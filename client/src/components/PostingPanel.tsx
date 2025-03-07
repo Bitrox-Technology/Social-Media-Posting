@@ -21,9 +21,11 @@ export const PostingPanel: React.FC<PostingPanelProps> = ({
   const [posting, setPosting] = useState(false);
   const [posted, setPosted] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isScheduled, setIsScheduled] = useState(false); // Toggle for scheduling
+  const [scheduleDateTime, setScheduleDateTime] = useState(''); // DateTime input
   const parsedContent = JSON.parse(content);
 
-  console.log("Parsed Content---", parsedContent);
+  console.log("Parsed Content---", parsedContent, scheduleDateTime);
 
   const handlePost = async (platform: string) => {
     if (platform !== 'instagram') {
@@ -43,6 +45,12 @@ export const PostingPanel: React.FC<PostingPanelProps> = ({
       formData.append('content', parsedContent.content);
       formData.append('hashtags', JSON.stringify(parsedContent.hashtags));
       formData.append('image', image);
+
+      // Add scheduleTime only if scheduling is selected and a date is provided
+      if (isScheduled && scheduleDateTime) {
+        console.log("Schedule Time---", scheduleDateTime);
+        formData.append('scheduleTime', scheduleDateTime);
+      }
 
       const response = await axios.post(
         'http://localhost:4000/api/v1/post',
@@ -95,7 +103,7 @@ export const PostingPanel: React.FC<PostingPanelProps> = ({
           ) : (
             <video
               src={URL.createObjectURL(image)}
-              controls // Add controls to play the video
+              controls
               className="w-full h-full object-cover"
             />
           )}
@@ -120,14 +128,35 @@ export const PostingPanel: React.FC<PostingPanelProps> = ({
           </div>
         </div>
 
-        {error && (
-          <p className="text-red-500 text-center">{error}</p>
-        )}
+        {/* Scheduling Toggle and Input */}
+        <div className="space-y-4">
+          <label className="flex items-center space-x-2 text-white">
+            <input
+              type="checkbox"
+              checked={isScheduled}
+              onChange={(e) => setIsScheduled(e.target.checked)}
+              className="form-checkbox text-yellow-500"
+            />
+            <span>Schedule Post</span>
+          </label>
+
+          {isScheduled && (
+            <input
+              type="datetime-local"
+              value={scheduleDateTime}
+              onChange={(e) => setScheduleDateTime(e.target.value)}
+              className="w-full p-2 rounded bg-gray-700 text-white"
+              min={new Date().toISOString().slice(0, 16)} // Prevent past dates
+            />
+          )}
+        </div>
+
+        {error && <p className="text-red-500 text-center">{error}</p>}
 
         <div className="flex justify-center space-x-4 pt-4">
           <button
             onClick={() => handlePost('instagram')}
-            disabled={posting || posted.includes('instagram')}
+            disabled={posting || posted.includes('instagram') || (isScheduled && !scheduleDateTime)}
             className="flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <Instagram className="w-5 h-5" />
@@ -136,6 +165,8 @@ export const PostingPanel: React.FC<PostingPanelProps> = ({
                 ? 'Posted to Instagram'
                 : posting
                 ? 'Posting...'
+                : isScheduled
+                ? 'Schedule Post'
                 : 'Post to Instagram'}
             </span>
             {posting && <Loader2 className="w-5 h-5 animate-spin" />}

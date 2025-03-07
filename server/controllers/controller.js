@@ -1,6 +1,6 @@
-import { postToInsta } from "../services/insta.js";
+import { postToInsta, schedulePost } from "../services/insta.js";
 import { Ollama } from "ollama";
-import { ApiResponse } from "../utils/apiResponse.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import fs from 'fs'
 
@@ -180,63 +180,63 @@ const Ideas = async (req, res, next) => {
 };
 
 const Post = async (req, res, next) => {
+  let filePath;
   try {
-    let filePath, mediaType, finalCaption;
     console.log('Received FormData:', req.body, req.file);
+  
 
-    if (req.file && req.body.title && req.body.content && req.body.hashtags) {
-      const file = req.file;
-      console.log('Media file uploaded:', file);
+    if (!req.file || !req.body.title || !req.body.content || !req.body.hashtags) {
+      throw new ApiError(400, 'Missing required fields: title, content, hashtags, and media file');
+    }
 
-      // Determine media type
-      mediaType = file.mimetype.startsWith('image')
-        ? 'photo'
-        : file.mimetype.startsWith('video')
-        ? 'video'
-        : null;
-      if (!mediaType) throw new ApiError(400, 'Unsupported media type. Use photo (JPEG) or video (MP4)' ); 
+    const file = req.file;
+    const mediaType = file.mimetype.startsWith('image')
+      ? 'photo'
+      : file.mimetype.startsWith('video')
+      ? 'video'
+      : null;
+    if (!mediaType) throw new ApiError(400, 'Unsupported media type. Use photo (JPEG) or video (MP4)');
 
-      const fileSizeMB = file.size / (1024 * 1024);
-      if (mediaType === 'photo' && fileSizeMB > 10)  {
-        throw new ApiError(400, 'Photo size exceeds 10MB limit' ); 
-      } else if (mediaType === 'video' && fileSizeMB > 15) {
-        throw new ApiError(400, 'Video size exceeds 15MB limit'  ); 
-      }
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (mediaType === 'photo' && fileSizeMB > 10) {
+      throw new ApiError(400, 'Photo size exceeds 10MB limit');
+    } else if (mediaType === 'video' && fileSizeMB > 15) {
+      throw new ApiError(400, 'Video size exceeds 15MB limit');
+    }
 
-      // File path from multer upload
-      filePath = file.path;
-      console.log('Media details:', filePath, mediaType, fileSizeMB.toFixed(2) + 'MB');
+    filePath = file.path;
+    console.log('Media details:', filePath, mediaType, fileSizeMB.toFixed(2) + 'MB');
 
-      // Extract data from FormData
-      const { title, content, hashtags } = req.body;
-      let parsedHashtags;
-      try {
-        parsedHashtags = JSON.parse(hashtags); 
-      } catch (e) {
-        parsedHashtags = hashtags.split(','); 
-      }
+    const { title, content, hashtags, scheduleTime } = req.body;
+    let parsedHashtags;
+    try {
+      parsedHashtags = JSON.parse(hashtags);
+    } catch (e) {
+      parsedHashtags = hashtags.split(',');
+    }
 
-      finalCaption = `${title}\n\n${content}`;
-      if (parsedHashtags && Array.isArray(parsedHashtags)) {
-        finalCaption += '\n\n' + parsedHashtags.map(tag => `#${tag}`).join(' ');
-      }
+    const finalCaption = `${title}\n\n${content}${
+      parsedHashtags && Array.isArray(parsedHashtags)
+        ? '\n\n' + parsedHashtags.map(tag => `${tag.trim()}`).join(' ')
+        : ''
+    }`;
+
+    // Log the final caption to verify title inclusion
+    console.log('Final caption to be posted:', finalCaption);
+
+    console.log(filePath, finalCaption, mediaType);
+
+    if (scheduleTime) {
+      const result = await schedulePost(filePath, finalCaption, mediaType, scheduleTime);
+      return res.status(200).json(new ApiResponse(200, result, `Post scheduled for ${scheduleTime}`));
     } else {
-      throw new ApiError(400, 'Missing required fields. Expected title, content, hashtags, and image file in FormData'); 
+      const instagramPostId = await postToInsta(filePath, finalCaption, mediaType);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return res.status(200).json(new ApiResponse(200, { postId: instagramPostId }, 'Media posted successfully!'));
     }
-
-    console.log(filePath, finalCaption, mediaType)
-    const instagramPostId = await postToInsta(filePath, finalCaption, mediaType);
-
-   
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-    return res.status(200).json(new ApiResponse(200, instagramPostId, 'Media posted successfully!'));
   } catch (error) {
     console.error('Error posting media:', error);
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
     next(error);
   }
 };

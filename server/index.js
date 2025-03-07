@@ -5,6 +5,7 @@ import router from './routes/router.js';
 import morgan from 'morgan';
 import helmet from 'helmet';  
 import { ApiError } from './utils/ApiError.js';  
+import session from 'express-session'; 
 
 configDotenv()
 
@@ -22,6 +23,12 @@ app.use(helmet());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(express.static("public"));
+
+app.use(session({
+    secret: 'bitrox-secret',
+    resave: false,
+    saveUninitialized: false,
+}));
 
 app.use("/api/v1", router)
 
