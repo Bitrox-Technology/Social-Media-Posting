@@ -1,24 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, Hash, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 interface ContentIdeasProps {
   topic: string;
   onSelect: (idea: string) => void;
-  onBack: () => void;
 }
 
-export const ContentIdeas: React.FC<ContentIdeasProps> = ({ topic, onSelect, onBack }) => {
-  console.log("Topic-----", topic);
-  const [ideas, setIdeas] = useState<{ title: string; content: string; hashtags: string[] }[]>([]);
+export const ContentIdeas: React.FC<ContentIdeasProps> = ({ topic, onSelect }) => {
+  // Initialize ideas from sessionStorage or empty array
+  const [ideas, setIdeas] = useState<{ title: string; content: string; hashtags: string[] }[]>(() => {
+    const savedIdeas = sessionStorage.getItem(`contentIdeas_${topic}`);
+    return savedIdeas ? JSON.parse(savedIdeas) : [];
+  });
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  console.log("Topic-----", topic);
+
+  // Save ideas to sessionStorage whenever they change
+  useEffect(() => {
+    if (ideas.length > 0) {
+      sessionStorage.setItem(`contentIdeas_${topic}`, JSON.stringify(ideas));
+    }
+  }, [ideas, topic]);
 
   const fetchContentIdeas = async () => {
     setLoading(true);
-    setIdeas([]);
     try {
       const response = await axios.post(
-        'http://localhost:4000/api/v1/ideas', // Adjust endpoint if needed
+        'http://localhost:4000/api/v1/ideas',
         { topic },
         {
           headers: {
@@ -27,10 +39,8 @@ export const ContentIdeas: React.FC<ContentIdeasProps> = ({ topic, onSelect, onB
         }
       );
 
-      const generatedIdeas = response.data.data; // Array of ideas directly from response.data.data
+      const generatedIdeas = response.data.data;
       console.log("Generated Ideas:", generatedIdeas);
-
-      // Set the ideas directly from the response
       setIdeas(generatedIdeas);
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -43,12 +53,21 @@ export const ContentIdeas: React.FC<ContentIdeasProps> = ({ topic, onSelect, onB
     }
   };
 
+  const handleSelect = (idea: { title: string; content: string; hashtags: string[] }) => {
+    onSelect(JSON.stringify(idea));
+    navigate('/images');
+  };
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="flex items-center text-yellow-500 hover:text-yellow-400 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -63,21 +82,21 @@ export const ContentIdeas: React.FC<ContentIdeasProps> = ({ topic, onSelect, onB
           disabled={loading}
           className="px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? 'Generating...' : 'Generate Ideas'}
+          {loading ? 'Generating...' : ideas.length > 0 ? 'Regenerate Ideas' : 'Generate Ideas'}
         </button>
       </div>
 
       <div className="grid gap-6">
-        {ideas.length === 0 ? (
-          <p className="text-gray-300">
-            {loading ? 'Loading content ideas...' : 'Click "Generate Ideas" to get started!'}
-          </p>
+        {ideas.length === 0 && !loading ? (
+          <p className="text-gray-300">Click "Generate Ideas" to get started!</p>
+        ) : loading ? (
+          <p className="text-gray-300">Loading content ideas...</p>
         ) : (
           ideas.map((idea, index) => (
             <div
               key={index}
               className="bg-gray-800 rounded-xl p-6 border border-yellow-500/50 hover:border-yellow-500 transition-colors cursor-pointer"
-              onClick={() => onSelect(JSON.stringify(idea))}
+              onClick={() => handleSelect(idea)}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">

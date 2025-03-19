@@ -1,13 +1,24 @@
 import React, { useState } from 'react';
 import { Search, TrendingUp, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface TopicSelectorProps {
   onSelect: (topic: string) => void;
-  onBack: () => void;
+  // Remove onBack since we'll handle it with navigate
 }
 
-export const TopicSelector: React.FC<TopicSelectorProps> = ({ onSelect, onBack }) => {
+export const TopicSelector: React.FC<TopicSelectorProps> = ({ onSelect }) => {
   const [customTopic, setCustomTopic] = useState('');
+  const navigate = useNavigate();
+
+  const handleSelect = (topic: string) => {
+    onSelect(topic);
+    navigate('/ideas');
+  };
+
+  const handleBack = () => {
+    navigate(-1); // Or navigate('/') if you prefer explicit routing to ContentTypeSelector
+  };
 
   const predefinedTopics = [
     'Digital Marketing',
@@ -29,7 +40,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = ({ onSelect, onBack }
     <div className="space-y-8">
       <div className="flex items-center">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="flex items-center text-yellow-500 hover:text-yellow-400 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
@@ -42,7 +53,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = ({ onSelect, onBack }
         {predefinedTopics.map((topic) => (
           <button
             key={topic}
-            onClick={() => onSelect(topic)}
+            onClick={() => handleSelect(topic)} // Updated to use handleSelect
             className="p-4 bg-gray-800 rounded-lg hover:bg-gray-700 text-white text-left transition-colors border border-yellow-500/50 hover:border-yellow-500"
           >
             {topic}
@@ -59,7 +70,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = ({ onSelect, onBack }
           {trendingTopics.map((topic) => (
             <button
               key={topic}
-              onClick={() => onSelect(topic)}
+              onClick={() => handleSelect(topic)} // Updated to use handleSelect
               className="p-4 bg-gray-800 rounded-lg hover:bg-gray-700 text-white text-left transition-colors border border-yellow-500"
             >
               {topic}
@@ -82,7 +93,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = ({ onSelect, onBack }
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
           <button
-            onClick={() => customTopic && onSelect(customTopic)}
+            onClick={() => customTopic && handleSelect(customTopic)} // Updated to use handleSelect
             disabled={!customTopic}
             className="px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
@@ -92,4 +103,4 @@ export const TopicSelector: React.FC<TopicSelectorProps> = ({ onSelect, onBack }
       </div>
     </div>
   );
-}
+};
