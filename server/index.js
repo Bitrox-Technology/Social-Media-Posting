@@ -21,9 +21,10 @@ const PORT = process.env.PORT || 4000;
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:3000" , 'http://localhost:5173'], // Allow requests from your frontend origin
-    methods: ["GET", "POST", "PUT", "DELETE"], // Allow these HTTP methods
-    allowedHeaders: ["Content-Type", "Authorization"], // Allow these headers
+    origin: ["http://localhost:3000" , 'http://localhost:5173'], 
+    methods: ["GET", "POST", "PUT", "DELETE"], 
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, 
   })
 );
 
@@ -34,7 +35,7 @@ morgan.format(
 app.use(morgan("custom"));
 
 app.use(helmet());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 app.use(

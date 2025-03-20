@@ -15,7 +15,7 @@ async function generateImage(prompt, negativePrompt) {
     cfg_scale: 7.0,
     batch_size: 1,
     override_settings: {
-      sd_model_checkpoint: 'realisticVisionV60B1_v51HyperVAE.safetensors',
+      sd_model_checkpoint: 'lumina_2.safetensors',
       sd_vae: 'sdxl_vae.safetensors',
     },
     enable_hr: true, // Enable hires fix
@@ -23,8 +23,8 @@ async function generateImage(prompt, negativePrompt) {
     hr_upscaler: 'R-ESRGAN 4x+',
     hr_second_pass_steps: 15, // Use hr_second_pass_steps instead of hr_steps
     denoising_strength: 0.4,  // Correct parameter name
-    refiner_checkpoint: 'realisticVisionV60B1_v51HyperVAE.safetensors',
-    refiner_switch_at: 0.8,
+    // refiner_checkpoint: 'lumina_2.safetensors',
+    // refiner_switch_at: 0.8,
   };
   try {
     const response = await axios.post(

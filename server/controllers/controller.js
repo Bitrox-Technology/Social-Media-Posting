@@ -6,7 +6,8 @@ import fs from "fs/promises";
 import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
 import { fileURLToPath } from "url";
-import { uploadOnClodinary } from "../utils/cloudinary.js";
+import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
+import { generateCarouselContent } from "../services/generateCarousel.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
@@ -329,13 +330,16 @@ const processQueue = async () => {
     const imagePath = path.join(imageDir, imageName);
     await fs.writeFile(imagePath, imageBuffer);
     console.log("Image saved to:", imagePath);
-    
+
     const upload = await uploadOnClodinary(imagePath);
-    if (!upload) throw new ApiError(500, "Failed to upload image to Cloudinary");
+    if (!upload)
+      throw new ApiError(500, "Failed to upload image to Cloudinary");
     console.log("Image uploaded to Cloudinary:", upload.secure_url);
     return res
       .status(200)
-      .json(new ApiResponse(200, upload.secure_url, `Image generated successfully`));
+      .json(
+        new ApiResponse(200, upload.secure_url, `Image generated successfully`)
+      );
   } catch (error) {
     console.error("Error in processQueue:", error);
     res.status(error.statusCode || 500).json({
@@ -365,4 +369,38 @@ const GenerateImage = async (req, res, next) => {
   }
 };
 
-export { Post, Content, Ideas, GenerateImage };
+const GenerateCarousel = async (req, res, next) => {
+  const { topic } = req.body;
+
+  if (!topic) {
+    return res.status(400).json({ error: "Topic is required" });
+  }
+
+  try {
+    const normalizedTopic = topic.toLowerCase().trim();
+    const generatedContent = await generateCarouselContent(normalizedTopic);
+
+    return res.status(200).json(new ApiResponse(200, generatedContent, "Successfully generated carousel content"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+const UploadCarouselImages = async (req, res, next) => {
+  const { images } = req.body;
+
+  console.log("Received images:", images);
+
+  if (!images || !Array.isArray(images)) {
+    throw new ApiError(400, "Images array is required");
+  }
+
+  try {
+    const imageUrls = await carouselUploadOnCloudinary(images);
+    return res.status(200).json(new ApiResponse(200, imageUrls, "Images uploaded successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { Post, Content, Ideas, GenerateImage, GenerateCarousel, UploadCarouselImages };

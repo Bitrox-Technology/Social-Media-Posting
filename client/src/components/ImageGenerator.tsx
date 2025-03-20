@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Image, Check, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { setSelectedFile } from '../store/appSlice';
+import { useGenerateImageMutation } from '../store/api';
 
 interface ContentIdea {
   title: string;
@@ -10,80 +12,47 @@ interface ContentIdea {
 }
 
 interface ImageGeneratorProps {
-  contentIdea?: ContentIdea | string | null; // Allow contentIdea to be a string
   contentType: 'post' | 'reel';
-  onSelect: (file: File | string) => void;
 }
 
-export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, contentType, onSelect }) => {
-  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null); // Will store the image URL
+export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) => {
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const [postCreationOption, setPostCreationOption] = useState<'withImage' | 'withoutImage'>('withImage');
   const [postType, setPostType] = useState<'single' | 'carousel' | 'festival'>('single');
   const [carouselImageOption, setCarouselImageOption] = useState<'withImage' | 'withoutImage'>('withImage');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [showLogo, setShowLogo] = useState<boolean>(true); // State to toggle logo visibility
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useAppDispatch();
 
-  console.log("generatedImageUrl---", generatedImageUrl);
+  // Access state from Redux store
+  const localContentIdea = useAppSelector((state) => state.app.selectedIdea) as ContentIdea | null;
 
-  // Parse contentIdea if it's a string, otherwise use it as-is
-  const parseContentIdea = (idea: ContentIdea | string | null | undefined): ContentIdea | null => {
-    if (!idea) return null;
-    if (typeof idea === 'string') {
-      try {
-        return JSON.parse(idea) as ContentIdea;
-      } catch (error) {
-        console.error('Error parsing contentIdea:', error);
-        return null;
-      }
-    }
-    return idea;
-  };
+  // RTK Query mutation hook for generating images
+  const [generateImage] = useGenerateImageMutation();
 
-  // Fallback contentIdea if not provided via props
-  const [localContentIdea, setLocalContentIdea] = useState<ContentIdea | null>(parseContentIdea(contentIdea));
-
-  // Check if contentIdea is passed via navigation state
-  useEffect(() => {
-    if (!contentIdea && location.state?.contentIdea) {
-      setLocalContentIdea(parseContentIdea(location.state.contentIdea));
-    }
-  }, [contentIdea, location.state]);
-
-  console.log("Data----", { propsContentIdea: contentIdea, localContentIdea, contentType });
+  // Default logo URL (replace with your actual logo path)
+  const defaultLogoUrl = '/images/Logo.png'; // Ensure this path points to your logo in the public folder
 
   const handleGenerateImage = async () => {
-    console.log("handleGenerateImage called");
-
     if (!localContentIdea || !localContentIdea.title) {
-      console.log("Missing contentIdea or title:", localContentIdea);
       alert('Please provide a content idea with a title to generate an image.');
       return;
     }
 
-    const prompt = localContentIdea.title + " " + localContentIdea.content;
-    console.log("Prompt to be used:", prompt);
-
+    const prompt = `${localContentIdea.title} ${localContentIdea.content}`;
     setIsGenerating(true);
     try {
-      console.log("Making API call to generate image...");
-      const response = await axios.post('http://localhost:4000/api/v1/generate-image', {
-        prompt: prompt,
-      });
-
-      console.log("API response:", response.data);
-      const imageUrl = response.data.data; // e.g., "http://localhost:4000/images/output_123456.png"
+      const response = await generateImage({ prompt }).unwrap();
+      const imageUrl = response.data;
       if (!imageUrl) {
-        throw new Error("No image URL returned from API");
+        throw new Error('No image URL returned from API');
       }
-
-      // Set the image URL directly
-      console.log("Setting image URL:", imageUrl);
       setGeneratedImageUrl(imageUrl);
 
-      // For non-carousel types, show the options to proceed
       if (postType !== 'carousel') {
         setShowOptions(true);
       }
@@ -92,41 +61,100 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
       alert('Failed to generate image. Please try again.');
     } finally {
       setIsGenerating(false);
-      console.log("API call completed, isGenerating set to false");
     }
   };
 
   const handleContinueToPost = () => {
     if (generatedImageUrl) {
-      fetch(generatedImageUrl)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], 'generated-image.png', { type: 'image/png' });
-          onSelect(file);
-          navigate('/post', {
-            state: {
-              contentType,
-              topic: localContentIdea?.title,
-              content: JSON.stringify(localContentIdea),
-              images: [file],
-            },
+      // If the logo is visible, we need to combine the image and logo into a single image
+      if (showLogo && (postType === 'single' || postType === 'festival')) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const image = new window.Image();
+        const logo = new window.Image();
+
+        // Set crossOrigin to handle CORS if the image is from an external source
+        image.crossOrigin = 'Anonymous';
+        logo.crossOrigin = 'Anonymous';
+
+        // Load the generated image
+        image.src = generatedImageUrl;
+        logo.src = defaultLogoUrl;
+
+        Promise.all([
+          new Promise((resolve) => {
+            image.onload = resolve;
+          }),
+          new Promise((resolve) => {
+            logo.onload = resolve;
+          }),
+        ])
+          .then(() => {
+            // Set canvas dimensions to match the generated image
+            canvas.width = image.width;
+            canvas.height = image.height;
+
+            // Draw the generated image
+            ctx?.drawImage(image, 0, 0);
+
+            // Draw the logo in the top-right corner (scale logo to 10% of image width)
+            const logoSize = image.width * 0.1; // Logo width is 10% of image width
+            const logoAspectRatio = logo.width / logo.height;
+            const logoHeight = logoSize / logoAspectRatio;
+            const padding = 20; // Padding from the top-right corner
+            ctx?.drawImage(
+              logo,
+              image.width - logoSize - padding, // X position (top-right)
+              padding, // Y position (top)
+              logoSize, // Width
+              logoHeight // Height
+            );
+
+            // Convert the canvas to a blob and create a file
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const file = new File([blob], 'generated-image-with-logo.png', { type: 'image/png' });
+                dispatch(setSelectedFile(file));
+                navigate('/post');
+              } else {
+                console.error('Failed to create blob from canvas');
+                alert('Failed to process the generated image with logo for posting.');
+              }
+            }, 'image/png');
+          })
+          .catch((error) => {
+            console.error('Error combining image and logo:', error);
+            alert('Failed to add logo to the generated image. Proceeding without logo.');
+            // Fallback: Proceed without the logo
+            fetch(generatedImageUrl)
+              .then((res) => res.blob())
+              .then((blob) => {
+                const file = new File([blob], 'generated-image.png', { type: 'image/png' });
+                dispatch(setSelectedFile(file));
+                navigate('/post');
+              })
+              .catch((err) => {
+                console.error('Error converting image URL to file:', err);
+                alert('Failed to process the generated image for posting.');
+              });
           });
-        })
-        .catch(error => {
-          console.error('Error converting image URL to file:', error);
-          alert('Failed to process the generated image for posting.');
-        });
+      } else {
+        // No logo, proceed as before
+        fetch(generatedImageUrl)
+          .then((res) => res.blob())
+          .then((blob) => {
+            const file = new File([blob], 'generated-image.png', { type: 'image/png' });
+            dispatch(setSelectedFile(file));
+            navigate('/post');
+          })
+          .catch((error) => {
+            console.error('Error converting image URL to file:', error);
+            alert('Failed to process the generated image for posting.');
+          });
+      }
     } else {
-      // If no image is generated (e.g., "without image" option), navigate to post creation without an image
-      onSelect('');
-      navigate('/post', {
-        state: {
-          contentType,
-          topic: localContentIdea?.title,
-          content: JSON.stringify(localContentIdea),
-          images: [],
-        },
-      });
+      dispatch(setSelectedFile(null));
+      navigate('/post');
     }
   };
 
@@ -142,16 +170,13 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
   };
 
   const handleProceed = () => {
-    if (postCreationOption === 'withImage') {
-      // Navigate directly to post creation without an image
+    if (postCreationOption === 'withoutImage') {
       handleContinueToPost();
     } else if (postType === 'carousel') {
-      // For carousel, wait for the user to select a template
       if (!selectedTemplate) {
         alert('Please select a carousel template to proceed.');
       }
     } else {
-      // Generate the image for single or festival
       handleGenerateImage();
     }
   };
@@ -160,18 +185,16 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
     navigate(-1);
   };
 
-  const isImage = contentType === 'post';
   const shouldShowGenerateButton =
     postCreationOption === 'withImage' &&
     (postType === 'single' || postType === 'festival' || (postType === 'carousel' && carouselImageOption === 'withImage'));
 
   const carouselTemplates = [
-    '/images/1.jpg',
     '/images/background.png',
     '/images/background1.png',
-    '/images/2.png',
     '/images/graphic.jpg',
-    
+    '/images/2.png',
+    '/images/1.jpg',
   ];
 
   return (
@@ -194,9 +217,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
         </div>
       </div>
 
-      {/* All Options on One Page */}
       <div className="space-y-6">
-        {/* Post Creation Options */}
         <div className="space-y-2">
           <h3 className="text-xl font-semibold text-white">Create Post</h3>
           <div className="flex space-x-4">
@@ -225,7 +246,6 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
           </div>
         </div>
 
-        {/* Post Type Selection (Enabled only if "With Image" is selected) */}
         {postCreationOption === 'withImage' && (
           <div className="space-y-2">
             <h3 className="text-xl font-semibold text-white">Select Post Type</h3>
@@ -267,7 +287,6 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
           </div>
         )}
 
-        {/* Carousel Image Options (Enabled only if "Carousel Image" is selected) */}
         {postCreationOption === 'withImage' && postType === 'carousel' && (
           <div className="space-y-2">
             <h3 className="text-xl font-semibold text-white">Carousel Image Options</h3>
@@ -298,7 +317,6 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
           </div>
         )}
 
-        {/* Generate Image Button (for Carousel with Image) */}
         {postCreationOption === 'withImage' && postType === 'carousel' && carouselImageOption === 'withImage' && !generatedImageUrl && (
           <div className="flex justify-end">
             <button
@@ -312,26 +330,45 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
           </div>
         )}
 
-        {/* Show Generated Image Preview (if applicable) */}
         {postCreationOption === 'withImage' &&
           (postType === 'single' || postType === 'festival' || (postType === 'carousel' && carouselImageOption === 'withImage')) &&
           generatedImageUrl && !showOptions && (
             <div className="grid grid-cols-1 gap-6">
-              <div className="relative rounded-xl overflow-hidden max-w-3xl max-h-[500px] mx-auto">
-                {isImage ? (
-                  <img
-                    src={generatedImageUrl}
-                    alt="Generated Image"
-                    className="w-full h-full object-contain"
-                  />
+              <div className="relative rounded-xl max-w-3xl max-h-[500px] mx-auto">
+                {contentType === 'post' ? (
+                  <div className="relative">
+                    <img
+                      src={generatedImageUrl}
+                      alt="Generated Image"
+                      className="w-full h-full object-contain"
+                    />
+                    {(postType === 'single' || postType === 'festival') && showLogo && (
+                      <img
+                        src={defaultLogoUrl}
+                        alt="Logo"
+                        className="absolute right-4 top-4 w-32 h-12 object-contain z-10"
+                      
+                      />
+                    )}
+                  </div>
                 ) : (
                   <p className="text-white">Reels are not supported for generation in this example.</p>
                 )}
               </div>
+              {(postType === 'single' || postType === 'festival') && (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={showLogo}
+                    onChange={(e) => setShowLogo(e.target.checked)}
+                    className="text-blue-600"
+                  />
+                  <label className="text-white">Add Logo</label>
+                </div>
+              )}
             </div>
           )}
 
-        {/* Show Carousel Templates (if "Carousel Image" is selected and either image is generated or "Without Image" is selected) */}
         {postCreationOption === 'withImage' &&
           postType === 'carousel' &&
           (carouselImageOption === 'withoutImage' || (carouselImageOption === 'withImage' && generatedImageUrl)) && (
@@ -341,9 +378,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
                 {carouselTemplates.map((template, index) => (
                   <div
                     key={index}
-                    className={`relative rounded-xl overflow-hidden cursor-pointer group aspect-[3/4] ${
-                      selectedTemplate === template ? 'ring-2 ring-yellow-500' : ''
-                    }`}
+                    className={`relative rounded-xl overflow-hidden cursor-pointer group aspect-[3/4] ${selectedTemplate === template ? 'ring-2 ring-yellow-500' : ''
+                      }`}
                     onClick={() => handleTemplateSelect(template)}
                   >
                     <img
@@ -366,7 +402,6 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
             </div>
           )}
 
-        {/* Proceed Button */}
         <div className="flex justify-end">
           <button
             onClick={handleProceed}
@@ -377,25 +412,43 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
             {isGenerating
               ? 'Generating...'
               : shouldShowGenerateButton && postType !== 'carousel'
-              ? 'Generate Image and Proceed'
-              : 'Proceed'}
+                ? 'Generate Image and Proceed'
+                : 'Proceed'}
           </button>
         </div>
       </div>
 
-      {/* Show options after image generation (for non-carousel post types) */}
       {showOptions && (
         <div className="space-y-6">
-          {/* Show the generated image again before proceeding */}
           {generatedImageUrl && (
             <div className="grid grid-cols-1 gap-6">
               <div className="relative rounded-xl overflow-hidden max-w-3xl max-h-[500px] mx-auto">
-                <img
-                  src={generatedImageUrl}
-                  alt="Generated Image"
-                  className="w-full h-full object-contain"
-                />
+                <div className="relative">
+                  <img
+                    src={generatedImageUrl}
+                    alt="Generated Image"
+                    className="w-full h-full object-contain"
+                  />
+                  {(postType === 'single' || postType === 'festival') && showLogo && (
+                    <img
+                      src={defaultLogoUrl}
+                      alt="Logo"
+                      className="absolute right-14 top-10 w-40 h-12 object-contain z-10"
+                    />
+                  )}
+                </div>
               </div>
+              {(postType === 'single' || postType === 'festival') && (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={showLogo}
+                    onChange={(e) => setShowLogo(e.target.checked)}
+                    className="text-blue-600"
+                  />
+                  <label className="text-white">Add Logo</label>
+                </div>
+              )}
             </div>
           )}
           <div className="flex justify-end space-x-4">
@@ -407,7 +460,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentIdea, con
             </button>
             {postType !== 'carousel' && (
               <button
-                onClick={() => setShowOptions(false)} // Allow going back to options
+                onClick={() => setShowOptions(false)}
                 className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 transition-colors"
               >
                 Back to Options

@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
+import { ApiError } from './ApiError.js';
 // 'fs' is file system that help to read write on the file. mainly we need a file path.
 
 // In our file system our file are linked or unlinked
@@ -26,4 +27,27 @@ const uploadOnClodinary = async (localFilePath) => {
   }
 }
 
-export { uploadOnClodinary }
+const carouselUploadOnCloudinary = async(images) => {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+
+  const uploadPromises = images.map(async (image, index) => {
+    try {
+      const result = await cloudinary.uploader.upload(image, {
+        folder: 'carousel_images',
+        public_id: `carousel_slide_${Date.now()}_${index}`, 
+      });
+      return result.secure_url; 
+    } catch (error) {
+      throw new ApiError(500, `Error uploading image to Cloudinary: ${error.message}`);
+    }
+  });
+
+  const imageUrls = await Promise.all(uploadPromises);
+  return imageUrls;
+}
+
+export { uploadOnClodinary, carouselUploadOnCloudinary }

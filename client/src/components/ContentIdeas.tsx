@@ -1,60 +1,70 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Sparkles, Hash, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { setSelectedIdea, setIdeas } from '../store/appSlice';
+import { useGenerateIdeasMutation } from '../store/api';
+import { motion } from 'framer-motion';
 
-interface ContentIdeasProps {
-  topic: string;
-  onSelect: (idea: string) => void;
+interface ContentIdea {
+  title: string;
+  content: string;
+  hashtags: string[];
 }
 
-export const ContentIdeas: React.FC<ContentIdeasProps> = ({ topic, onSelect }) => {
-  // Initialize ideas from sessionStorage or empty array
-  const [ideas, setIdeas] = useState<{ title: string; content: string; hashtags: string[] }[]>(() => {
-    const savedIdeas = sessionStorage.getItem(`contentIdeas_${topic}`);
-    return savedIdeas ? JSON.parse(savedIdeas) : [];
-  });
-  const [loading, setLoading] = useState(false);
+export const ContentIdeas: React.FC = () => {
+  const topic = useAppSelector((state) => state.app.selectedTopic);
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  console.log("Topic-----", topic);
+  // Use RTK Query mutation to fetch content ideas
+  const [generateIdeas, { data: response, isLoading, isError, error }] = useGenerateIdeasMutation({
+    fixedCacheKey: `contentIdeas_${topic}`,
+  });
 
-  // Save ideas to sessionStorage whenever they change
+  // Extract the ideas array from the response
+  const ideas: ContentIdea[] = response?.data && Array.isArray(response.data) ? response.data : [];
+
+  // Log the data for debugging
+  console.log("Response from RTK Query:", response);
+  console.log("Ideas:", ideas);
+
+  // Load ideas from sessionStorage on mount
+  useEffect(() => {
+    const savedIdeas = sessionStorage.getItem(`contentIdeas_${topic}`);
+    if (savedIdeas && !ideas.length) {
+      try {
+        const parsedIdeas: ContentIdea[] = JSON.parse(savedIdeas);
+        if (Array.isArray(parsedIdeas)) {
+          dispatch(setIdeas(parsedIdeas)); // Store the array of ideas
+          if (parsedIdeas.length > 0) {
+            dispatch(setSelectedIdea(parsedIdeas[0])); // Set the first idea as the selected idea
+          }
+        }
+      } catch (err) {
+        console.error('Error parsing saved ideas from sessionStorage:', err);
+      }
+    }
+  }, [topic, ideas.length, dispatch]);
+
+  // Save ideas to sessionStorage and Redux whenever they change
   useEffect(() => {
     if (ideas.length > 0) {
       sessionStorage.setItem(`contentIdeas_${topic}`, JSON.stringify(ideas));
+      dispatch(setIdeas(ideas)); // Also store in Redux
     }
-  }, [ideas, topic]);
+  }, [ideas, topic, dispatch]);
 
   const fetchContentIdeas = async () => {
-    setLoading(true);
     try {
-      const response = await axios.post(
-        'http://localhost:4000/api/v1/ideas',
-        { topic },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const generatedIdeas = response.data.data;
-      console.log("Generated Ideas:", generatedIdeas);
-      setIdeas(generatedIdeas);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Error fetching content ideas:', error.message);
-      } else {
-        console.error('Error fetching content ideas:', error);
-      }
-    } finally {
-      setLoading(false);
+      await generateIdeas({ topic }).unwrap();
+    } catch (err) {
+      console.error('Error fetching content ideas:', err);
     }
   };
 
-  const handleSelect = (idea: { title: string; content: string; hashtags: string[] }) => {
-    onSelect(JSON.stringify(idea));
+  const handleSelect = (idea: ContentIdea) => {
+    dispatch(setSelectedIdea(idea));
     navigate('/images');
   };
 
@@ -68,7 +78,8 @@ export const ContentIdeas: React.FC<ContentIdeasProps> = ({ topic, onSelect }) =
         <div className="flex items-center">
           <button
             onClick={handleBack}
-            className="flex items-center text-yellow-500 hover:text-yellow-400 transition-colors"
+            className="flex items-center text-yellow-500 hover:text-yellow-400 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+            aria-label="Go back to topic selection"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back
@@ -77,26 +88,41 @@ export const ContentIdeas: React.FC<ContentIdeasProps> = ({ topic, onSelect }) =
             Content Ideas for "{topic}"
           </h2>
         </div>
-        <button
+        <motion.button
           onClick={fetchContentIdeas}
-          disabled={loading}
-          className="px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={isLoading}
+          className="px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+          whileHover={{ scale: 1.05, backgroundColor: '#FBBF24' }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+          aria-label={ideas.length > 0 ? 'Regenerate content ideas' : 'Generate content ideas'}
         >
-          {loading ? 'Generating...' : ideas.length > 0 ? 'Regenerate Ideas' : 'Generate Ideas'}
-        </button>
+          {isLoading ? 'Generating...' : ideas.length > 0 ? 'Regenerate Ideas' : 'Generate Ideas'}
+        </motion.button>
       </div>
 
-      <div className="grid gap-6">
-        {ideas.length === 0 && !loading ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {ideas.length === 0 && !isLoading ? (
           <p className="text-gray-300">Click "Generate Ideas" to get started!</p>
-        ) : loading ? (
+        ) : isLoading ? (
           <p className="text-gray-300">Loading content ideas...</p>
+        ) : isError ? (
+          <p className="text-red-500">
+            Error fetching ideas: {error ? (error as any).message : 'Unknown error'}
+          </p>
         ) : (
           ideas.map((idea, index) => (
-            <div
+            <motion.div
               key={index}
-              className="bg-gray-800 rounded-xl p-6 border border-yellow-500/50 hover:border-yellow-500 transition-colors cursor-pointer"
+              className="bg-gray-800 rounded-xl p-6 border border-yellow-500/50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
               onClick={() => handleSelect(idea)}
+              whileHover={{ scale: 1.02, borderColor: '#FBBF24' }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleSelect(idea)}
+              aria-label={`Select content idea: ${idea.title}`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -120,7 +146,7 @@ export const ContentIdeas: React.FC<ContentIdeasProps> = ({ topic, onSelect }) =
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))
         )}
       </div>
