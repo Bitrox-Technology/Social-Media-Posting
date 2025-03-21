@@ -52,13 +52,7 @@ function App() {
             />
             <Route
               path="/post"
-              element={
-                selectedFile && contentType && selectedIdea ? (
-                  <PostingPanel />
-                ) : (
-                  <Navigate to="/images" />
-                )
-              }
+              element={<PostingPanel />}
             />
             <Route path="/carousel" element={<Carousel />} />
             <Route path="*" element={<Navigate to="/" />} />

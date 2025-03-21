@@ -6,7 +6,7 @@ import fs from "fs/promises";
 import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
 import { fileURLToPath } from "url";
-import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
+import { carouselUploadOnCloudinary, singleUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
 import { generateCarouselContent } from "../services/generateCarousel.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
@@ -387,20 +387,34 @@ const GenerateCarousel = async (req, res, next) => {
 };
 
 const UploadCarouselImages = async (req, res, next) => {
-  const { images } = req.body;
 
-  console.log("Received images:", images);
-
-  if (!images || !Array.isArray(images)) {
-    throw new ApiError(400, "Images array is required");
+  if (!req.files || req.files.length === 0) {
+    throw new ApiError(400, "No images provided");
   }
-
+  console.log("Received images:", req.files);
   try {
-    const imageUrls = await carouselUploadOnCloudinary(images);
+    const imageUrls = await carouselUploadOnCloudinary(req.files);
+    console.log("Image URLs:", imageUrls);
     return res.status(200).json(new ApiResponse(200, imageUrls, "Images uploaded successfully"));
   } catch (error) {
     next(error);
   }
 };
 
-export { Post, Content, Ideas, GenerateImage, GenerateCarousel, UploadCarouselImages };
+const UploadSingleImage = async (req, res, next) => {
+  if (!req.file) {
+    throw new ApiError(400, "No image file provided");
+  }
+
+  console.log("Received image:", req.file);
+
+  try {
+    const result = await uploadOnClodinary(req.file.path);
+    
+    return res.status(200).json(new ApiResponse(200, result, "Image uploaded successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { Post, Content, Ideas, GenerateImage, GenerateCarousel, UploadCarouselImages , UploadSingleImage};

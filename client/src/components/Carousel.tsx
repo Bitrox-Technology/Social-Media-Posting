@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Swiper, SwiperSlide, SwiperRef } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
-import { Swiper as SwiperCore } from 'swiper'; // Import Swiper core type
+import { Swiper as SwiperCore } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -49,6 +49,8 @@ export const Carousel: React.FC = () => {
   const [editedSlides, setEditedSlides] = useState<Slide[]>([]);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [updateLog, setUpdateLog] = useState<string[]>([]);
+  const [addLogo, setAddLogo] = useState<boolean>(true); // New state for logo toggle
+  const defaultLogoUrl = '/images/Logo1.png'; // Default logo URL
   const swiperRef = useRef<SwiperRef>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const navigate = useNavigate();
@@ -85,7 +87,7 @@ export const Carousel: React.FC = () => {
   const socialHandle = '@bitroxtechnologies';
   const footerText = 'bitrox.tech';
 
-  // Default slides to show when the user first arrives
+  // Default slides
   const defaultSlides: Slide[] = [
     {
       tagline: 'Welcome to Bitrox',
@@ -116,7 +118,7 @@ export const Carousel: React.FC = () => {
       comment: '/images/comment.png',
       save: '/images/save.png',
       like: '/images/like.png',
-      overlayGraphic: '/images/graphic.png',
+      overlayGraphic: '/images/graphic.jpg',
     },
     {
       title: 'Our Services',
@@ -131,7 +133,7 @@ export const Carousel: React.FC = () => {
       comment: '/images/comment.png',
       save: '/images/save.png',
       like: '/images/like.png',
-      overlayGraphic: '/images/graphic.png',
+      overlayGraphic: '/images/graphic.jpg',
     },
     {
       title: 'Get Started Today',
@@ -146,7 +148,7 @@ export const Carousel: React.FC = () => {
       comment: '/images/comment.png',
       save: '/images/save.png',
       like: '/images/like.png',
-      overlayGraphic: '/images/graphic.png',
+      overlayGraphic: '/images/graphic.jpg',
     },
     {
       tagline: 'Thank You!',
@@ -200,7 +202,6 @@ export const Carousel: React.FC = () => {
       const generatedContent: CarouselContent[] = response.data;
       console.log('Generated carousel content:', generatedContent);
 
-      // Add frontend-specific fields to the generated content
       const normalizedTopic = topic.toLowerCase().trim();
       const generatedImages = localImages[normalizedTopic] || localImages['default'];
       if (!generatedImages.length && !initialImage) {
@@ -221,7 +222,7 @@ export const Carousel: React.FC = () => {
         comment: '/images/comment.png',
         save: '/images/save.png',
         like: '/images/like.png',
-        overlayGraphic: index === 1 || index === 2 || index === 3 ? '/images/graphic.png' : '',
+        overlayGraphic: index === 1 || index === 2 || index === 3 ? '/images/graphic.jpg' : '',
       }));
 
       setSlides(generatedSlides);
@@ -268,127 +269,88 @@ export const Carousel: React.FC = () => {
 
   // Preload all images for a slide to ensure they are available for html2canvas
   const preloadSlideImages = async (slide: Slide): Promise<void> => {
-    const imageUrls = [
+    const imagesToPreload = [
       slide.imageUrl,
       slide.headshotUrl,
       slide.overlayGraphic,
       slide.like,
       slide.comment,
       slide.save,
-    ].filter((url): url is string => !!url); // Filter out empty strings
-
-    const fallbackImage = '/images/background1.jpg'; // Primary fallback
-    const secondaryFallbackImage = '/images/placeholder.jpg'; // Secondary fallback
-
-    const loadImage = async (url: string): Promise<string> => {
-      try {
-        // First, check if the image is accessible using fetch
-        const response = await fetch(url, { method: 'HEAD' });
-        if (!response.ok) {
-          console.warn(`Image not accessible: ${url}. Using fallback image: ${fallbackImage}`);
-          return fallbackImage;
-        }
-
-        // If accessible, attempt to load the image
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.src = url;
-          img.onload = () => resolve(url);
-          img.onerror = () => {
-            console.warn(`Failed to load image: ${url}. Using fallback image: ${fallbackImage}`);
-            resolve(fallbackImage);
-          };
-        });
-      } catch (error) {
-        console.warn(`Error checking image accessibility: ${url}. Using fallback image: ${fallbackImage}`);
-        return fallbackImage;
-      }
-    };
-
-    const loadedUrls = await Promise.all(
-      imageUrls.map(async (url) => {
-        let resolvedUrl = await loadImage(url);
-        // If the resolved URL is the fallback and it also fails, use the secondary fallback
-        if (resolvedUrl === fallbackImage) {
-          try {
-            const response = await fetch(fallbackImage, { method: 'HEAD' });
-            if (!response.ok) {
-              console.warn(`Fallback image not accessible: ${fallbackImage}. Using secondary fallback: ${secondaryFallbackImage}`);
-              resolvedUrl = secondaryFallbackImage;
-            }
-          } catch (error) {
-            console.warn(`Error checking fallback image: ${fallbackImage}. Using secondary fallback: ${secondaryFallbackImage}`);
-            resolvedUrl = secondaryFallbackImage;
-          }
-        }
-        return resolvedUrl;
-      })
-    );
-
-    // Update the slide with the loaded or fallback URLs
-    slide.imageUrl = loadedUrls[0] || slide.imageUrl;
-    slide.headshotUrl = loadedUrls[1] || slide.headshotUrl;
-    slide.overlayGraphic = loadedUrls[2] || slide.overlayGraphic;
-    slide.like = loadedUrls[3] || slide.like;
-    slide.comment = loadedUrls[4] || slide.comment;
-    slide.save = loadedUrls[5] || slide.save;
+      addLogo ? defaultLogoUrl : '',
+    ].filter(Boolean);
+  
+    const preloadPromises = imagesToPreload.map((url) => {
+      return new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.src = url || '';
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+      });
+    });
+  
+    await Promise.all(preloadPromises);
   };
 
-  // Utility to handle delay
   const delay = (ms: number): Promise<void> => {
     return new Promise((resolve) => setTimeout(resolve, ms));
   };
 
   const handleExportToPost = async () => {
-    const imageDataUrls: string[] = []; // Store base64 image data
-  
-    for (let index = 0; index < slides.length; index++) {
-      const slide = slides[index];
-      const slideElement = slideRefs.current[index];
-  
-      if (slideElement) {
-        try {
-          console.log(`Preloading images for slide ${index + 1}...`);
-          await preloadSlideImages(slide);
-  
-          if (swiperRef.current && swiperRef.current.swiper) {
-            console.log(`Sliding to slide ${index + 1}...`);
-            swiperRef.current.swiper.slideTo(index);
-            await delay(500); // Wait for slide transition
-          }
-  
-          console.log(`Waiting for slide ${index + 1} to render...`);
-          await delay(1000);
-  
-          console.log(`Generating canvas for slide ${index + 1}...`);
-          const canvas = await html2canvas(slideElement, {
-            useCORS: true,
-            logging: true,
-            backgroundColor: null,
-            scale: 1, // Reduce resolution (default is 1, which matches device pixel ratio)
-          });
-  
-          // Convert to JPEG with quality 0.7 to reduce size
-          const imgData = canvas.toDataURL('image/jpeg', 0.7);
-          imageDataUrls.push(imgData);
-          console.log(`Canvas generated for slide ${index + 1}. Total images: ${imageDataUrls.length}`);
-        } catch (error) {
-          console.error(`Error generating canvas for slide ${index + 1}:`, error);
-          alert(`Failed to generate image for slide ${index + 1}. Please try again.`);
-          return;
-        }
-      } else {
-        console.warn(`Slide element for slide ${index + 1} not found.`);
-      }
+    if (!slides.length) {
+      alert('No slides available to export.');
+      return;
     }
   
-    // Send the image data to the backend using RTK Query
-    try {
-      const result = await uploadCarousel({ images: imageDataUrls }).unwrap();
-      const { urls } = result;
-      console.log('Generated Cloudinary URLs:', urls);
+    setLoading(true); // Show loading state
   
-      // Prepare the content for the posting panel
+    try {
+      const formData = new FormData();
+  
+      // Loop through each slide to capture it as a PNG image
+      for (let i = 0; i < slides.length; i++) {
+        const slideElement = slideRefs.current[i];
+        if (!slideElement) {
+          console.error(`Slide ${i + 1} element not found`);
+          continue;
+        }
+  
+        // Preload images for the current slide to ensure they render correctly
+        await preloadSlideImages(slides[i]);
+  
+        // Capture the slide as an image using html2canvas
+        const canvas = await html2canvas(slideElement, {
+          useCORS: true, // Enable CORS for external images
+          allowTaint: false, // Prevent tainted canvas errors
+          scale: 2, // Higher resolution
+          backgroundColor: null, // Preserve transparency if needed
+        });
+  
+        // Convert canvas to a Blob (PNG format)
+        const blob = await new Promise<Blob>((resolve) =>
+          canvas.toBlob((blob) => resolve(blob!), 'image/png')
+        );
+  
+        // Debugging: Log the blob to ensure it's valid
+        console.log(`Slide ${i + 1} Blob:`, blob);
+  
+        // Append the Blob to FormData with the field name 'carouselImages'
+        formData.append('images', blob, `slide_${i + 1}.png`);
+  
+        // Optional: Small delay to ensure rendering completes
+        await delay(500);
+      }
+  
+      // Debugging: Log the FormData entries
+      for (const [key, value] of formData.entries()) {
+        console.log(`FormData Entry - ${key}:`, value);
+      }
+  
+      // Send the FormData with PNG images to the backend
+      const result = await uploadCarousel(formData).unwrap();
+       // Expecting Cloudinary URLs from the backend
+      console.log('Generated Cloudinary URLs:', result);
+  
+      // Prepare content for the posting panel
       const content = {
         title: `${topic || 'Default'} Carousel`,
         content: `Check out this amazing carousel about ${topic || 'Bitrox'}!`,
@@ -397,17 +359,23 @@ export const Carousel: React.FC = () => {
   
       // Navigate to the posting panel with the Cloudinary URLs
       console.log('Navigating to posting panel with Cloudinary URLs...');
-      navigate('/post', {
-        state: {
-          contentType: 'post',
-          topic: topic || 'Default',
-          content: JSON.stringify(content),
-          imageDataUrls: urls, // Pass the Cloudinary URLs
-        },
-      });
+
+      setTimeout(()=>{
+        navigate('/post', {
+          state: {
+            contentType: 'post',
+            topic: topic || 'Default',
+            content: JSON.stringify(content),
+            imageDataUrls: result.data, 
+          },
+        });
+      }, 3000)
+     
     } catch (error) {
-      console.error('Error uploading carousel images:', error);
-      alert('Failed to upload carousel images to Cloudinary. Please try again.');
+      console.error('Error exporting carousel images:', error);
+      alert('Failed to export carousel images. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -421,7 +389,7 @@ export const Carousel: React.FC = () => {
           onChange={(e) => setTopic(e.target.value)}
           placeholder="Enter a topic (e.g., Predictive Social Media Campaign Outcomes)"
           className="w-full px-5 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base mb-4"
-          disabled={!!selectedIdea} // Disable input if an idea is selected
+          disabled={!!selectedIdea}
         />
         <button
           onClick={handleGenerateCarouselContent}
@@ -432,7 +400,19 @@ export const Carousel: React.FC = () => {
         </button>
       </div>
 
-      {/* Always show the carousel preview section */}
+      {/* Logo Toggle Checkbox */}
+      <div className="mb-6">
+        <label className="flex items-center space-x-2 text-white">
+          <input
+            type="checkbox"
+            checked={addLogo}
+            onChange={(e) => setAddLogo(e.target.checked)}
+            className="form-checkbox text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+          />
+          <span>Add Logo to Slides</span>
+        </label>
+      </div>
+
       <div className="mt-8">
         <h3 className="text-xl font-semibold mb-6">Preview Carousel</h3>
         <Swiper
@@ -474,6 +454,16 @@ export const Carousel: React.FC = () => {
                   />
                 )}
 
+                {/* Logo in Top-Right Corner */}
+                {addLogo && (
+                  <img
+                    src={defaultLogoUrl}
+                    alt="Logo"
+                    className="absolute top-12 right-12 w-30 h-12 object-contain z-10"
+                    onError={(e) => console.error('Logo load error:', e)}
+                  />
+                )}
+
                 <div className="absolute inset-0 flex flex-col justify-between p-8 m-10">
                   <div className="flex flex-col items-left text-left">
                     {slide.header && (
@@ -491,7 +481,7 @@ export const Carousel: React.FC = () => {
                         {slide.tagline}
                       </span>
                     )}
-                    <h2 className="text-5xl font-bold text-green-400 drop-shadow-lg mb-4 leading-tight uppercase tracking-wide transition-all duration-300 hover:text-green-300">
+                    <h2 className="text-5xl font-bold text-white-400 drop-shadow-lg mb-4 leading-tight uppercase tracking-wide transition-all duration-300 hover:text-green-300">
                       {slide.title}
                     </h2>
                     {slide.description && (

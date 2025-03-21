@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image, Check, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setSelectedFile } from '../store/appSlice';
-import { useGenerateImageMutation } from '../store/api';
+import { useGenerateImageMutation, useUploadImageToCloudinaryMutation } from '../store/api';
 
 interface ContentIdea {
   title: string;
@@ -15,6 +15,7 @@ interface ImageGeneratorProps {
   contentType: 'post' | 'reel';
 }
 
+
 export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) => {
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -23,19 +24,26 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
   const [postType, setPostType] = useState<'single' | 'carousel' | 'festival'>('single');
   const [carouselImageOption, setCarouselImageOption] = useState<'withImage' | 'withoutImage'>('withImage');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [showLogo, setShowLogo] = useState<boolean>(true); // State to toggle logo visibility
+  const [showLogo, setShowLogo] = useState<boolean>(true);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
 
-  // Access state from Redux store
   const localContentIdea = useAppSelector((state) => state.app.selectedIdea) as ContentIdea | null;
 
-  // RTK Query mutation hook for generating images
   const [generateImage] = useGenerateImageMutation();
+  const [uploadImageToCloudinary, { isLoading: isUploading }] = useUploadImageToCloudinaryMutation();
 
-  // Default logo URL (replace with your actual logo path)
-  const defaultLogoUrl = '/images/Logo.png'; // Ensure this path points to your logo in the public folder
+  const defaultLogoUrl = '/images/Logo.png';
+
+  useEffect(() => {
+    if (location.state && (location.state as any).generatedImageUrl) {
+      setGeneratedImageUrl((location.state as any).generatedImageUrl);
+      if (postType !== 'carousel') {
+        setShowOptions(true);
+      }
+    }
+  }, [location.state, postType]);
 
   const handleGenerateImage = async () => {
     if (!localContentIdea || !localContentIdea.title) {
@@ -64,97 +72,108 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
     }
   };
 
-  const handleContinueToPost = () => {
+  const handleContinueToPost = async () => {
     if (generatedImageUrl) {
-      // If the logo is visible, we need to combine the image and logo into a single image
-      if (showLogo && (postType === 'single' || postType === 'festival')) {
+      try {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to get canvas context');
+
         const image = new window.Image();
         const logo = new window.Image();
 
-        // Set crossOrigin to handle CORS if the image is from an external source
         image.crossOrigin = 'Anonymous';
         logo.crossOrigin = 'Anonymous';
 
-        // Load the generated image
         image.src = generatedImageUrl;
         logo.src = defaultLogoUrl;
 
-        Promise.all([
-          new Promise((resolve) => {
-            image.onload = resolve;
+        await Promise.all([
+          new Promise<void>((resolve) => {
+            image.onload = () => resolve();
+            image.onerror = () => {
+              throw new Error('Failed to load generated image');
+            };
           }),
-          new Promise((resolve) => {
-            logo.onload = resolve;
+          new Promise<void>((resolve) => {
+            logo.onload = () => resolve();
+            logo.onerror = () => {
+              throw new Error('Failed to load logo image');
+            };
           }),
-        ])
-          .then(() => {
-            // Set canvas dimensions to match the generated image
-            canvas.width = image.width;
-            canvas.height = image.height;
+        ]);
 
-            // Draw the generated image
-            ctx?.drawImage(image, 0, 0);
+        canvas.width = image.width;
+        canvas.height = image.height;
 
-            // Draw the logo in the top-right corner (scale logo to 10% of image width)
-            const logoSize = image.width * 0.1; // Logo width is 10% of image width
-            const logoAspectRatio = logo.width / logo.height;
-            const logoHeight = logoSize / logoAspectRatio;
-            const padding = 20; // Padding from the top-right corner
-            ctx?.drawImage(
-              logo,
-              image.width - logoSize - padding, // X position (top-right)
-              padding, // Y position (top)
-              logoSize, // Width
-              logoHeight // Height
-            );
+        console.log('Canvas dimensions:', canvas.width, canvas.height);
 
-            // Convert the canvas to a blob and create a file
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const file = new File([blob], 'generated-image-with-logo.png', { type: 'image/png' });
-                dispatch(setSelectedFile(file));
-                navigate('/post');
-              } else {
-                console.error('Failed to create blob from canvas');
-                alert('Failed to process the generated image with logo for posting.');
-              }
-            }, 'image/png');
+        ctx.drawImage(image, 0, 0);
+
+        if (showLogo && (postType === 'single' || postType === 'festival')) {
+          const logoWidth = 128; // w-32 = 128px
+        const logoHeight = 48; // h-12 = 48px
+        const padding = 16; // right-4 and top-4 = 16px
+
+        // Calculate the logo's position (top-right corner)
+        const logoX = canvas.width - logoWidth - padding; // Absolute right position
+        const logoY = padding; // Absolute top position
+
+        // Calculate the scaling factor to maintain aspect ratio
+        const logoAspectRatio = logo.width / logo.height;
+        const scaledLogoWidth = Math.min(logoWidth, logoHeight * logoAspectRatio);
+        const scaledLogoHeight = scaledLogoWidth / logoAspectRatio;
+
+        // Draw the logo with object-contain behavior
+        ctx.drawImage(
+          logo,
+          0, // Source x
+          0, // Source y
+          logo.width, // Source width
+          logo.height, // Source height
+          logoX, // Destination x
+          logoY, // Destination y
+          scaledLogoWidth, // Destination width
+          scaledLogoHeight // Destination height
+        );
+        }
+
+        const blob = await new Promise<Blob>((resolve) => {
+          canvas.toBlob((b) => resolve(b as Blob), 'image/png');
+        });
+
+        console.log('Blob:', blob);
+
+        const formData = new FormData();
+        formData.append('image', blob, 'generated-image.png');
+
+        const result = await uploadImageToCloudinary(formData).unwrap();
+        console.log('Cloudinary upload result:', result);
+        const cloudinaryUrl = result?.data?.secure_url;
+
+        console.log('Cloudinary URL:', cloudinaryUrl);
+       
+
+        dispatch(
+          setSelectedFile({
+            name: 'generated-image.png',
+            url: cloudinaryUrl,
           })
-          .catch((error) => {
-            console.error('Error combining image and logo:', error);
-            alert('Failed to add logo to the generated image. Proceeding without logo.');
-            // Fallback: Proceed without the logo
-            fetch(generatedImageUrl)
-              .then((res) => res.blob())
-              .then((blob) => {
-                const file = new File([blob], 'generated-image.png', { type: 'image/png' });
-                dispatch(setSelectedFile(file));
-                navigate('/post');
-              })
-              .catch((err) => {
-                console.error('Error converting image URL to file:', err);
-                alert('Failed to process the generated image for posting.');
-              });
-          });
-      } else {
-        // No logo, proceed as before
-        fetch(generatedImageUrl)
-          .then((res) => res.blob())
-          .then((blob) => {
-            const file = new File([blob], 'generated-image.png', { type: 'image/png' });
-            dispatch(setSelectedFile(file));
-            navigate('/post');
-          })
-          .catch((error) => {
-            console.error('Error converting image URL to file:', error);
-            alert('Failed to process the generated image for posting.');
-          });
+        );
+
+        setTimeout(() => {
+          navigate('/post', { state: { cloudinaryUrl, generatedImageUrl } });
+        }, 5000);
+      } catch (error) {
+        console.error('Error in handleContinueToPost:', error);
+        alert('Failed to process and upload image. Please try again.');
       }
-    } else {
-      dispatch(setSelectedFile(null));
-      navigate('/post');
+    }else{
+      dispatch(
+        setSelectedFile(null)
+      )
+      navigate('/post')
+        
     }
   };
 
@@ -165,6 +184,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
         initialImage: generatedImageUrl,
         template,
         topic: localContentIdea?.title,
+        generatedImageUrl,
       },
     });
   };
@@ -175,6 +195,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
     } else if (postType === 'carousel') {
       if (!selectedTemplate) {
         alert('Please select a carousel template to proceed.');
+      } else {
+        handleTemplateSelect(selectedTemplate);
       }
     } else {
       handleGenerateImage();
@@ -182,7 +204,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
   };
 
   const handleBack = () => {
-    navigate(-1);
+    navigate(-1 as any, { state: { generatedImageUrl } });
   };
 
   const shouldShowGenerateButton =
@@ -347,7 +369,6 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
                         src={defaultLogoUrl}
                         alt="Logo"
                         className="absolute right-4 top-4 w-32 h-12 object-contain z-10"
-                      
                       />
                     )}
                   </div>
@@ -378,8 +399,9 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
                 {carouselTemplates.map((template, index) => (
                   <div
                     key={index}
-                    className={`relative rounded-xl overflow-hidden cursor-pointer group aspect-[3/4] ${selectedTemplate === template ? 'ring-2 ring-yellow-500' : ''
-                      }`}
+                    className={`relative rounded-xl overflow-hidden cursor-pointer group aspect-[3/4] ${
+                      selectedTemplate === template ? 'ring-2 ring-yellow-500' : ''
+                    }`}
                     onClick={() => handleTemplateSelect(template)}
                   >
                     <img
@@ -405,15 +427,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
         <div className="flex justify-end">
           <button
             onClick={handleProceed}
-            disabled={isGenerating || !localContentIdea?.title}
+            disabled={isGenerating || isUploading || !localContentIdea?.title}
             className="flex items-center px-4 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Image className="w-5 h-5 mr-2" />
             {isGenerating
               ? 'Generating...'
+              : isUploading
+              ? 'Uploading...'
               : shouldShowGenerateButton && postType !== 'carousel'
-                ? 'Generate Image and Proceed'
-                : 'Proceed'}
+              ? 'Generate Image and Proceed'
+              : 'Proceed'}
           </button>
         </div>
       </div>
@@ -454,9 +478,10 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
           <div className="flex justify-end space-x-4">
             <button
               onClick={handleContinueToPost}
-              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 transition-colors"
+              disabled={isUploading}
+              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Continue to Post
+              {isUploading ? 'Uploading...' : 'Continue to Post'}
             </button>
             {postType !== 'carousel' && (
               <button

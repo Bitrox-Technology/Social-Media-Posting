@@ -29,41 +29,48 @@ interface GenerateCarouselResponse {
 
 export const api = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000' }),
+  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/api/v1' }),
   endpoints: (builder) => ({
     generateIdeas: builder.mutation<GenerateIdeasResponse, { topic: string }>({
       query: (body) => ({
-        url: '/api/v1/ideas',
+        url: '/ideas',
         method: 'POST',
         body,
       }),
     }),
     generateImage: builder.mutation<{ data: string }, { prompt: string }>({
       query: (body) => ({
-        url: '/api/v1/generate-image',
+        url: '/generate-image',
         method: 'POST',
         body,
       }),
     }),
     postContent: builder.mutation<any, FormData>({
       query: (formData) => ({
-        url: '/api/v1/post',
+        url: '/post',
         method: 'POST',
         body: formData,
       }),
     }),
     generateCarousel: builder.mutation<GenerateCarouselResponse, { topic: string }>({
       query: (body) => ({
-        url: '/api/v1/generate-carousel',
+        url: '/generate-carousel',
         method: 'POST',
         body,
       }),
     }),
-    uploadCarousel: builder.mutation<{ urls: string[] }, { images: string[] }>({
+    uploadCarousel: builder.mutation< any, FormData>({
       query: (body) => ({
-        url: '/api/upload-carousel',
+        url: '/upload-carousel',
         method: 'POST',
         body,
+      }),
+    }),
+    uploadImageToCloudinary: builder.mutation<any, FormData>({
+      query: (formData) => ({
+        url: '/upload-single', 
+        method: 'POST',
+        body: formData,
       }),
     }),
   }),
@@ -74,5 +81,6 @@ export const {
   useGenerateImageMutation,
   usePostContentMutation,
   useGenerateCarouselMutation,
-  useUploadCarouselMutation
+  useUploadCarouselMutation,
+  useUploadImageToCloudinaryMutation
 } = api;

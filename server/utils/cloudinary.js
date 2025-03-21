@@ -1,53 +1,86 @@
-import { v2 as cloudinary } from 'cloudinary';
-import fs from 'fs';
-import { ApiError } from './ApiError.js';
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
+import { ApiError } from "./ApiError.js";
 // 'fs' is file system that help to read write on the file. mainly we need a file path.
 
 // In our file system our file are linked or unlinked
 // Linked means attached and Unlinked means delete the files
 
-
 const uploadOnClodinary = async (localFilePath) => {
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
   try {
     if (!localFilePath) return null;
     // Upload the file on cloudinary
     const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: "auto"
-    })
-    fs.unlinkSync(localFilePath)
-    return response
+      resource_type: "auto",
+    });
+    fs.unlinkSync(localFilePath);
+    return response;
   } catch (error) {
-    fs.unlinkSync(localFilePath) // remove the locally saved temporary file as the upload operation got failed
+    fs.unlinkSync(localFilePath); 
     return null;
   }
-}
+};
 
-const carouselUploadOnCloudinary = async(images) => {
+const carouselUploadOnCloudinary = async (files) => {
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
-  const uploadPromises = images.map(async (image, index) => {
-    try {
-      const result = await cloudinary.uploader.upload(image, {
-        folder: 'carousel_images',
-        public_id: `carousel_slide_${Date.now()}_${index}`, 
-      });
-      return result.secure_url; 
-    } catch (error) {
-      throw new ApiError(500, `Error uploading image to Cloudinary: ${error.message}`);
+  const urls = [];
+
+  try {
+    for (const file of files) {
+      const uniqueFilename = `${file.originalname}`; 
+      const result = await cloudinary.uploader.upload(
+        file.path,
+        {
+          public_id: uniqueFilename,
+          resource_type: "image",
+          folder: "carousel-images", 
+        }
+      );
+      fs.unlinkSync(file.path);
+      urls.push(result.secure_url);
     }
+    return urls;
+  } catch (error) {
+    for (const file of files) {
+      fs.unlinkSync(file.path);
+    }
+    return null;
+  }
+};
+
+const singleUploadOnCloudinary = async (buffer) => {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 
-  const imageUrls = await Promise.all(uploadPromises);
-  return imageUrls;
-}
+  try {
+    const result = await cloudinary.uploader
+      .upload_stream({ resource_type: "image" })
+      .end(buffer);
 
-export { uploadOnClodinary, carouselUploadOnCloudinary }
+    console.log(result);
+    return result.secure_url;
+  } catch (error) {
+    throw new ApiError(
+      500,
+      `Error uploading image to Cloudinary: ${error.message}`
+    );
+  }
+};
+export {
+  uploadOnClodinary,
+  carouselUploadOnCloudinary,
+  singleUploadOnCloudinary,
+};
