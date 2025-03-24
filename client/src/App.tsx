@@ -1,4 +1,4 @@
-import React from 'react';
+// src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ContentTypeSelector } from './components/ContentTypeSelector';
@@ -7,6 +7,7 @@ import { ContentIdeas } from './components/ContentIdeas';
 import { ImageGenerator } from './components/ImageGenerator';
 import { PostingPanel } from './components/PostingPanel';
 import { Carousel } from './components/Carousel';
+import { DoYouKnow } from './components/DoYouKnow';
 import { useAppSelector } from './store/hooks';
 
 function App() {
@@ -14,7 +15,7 @@ function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
   const selectedTopic = useAppSelector((state) => state.app.selectedTopic);
   const selectedIdea = useAppSelector((state) => state.app.selectedIdea);
-  const selectedFile = useAppSelector((state) => state.app.selectedFile);
+
 
   return (
     <Router>
@@ -55,6 +56,12 @@ function App() {
               element={<PostingPanel />}
             />
             <Route path="/carousel" element={<Carousel />} />
+            <Route
+              path="/doyouknow"
+              element={
+                <DoYouKnow />
+              }
+            />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>

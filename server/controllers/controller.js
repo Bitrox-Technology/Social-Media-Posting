@@ -357,9 +357,9 @@ const GenerateImage = async (req, res, next) => {
   if (!prompt) throw new ApiError(400, "Prompt is required");
 
   queue.push({
-    prompt: `A highly detailed photograph for a ${prompt},ultra-sharp, photorealistic, realistic lighting, detailed textures, visually striking and futuristic`,
+    prompt: `A highly detailed, photorealistic scene of ${prompt}, showcasing futuristic innovation, ultra-sharp details, realistic lighting with soft highlights, intricate textures, vibrant yet professional color palette, visually striking composition, modern and optimistic tone`,
     negativePrompt:
-      "cartoon, anime, blurry, low detail, unrealistic, Avoid dark or dystopian themes",
+      "cartoon, anime, blurry, low detail, unrealistic, dark, dystopian, overly saturated, chaotic composition, amateurish, dull colors, distorted proportions",
     res,
   });
   try {

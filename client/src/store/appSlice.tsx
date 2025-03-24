@@ -6,19 +6,19 @@ interface ContentIdea {
   hashtags: string[];
 }
 
-// Define a serializable type for selectedFile
 interface SelectedFileData {
   name: string;
-  url: string; // Cloudinary URL or similar
+  url: string;
 }
 
 interface AppState {
   contentType: 'post' | 'reel' | null;
   selectedTopic: string;
   selectedIdea: ContentIdea | null;
-  selectedFile: SelectedFileData | null; // Updated to serializable type
+  selectedFile: SelectedFileData | null;
   posted: string[];
   ideas: ContentIdea[];
+  selectedDoYouKnowTemplate: string | null; // Add this field
 }
 
 const initialState: AppState = {
@@ -28,6 +28,7 @@ const initialState: AppState = {
   selectedFile: null,
   posted: [],
   ideas: [],
+  selectedDoYouKnowTemplate: null, // Initialize the new field
 };
 
 const appSlice = createSlice({
@@ -52,6 +53,9 @@ const appSlice = createSlice({
     setIdeas(state, action: PayloadAction<ContentIdea[]>) {
       state.ideas = action.payload;
     },
+    setSelectedDoYouKnowTemplate(state, action: PayloadAction<string | null>) {
+      state.selectedDoYouKnowTemplate = action.payload;
+    },
     resetState(state) {
       state.contentType = null;
       state.selectedTopic = '';
@@ -59,11 +63,20 @@ const appSlice = createSlice({
       state.selectedFile = null;
       state.posted = [];
       state.ideas = [];
+      state.selectedDoYouKnowTemplate = null; // Reset the new field
     },
   },
 });
 
-export const { setContentType, setSelectedTopic, setSelectedIdea, setSelectedFile, setPosted, setIdeas, resetState } =
-  appSlice.actions;
+export const {
+  setContentType,
+  setSelectedTopic,
+  setSelectedIdea,
+  setSelectedFile,
+  setPosted,
+  setIdeas,
+  setSelectedDoYouKnowTemplate, // Export the new action
+  resetState,
+} = appSlice.actions;
 
 export default appSlice.reducer;

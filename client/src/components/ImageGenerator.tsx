@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Image, Check, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { setSelectedFile } from '../store/appSlice';
+import { setSelectedFile, setSelectedDoYouKnowTemplate } from '../store/appSlice';
 import { useGenerateImageMutation, useUploadImageToCloudinaryMutation } from '../store/api';
+import { carouselTemplates } from '../templetes/templetesDesign';
+import { doYouKnowTemplates } from '../templetes/doYouKnowTemplates';
 
 interface ContentIdea {
   title: string;
@@ -15,15 +17,16 @@ interface ImageGeneratorProps {
   contentType: 'post' | 'reel';
 }
 
-
 export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) => {
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const [postCreationOption, setPostCreationOption] = useState<'withImage' | 'withoutImage'>('withImage');
-  const [postType, setPostType] = useState<'single' | 'carousel' | 'festival'>('single');
+  const [postType, setPostType] = useState<'single' | 'carousel' | 'festival' | 'doYouKnow'>('single');
   const [carouselImageOption, setCarouselImageOption] = useState<'withImage' | 'withoutImage'>('withImage');
+  const [doYouKnowImageOption, setDoYouKnowImageOption] = useState<'withImage' | 'withoutImage'>('withImage');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [selectedDoYouKnowTemplate, setLocalSelectedDoYouKnowTemplate] = useState<string | null>(null);
   const [showLogo, setShowLogo] = useState<boolean>(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,7 +42,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
   useEffect(() => {
     if (location.state && (location.state as any).generatedImageUrl) {
       setGeneratedImageUrl((location.state as any).generatedImageUrl);
-      if (postType !== 'carousel') {
+      if (postType !== 'carousel' && postType !== 'doYouKnow') {
         setShowOptions(true);
       }
     }
@@ -56,12 +59,10 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
     try {
       const response = await generateImage({ prompt }).unwrap();
       const imageUrl = response.data;
-      if (!imageUrl) {
-        throw new Error('No image URL returned from API');
-      }
+      if (!imageUrl) throw new Error('No image URL returned from API');
       setGeneratedImageUrl(imageUrl);
 
-      if (postType !== 'carousel') {
+      if (postType !== 'carousel' && postType !== 'doYouKnow') {
         setShowOptions(true);
       }
     } catch (error) {
@@ -91,75 +92,45 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
         await Promise.all([
           new Promise<void>((resolve) => {
             image.onload = () => resolve();
-            image.onerror = () => {
-              throw new Error('Failed to load generated image');
-            };
+            image.onerror = () => { throw new Error('Failed to load generated image'); };
           }),
           new Promise<void>((resolve) => {
             logo.onload = () => resolve();
-            logo.onerror = () => {
-              throw new Error('Failed to load logo image');
-            };
+            logo.onerror = () => { throw new Error('Failed to load logo image'); };
           }),
         ]);
 
         canvas.width = image.width;
         canvas.height = image.height;
 
-        console.log('Canvas dimensions:', canvas.width, canvas.height);
-
         ctx.drawImage(image, 0, 0);
 
-        if (showLogo && (postType === 'single' || postType === 'festival')) {
-          const logoWidth = 128; // w-32 = 128px
-        const logoHeight = 48; // h-12 = 48px
-        const padding = 16; // right-4 and top-4 = 16px
+        if (showLogo && (postType === 'single' || postType === 'festival' || postType === 'doYouKnow')) {
+          const logoWidth = 128;
+          const logoHeight = 48;
+          const padding = 16;
 
-        // Calculate the logo's position (top-right corner)
-        const logoX = canvas.width - logoWidth - padding; // Absolute right position
-        const logoY = padding; // Absolute top position
+          const logoX = canvas.width - logoWidth - padding;
+          const logoY = padding;
 
-        // Calculate the scaling factor to maintain aspect ratio
-        const logoAspectRatio = logo.width / logo.height;
-        const scaledLogoWidth = Math.min(logoWidth, logoHeight * logoAspectRatio);
-        const scaledLogoHeight = scaledLogoWidth / logoAspectRatio;
+          const logoAspectRatio = logo.width / logo.height;
+          const scaledLogoWidth = Math.min(logoWidth, logoHeight * logoAspectRatio);
+          const scaledLogoHeight = scaledLogoWidth / logoAspectRatio;
 
-        // Draw the logo with object-contain behavior
-        ctx.drawImage(
-          logo,
-          0, // Source x
-          0, // Source y
-          logo.width, // Source width
-          logo.height, // Source height
-          logoX, // Destination x
-          logoY, // Destination y
-          scaledLogoWidth, // Destination width
-          scaledLogoHeight // Destination height
-        );
+          ctx.drawImage(logo, 0, 0, logo.width, logo.height, logoX, logoY, scaledLogoWidth, scaledLogoHeight);
         }
 
         const blob = await new Promise<Blob>((resolve) => {
           canvas.toBlob((b) => resolve(b as Blob), 'image/png');
         });
 
-        console.log('Blob:', blob);
-
         const formData = new FormData();
         formData.append('image', blob, 'generated-image.png');
 
         const result = await uploadImageToCloudinary(formData).unwrap();
-        console.log('Cloudinary upload result:', result);
         const cloudinaryUrl = result?.data?.secure_url;
 
-        console.log('Cloudinary URL:', cloudinaryUrl);
-       
-
-        dispatch(
-          setSelectedFile({
-            name: 'generated-image.png',
-            url: cloudinaryUrl,
-          })
-        );
+        dispatch(setSelectedFile({ name: 'generated-image.png', url: cloudinaryUrl }));
 
         setTimeout(() => {
           navigate('/post', { state: { cloudinaryUrl, generatedImageUrl } });
@@ -168,25 +139,19 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
         console.error('Error in handleContinueToPost:', error);
         alert('Failed to process and upload image. Please try again.');
       }
-    }else{
-      dispatch(
-        setSelectedFile(null)
-      )
-      navigate('/post')
-        
+    } else {
+      dispatch(setSelectedFile(null));
+      navigate('/post');
     }
   };
 
-  const handleTemplateSelect = (template: string) => {
-    setSelectedTemplate(template);
-    navigate('/carousel', {
-      state: {
-        initialImage: generatedImageUrl,
-        template,
-        topic: localContentIdea?.title,
-        generatedImageUrl,
-      },
-    });
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplate(templateId);
+  };
+
+  const handleDoYouKnowTemplateSelect = (templateId: string) => {
+    setLocalSelectedDoYouKnowTemplate(templateId);
+    dispatch(setSelectedDoYouKnowTemplate(templateId));
   };
 
   const handleProceed = () => {
@@ -196,7 +161,26 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
       if (!selectedTemplate) {
         alert('Please select a carousel template to proceed.');
       } else {
-        handleTemplateSelect(selectedTemplate);
+        navigate('/carousel', {
+          state: {
+            initialImage: generatedImageUrl,
+            template: selectedTemplate,
+            topic: localContentIdea?.title,
+            generatedImageUrl,
+          },
+        });
+      }
+    } else if (postType === 'doYouKnow') {
+      if (!selectedDoYouKnowTemplate) {
+        alert('Please select a "Do You Know" template to proceed.');
+      } else {
+        navigate('/doyouknow', {
+          state: {
+            generatedImageUrl,
+            showLogo,
+            defaultLogoUrl,
+          },
+        });
       }
     } else {
       handleGenerateImage();
@@ -209,18 +193,24 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
 
   const shouldShowGenerateButton =
     postCreationOption === 'withImage' &&
-    (postType === 'single' || postType === 'festival' || (postType === 'carousel' && carouselImageOption === 'withImage'));
+    (postType === 'single' || postType === 'festival' ||
+      (postType === 'carousel' && carouselImageOption === 'withImage') ||
+      (postType === 'doYouKnow' && doYouKnowImageOption === 'withImage'));
 
-  const carouselTemplates = [
-    '/images/background.png',
-    '/images/background1.png',
-    '/images/graphic.jpg',
-    '/images/2.png',
-    '/images/1.jpg',
-  ];
+  const carouselTemplateOptions = carouselTemplates.map((template) => ({
+    id: template.id,
+    name: template.name,
+    thumbnail: template.slides[0].imageUrl,
+  }));
+
+  const doYouKnowTemplateOptions = doYouKnowTemplates.map((template) => ({
+    id: template.id,
+    name: template.name,
+    thumbnail: template.slides[0].imageUrl,
+  }));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 md:p-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <button
@@ -242,7 +232,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
       <div className="space-y-6">
         <div className="space-y-2">
           <h3 className="text-xl font-semibold text-white">Create Post</h3>
-          <div className="flex space-x-4">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
             <label className="flex items-center space-x-2">
               <input
                 type="radio"
@@ -271,7 +261,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
         {postCreationOption === 'withImage' && (
           <div className="space-y-2">
             <h3 className="text-xl font-semibold text-white">Select Post Type</h3>
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
               <label className="flex items-center space-x-2">
                 <input
                   type="radio"
@@ -305,6 +295,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
                 />
                 <span className="text-white">Festival</span>
               </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="postType"
+                  value="doYouKnow"
+                  checked={postType === 'doYouKnow'}
+                  onChange={() => setPostType('doYouKnow')}
+                  className="text-blue-600"
+                />
+                <span className="text-white">Do You Know</span>
+              </label>
             </div>
           </div>
         )}
@@ -312,7 +313,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
         {postCreationOption === 'withImage' && postType === 'carousel' && (
           <div className="space-y-2">
             <h3 className="text-xl font-semibold text-white">Carousel Image Options</h3>
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
               <label className="flex items-center space-x-2">
                 <input
                   type="radio"
@@ -339,31 +340,61 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
           </div>
         )}
 
-        {postCreationOption === 'withImage' && postType === 'carousel' && carouselImageOption === 'withImage' && !generatedImageUrl && (
-          <div className="flex justify-end">
-            <button
-              onClick={handleGenerateImage}
-              disabled={isGenerating || !localContentIdea?.title}
-              className="flex items-center px-4 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Image className="w-5 h-5 mr-2" />
-              {isGenerating ? 'Generating...' : 'Generate Image'}
-            </button>
+        {postCreationOption === 'withImage' && postType === 'doYouKnow' && (
+          <div className="space-y-2">
+            <h3 className="text-xl font-semibold text-white">Do You Know Image Options</h3>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="doYouKnowImageOption"
+                  value="withImage"
+                  checked={doYouKnowImageOption === 'withImage'}
+                  onChange={() => setDoYouKnowImageOption('withImage')}
+                  className="text-blue-600"
+                />
+                <span className="text-white">With Image</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="doYouKnowImageOption"
+                  value="withoutImage"
+                  checked={doYouKnowImageOption === 'withoutImage'}
+                  onChange={() => setDoYouKnowImageOption('withoutImage')}
+                  className="text-blue-600"
+                />
+                <span className="text-white">Without Image</span>
+              </label>
+            </div>
           </div>
         )}
 
         {postCreationOption === 'withImage' &&
-          (postType === 'single' || postType === 'festival' || (postType === 'carousel' && carouselImageOption === 'withImage')) &&
-          generatedImageUrl && !showOptions && (
+          ((postType === 'carousel' && carouselImageOption === 'withImage') ||
+            (postType === 'doYouKnow' && doYouKnowImageOption === 'withImage')) &&
+          !generatedImageUrl && (
+            <div className="flex justify-end">
+              <button
+                onClick={handleGenerateImage}
+                disabled={isGenerating || !localContentIdea?.title}
+                className="flex items-center px-4 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Image className="w-5 h-5 mr-2" />
+                {isGenerating ? 'Generating...' : 'Generate Image'}
+              </button>
+            </div>
+          )}
+
+        {postCreationOption === 'withImage' &&
+          (postType === 'single' || postType === 'festival') &&
+          generatedImageUrl &&
+          !showOptions && (
             <div className="grid grid-cols-1 gap-6">
               <div className="relative rounded-xl max-w-3xl max-h-[500px] mx-auto">
                 {contentType === 'post' ? (
                   <div className="relative">
-                    <img
-                      src={generatedImageUrl}
-                      alt="Generated Image"
-                      className="w-full h-full object-contain"
-                    />
+                    <img src={generatedImageUrl} alt="Generated Image" className="w-full h-full object-contain" />
                     {(postType === 'single' || postType === 'festival') && showLogo && (
                       <img
                         src={defaultLogoUrl}
@@ -395,32 +426,68 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
           (carouselImageOption === 'withoutImage' || (carouselImageOption === 'withImage' && generatedImageUrl)) && (
             <div className="space-y-4">
               <h3 className="text-xl font-semibold text-white">Select a Carousel Template</h3>
-              <div className="grid grid-cols-3 gap-6">
-                {carouselTemplates.map((template, index) => (
-                  <div
-                    key={index}
-                    className={`relative rounded-xl overflow-hidden cursor-pointer group aspect-[3/4] ${
-                      selectedTemplate === template ? 'ring-2 ring-yellow-500' : ''
-                    }`}
-                    onClick={() => handleTemplateSelect(template)}
-                  >
-                    <img
-                      src={template}
-                      alt={`Carousel Template ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="bg-yellow-500 rounded-full p-2">
-                        {selectedTemplate === template ? (
-                          <Check className="w-6 h-6 text-black" />
-                        ) : (
-                          <Image className="w-6 h-6 text-black" />
-                        )}
+              {carouselTemplateOptions.length === 0 ? (
+                <p className="text-red-500">No carousel templates available. Please check your templates file.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {carouselTemplateOptions.map((template) => (
+                    <div
+                      key={template.id}
+                      className={`relative rounded-xl overflow-hidden cursor-pointer group aspect-[3/4] ${
+                        selectedTemplate === template.id ? 'ring-2 ring-yellow-500' : ''
+                      }`}
+                      onClick={() => handleTemplateSelect(template.id)}
+                    >
+                      <img src={template.thumbnail} alt={template.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="bg-yellow-500 rounded-full p-2">
+                          {selectedTemplate === template.id ? (
+                            <Check className="w-6 h-6 text-black" />
+                          ) : (
+                            <Image className="w-6 h-6 text-black" />
+                          )}
+                        </div>
+                        <p className="text-white mt-2 text-sm font-semibold">{template.name}</p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+        {postCreationOption === 'withImage' &&
+          postType === 'doYouKnow' &&
+          (doYouKnowImageOption === 'withoutImage' || (doYouKnowImageOption === 'withImage' && generatedImageUrl)) && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-white">Select a "Do You Know" Template</h3>
+              {doYouKnowTemplateOptions.length === 0 ? (
+                <p className="text-red-500">No "Do You Know" templates available. Please check your templates file.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {doYouKnowTemplateOptions.map((template) => (
+                    <div
+                      key={template.id}
+                      className={`relative rounded-xl overflow-hidden cursor-pointer group aspect-[3/4] ${
+                        selectedDoYouKnowTemplate === template.id ? 'ring-2 ring-yellow-500' : ''
+                      }`}
+                      onClick={() => handleDoYouKnowTemplateSelect(template.id)}
+                    >
+                      <img src={template.thumbnail} alt={template.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="bg-yellow-500 rounded-full p-2">
+                          {selectedDoYouKnowTemplate === template.id ? (
+                            <Check className="w-6 h-6 text-black" />
+                          ) : (
+                            <Image className="w-6 h-6 text-black" />
+                          )}
+                        </div>
+                        <p className="text-white mt-2 text-sm font-semibold">{template.name}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -435,7 +502,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
               ? 'Generating...'
               : isUploading
               ? 'Uploading...'
-              : shouldShowGenerateButton && postType !== 'carousel'
+              : shouldShowGenerateButton && postType !== 'carousel' && postType !== 'doYouKnow'
               ? 'Generate Image and Proceed'
               : 'Proceed'}
           </button>
@@ -447,20 +514,20 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
           {generatedImageUrl && (
             <div className="grid grid-cols-1 gap-6">
               <div className="relative rounded-xl overflow-hidden max-w-3xl max-h-[500px] mx-auto">
-                <div className="relative">
-                  <img
-                    src={generatedImageUrl}
-                    alt="Generated Image"
-                    className="w-full h-full object-contain"
-                  />
-                  {(postType === 'single' || postType === 'festival') && showLogo && (
-                    <img
-                      src={defaultLogoUrl}
-                      alt="Logo"
-                      className="absolute right-14 top-10 w-40 h-12 object-contain z-10"
-                    />
-                  )}
-                </div>
+                {contentType === 'post' ? (
+                  <div className="relative">
+                    <img src={generatedImageUrl} alt="Generated Image" className="w-full h-full object-contain" />
+                    {(postType === 'single' || postType === 'festival') && showLogo && (
+                      <img
+                        src={defaultLogoUrl}
+                        alt="Logo"
+                        className="absolute right-14 top-10 w-40 h-12 object-contain z-10"
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-white">Reels are not supported for generation in this example.</p>
+                )}
               </div>
               {(postType === 'single' || postType === 'festival') && (
                 <div className="flex items-center space-x-2">
@@ -483,7 +550,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
             >
               {isUploading ? 'Uploading...' : 'Continue to Post'}
             </button>
-            {postType !== 'carousel' && (
+            {(postType !== 'carousel' && postType !== 'doYouKnow') && (
               <button
                 onClick={() => setShowOptions(false)}
                 className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 transition-colors"
