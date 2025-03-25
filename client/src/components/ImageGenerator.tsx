@@ -37,7 +37,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
   const [generateImage] = useGenerateImageMutation();
   const [uploadImageToCloudinary, { isLoading: isUploading }] = useUploadImageToCloudinaryMutation();
 
-  const defaultLogoUrl = '/images/Logo.png';
+  const defaultLogoUrl = '/images/Logo1.png';
 
   useEffect(() => {
     if (location.state && (location.state as any).generatedImageUrl) {
