@@ -23,12 +23,14 @@ export interface CarouselTemplate {
   name: string;
   slides: Slide[];
   renderSlide: (slide: Slide, addLogo: boolean, defaultLogoUrl: string) => JSX.Element;
+  coverImageUrl?: string;
 }
 
 // Template 1: Modern Overlay (Your Original Design with 5 Slides)
 const Template1: CarouselTemplate = {
   id: 'template1',
   name: 'Modern Overlay',
+  coverImageUrl: '/images/background1.png',
   slides: [
     {
       tagline: 'Welcome to Bitrox',
@@ -59,7 +61,7 @@ const Template1: CarouselTemplate = {
       comment: '/images/comment.png',
       save: '/images/save.png',
       like: '/images/like.png',
-      overlayGraphic: '/images/graphic.jpg',
+      overlayGraphic: '',
     },
     {
       title: 'Our Services',
@@ -74,7 +76,7 @@ const Template1: CarouselTemplate = {
       comment: '/images/comment.png',
       save: '/images/save.png',
       like: '/images/like.png',
-      overlayGraphic: '/images/graphic.jpg',
+      overlayGraphic: '',
     },
     {
       title: 'Get Started Today',
@@ -89,7 +91,7 @@ const Template1: CarouselTemplate = {
       comment: '/images/comment.png',
       save: '/images/save.png',
       like: '/images/like.png',
-      overlayGraphic: '/images/graphic.jpg',
+      overlayGraphic: '',
     },
     {
       tagline: 'Thank You!',
@@ -113,63 +115,173 @@ const Template1: CarouselTemplate = {
       className="relative w-full h-[600px] bg-cover bg-center rounded-lg overflow-hidden"
       style={{
         backgroundImage: `url(${slide.imageUrl})`,
-        backgroundColor: '#1e3a8a',
+        backgroundColor: '#1e3a8a', // Fallback color
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
     >
-      <div className="absolute inset-0 bg-black bg-opacity-75"></div>
-      {slide.overlayGraphic && (
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{
-            backgroundImage: `url(${slide.overlayGraphic})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-      )}
+      {/* Gradient Overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(30, 58, 138, 0.8), rgba(107, 33, 168, 0.8))', // Blue to purple gradient overlay
+        }}
+      ></div>
+
+      {/* Subtle Tech-Inspired Lines */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
+          `, // Grid-like lines
+          backgroundSize: '50px 50px',
+          opacity: 0.3,
+        }}
+      ></div>
+
+
+      {/* Logo (Top-Left) */}
       {addLogo && (
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-30 h-12 object-contain z-10"
+          className="absolute top-8 left-8 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
         />
       )}
-      <div className="absolute inset-0 flex flex-col justify-between p-8 m-10">
-        <div className="flex flex-col items-left text-left">
-          {slide.header && <span className="text-sm font-light text-gray-300 mb-2">{slide.header}</span>}
+
+      {/* Slide Number (Top-Right) */}
+      <div className="absolute top-8 right-8 bg-blue-900 text-white text-2xl w-12 h-12 flex items-center justify-center rounded-full font-bold z-20">
+        {`0${slide.slideNumber}`}
+      </div>
+
+      {/* Content Section */}
+      <div className="absolute inset-0 flex flex-col justify-center p-8 md:p-12 z-10">
+        <div className="flex flex-col items-start text-left max-w-2xl">
+          {/* Headshot (Circular Avatar with Glow) */}
           {slide.headshotUrl && (
-            <img src={slide.headshotUrl} alt="Headshot" className="w-16 h-16 rounded-full mb-4 border-2 border-blue-500" />
+            <div className="relative mb-6">
+              <img
+                src={slide.headshotUrl}
+                alt="Headshot"
+                className="w-20 h-20 rounded-full border-2 border-white"
+                style={{
+                  boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)', // Glowing effect
+                }}
+              />
+              {/* Subtle Glow Ring */}
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  border: '2px solid rgba(59, 130, 246, 0.3)',
+                  boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)',
+                }}
+              ></div>
+            </div>
           )}
+
+          {/* Tagline */}
           {slide.tagline && (
-            <span className="text-xl font-light text-blue-400 drop-shadow-lg mb-2">{slide.tagline}</span>
+            <span
+              className="text-lg md:text-xl font-medium text-blue-300 mb-2"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                textShadow: '0 0 5px rgba(59, 130, 246, 0.3)', // Subtle glow
+              }}
+            >
+              {slide.tagline}
+            </span>
           )}
-          <h2 className="text-5xl font-bold text-white drop-shadow-lg mb-4 uppercase tracking-wide">
+
+          {/* Title */}
+          <h2
+            className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-wide"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              textShadow: '0 0 10px rgba(59, 130, 246, 0.5)', // Glowing effect
+            }}
+          >
             {slide.title}
           </h2>
+
+          {/* Description */}
           {slide.description && (
-            <p className="text-lg font-light text-white max-w-md bg-gray-800 bg-opacity-50 p-4 rounded-lg">
+            <p
+              className="text-base md:text-lg text-gray-200 max-w-md leading-relaxed"
+              style={{
+                fontFamily: "'Roboto', sans-serif",
+              }}
+            >
               {slide.description}
             </p>
           )}
         </div>
-        <div className="flex justify-between items-center">
-          <div className="flex flex-col items-start">
-            <div className="bg-blue-800 text-white text-4xl w-16 h-16 flex items-center justify-center rounded-lg font-bold mb-2">
-              {`0${slide.slideNumber}`}
-            </div>
-            <a href={slide.websiteUrl} className="text-blue-300">{slide.footer}</a>
-          </div>
-          {slide.slideNumber === 5 && (
-            <div className="flex space-x-4">
-              <img src={slide.like} alt="Like" className="w-10 h-10" />
-              <img src={slide.comment} alt="Comment" className="w-10 h-10" />
-              <img src={slide.save} alt="Save" className="w-9 h-10" />
-            </div>
-          )}
-        </div>
       </div>
+
+      {/* Bottom Section (Footer, Website URL, and Social Icons) */}
+      <div className="absolute bottom-4 left-0 right-0 flex justify-between items-center px-8 md:px-12 z-10">
+        {/* Footer and Social Handle (Bottom-Left) */}
+        <div className="flex flex-col items-start">
+          <span
+            className="text-sm md:text-base text-white"
+            style={{
+              fontFamily: "'Roboto', sans-serif",
+            }}
+          >
+            Designed by {slide.footer}
+          </span>
+          <span
+            className="text-sm md:text-base text-blue-300"
+            style={{
+              fontFamily: "'Roboto', sans-serif",
+            }}
+          >
+            {slide.socialHandle}
+          </span>
+        </div>
+
+        {/* Website URL (Bottom-Right) */}
+        <a
+          href={slide.websiteUrl}
+          className="text-blue-300 text-sm md:text-base hover:underline"
+          style={{
+            fontFamily: "'Roboto', sans-serif",
+          }}
+        >
+          {slide.websiteUrl}
+        </a>
+      </div>
+
+      {/* Social Icons (Floating on Last Slide) */}
+      {slide.slideNumber === 5 && (
+        <div className="absolute bottom-16 right-8 flex flex-col space-y-4 z-20">
+          <img
+            src={slide.like}
+            alt="Like"
+            className="w-8 h-8 rounded-full bg-blue-900 p-2 hover:bg-blue-800 transition"
+            style={{
+              boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)', // Glowing effect
+            }}
+          />
+          <img
+            src={slide.comment}
+            alt="Comment"
+            className="w-8 h-8 rounded-full bg-blue-900 p-2 hover:bg-blue-800 transition"
+            style={{
+              boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)', // Glowing effect
+            }}
+          />
+          <img
+            src={slide.save}
+            alt="Save"
+            className="w-8 h-8 rounded-full bg-blue-900 p-2 hover:bg-blue-800 transition"
+            style={{
+              boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)', // Glowing effect
+            }}
+          />
+        </div>
+      )}
     </div>
   ),
 };
@@ -178,6 +290,7 @@ const Template1: CarouselTemplate = {
 const Template2: CarouselTemplate = {
   id: 'template-social-media',
   name: 'Social Media Growth Hacks',
+  coverImageUrl: '/images/background1.png',
   slides: [
     {
       title: 'Growth Hacks for Your Social Media Business',
@@ -339,6 +452,7 @@ const Template2: CarouselTemplate = {
 const Template3: CarouselTemplate = {
   id: 'template-growth-strategies',
   name: 'Growth Strategies',
+  coverImageUrl: '/images/background1.png',
   slides: [
     {
       title: 'HOW TO GROW YOUR BUSINESS ON SOCIAL MEDIA',
@@ -543,6 +657,7 @@ const Template3: CarouselTemplate = {
 const Template4: CarouselTemplate = {
   id: 'template-ai-agents',
   name: 'AI Agents',
+  coverImageUrl: '/images/background1.png',
   slides: [
     {
       title: 'Integrate The Power Of AI In Your Business.',
@@ -986,4 +1101,294 @@ const Template4: CarouselTemplate = {
   ),
 };
 
-export const carouselTemplates: CarouselTemplate[] = [Template1, Template2, Template3, Template4];
+const Template5: CarouselTemplate = {
+  id: 'template5',
+  name: 'Cyberpunk AI',
+  coverImageUrl: '/images/carousel-cover/cover1.png', // Path to the provided image
+  slides: [
+    {
+      tagline: 'Welcome to Bitrox',
+      title: 'EXPLORE OUR AI SOLUTIONS',
+      description: 'Discover how our AI-powered tools can transform your business.',
+      imageUrl: '/images/background8.jpg', // Path to the provided image
+      headshotUrl: '/images/headshot.jpg',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '',
+    },
+    {
+      title: 'Why Choose Bitrox?',
+      description: 'Cutting-edge tech to stay ahead.',
+      imageUrl: '/images/background8.jpg',
+      headshotUrl: '',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '',
+    },
+    {
+      title: 'Our Services',
+      description: 'AI analytics to predictive modeling.',
+      imageUrl: '/images/background8.jpg',
+      headshotUrl: '',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '',
+    },
+    {
+      title: 'Get Started Today',
+      description: 'Join thousands innovating with Bitrox.',
+      imageUrl: '/images/background8.jpg',
+      headshotUrl: '',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '',
+    },
+    {
+      tagline: 'Thank You!',
+      title: 'LET’S CONNECT',
+      description: 'Follow us for updates.',
+      imageUrl: '/images/background8.jpg',
+      headshotUrl: '/images/headshot.jpg',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div
+      className="relative w-full h-[600px] bg-cover bg-center rounded-lg overflow-hidden"
+      style={{
+        backgroundImage: `url(${slide.imageUrl})`,
+        backgroundColor: '#1A1A1A', // Fallback color (dark gray)
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* Gradient Overlay for Readability */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.9))', // Dark gray overlay
+        }}
+      ></div>
+
+      {/* Circuit Pattern Overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(255, 0, 255, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0, 255, 255, 0.1) 1px, transparent 1px)
+          `, // Neon pink and blue circuit lines
+          backgroundSize: '40px 40px',
+          opacity: 0.3,
+        }}
+      ></div>
+
+      {/* Holographic Shape (Top-Right) */}
+      <div
+        className="absolute top-8 right-8 w-16 h-16"
+        style={{
+          background: 'linear-gradient(45deg, #FF00FF, #00FFFF)',
+          clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+          transform: 'rotate(45deg)',
+          boxShadow: '0 0 15px rgba(255, 0, 255, 0.5)',
+        }}
+      ></div>
+
+      {/* Logo (Top-Left) with 3D Glow */}
+      {addLogo && (
+        <div className="absolute top-8 left-8 z-20">
+          <img
+            src={defaultLogoUrl}
+            alt="Logo"
+            className="w-32 h-12 object-contain md:w-40 md:h-16"
+            style={{
+              filter: 'drop-shadow(0 0 10px rgba(0, 255, 255, 0.7))', // Neon blue glow
+              transform: 'translateZ(10px)',
+            }}
+          />
+        </div>
+      )}
+
+      {/* Slide Number (Top-Right) with Neon Effect */}
+      <div
+        className="absolute top-10 right-10 text-white text-2xl w-12 h-12 flex items-center justify-center rounded-full font-bold z-20"
+        style={{
+          background: 'rgba(255, 0, 255, 0.3)', // Neon pink background
+          boxShadow: '0 0 15px rgba(255, 0, 255, 0.5)', // Neon pink glow
+          fontFamily: "'Orbitron', sans-serif",
+        }}
+      >
+        {`0${slide.slideNumber}`}
+      </div>
+
+      {/* Content Section */}
+      <div className="absolute inset-0 flex flex-col justify-center p-8 md:p-12 z-10">
+        <div className="flex flex-col items-start text-left max-w-2xl">
+
+          {/* Tagline with Gradient Text */}
+          {slide.tagline && (
+            <span
+              className="text-lg md:text-xl font-medium mb-2 uppercase"
+              style={{
+                fontFamily: "'Montserrat', sans-serif",
+                background: 'linear-gradient(to right, #FF00FF, #00FFFF)', // Neon pink to blue gradient
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 0 10px rgba(0, 255, 255, 0.5)', // Neon blue glow
+              }}
+            >
+              {slide.tagline}
+            </span>
+          )}
+
+          {/* Title with Neon Glow */}
+          <h2
+            className="text-4xl md:text-5xl font-extrabold mb-4 tracking-wide uppercase"
+            style={{
+              fontFamily: "'Orbitron', sans-serif",
+              color: '#FFFFFF',
+              textShadow: '0 0 15px rgba(255, 0, 255, 0.7), 0 0 30px rgba(0, 255, 255, 0.5)', // Neon pink and blue glow
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description with Semi-Transparent Background */}
+          {slide.description && (
+            <div
+              className="relative max-w-md"
+              style={{
+                background: 'rgba(26, 26, 26, 0.5)', // Dark gray background
+                padding: '1rem',
+                borderRadius: '8px',
+                boxShadow: '0 0 15px rgba(0, 255, 255, 0.3)', // Neon blue glow
+              }}
+            >
+              <p
+                className="text-base md:text-lg text-gray-200 leading-relaxed"
+                style={{
+                  fontFamily: "'Roboto', sans-serif",
+                  textShadow: '0 0 5px rgba(255, 0, 255, 0.3)', // Subtle neon pink glow
+                }}
+              >
+                {slide.description}
+              </p>
+              {/* Decorative Circuit Node (Bottom-Right) */}
+              <div
+                className="absolute -bottom-4 -right-4 w-8 h-8 rounded-full"
+                style={{
+                  background: 'linear-gradient(45deg, #FF00FF, #00FFFF)', // Neon pink to blue gradient
+                  boxShadow: '0 0 15px rgba(255, 0, 255, 0.5)', // Neon pink glow
+                }}
+              ></div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Section (Footer, Website URL, and Social Icons) */}
+      <div className="absolute bottom-4 left-0 right-0 flex justify-between items-center px-8 md:px-12 z-10">
+        {/* Footer and Social Handle (Bottom-Left) */}
+        <div className="flex flex-col items-start">
+          <span
+            className="text-sm md:text-base text-white"
+            style={{
+              fontFamily: "'Roboto', sans-serif",
+              textShadow: '0 0 5px rgba(0, 255, 255, 0.3)', // Neon blue glow
+            }}
+          >
+      {slide.footer}
+          </span>
+          {/* <span
+            className="text-sm md:text-base text-blue-300"
+            style={{
+              fontFamily: "'Roboto', sans-serif",
+              textShadow: '0 0 5px rgba(255, 0, 255, 0.3)', // Neon pink glow
+            }}
+          >
+            {slide.socialHandle}
+          </span> */}
+        </div>
+
+        {/* Website URL (Bottom-Right) */}
+        <a
+          href={slide.websiteUrl}
+          className="text-blue-300 text-sm md:text-base hover:underline"
+          style={{
+            fontFamily: "'Roboto', sans-serif",
+            textShadow: '0 0 5px rgba(0, 255, 255, 0.3)', // Neon blue glow
+          }}
+        >
+          {slide.websiteUrl}
+        </a>
+      </div>
+
+      {/* Social Icons (Floating on Last Slide) */}
+      {slide.slideNumber === 5 && (
+        <div className="absolute bottom-16 right-8 flex flex-col space-y-4 z-20">
+          <img
+            src={slide.like}
+            alt="Like"
+            className="w-8 h-8 rounded-full p-2 transition"
+            style={{
+              background: 'rgba(255, 0, 255, 0.3)', // Neon pink background
+              boxShadow: '0 0 15px rgba(255, 0, 255, 0.5)', // Neon pink glow
+            }}
+          />
+          <img
+            src={slide.comment}
+            alt="Comment"
+            className="w-8 h-8 rounded-full p-2 transition"
+            style={{
+              background: 'rgba(0, 255, 255, 0.3)', // Neon blue background
+              boxShadow: '0 0 15px rgba(0, 255, 255, 0.5)', // Neon blue glow
+            }}
+          />
+          <img
+            src={slide.save}
+            alt="Save"
+            className="w-8 h-8 rounded-full p-2 transition"
+            style={{
+              background: 'rgba(255, 0, 255, 0.3)', // Neon pink background
+              boxShadow: '0 0 15px rgba(255, 0, 255, 0.5)', // Neon pink glow
+            }}
+          />
+        </div>
+      )}
+    </div>
+  ),
+};
+
+export const carouselTemplates: CarouselTemplate[] = [Template1, Template2, Template3, Template4, Template5];

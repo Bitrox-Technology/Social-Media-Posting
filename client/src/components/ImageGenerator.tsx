@@ -200,13 +200,13 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) =
   const carouselTemplateOptions = carouselTemplates.map((template) => ({
     id: template.id,
     name: template.name,
-    thumbnail: template.slides[0].imageUrl,
+    thumbnail: template.coverImageUrl,
   }));
 
   const doYouKnowTemplateOptions = doYouKnowTemplates.map((template) => ({
     id: template.id,
     name: template.name,
-    thumbnail: template.slides[0].imageUrl,
+    thumbnail: template.coverImageUrl,
   }));
 
   return (
