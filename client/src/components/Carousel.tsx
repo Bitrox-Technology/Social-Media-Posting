@@ -1,4 +1,3 @@
-// src/components/Carousel.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Swiper, SwiperSlide, SwiperRef } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
@@ -24,6 +23,7 @@ export const Carousel: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [updateLog, setUpdateLog] = useState<string[]>([]);
   const [addLogo, setAddLogo] = useState<boolean>(true);
+  const [platform, setPlatform] = useState<'instagram' | 'facebook'>('instagram');
   const defaultLogoUrl = '/images/Logo1.png';
   const swiperRef = useRef<SwiperRef>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -35,17 +35,10 @@ export const Carousel: React.FC = () => {
   const [generateCarousel] = useGenerateCarouselMutation();
   const [uploadCarousel, { isLoading: isUploading }] = useUploadCarouselMutation();
 
-  const localImages: Record<string, string[]> = {
-    'artificial intelligence': Array(5).fill('/images/background1.png'),
-    'default': Array(5).fill('/images/background1.png'),
-  };
-
   useEffect(() => {
-    // Set topic from initialTopic or selectedIdea
     if (initialTopic) setTopic(initialTopic);
     else if (selectedIdea?.title) setTopic(selectedIdea.title);
 
-    // Set the initial template from navigation state if provided
     if (initialTemplate) {
       const template = carouselTemplates.find((t) => t.id === initialTemplate) || carouselTemplates[0];
       setSelectedTemplate(template);
@@ -70,31 +63,35 @@ export const Carousel: React.FC = () => {
     try {
       const response = await generateCarousel({ topic }).unwrap();
       const generatedContent = response.data;
-      const normalizedTopic = topic.toLowerCase().trim();
-      const generatedImages = localImages[normalizedTopic] || localImages['default'];
 
-      const generatedSlides: Slide[] = generatedContent.map((content: any, index: number) => ({
-        ...selectedTemplate.slides[index],
-        tagline: content.tagline || selectedTemplate.slides[index].tagline,
-        title: content.title || selectedTemplate.slides[index].title,
-        description: content.description || selectedTemplate.slides[index].description,
-        imageUrl: initialImage || generatedImages[index] || selectedTemplate.slides[index].imageUrl,
-        headshotUrl: selectedTemplate.slides[index].headshotUrl,
-        header: `Slide ${index + 1} - ${topic}`,
-        footer: selectedTemplate.slides[index].footer,
-        socialHandle: selectedTemplate.slides[index].socialHandle,
-        websiteUrl: selectedTemplate.slides[index].websiteUrl,
-        slideNumber: index + 1,
-        comment: selectedTemplate.slides[index].comment,
-        save: selectedTemplate.slides[index].save,
-        like: selectedTemplate.slides[index].like,
-        overlayGraphic: selectedTemplate.slides[index].overlayGraphic,
-      }));
+      const newSlides: Slide[] = selectedTemplate.slides.map((slide, index) => {
+        const content = generatedContent[index] || {};
+        let formattedDescription = content.description || slide.description;
 
-      setSlides(generatedSlides);
-      setEditedSlides([...generatedSlides]);
+        // Check if description starts with a number followed by a dot (e.g., "1.")
+        if ((formattedDescription ?? '').trim().match(/^\d+\./)) {
+          formattedDescription = (formattedDescription || '').split(/,\s*\d+\./) // Split by ", <number>."
+            .map((item, i) => {
+              const cleanItem = item.replace(/^\s*\d+\.\s*/, '').trim(); // Remove leading number if present
+              return i === 0 ? cleanItem : `${i + 1}. ${cleanItem}`; // Re-add number with proper formatting
+            })
+            .join('\n')
+            .replace(/^\s+/, ''); // Remove leading whitespace
+        }
+
+        return {
+          ...slide,
+          tagline: content.tagline || slide.tagline,
+          title: content.title || slide.title,
+          description: formattedDescription,
+          imageUrl: generatedImageUrl || slide.imageUrl,
+        };
+      });
+
+      setSlides(newSlides);
+      setEditedSlides([...newSlides]);
       setEditMode(true);
-      setUpdateLog([...updateLog, `Generated carousel for ${topic}`]);
+      setUpdateLog([...updateLog, `Generated new carousel content for "${topic}"`]);
     } catch (error) {
       console.error('Error generating carousel:', error);
       alert('Failed to generate carousel.');
@@ -111,7 +108,7 @@ export const Carousel: React.FC = () => {
         const newEditedSlides = [...editedSlides];
         newEditedSlides[index] = { ...newEditedSlides[index], [field]: reader.result as string };
         setEditedSlides(newEditedSlides);
-        setUpdateLog([...updateLog, `Updated Slide ${index + 1}: ${field} to ${file.name}`]);
+        setUpdateLog([...updateLog, `Updated Slide ${index + 1}: ${field} to "${file.name}"`]);
       };
       reader.readAsDataURL(file);
     }
@@ -127,6 +124,7 @@ export const Carousel: React.FC = () => {
   const handleSaveChanges = () => {
     setSlides([...editedSlides]);
     setUpdateLog([...updateLog, `Saved changes for Slide ${activeIndex + 1}`]);
+    setEditMode(false);
   };
 
   const handleSlideChange = (swiper: SwiperCore) => {
@@ -191,169 +189,241 @@ export const Carousel: React.FC = () => {
   };
 
   const handleBack = () => {
-    // Corrected navigation path to match ImageGenerator route
     navigate('/images', { state: { generatedImageUrl } });
   };
 
+  const getSlideDimensions = () => {
+    const baseDimensions = platform === 'instagram' ? { width: 1080, height: 1080 } : { width: 1200, height: 1200 };
+    return {
+      width: `${baseDimensions.width}px`,
+      height: `${baseDimensions.height}px`,
+      maxHeight: '70vh',
+      aspectRatio: '1 / 1',
+    };
+  };
+
   return (
-    <div className="p-8 bg-gray-900 min-h-screen text-white">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-6 md:p-10">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
           <button
             onClick={handleBack}
-            className="flex items-center text-yellow-500 hover:text-yellow-400 transition-colors"
+            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-all duration-300"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Template Selection
+            <ArrowLeft className="w-6 h-6" />
+            <span className="text-lg font-medium">Back to Image Generator</span>
+          </button>
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">
+            Create Carousel
+          </h1>
+        </div>
+
+        {/* Controls */}
+        <div className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 mb-8 border border-gray-700 space-y-4">
+          <input
+            type="text"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="Enter a topic"
+            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400"
+          />
+          <select
+            value={selectedTemplate.id}
+            onChange={(e) => handleTemplateChange(e.target.value)}
+            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400"
+          >
+            {carouselTemplates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+              </option>
+            ))}
+          </select>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={addLogo}
+                onChange={(e) => setAddLogo(e.target.checked)}
+                className="w-5 h-5 text-yellow-400 border-gray-600"
+              />
+              <span>Add Logo</span>
+            </label>
+            <select
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value as 'instagram' | 'facebook')}
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg"
+            >
+              <option value="instagram">Instagram (1080x1080)</option>
+              <option value="facebook">Facebook (1200x1200)</option>
+            </select>
+          </div>
+          <button
+            onClick={handleGenerateCarouselContent}
+            disabled={loading}
+            className="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-lg hover:from-yellow-400 hover:to-orange-400 disabled:opacity-50 transition-all duration-300"
+          >
+            {loading ? 'Generating...' : 'Generate Carousel Content'}
           </button>
         </div>
-        <h2 className="text-2xl font-semibold">Generate Carousel</h2>
-      </div>
 
-      <div className="mb-6">
-        <input
-          type="text"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          placeholder="Enter a topic"
-          className="w-full px-5 py-3 bg-gray-800 text-white rounded-lg mb-4"
-        />
-        <select
-          value={selectedTemplate.id}
-          onChange={(e) => handleTemplateChange(e.target.value)}
-          className="w-full px-5 py-3 bg-gray-800 text-white rounded-lg mb-4"
+        {/* Swiper Carousel */}
+        <Swiper
+          modules={[Navigation, Pagination]}
+          navigation={{ nextEl: '.swiper-button-next-custom', prevEl: '.swiper-button-prev-custom' }}
+          pagination={{ clickable: true }}
+          spaceBetween={20}
+          slidesPerView={1}
+          onSlideChange={handleSlideChange}
+          ref={swiperRef}
+          className="mb-8"
         >
-          {carouselTemplates.map((template) => (
-            <option key={template.id} value={template.id}>
-              {template.name}
-            </option>
+          {slides.map((slide, index) => (
+            <SwiperSlide key={index}>
+              <div
+                ref={(el) => (slideRefs.current[index] = el)}
+                style={{
+                  width: getSlideDimensions().width,
+                  height: getSlideDimensions().height,
+                  maxWidth: '100%',
+                  maxHeight: getSlideDimensions().maxHeight,
+                  aspectRatio: getSlideDimensions().aspectRatio,
+                  margin: '0 auto',
+                  overflow: 'hidden',
+                }}
+              >
+                {selectedTemplate.renderSlide(slide, addLogo, defaultLogoUrl)}
+              </div>
+            </SwiperSlide>
           ))}
-        </select>
-        <button
-          onClick={handleGenerateCarouselContent}
-          disabled={loading}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
-        >
-          {loading ? 'Generating...' : 'Generate Carousel'}
-        </button>
-      </div>
+          <div className="swiper-button-prev-custom absolute top-1/2 left-4 text-yellow-400 -translate-y-1/2 z-10">
+            <svg className="w-10 h-10" viewBox="0 0 24 24">
+              <path d="M14 18l-6-6 6-6v12z" fill="currentColor" />
+            </svg>
+          </div>
+          <div className="swiper-button-next-custom absolute top-1/2 right-4 text-yellow-400 -translate-y-1/2 z-10">
+            <svg className="w-10 h-10" viewBox="0 0 24 24">
+              <path d="M10 6l6 6-6 6V6z" fill="currentColor" />
+            </svg>
+          </div>
+        </Swiper>
 
-      <div className="mb-6">
-        <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            checked={addLogo}
-            onChange={(e) => setAddLogo(e.target.checked)}
-            className="form-checkbox text-blue-500"
-          />
-          <span>Add Logo</span>
-        </label>
-      </div>
-
-      <Swiper
-        modules={[Navigation, Pagination]}
-        navigation={{ nextEl: '.swiper-button-next-custom', prevEl: '.swiper-button-prev-custom' }}
-        pagination={{ clickable: true }}
-        spaceBetween={20}
-        slidesPerView={1}
-        onSlideChange={handleSlideChange}
-        ref={swiperRef}
-      >
-        {slides.map((slide, index) => (
-          <SwiperSlide key={index}>
-            <div ref={(el) => (slideRefs.current[index] = el)}>
-              {selectedTemplate.renderSlide(slide, addLogo, defaultLogoUrl)}
-            </div>
-          </SwiperSlide>
-        ))}
-        <div className="swiper-button-prev-custom absolute top-1/2 left-4 text-white -translate-y-1/2">
-          <svg className="w-8 h-8" viewBox="0 0 24 24">
-            <path d="M14 18l-6-6 6-6v12z" fill="currentColor" />
-          </svg>
-        </div>
-        <div className="swiper-button-next-custom absolute top-1/2 right-4 text-white -translate-y-1/2">
-          <svg className="w-8 h-8" viewBox="0 0 24 24">
-            <path d="M10 6l6 6-6 6V6z" fill="currentColor" />
-          </svg>
-        </div>
-      </Swiper>
-
-      <div className="mt-4 flex space-x-4">
+        {/* Export Button */}
         <button
           onClick={handleExportToPost}
           disabled={isUploading}
-          className="px-6 py-3 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 transition-colors"
+          className="w-full md:w-auto px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 disabled:opacity-50 transition-all duration-300 mb-8"
         >
           {isUploading ? 'Uploading...' : 'Export to Post'}
         </button>
-      </div>
 
-      {editMode && (
-        <div className="mt-8 p-6 bg-gray-800 rounded-lg">
-          <h3 className="text-xl font-semibold mb-6">Edit Slide {activeIndex + 1}</h3>
-          <div className="grid grid-cols-1 gap-4">
-            <input
-              type="text"
-              value={editedSlides[activeIndex].header || ''}
-              onChange={(e) => handleEditChange(activeIndex, 'header', e.target.value)}
-              placeholder="Header"
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg"
-            />
-            <input
-              type="text"
-              value={editedSlides[activeIndex].tagline || ''}
-              onChange={(e) => handleEditChange(activeIndex, 'tagline', e.target.value)}
-              placeholder="Tagline"
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg"
-            />
-            <input
-              type="text"
-              value={editedSlides[activeIndex].title}
-              onChange={(e) => handleEditChange(activeIndex, 'title', e.target.value)}
-              placeholder="Title"
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg"
-            />
-            <textarea
-              value={editedSlides[activeIndex].description || ''}
-              onChange={(e) => handleEditChange(activeIndex, 'description', e.target.value)}
-              placeholder="Description"
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg h-24"
-            />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageUpload(activeIndex, 'imageUrl', e)}
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg"
-            />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageUpload(activeIndex, 'headshotUrl', e)}
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg"
-            />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageUpload(activeIndex, 'overlayGraphic', e)}
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg"
-            />
+        {/* Edit Mode */}
+        {editMode && (
+          <div className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700">
+            <h3 className="text-2xl font-semibold mb-6">Edit Slide {activeIndex + 1}</h3>
+            <div className="grid grid-cols-1 gap-6">
+              <div>
+                <label className="block text-gray-300 mb-1">Header</label>
+                <input
+                  type="text"
+                  value={editedSlides[activeIndex].header || ''}
+                  onChange={(e) => handleEditChange(activeIndex, 'header', e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Tagline</label>
+                <input
+                  type="text"
+                  value={editedSlides[activeIndex].tagline || ''}
+                  onChange={(e) => handleEditChange(activeIndex, 'tagline', e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={editedSlides[activeIndex].title}
+                  onChange={(e) => handleEditChange(activeIndex, 'title', e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Description</label>
+                <textarea
+                  value={editedSlides[activeIndex].description || ''}
+                  onChange={(e) => handleEditChange(activeIndex, 'description', e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg h-32 focus:ring-2 focus:ring-yellow-400"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Background Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(activeIndex, 'imageUrl', e)}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Headshot Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(activeIndex, 'headshotUrl', e)}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Overlay Graphic</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(activeIndex, 'overlayGraphic', e)}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex space-x-4">
+              <button
+                onClick={handleSaveChanges}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-all duration-300"
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={() => setEditMode(false)}
+                className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-all duration-300"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-          <div className="mt-4 flex space-x-4">
-            <button
-              onClick={handleSaveChanges}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
-            >
-              Save Changes
-            </button>
-            <button
-              onClick={() => setEditMode(false)}
-              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors"
-            >
-              Cancel
-            </button>
+        )}
+
+        {/* Edit Toggle */}
+        {!editMode && slides.length > 0 && (
+          <button
+            onClick={() => setEditMode(true)}
+            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all duration-300"
+          >
+            Edit Slides
+          </button>
+        )}
+
+        {/* Update Log */}
+        {updateLog.length > 0 && (
+          <div className="mt-6 bg-gray-800/50 backdrop-blur-md rounded-lg p-3 border border-gray-700 max-h-32 overflow-y-auto">
+            <h3 className="text-md font-semibold mb-1">Update Log</h3>
+            <ul className="list-disc pl-3 text-gray-300 text-xs">
+              {updateLog.map((log, index) => (
+                <li key={index}>{log}</li>
+              ))}
+            </ul>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

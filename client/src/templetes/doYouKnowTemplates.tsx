@@ -66,7 +66,7 @@ const DoYouKnowTemplate1: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
         />
       )}
 
@@ -160,7 +160,7 @@ const DoYouKnowTemplate2: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
         />
       )}
 
@@ -255,7 +255,7 @@ const DoYouKnowTemplate3: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
         />
       )}
 
@@ -344,7 +344,7 @@ const DoYouKnowTemplate4: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
         />
       )}
 
@@ -453,7 +453,7 @@ const DoYouKnowTemplate5: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
         />
       )}
 
@@ -606,7 +606,7 @@ const DoYouKnowTemplate6: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
           style={{
             filter: 'invert(100%)', // Convert white logo to black
           }}
@@ -754,7 +754,7 @@ const DoYouKnowTemplate7: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
           style={{
             filter: 'invert(100%)', // Convert white logo to black
           }}
@@ -884,7 +884,7 @@ const DoYouKnowTemplate8: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
         />
       )}
 
@@ -991,7 +991,7 @@ const DoYouKnowTemplate9: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
         />
       )}
 
@@ -1168,7 +1168,7 @@ const DoYouKnowTemplate10: DoYouKnowTemplate = {
         <img
           src={defaultLogoUrl}
           alt="Logo"
-          className="absolute top-12 right-12 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+          className="absolute top-2 right-1 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
         />
       )}
 

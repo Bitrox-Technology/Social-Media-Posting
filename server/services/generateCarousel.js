@@ -63,4 +63,32 @@ const generateCarouselContent = async (topic) => {
   }
 };
 
-export { generateCarouselContent };
+
+const generateDoYouKnow = async (topic) => {
+    try {
+      const prompt = `Generate a "Did You Know?" fact about the topic "${topic}" in JSON format. The JSON must have two fields: "title" and "description". The "title" must be "DID YOU KNOW?" in uppercase. The "description" must be a concise, interesting fact (1-2 sentences, 15-25 words, max 30 words). Example: {"title": "DID YOU KNOW?", "description": "Social media in digital marketing reaches billions, surpassing traditional ads with real-time engagement."}`;
+  
+      const response = await ollama.chat({
+        model: "deepseek-r1:7b",
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      });
+  
+      const cleanedResponse = response.message.content.replace(/<think>[\s\S]*<\/think>/g, '').trim();
+      console.log(cleanedResponse);
+
+      const generatedContent = JSON.parse(cleanedResponse);
+      console.log(generatedContent);
+  
+      return generatedContent;
+  } catch (error) {
+    throw new ApiError(400, "Failed to generate do you know content");
+  }
+}
+
+
+export { generateCarouselContent, generateDoYouKnow };

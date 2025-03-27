@@ -12,6 +12,11 @@ interface CarouselContent {
   description?: string;
 }
 
+interface GenerateDoYouKnowResponse {
+  title: string;
+  description: string;
+}
+
 // Define the API response structure
 interface GenerateIdeasResponse {
   statusCode: number;
@@ -59,7 +64,7 @@ export const api = createApi({
         body,
       }),
     }),
-    uploadCarousel: builder.mutation< any, FormData>({
+    uploadCarousel: builder.mutation<any, FormData>({
       query: (body) => ({
         url: '/upload-carousel',
         method: 'POST',
@@ -68,9 +73,16 @@ export const api = createApi({
     }),
     uploadImageToCloudinary: builder.mutation<any, FormData>({
       query: (formData) => ({
-        url: '/upload-single', 
+        url: '/upload-single',
         method: 'POST',
         body: formData,
+      }),
+    }),
+    generateDoYouKnow: builder.mutation<any, { topic: string }>({
+      query: (body) => ({
+        url: '/generate-doyouknow',
+        method: 'POST',
+        body,
       }),
     }),
   }),
@@ -82,5 +94,6 @@ export const {
   usePostContentMutation,
   useGenerateCarouselMutation,
   useUploadCarouselMutation,
-  useUploadImageToCloudinaryMutation
+  useUploadImageToCloudinaryMutation,
+  useGenerateDoYouKnowMutation,
 } = api;
