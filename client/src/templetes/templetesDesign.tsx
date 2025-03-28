@@ -1392,7 +1392,7 @@ const Template5: CarouselTemplate = {
 };
 
 const Template6: CarouselTemplate = {
-  id: 'template7',
+  id: 'template6',
   name: 'Futuristic AI Tech',
   coverImageUrl: '/images/carousel-cover/cover2.png', // First provided image
   slides: [
@@ -1685,4 +1685,571 @@ const Template6: CarouselTemplate = {
   ),
 };
 
-export const carouselTemplates: CarouselTemplate[] = [Template1, Template2, Template3, Template4, Template5, Template6];
+const Template7: CarouselTemplate = {
+  id: 'template7',
+  name: 'Cosmic Tech Galaxy',
+  coverImageUrl: '/images/carousel-cover/cosmic-cover.png',
+  slides: [
+    {
+      tagline: 'Welcome to GalaxyTech',
+      title: 'EXPLORE THE FUTURE',
+      description: '',
+      imageUrl: '/images/background10.jpg',
+      headshotUrl: '/images/headshot-cosmic.jpg',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '/images/3d/sphere-gold.png',
+    },
+    {
+      title: 'GALACTIC INNOVATION',
+      description: 'Harness the power of cosmic technology.',
+      imageUrl: '/images/background10.jpg',
+      headshotUrl: '',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '',
+    },
+    {
+      title: 'STELLAR PERFORMANCE',
+      description: 'Unmatched speed and efficiency.',
+      imageUrl: '/images/background10.jpg',
+      headshotUrl: '',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '/images/3d/pyramid-gold.png',
+    },
+    {
+      title: 'COSMIC CONNECTIVITY',
+      description: 'Seamless integration across the universe.',
+      imageUrl: '/images/background10.jpg',
+      headshotUrl: '',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '/images/3d/orb-purple.png',
+    },
+    {
+      tagline: 'Join the Cosmic Journey!',
+      title: 'CONNECT WITH GALAXYTECH',
+      description: 'Stay ahead with cutting-edge innovation.',
+      imageUrl: '/images/background10.jpg',
+      headshotUrl: '/images/headshot-cosmic.jpg',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '/images/3d/sphere-gold.png',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div
+      className="relative w-full h-[600px] bg-cover bg-center rounded-xl overflow-hidden"
+      style={{
+        backgroundImage: `url(${slide.imageUrl})`,
+        backgroundColor: '#1A0B2E', // Deep cosmic purple fallback
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8)', // Strong shadow for depth
+      }}
+    >
+      {/* Gradient Overlay for Cosmic Effect */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(to top, rgba(26, 11, 46, 0.9), rgba(255, 215, 0, 0.1))', // Purple to gold gradient
+          opacity: 0.85,
+        }}
+      ></div>
+
+      {/* Glowing Starfield Effect */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle, rgba(255, 215, 0, 0.3) 1px, transparent 1px),
+            radial-gradient(circle, rgba(255, 215, 0, 0.2) 1px, transparent 1px)
+          `,
+          backgroundSize: '50px 50px',
+          opacity: 0.4,
+        }}
+      ></div>
+
+      {/* Logo (Top-Center) with Glowing Effect */}
+      {addLogo && (
+        <div className="absolute top-4 right-4 z-20">
+          <img
+            src={defaultLogoUrl}
+            alt="Logo"
+            className="w-40 h-14 object-contain"
+            style={{
+              filter: 'drop-shadow(0 0 15px rgba(255, 215, 0, 0.8))', // Gold glow
+            }}
+          />
+        </div>
+      )}
+
+      {/* Slide Number (Top-Right) with 3D Effect */}
+      <div
+        className="absolute top-4 left-4 text-gold-300 text-lg w-12 h-12 flex items-center justify-center font-bold z-20"
+        style={{
+          background: 'linear-gradient(45deg, rgba(255, 215, 0, 0.2), rgba(138, 43, 226, 0.3))', // Gold to purple gradient
+          border: '2px solid rgba(255, 215, 0, 0.6)', // Gold border
+          boxShadow: '0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(138, 43, 226, 0.4)', // Gold and purple glow
+          fontFamily: "'Exo 2', sans-serif",
+          clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)', // Hexagon shape
+        }}
+      >
+        {`0${slide.slideNumber}`}
+      </div>
+
+      {/* Content Section (Centered) */}
+      <div className="absolute inset-0 flex flex-col justify-center items-center p-6 md:p-8 z-10">
+        {/* 3D Overlay Graphic (Floating Effect) */}
+        {slide.overlayGraphic && (
+          <div
+            className="absolute w-48 h-48 md:w-56 md:h-56 overflow-hidden"
+            style={{
+              backgroundImage: `url(${slide.overlayGraphic})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: '3px solid rgba(255, 215, 0, 0.6)', // Gold border
+              boxShadow: '0 0 25px rgba(255, 215, 0, 0.8), 0 10px 20px rgba(0, 0, 0, 0.5)', // Gold glow with shadow
+              top: '10%',
+              left: '10%',
+              transform: 'rotate(15deg)',
+            }}
+          ></div>
+        )}
+
+        <div className="flex flex-col items-center text-center max-w-lg">
+          {/* Tagline with 3D Text Effect */}
+          {slide.tagline && (
+            <span
+              className="text-sm md:text-md font-medium mb-4 uppercase tracking-widest"
+              style={{
+                fontFamily: "'Exo 2', sans-serif",
+                color: '#FFD700', // Gold color
+                textShadow: '0 0 10px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(138, 43, 226, 0.5)', // Gold glow with purple shadow
+              }}
+            >
+              {slide.tagline}
+            </span>
+          )}
+
+          {/* Title with 3D Font and Glow */}
+          <h2
+            className={`font-extrabold tracking-wide uppercase ${slide.slideNumber === 1 ? 'text-5xl md:text-8xl' : 'text-4xl md:text-5xl'}`}
+            style={{
+              fontFamily: "'Exo 2', sans-serif",
+              color: '#FFFFFF',
+              textShadow: '0 0 20px rgba(255, 215, 0, 0.9), 0 0 30px rgba(138, 43, 226, 0.6), 0 5px 10px rgba(0, 0, 0, 0.5)', // Gold and purple glow with shadow
+              letterSpacing: '3px',
+              lineHeight: '1.2',
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description with Glassmorphism Effect */}
+          {slide.description && (
+            <div
+              className="relative max-w-md mt-6"
+              style={{
+                background: 'rgba(138, 43, 226, 0.1)', // Purple glass effect
+                padding: '1.5rem',
+                borderRadius: '15px',
+                border: '1px solid rgba(255, 215, 0, 0.3)', // Gold border
+                boxShadow: '0 0 20px rgba(138, 43, 226, 0.5)', // Purple glow
+                backdropFilter: 'blur(5px)', // Glassmorphism blur
+              }}
+            >
+              <p
+                className="text-sm md:text-base text-gray-200 leading-relaxed"
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  textShadow: '0 0 5px rgba(255, 215, 0, 0.4)', // Gold glow
+                }}
+              >
+                {slide.description}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Section (Footer, Website URL, and Social Icons) */}
+      <div className="absolute bottom-4 left-0 right-0 flex justify-between items-center px-6 md:px-8 z-10">
+        {/* Footer and Social Handle (Bottom-Left) */}
+        <div className="flex items-center space-x-4">
+          <span
+            className="text-sm md:text-base text-gray-200"
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              textShadow: '0 0 5px rgba(255, 215, 0, 0.4)', // Gold glow
+            }}
+          >
+            {slide.footer}
+          </span>
+          {/* <span
+            className="text-sm md:text-base text-gold-300"
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              textShadow: '0 0 5px rgba(255, 215, 0, 0.4)', // Gold glow
+            }}
+          >
+            {slide.socialHandle}
+          </span> */}
+        </div>
+
+        {/* Website URL (Bottom-Right) */}
+        <a
+          href={slide.websiteUrl}
+          className="text-gold-300 text-sm md:text-base hover:underline"
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            textShadow: '0 0 5px rgba(255, 215, 0, 0.4)', // Gold glow
+          }}
+        >
+          {slide.websiteUrl}
+        </a>
+      </div>
+
+      {/* Social Icons (Floating on Last Slide) */}
+      {slide.slideNumber === 5 && (
+        <div className="absolute bottom-16 right-6 flex flex-col space-y-4 z-20">
+          <img
+            src={slide.like}
+            alt="Like"
+            className="w-10 h-10 rounded-full p-2 transition-transform hover:scale-110"
+            style={{
+              background: 'rgba(138, 43, 226, 0.3)', // Purple background
+              boxShadow: '0 0 15px rgba(255, 215, 0, 0.6)', // Gold glow
+            }}
+          />
+          <img
+            src={slide.comment}
+            alt="Comment"
+            className="w-10 h-10 rounded-full p-2 transition-transform hover:scale-110"
+            style={{
+              background: 'rgba(138, 43, 226, 0.3)', // Purple background
+              boxShadow: '0 0 15px rgba(255, 215, 0, 0.6)', // Gold glow
+            }}
+          />
+          <img
+            src={slide.save}
+            alt="Save"
+            className="w-10 h-10 rounded-full p-2 transition-transform hover:scale-110"
+            style={{
+              background: 'rgba(138, 43, 226, 0.3)', // Purple background
+              boxShadow: '0 0 15px rgba(255, 215, 0, 0.6)', // Gold glow
+            }}
+          />
+        </div>
+      )}
+    </div>
+  ),
+};
+
+const Template8: CarouselTemplate = {
+  id: 'template8',
+  name: 'DeFi Blockchain Inspired',
+  coverImageUrl: '/images/carousel-cover/defi-cover.png',
+  slides: [
+    {
+      tagline: 'Welcome to DeFiVerse',
+      title: 'UNLOCK DECENTRALIZED FINANCE',
+      description: '',
+      imageUrl: '/images/background11.jpg', // Freepik-inspired blockchain background
+      headshotUrl: '/images/headshot/headshot1.jpg',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+      comment: '/images/comment.png', // Freepik-inspired yellow comment icon
+      save: '/images/save.png', // Freepik-inspired yellow save icon
+      like: '/images/like.png', // Freepik-inspired yellow like icon
+      overlayGraphic: '/images/overlay/overlay2.jpg', // Freepik-inspired 3D blockchain cube
+    },
+    {
+      title: 'SECURE TRANSACTIONS',
+      description: 'Experience trustless, transparent financial systems.',
+      imageUrl: '/images/background11.jpg', // Freepik-inspired digital finance background
+      headshotUrl: '',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '/images/overlay/overlay3.jpg', // Freepik-inspired 3D holographic lock
+    },
+    {
+      title: 'SMART CONTRACTS',
+      description: 'Automate and secure your financial agreements.',
+      imageUrl: '/images/background11.jpg', // Freepik-inspired tech grid background
+      headshotUrl: '',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '/images/overlay/overlay1.jpg', // Freepik-inspired 3D contract model
+    },
+    {
+      title: 'YIELD FARMING',
+      description: 'Maximize returns with DeFi staking solutions.',
+      imageUrl: '/images/background11.jpg', // Freepik-inspired financial growth background
+      headshotUrl: '',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '/images/overlay/overlay4.jpg', // Freepik-inspired 3D coin stack
+    },
+    {
+      tagline: 'Join the DeFi Revolution!',
+      title: 'CONNECT WITH DEFIVERSE',
+      description: 'Stay ahead in the world of decentralized finance.',
+      imageUrl: '/images/background11.jpg', // Freepik-inspired futuristic finance background
+      headshotUrl: '/images/headshot/headshot1.jpg',
+      header: '',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+      comment: '/images/comment.png',
+      save: '/images/save.png',
+      like: '/images/like.png',
+      overlayGraphic: '/images/overlay/overlay5.jpg', // Freepik-inspired 3D holographic wallet
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div
+      className="relative w-full h-[600px] bg-cover bg-center rounded-xl overflow-hidden"
+      style={{
+        backgroundImage: `url(${slide.imageUrl})`,
+        backgroundColor: '#0F172A', // Dark slate fallback
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        boxShadow: '0 15px 40px rgba(0, 0, 0, 0.8)', // Deep shadow for 3D effect
+      }}
+    >
+      {/* Gradient Overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(236, 72, 153, 0.3))', // Slate to magenta gradient
+          opacity: 0.9,
+        }}
+      ></div>
+
+      {/* Neon Grid Lines */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(6, 182, 212, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(6, 182, 212, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '50px 50px',
+          opacity: 0.5,
+        }}
+      ></div>
+
+      {/* Logo (Top-Right) */}
+      {addLogo && (
+        <div className="absolute top-4 right-4 z-20">
+          <img
+            src={defaultLogoUrl}
+            alt="Logo"
+            className="w-28 h-8 object-contain"
+            style={{
+              filter: 'drop-shadow(0 0 10px rgba(6, 182, 212, 0.7))', // Cyan glow
+            }}
+          />
+        </div>
+      )}
+
+      {/* Slide Number (Bottom-Left) */}
+      <div
+        className="absolute bottom-4 left-4 text-white text-sm font-bold z-20 bg-opacity-50 rounded-full px-3 py-1"
+        style={{
+          fontFamily: "'Inter', sans-serif",
+          background: 'rgba(6, 182, 212, 0.2)', // Cyan background
+          border: '1px solid rgba(6, 182, 212, 0.5)', // Cyan border
+          boxShadow: '0 0 8px rgba(6, 182, 212, 0.5)', // Cyan glow
+        }}
+      >
+        {`0${slide.slideNumber}/05`}
+      </div>
+
+      {/* Content Section */}
+      <div className="absolute inset-0 flex flex-row items-center p-6 md:p-8 z-10">
+        {/* Left Section: Title and Overlay Graphic */}
+        <div className="flex flex-col justify-center w-1/2 pr-4">
+          {slide.tagline && (
+            <span
+              className="text-md md:text-lg font-medium uppercase tracking-widest mb-4"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                color: '#EC4899', // Magenta
+                textShadow: '0 0 8px rgba(236, 72, 153, 0.6)', // Magenta glow
+              }}
+            >
+              {slide.tagline}
+            </span>
+          )}
+          <h2
+            className="text-4xl md:text-6xl font-extrabold uppercase leading-tight"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              color: '#FFFFFF',
+              textShadow: '0 0 15px rgba(6, 182, 212, 0.7), 0 0 25px rgba(236, 72, 153, 0.5)', // Cyan and magenta glow
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Overlay Graphic (Below Title) */}
+          {slide.overlayGraphic && (
+            <div
+              className="mt-6 w-48 h-48 md:w-56 md:h-56"
+              style={{
+                backgroundImage: `url(${slide.overlayGraphic})`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                filter: 'drop-shadow(0 0 15px rgba(6, 182, 212, 0.5))', // Cyan glow
+              }}
+            ></div>
+          )}
+        </div>
+
+        {/* Right Section: Description */}
+        <div className="flex flex-col justify-center w-1/2 pl-4">
+          {/* Description (Positioned to Avoid Overlap) */}
+          {slide.description && (
+            <div
+              className="max-w-sm bg-opacity-50 rounded-lg p-4"
+              style={{
+                background: 'rgba(236, 72, 153, 0.1)', // Magenta background
+                border: '1px solid rgba(236, 72, 153, 0.3)', // Magenta border
+                boxShadow: '0 0 10px rgba(236, 72, 153, 0.4)', // Magenta glow
+              }}
+            >
+              <p
+                className="text-sm md:text-base text-gray-200 leading-relaxed text-right"
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                {slide.description}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Section: Footer, Social Handle, Website URL, and Social Icons */}
+      <div className="absolute bottom-4 left-0 right-0 flex justify-between items-center px-6 md:px-8 z-10">
+        {/* Left: Footer and Social Handle */}
+        <div className="flex flex-col items-start">
+          <span
+            className="text-sm md:text-base text-white"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            {slide.footer}
+          </span>
+          <span
+            className="text-xs md:text-sm text-cyan-400"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            {slide.socialHandle}
+          </span>
+          <a
+            href={slide.websiteUrl}
+            className="text-cyan-400 text-xs md:text-sm hover:underline"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            {slide.websiteUrl}
+          </a>
+        </div>
+
+        {/* Right: Social Icons (Last Slide Only) */}
+        {slide.slideNumber === 5 && (
+          <div className="flex space-x-4">
+            <img
+              src={slide.like}
+              alt="Like"
+              className="w-8 h-8 transition-transform hover:scale-110"
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.5))', // Cyan glow
+              }}
+            />
+            <img
+              src={slide.comment}
+              alt="Comment"
+              className="w-8 h-8 transition-transform hover:scale-110"
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.5))', // Cyan glow
+              }}
+            />
+            <img
+              src={slide.save}
+              alt="Save"
+              className="w-8 h-8 transition-transform hover:scale-110"
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.5))', // Cyan glow
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  ),
+};
+
+export const carouselTemplates: CarouselTemplate[] = [Template1, Template2, Template3, Template4, Template5, Template6, Template7, Template8];

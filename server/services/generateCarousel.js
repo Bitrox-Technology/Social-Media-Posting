@@ -29,11 +29,11 @@ const generateCarouselContent = async (topic) => {
 
       Return the data as a JSON array with 5 objects, each containing the appropriate fields (tagline, title, description). For example:
       [
-        { "tagline": "Welcome to the Journey", "title": "${topic.toUpperCase()} OVERVIEW", "description": "..." },
+        { "tagline": "Welcome to the Journey", "title": "${topic.toUpperCase()}", "description": "..." },
         { "title": "Why ${topic} Matters", "description": "..." },
         { "title": "Top Tips for ${topic}", "description": "..." },
         { "title": "Future of ${topic}", "description": "..." },
-        { "tagline": "Thanks for Watching", "title": "THANK YOU!", "description": "..." }
+        { "tagline": "Connect with use", "title": "Connect With US!", "description": "..." }
       ]
 
       **Important Instructions:**
