@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { setSelectedFile, setSelectedDoYouKnowTemplate } from '../store/appSlice';
-import { useUploadImageToCloudinaryMutation, useGenerateDoYouKnowMutation } from '../store/api';
-import { DoYouKnowSlide, doYouKnowTemplates } from '../templetes/doYouKnowTemplates';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { setSelectedFile, setSelectedDoYouKnowTemplate } from '../../store/appSlice';
+import { useUploadImageToCloudinaryMutation, useGenerateDoYouKnowMutation } from '../../store/api';
+import { DoYouKnowSlide, doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
 import { ArrowLeft } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { motion } from 'framer-motion';

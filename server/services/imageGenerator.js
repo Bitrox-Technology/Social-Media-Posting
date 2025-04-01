@@ -13,9 +13,9 @@ async function generateImage(prompt, negativePrompt) {
     height: 512,
     sampler_name: 'DPM++ 2M',
     cfg_scale: 7.0,
-    batch_size: 3,
+    batch_size: 1,
     override_settings: {
-      sd_model_checkpoint: 'lumina_2.safetensors',
+      sd_model_checkpoint: 'sd_xl_base_1.0.safetensors',
       sd_vae: 'sdxl_vae.safetensors',
     },
     enable_hr: true, // Enable hires fix

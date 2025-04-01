@@ -1,8 +1,8 @@
 import React from 'react';
 import { Image, Film } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch } from '../store/hooks';
-import { setContentType } from '../store/appSlice';
+import { useAppDispatch } from '../../store/hooks';
+import { setContentType } from '../../store/appSlice';
 
 interface ContentTypeSelectorProps {
   // No props needed since we're using Redux

@@ -7,7 +7,7 @@ import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
-import { generateCarouselContent, generateDoYouKnow } from "../services/generateCarousel.js";
+import { generateCarouselContent, generateDoYouKnow, generateTopics } from "../services/generateCarousel.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
@@ -387,7 +387,6 @@ const GenerateCarousel = async (req, res, next) => {
 };
 
 const UploadCarouselImages = async (req, res, next) => {
-
   if (!req.files || req.files.length === 0) {
     throw new ApiError(400, "No images provided");
   }
@@ -422,7 +421,7 @@ const GenerateDoYouKnow = async (req, res, next) => {
   const { topic } = req.body;
 
   if (!topic) {
-    return res.status(400).json({ error: "Topic is required" });
+    throw new ApiError(400, "Topic is required");
   }
   try {
     const result = await generateDoYouKnow(topic);
@@ -432,6 +431,21 @@ const GenerateDoYouKnow = async (req, res, next) => {
   }
 };
 
+const GenerateTopics = async (req, res, next) => {
+  
+  const { business } = req.body;
+
+  if (!business) {
+    throw new ApiError(400, "business is required");
+  }
+  try {
+    const result = await generateTopics(business);
+    return res.status(200).json(new ApiResponse(200, result, "Topics genrated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
 
 
-export { Post, Content, Ideas, GenerateImage, GenerateCarousel, UploadCarouselImages , UploadSingleImage, GenerateDoYouKnow};
+
+export { Post, Content, Ideas, GenerateImage, GenerateCarousel, UploadCarouselImages , UploadSingleImage, GenerateDoYouKnow, GenerateTopics};

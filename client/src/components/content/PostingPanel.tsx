@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Instagram, Facebook, CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { resetState } from '../store/appSlice';
-import { usePostContentMutation } from '../store/api';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { resetState } from '../../store/appSlice';
+import { usePostContentMutation } from '../../store/api';
 import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';

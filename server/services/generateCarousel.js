@@ -91,4 +91,34 @@ const generateDoYouKnow = async (topic) => {
 }
 
 
-export { generateCarouselContent, generateDoYouKnow };
+const generateTopics = async (topic) => {
+  try {
+    const prompt = `Generate 10 topics related to "${topic}" in JSON format. The JSON must have keys "topic1" through "topic10", each with a string value representing a topic. Example: {"topic1": "Example Topic 1", "topic2": "Example Topic 2", ...}`;
+
+    const response = await ollama.chat({
+      model: "deepseek-r1:7b",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+
+    const cleanedResponse = response.message.content
+      .replace(/<think>[\s\S]*<\/think>/g, '') // Remove <think> tags and their content
+      .replace(/```json|```/g, '') // Remove code fences if present
+      .trim();
+   console.log(cleanedResponse);
+    // Parse the cleaned JSON response
+    const generatedContent = JSON.parse(cleanedResponse);
+
+    console.log(generatedContent);
+
+    return generatedContent;
+} catch (error) {
+  throw new ApiError(400, "Failed to generate topics content");
+}
+}
+
+export { generateCarouselContent, generateDoYouKnow, generateTopics };

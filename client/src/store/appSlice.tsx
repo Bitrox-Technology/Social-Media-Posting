@@ -1,3 +1,4 @@
+// src/store/slices/appSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface ContentIdea {
@@ -11,14 +12,35 @@ interface SelectedFileData {
   url: string;
 }
 
+interface CarouselContent {
+  tagline?: string;
+  title: string;
+  description?: string;
+}
+
+interface DoYouKnowContent {
+  title: string;
+  description: string;
+}
+
+interface Post {
+  topic: string;
+  type: 'image' | 'carousel' | 'doyouknow';
+  content: string | CarouselContent[] | DoYouKnowContent;
+}
 interface AppState {
-  contentType: 'post' | 'reel' | null;
+  contentType: 'post' | 'reel' | 'carousel' | 'doyouknow' | null; // Added more types
   selectedTopic: string;
   selectedIdea: ContentIdea | null;
   selectedFile: SelectedFileData | null;
-  posted: string[];
+  posted: string[]; // Array of post identifiers (e.g., URLs or IDs)
   ideas: ContentIdea[];
-  selectedDoYouKnowTemplate: string | null; // Add this field
+  selectedDoYouKnowTemplate: string | null;
+  user: { email: string } | null;
+  token: string | null;
+  selectedBusiness: string | null;
+  posts: Post[];
+  apiTopics: string[];
 }
 
 const initialState: AppState = {
@@ -28,18 +50,30 @@ const initialState: AppState = {
   selectedFile: null,
   posted: [],
   ideas: [],
-  selectedDoYouKnowTemplate: null, // Initialize the new field
+  selectedDoYouKnowTemplate: null,
+  user: null,
+  token: null,
+  selectedBusiness: null,
+  posts: [],
+  apiTopics: [],
 };
+
 
 const appSlice = createSlice({
   name: 'app',
   initialState,
   reducers: {
-    setContentType(state, action: PayloadAction<'post' | 'reel' | null>) {
+    setContentType(
+      state,
+      action: PayloadAction<'post' | 'reel' | 'carousel' | 'doyouknow' | null>
+    ) {
       state.contentType = action.payload;
     },
     setSelectedTopic(state, action: PayloadAction<string>) {
       state.selectedTopic = action.payload;
+    },
+    setSelectedBusiness: (state, action: PayloadAction<string>) => {
+      state.selectedBusiness = action.payload;
     },
     setSelectedIdea(state, action: PayloadAction<ContentIdea | null>) {
       state.selectedIdea = action.payload;
@@ -56,6 +90,21 @@ const appSlice = createSlice({
     setSelectedDoYouKnowTemplate(state, action: PayloadAction<string | null>) {
       state.selectedDoYouKnowTemplate = action.payload;
     },
+    setUser(state, action: PayloadAction<{ email: string; token: string }>) {
+      state.user = { email: action.payload.email };
+      state.token = action.payload.token;
+    },
+
+    setPosts: (state, action: PayloadAction<Post[]>) => {
+      state.posts = action.payload;
+    },
+    logout(state) {
+      state.user = null;
+      state.token = null;
+    },
+    setApiTopics: (state, action: PayloadAction<string[]>) => {
+      state.apiTopics = action.payload;
+    },
     resetState(state) {
       state.contentType = null;
       state.selectedTopic = '';
@@ -63,7 +112,7 @@ const appSlice = createSlice({
       state.selectedFile = null;
       state.posted = [];
       state.ideas = [];
-      state.selectedDoYouKnowTemplate = null; // Reset the new field
+      state.selectedDoYouKnowTemplate = null;
     },
   },
 });
@@ -75,8 +124,13 @@ export const {
   setSelectedFile,
   setPosted,
   setIdeas,
-  setSelectedDoYouKnowTemplate, // Export the new action
+  setSelectedDoYouKnowTemplate,
   resetState,
+  setUser, 
+  logout,
+  setSelectedBusiness,
+  setPosts,
+  setApiTopics
 } = appSlice.actions;
 
 export default appSlice.reducer;

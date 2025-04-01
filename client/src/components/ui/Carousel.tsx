@@ -8,9 +8,9 @@ import 'swiper/css/pagination';
 import html2canvas from 'html2canvas';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { RootState } from '../store';
-import { useGenerateCarouselMutation, useUploadCarouselMutation } from '../store/api';
-import { carouselTemplates, Slide, CarouselTemplate } from '../templetes/templetesDesign';
+import { RootState } from '../../store';
+import { useGenerateCarouselMutation, useUploadCarouselMutation } from '../../store/api';
+import { carouselTemplates, Slide, CarouselTemplate } from '../../templetes/templetesDesign';
 import { ArrowLeft } from 'lucide-react';
 
 export const Carousel: React.FC = () => {

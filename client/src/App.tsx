@@ -1,14 +1,17 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { ContentTypeSelector } from './components/ContentTypeSelector';
-import { TopicSelector } from './components/TopicSelector';
-import { ContentIdeas } from './components/ContentIdeas';
-import { ImageGenerator } from './components/ImageGenerator';
-import { PostingPanel } from './components/PostingPanel';
-import { Carousel } from './components/Carousel';
-import { DoYouKnow } from './components/DoYouKnow';
+import {Layout} from './components/layout/Layout'; // Adjusted path
+import { ContentTypeSelector } from './components/content/ContentTypeSelector'; // Adjusted path
+import { TopicSelector } from './components/content/TopicSelector';
+import { ContentIdeas } from './components/content/ContentIdeas';
+import { ImageGenerator } from './components/content/ImageGenerator';
+import { PostingPanel } from './components/content/PostingPanel';
+import { Carousel } from './components/ui/Carousel';
+import { DoYouKnow } from './components/ui/DoYouKnow';
 import { useAppSelector } from './store/hooks';
+import { SignUp } from './components/auth/Signup'; // Adjusted path
+import { SignIn } from './components/auth/Signin'; // Adjusted path
+import { AutoPostCreator } from './components/content/AutoPostCreator';
 
 function App() {
   // Access state from Redux store
@@ -16,11 +19,10 @@ function App() {
   const selectedTopic = useAppSelector((state) => state.app.selectedTopic);
   const selectedIdea = useAppSelector((state) => state.app.selectedIdea);
 
-
   return (
     <Router>
       <Layout>
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="page-content max-w-6xl mx-auto px-4 py-8">
           <h1 className="text-4xl font-bold text-yellow-500 mb-8 text-center">
             AI Social Media Content Creator
           </h1>
@@ -34,11 +36,7 @@ function App() {
             <Route
               path="/ideas"
               element={
-                selectedTopic ? (
-                  <ContentIdeas />
-                ) : (
-                  <Navigate to="/topic" />
-                )
+                selectedTopic ? <ContentIdeas /> : <Navigate to="/topic" />
               }
             />
             <Route
@@ -51,17 +49,12 @@ function App() {
                 )
               }
             />
-            <Route
-              path="/post"
-              element={<PostingPanel />}
-            />
+            <Route path="/post" element={<PostingPanel />} />
             <Route path="/carousel" element={<Carousel />} />
-            <Route
-              path="/doyouknow"
-              element={
-                <DoYouKnow />
-              }
-            />
+            <Route path="/doyouknow" element={<DoYouKnow />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/auto" element={<AutoPostCreator />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>

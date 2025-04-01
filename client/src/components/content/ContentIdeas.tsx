@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { Sparkles, Hash, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { setSelectedIdea, setIdeas } from '../store/appSlice';
-import { useGenerateIdeasMutation } from '../store/api';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { setSelectedIdea, setIdeas } from '../../store/appSlice';
+import { useGenerateIdeasMutation } from '../../store/api';
 import { motion } from 'framer-motion';
 
 interface ContentIdea {

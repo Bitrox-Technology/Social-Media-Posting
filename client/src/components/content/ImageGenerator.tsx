@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Image, Check, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { setSelectedFile, setSelectedDoYouKnowTemplate } from '../store/appSlice';
-import { useGenerateImageMutation, useUploadImageToCloudinaryMutation } from '../store/api';
-import { carouselTemplates } from '../templetes/templetesDesign';
-import { doYouKnowTemplates } from '../templetes/doYouKnowTemplates';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { setSelectedFile, setSelectedDoYouKnowTemplate } from '../../store/appSlice';
+import { useGenerateImageMutation, useUploadImageToCloudinaryMutation } from '../../store/api';
+import { carouselTemplates } from '../../templetes/templetesDesign';
+import { doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
 
 interface ContentIdea {
   title: string;
@@ -14,7 +14,7 @@ interface ContentIdea {
 }
 
 interface ImageGeneratorProps {
-  contentType: 'post' | 'reel';
+  contentType: 'post' | 'reel' | 'carousel' | 'doyouknow';
 }
 
 export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) => {

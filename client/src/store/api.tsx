@@ -17,70 +17,97 @@ interface GenerateDoYouKnowResponse {
   description: string;
 }
 
-// Define the API response structure
-interface GenerateIdeasResponse {
-  statusCode: number;
-  data: ContentIdea[];
-  message: string;
-  success: boolean;
+interface GenerateTopicsResponse {
+  topics: string[];
 }
 
-interface GenerateCarouselResponse {
+// Generic API response structure
+interface ApiResponse<T> {
   statusCode: number;
-  data: CarouselContent[];
+  data: T;
   message: string;
   success: boolean;
 }
 
 export const api = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/api/v1' }),
+  baseQuery: fetchBaseQuery({
+    baseUrl: 'http://localhost:4000/api/v1',
+    // prepareHeaders: (headers, { getState }) => {
+    //   const token = (getState() as any).auth.token; // Assuming auth slice has a token
+    //   if (token) {
+    //     headers.set('Authorization', `Bearer ${token}`);
+    //   }
+    //   return headers;
+    // },
+  }),
   endpoints: (builder) => ({
-    generateIdeas: builder.mutation<GenerateIdeasResponse, { topic: string }>({
+    generateIdeas: builder.mutation<ApiResponse<ContentIdea[]>, { topic: string }>({
       query: (body) => ({
         url: '/ideas',
         method: 'POST',
         body,
       }),
     }),
-    generateImage: builder.mutation<{ data: string }, { prompt: string }>({
+    generateImage: builder.mutation<ApiResponse<string>, { prompt: string }>({
       query: (body) => ({
         url: '/generate-image',
         method: 'POST',
         body,
       }),
     }),
-    postContent: builder.mutation<any, FormData>({
+    postContent: builder.mutation<ApiResponse<any>, FormData>({
       query: (formData) => ({
         url: '/post',
         method: 'POST',
         body: formData,
       }),
     }),
-    generateCarousel: builder.mutation<GenerateCarouselResponse, { topic: string }>({
+    generateCarousel: builder.mutation<ApiResponse<CarouselContent[]>, { topic: string }>({
       query: (body) => ({
         url: '/generate-carousel',
         method: 'POST',
         body,
       }),
     }),
-    uploadCarousel: builder.mutation<any, FormData>({
+    uploadCarousel: builder.mutation<ApiResponse<any>, FormData>({
       query: (body) => ({
         url: '/upload-carousel',
         method: 'POST',
         body,
       }),
     }),
-    uploadImageToCloudinary: builder.mutation<any, FormData>({
+    uploadImageToCloudinary: builder.mutation<ApiResponse<any>, FormData>({
       query: (formData) => ({
         url: '/upload-single',
         method: 'POST',
         body: formData,
       }),
     }),
-    generateDoYouKnow: builder.mutation<any, { topic: string }>({
+    generateDoYouKnow: builder.mutation<ApiResponse<GenerateDoYouKnowResponse>, { topic: string }>({
       query: (body) => ({
         url: '/generate-doyouknow',
+        method: 'POST',
+        body,
+      }),
+    }),
+    signUp: builder.mutation<ApiResponse<{ email: string; token: string }>, { email: string; password: string }>({
+      query: (body) => ({
+        url: '/signup',
+        method: 'POST',
+        body,
+      }),
+    }),
+    signIn: builder.mutation<ApiResponse<{ email: string; token: string }>, { email: string; password: string }>({
+      query: (body) => ({
+        url: '/signin',
+        method: 'POST',
+        body,
+      }),
+    }),
+    generateTopics: builder.mutation<ApiResponse<GenerateTopicsResponse>, { business: string }>({
+      query: (body) => ({
+        url: '/topics',
         method: 'POST',
         body,
       }),
@@ -96,4 +123,7 @@ export const {
   useUploadCarouselMutation,
   useUploadImageToCloudinaryMutation,
   useGenerateDoYouKnowMutation,
+  useSignUpMutation,
+  useSignInMutation,
+  useGenerateTopicsMutation,
 } = api;

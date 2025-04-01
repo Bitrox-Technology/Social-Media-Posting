@@ -16,6 +16,8 @@ export interface Slide {
   like?: string;
   save?: string;
   overlayGraphic?: string;
+  sticker?: string; // Optional sticker URL
+  shape?: string; // Optional shape URL
 }
 
 export interface CarouselTemplate {
@@ -2252,4 +2254,524 @@ const Template8: CarouselTemplate = {
   ),
 };
 
-export const carouselTemplates: CarouselTemplate[] = [Template1, Template2, Template3, Template4, Template5, Template6, Template7, Template8];
+const Template9: CarouselTemplate = {
+  id: 'template9',
+  name: 'Blockchain Basics',
+  coverImageUrl: '/images/carousel-cover/blockchain-cover.png', // Placeholder for cover image
+  slides: [
+    {
+      tagline: 'Demystifying Blockchain',
+      title: 'UNLOCKING DECENTRALIZED TECH',
+      description: '',
+      imageUrl: '/images/background12.jpg', // Placeholder for background
+      headshotUrl: '/images/your-headshot.jpg',
+      header: '',
+      footer: 'Your Name',
+      socialHandle: '@your_linkedin_handle',
+      websiteUrl: 'https://linkedin.com/in/yourprofile',
+      slideNumber: 1,
+      comment: '/images/comment-icon.png',
+      save: '/images/save-icon.png',
+      like: '/images/like-icon.png',
+      overlayGraphic: '/images/blockchain-graphic1.png', // Placeholder for overlay
+    },
+    {
+      title: 'SECURE TRANSACTIONS',
+      description: 'Blockchain enables peer-to-peer transactions without intermediaries.',
+      imageUrl: '/images/background12.jpg',
+      headshotUrl: '',
+      header: '',
+      footer: 'Your Name',
+      socialHandle: '@your_linkedin_handle',
+      websiteUrl: 'https://linkedin.com/in/yourprofile',
+      slideNumber: 2,
+      comment: '/images/comment-icon.png',
+      save: '/images/save-icon.png',
+      like: '/images/like-icon.png',
+      overlayGraphic: '/images/blockchain-graphic2.png',
+    },
+    {
+      title: 'TRANSPARENCY & IMMUTABILITY',
+      description: 'Public ledger ensures transparency and prevents tampering.',
+      imageUrl: '/images/background12.jpg',
+      headshotUrl: '',
+      header: '',
+      footer: 'Your Name',
+      socialHandle: '@your_linkedin_handle',
+      websiteUrl: 'https://linkedin.com/in/yourprofile',
+      slideNumber: 3,
+      comment: '/images/comment-icon.png',
+      save: '/images/save-icon.png',
+      like: '/images/like-icon.png',
+      overlayGraphic: '/images/blockchain-graphic3.png',
+    },
+    {
+      title: 'SMART CONTRACTS',
+      description: 'Automate execution with predefined rules for efficiency.',
+      imageUrl: '/images/background12.jpg',
+      headshotUrl: '',
+      header: '',
+      footer: 'Your Name',
+      socialHandle: '@your_linkedin_handle',
+      websiteUrl: 'https://linkedin.com/in/yourprofile',
+      slideNumber: 4,
+      comment: '/images/comment-icon.png',
+      save: '/images/save-icon.png',
+      like: '/images/like-icon.png',
+      overlayGraphic: '/images/blockchain-graphic4.png',
+    },
+    {
+      tagline: 'Join the Conversation!',
+      title: 'BLOCKCHAIN IN SUMMARY',
+      description: 'Secure, transparent, immutable, and automated solutions.',
+      imageUrl: '/images/background12.jpg',
+      headshotUrl: '/images/your-headshot.jpg',
+      header: '',
+      footer: 'Your Name',
+      socialHandle: '@your_linkedin_handle',
+      websiteUrl: 'https://linkedin.com/in/yourprofile',
+      slideNumber: 5,
+      comment: '/images/comment-icon.png',
+      save: '/images/save-icon.png',
+      like: '/images/like-icon.png',
+      overlayGraphic: '/images/blockchain-graphic5.png',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div
+      className="relative w-full h-[600px] bg-cover bg-center rounded-lg overflow-hidden"
+      style={{
+        backgroundImage: `url(${slide.imageUrl})`,
+        backgroundColor: '#FFFFFF', // White fallback for a crisp, PDF-like look
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        boxShadow: '0 8px 20px rgba(0, 0, 0, 0.1)', // Softer shadow
+      }}
+    >
+      {/* Light Gradient Overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.3))',
+          opacity: 0.5,
+        }}
+      ></div>
+
+      {/* Logo (Top-Left) */}
+      {addLogo && (
+        <div className="absolute top-6 left-6 z-20">
+          <img
+            src={defaultLogoUrl}
+            alt="Logo"
+            className="w-20 h-6 object-contain"
+            style={{
+              filter: 'contrast(1.1)', // Slight enhancement
+            }}
+          />
+        </div>
+      )}
+
+      {/* Slide Number (Top-Right) */}
+      <div
+        className="absolute top-6 right-6 text-gray-700 text-sm w-6 h-6 flex items-center justify-center font-medium z-20"
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderRadius: '50%',
+          border: '1px solid rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        {slide.slideNumber}
+      </div>
+
+      {/* Content Section (Centered with PDF-like Spacing) */}
+      <div className="absolute inset-0 flex flex-col justify-center items-center p-8 z-10">
+        {/* Overlay Graphic (Top-Right Corner) */}
+        {slide.overlayGraphic && (
+          <div
+            className="absolute w-24 h-24 rounded-md overflow-hidden"
+            style={{
+              backgroundImage: `url(${slide.overlayGraphic})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              top: '15%',
+              right: '15%',
+              opacity: 0.7,
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+            }}
+          ></div>
+        )}
+
+        <div className="flex flex-col items-center text-center max-w-md">
+          {/* Tagline */}
+          {slide.tagline && (
+            <span
+              className="text-sm font-semibold mb-4 uppercase tracking-wide text-gray-800"
+              style={{
+                fontFamily: "'Arial', sans-serif",
+                color: '#2E86C1', // Softer blockchain blue
+              }}
+            >
+              {slide.tagline}
+            </span>
+          )}
+
+          {/* Title */}
+          <h2
+            className={`font-extrabold ${slide.slideNumber === 1 ? 'text-4xl' : 'text-3xl'}`}
+            style={{
+              fontFamily: "'Arial', sans-serif",
+              color: '#333333', // Dark gray for contrast
+              lineHeight: '1.3',
+              marginBottom: slide.description ? '1.5rem' : '0',
+              textTransform: 'none', // Match PDF's sentence case
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          {slide.description && (
+            <p
+              className="text-md text-gray-700 leading-relaxed mt-4 px-6 py-3 bg-white bg-opacity-80 rounded-lg"
+              style={{
+                fontFamily: "'Arial', sans-serif",
+                maxWidth: '90%',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+              }}
+            >
+              {slide.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Section (Footer and Social Handle) */}
+      <div className="absolute bottom-6 left-0 right-0 flex justify-between items-center px-8 z-10">
+        <div className="flex flex-col items-start">
+          <span
+            className="text-sm text-gray-800 font-medium"
+            style={{
+              fontFamily: "'Arial', sans-serif",
+            }}
+          >
+            {slide.footer}
+          </span>
+          <span
+            className="text-sm text-gray-600"
+            style={{
+              fontFamily: "'Arial', sans-serif",
+            }}
+          >
+            {slide.socialHandle}
+          </span>
+        </div>
+        <a
+          href={slide.websiteUrl}
+          className="text-sm text-gray-800 hover:underline"
+          style={{
+            fontFamily: "'Arial', sans-serif",
+          }}
+        >
+          {slide.websiteUrl}
+        </a>
+      </div>
+
+      {/* Social Icons (Bottom-Right on Last Slide) */}
+      {slide.slideNumber === 5 && (
+        <div className="absolute bottom-16 right-8 flex space-x-4 z-20">
+          <img
+            src={slide.like}
+            alt="Like"
+            className="w-5 h-5 rounded-full bg-gray-200 p-1 hover:scale-110 transition-transform"
+          />
+          <img
+            src={slide.comment}
+            alt="Comment"
+            className="w-5 h-5 rounded-full bg-gray-200 p-1 hover:scale-110 transition-transform"
+          />
+          <img
+            src={slide.save}
+            alt="Save"
+            className="w-5 h-5 rounded-full bg-gray-200 p-1 hover:scale-110 transition-transform"
+          />
+        </div>
+      )}
+    </div>
+  ),
+};
+
+const Template10: CarouselTemplate = {
+  id: 'techEfficiencyCarousel',
+  name: 'Tech Efficiency',
+  coverImageUrl: '/images/carousel-cover/cover3.png',
+  slides: [
+    {
+      tagline: 'TECH IN',
+      title: 'BUSINESS',
+      description: '',
+      imageUrl: '/images/background13.jpg',
+      header: 'REALLYGREATSITE.COM',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+      comment: '/images/comment-icon.png',
+      save: '/images/save-icon.png',
+      like: '/images/like-icon.png',
+      sticker: '/images/3d-tech-cube.png',
+      shape: '/images/abstract-shape-1.svg',
+      headshotUrl: '',
+    },
+    {
+      tagline: 'SETTING',
+      title: 'THE STAGE',
+      description: 'Witness how technology is not just changing but defining the way businesses operate. It\'s more than a trend, it\'s a game-changer.',
+      imageUrl: '/images/background13.jpg',
+      header: 'REALLYGREATSITE.COM',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+      sticker: '/images/holographic-chip.png',
+      shape: '/images/circuit-wave.svg',
+      headshotUrl: '',
+    },
+    {
+      tagline: 'UNVEILING',
+      title: 'THE KEY',
+      description: 'Embark on a discovery of Innovations. From AI and IoT to Cloud, these technologies are the driving forces reshaping the business world.',
+      imageUrl: '/images/background13.jpg',
+      header: 'REALLYGREATSITE.COM',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+      sticker: '/images/ai-brain-3d.png',
+      shape: '/images/digital-grid.svg',
+      headshotUrl: '',
+    },
+    {
+      tagline: 'MAXIMIZING',
+      title: 'EFFICIENCY',
+      description: 'Tech isn\'t just about innovation, it\'s about streamlining operations and cutting costs.',
+      imageUrl: '/images/background13.jpg',
+      header: 'REALLYGREATSITE.COM',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+      sticker: '/images/gear-system-3d.png',
+      shape: '/images/hexagon-pattern.svg',
+      headshotUrl: '',
+    },
+    {
+      tagline: 'THANK YOU!',
+      title: 'NOW IS YOUR TURN, SHARE YOUR TECH VISION!',
+      description: '',
+      imageUrl: '/images/background13.jpg',
+      header: 'REALLYGREATSITE.COM',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtechnologies',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+      sticker: '/images/heart-purple.png', // Based on the purple heart in the slide
+      shape: '/images/particle-dots.svg',
+      headshotUrl: '',
+      
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div
+      className="relative w-full h-[700px] bg-cover bg-center rounded-xl overflow-hidden"
+      style={{
+        backgroundImage: `url(${slide.imageUrl})`,
+        backgroundColor: '#0F172A', // Dark background consistent with the slides
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        boxShadow: '0 12px 25px rgba(0, 0, 0, 0.15)',
+      }}
+    >
+      {/* Abstract background shape */}
+      {slide.shape && (
+        <div 
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `url(${slide.shape})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+      )}
+
+      {/* Gradient Overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(105deg, rgba(46, 55, 77, 0.7) 0%, rgba(15,23,42,0.3) 100%)',
+        }}
+      ></div>
+
+      {/* Header (Top Left) */}
+      {/* <div className="absolute top-8 left-8 z-20 flex items-center">
+        <span
+          className="text-xs font-bold tracking-widest text-gray-300 uppercase"
+          style={{
+            fontFamily: "'Inter', sans-serif",
+            letterSpacing: '0.2em',
+          }}
+        >
+          {slide.header}
+        </span>
+      </div> */}
+
+      {/* Logo (Top Right) */}
+      {addLogo && (
+        <div className="absolute top-8 right-8 z-20">
+          <img
+            src={defaultLogoUrl}
+            alt="Logo"
+            className="w-24 h-18 object-contain"
+          />
+        </div>
+      )}
+
+      {/* Slide Number (Top Right under logo) */}
+      <div
+        className="absolute top-20 right-8 text-white text-sm w-8 h-8 flex items-center justify-center font-bold z-20"
+        style={{
+          backgroundColor: '#A855F7', // Purple color from the slides
+          borderRadius: '50%',
+          fontFamily: "'Inter', sans-serif",
+        }}
+      >
+        {String(slide.slideNumber).padStart(2, '0')} {/* Matches the "01", "02" format */}
+      </div>
+
+      {/* Content Section (Left-Aligned) */}
+      <div className="absolute inset-0 flex flex-col justify-center items-start p-12 z-10 pl-16">
+        <div className="flex flex-col items-start text-left max-w-2xl">
+          {/* Tagline */}
+          {slide.tagline && (
+            <span
+              className="text-2xl font-bold mb-2 uppercase tracking-wider"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                color: '#', // Black for contrast on lighter slides
+                letterSpacing: '0.1em',
+                textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              }}
+            >
+              {slide.tagline}
+            </span>
+          )}
+
+          {/* Title */}
+          {slide.title && (
+            <h2
+              className={`font-extrabold leading-tight mb-6 ${slide.slideNumber === 5 ? 'text-5xl' : 'text-6xl'} ${slide.slideNumber === 1? 'text-8xl': ''}`}
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                color: '#FFFFFF', // White for last slide, black for others
+                lineHeight: '1.2',
+                textShadow: '0 2px 8px rgba(243, 224, 224, 0.3)',
+              }}
+            >
+              {slide.title}
+            </h2>
+          )}
+
+          {/* Description */}
+          {slide.description && (
+            <p
+              className="text-lg text-gray-800 leading-relaxed mb-8"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                backgroundColor:'rgba(15, 23, 42, 0.7)' , // Dark background for slides 2 and 3
+                color:'#FFFFFF' , // White text for dark background
+                padding: '1.5rem' ,
+                borderRadius:  '12px' ,
+                backdropFilter: 'blur(4px)' ,
+                border: '1px solid rgba(255, 255, 255, 0.1)' ,
+                maxWidth: '600px',
+              }}
+            >
+              {slide.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* 3D Sticker/Graphic (Right Side) */}
+      {slide.sticker && (
+        <div
+          className="absolute right-12 bottom-1/4 w-32 h-32 z-10"
+          style={{
+            backgroundImage: `url(${slide.sticker})`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.3))',
+          }}
+        />
+      )}
+
+      {/* Purple Horizontal Line */}
+      <div
+        className="absolute left-0 right-0 z-10"
+        style={{
+          bottom: '150px',
+          height: '8px',
+          backgroundColor: '#A855F7', // Purple color from the slides
+          borderRadius: '4px',
+        }}
+      />
+
+      {/* Footer Section */}
+      <div className="absolute bottom-12 left-8 right-8 flex justify-between items-center z-10">
+        <span
+          className="text-sm font-medium text-gray-300"
+          style={{
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          {slide.footer}
+        </span>
+        <a
+          href={slide.websiteUrl}
+          className="text-sm font-medium text-gray-300 hover:text-blue-300 transition-colors"
+          style={{
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          {slide.websiteUrl}
+        </a>
+      </div>
+
+      {/* Navigation Arrow (Bottom Right) */}
+      <div
+        className="absolute bottom-16 right-8 z-20"
+        style={{
+          width: '40px',
+          height: '40px',
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="#A855F7" // Purple color for the arrow
+          className="w-10 h-10"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </div>
+
+    </div>
+  ),
+};
+export const carouselTemplates: CarouselTemplate[] = [Template1, Template2, Template3, Template4, Template5, Template6, Template7, Template8, Template9, Template10];
