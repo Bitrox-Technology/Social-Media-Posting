@@ -8,6 +8,7 @@ import { ApiError } from "./utils/ApiError.js";
 import session from "express-session";
 import path from "path";
 import { fileURLToPath } from 'url';
+import connectDB from "./config/db.js";
 
 // Get the equivalent of __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -69,7 +70,10 @@ app.use(function (err, req, res, next) {
   else res.status(status).send({ status: status, message: err.message });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+connectDB().then(() => {
+  app.listen((process.env.PORT || 8000), () => {
+      console.log(`Server is running at port: ${process.env.PORT} `)
+  })
+}).catch((err) => [
+  console.log("MongoDB connection failed!!!", err)
+])

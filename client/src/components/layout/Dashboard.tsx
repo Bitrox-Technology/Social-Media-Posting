@@ -10,7 +10,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isOpen }) => {
     <aside
       className={`fixed inset-y-0 left-0 z-20 w-64 bg-gray-800 text-white transform transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
-      } md:relative md:translate-x-0 md:w-64`}
+      }`}
     >
       <div className="p-4 h-full flex flex-col">
         <h2 className="text-xl font-bold text-yellow-500 mb-4">Dashboard</h2>

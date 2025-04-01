@@ -14,7 +14,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isAuthPage = location.pathname === '/signin' || location.pathname === '/signup';
 
   const toggleDashboard = () => {
-    setIsDashboardOpen(!isDashboardOpen);
+    setIsDashboardOpen((prev) => !prev);
   };
 
   return (

@@ -27,7 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleDashboard, isDashboardOpen
         <div className="flex items-center space-x-4">
           <button
             onClick={toggleDashboard}
-            className="text-white hover:text-yellow-500 md:hidden"
+            className="text-white hover:text-yellow-500 focus:outline-none"
           >
             <Menu className="w-6 h-6" />
           </button>
