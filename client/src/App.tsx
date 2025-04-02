@@ -1,6 +1,6 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import {Layout} from './components/layout/Layout'; // Adjusted path
+import { Layout } from './components/layout/Layout'; // Adjusted path
 import { ContentTypeSelector } from './components/content/ContentTypeSelector'; // Adjusted path
 import { TopicSelector } from './components/content/TopicSelector';
 import { ContentIdeas } from './components/content/ContentIdeas';
@@ -12,6 +12,10 @@ import { useAppSelector } from './store/hooks';
 import { SignUp } from './components/auth/Signup'; // Adjusted path
 import { SignIn } from './components/auth/Signin'; // Adjusted path
 import { AutoPostCreator } from './components/content/AutoPostCreator';
+import { TemplateCarousel } from './components/ui/TemplateCarousel';
+import { DoYouKnowTemplateSelector } from './components/ui/DoYouKnowTemplate';
+import { ImageGeneration } from './components/ui/ImageGeneration';
+import { ImageGenerationTemplate } from './components/ui/ImageGenerationTemplate';
 
 function App() {
   // Access state from Redux store
@@ -50,7 +54,22 @@ function App() {
               }
             />
             <Route path="/post" element={<PostingPanel />} />
-            <Route path="/carousel" element={<Carousel />} />
+            <Route
+              path="/carousel"
+              element={
+                <Carousel
+                  initialTopic="defaultTopic"
+                  template="defaultTemplate"
+                  slides={[]}
+                />
+              }
+            />
+
+            <Route path='/image-generator' element={<ImageGeneration />} />
+
+            <Route path='/tmcarousel' element={<TemplateCarousel initialTopic="defaultTopic" />} />
+            <Route path='/tmimagegeneration' element={<ImageGenerationTemplate/>} />
+            <Route path='/tmdoyouknow' element={<DoYouKnowTemplateSelector />} />
             <Route path="/doyouknow" element={<DoYouKnow />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/signin" element={<SignIn />} />

@@ -78,7 +78,7 @@ const generateDoYouKnow = async (topic) => {
         ],
       });
   
-      const cleanedResponse = response.message.content.replace(/<think>[\s\S]*<\/think>/g, '').trim();
+      const cleanedResponse = response.message.content.replace(/<think>[\s\S]*<\/think>/g, '').replace(/```json|```/g, '').trim();
       console.log(cleanedResponse);
 
       const generatedContent = JSON.parse(cleanedResponse);

@@ -112,6 +112,13 @@ export const api = createApi({
         body,
       }),
     }),
+    generateImageContent: builder.mutation<{ data: { title: string; description: string } }, { prompt: string }>({
+      query: (body) => ({
+        url: '/generate-image-content',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -126,4 +133,5 @@ export const {
   useSignUpMutation,
   useSignInMutation,
   useGenerateTopicsMutation,
+  useGenerateImageContentMutation
 } = api;

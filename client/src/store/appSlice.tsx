@@ -27,6 +27,8 @@ interface Post {
   topic: string;
   type: 'image' | 'carousel' | 'doyouknow';
   content: string | CarouselContent[] | DoYouKnowContent;
+  images?: string[];
+  templateId?: string; 
 }
 interface AppState {
   contentType: 'post' | 'reel' | 'carousel' | 'doyouknow' | null; // Added more types

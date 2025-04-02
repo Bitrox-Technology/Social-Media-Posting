@@ -1,40 +1,52 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setSelectedFile, setSelectedDoYouKnowTemplate } from '../../store/appSlice';
+import { setSelectedFile } from '../../store/appSlice';
 import { useUploadImageToCloudinaryMutation, useGenerateDoYouKnowMutation } from '../../store/api';
 import { DoYouKnowSlide, doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
 import { ArrowLeft } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { motion } from 'framer-motion';
 
-interface DoYouKnowProps {}
+interface DoYouKnowProps {
+  onImagesGenerated?: (image: string) => void;
+  onSave?: (updatedSlide: DoYouKnowSlide, ref: HTMLDivElement) => void; // Updated to include ref
+  initialSlide?: { title: string; fact: string; footer?: string; websiteUrl?: string; imageUrl?: string };
+  templateId?: string;
+}
 
-export const DoYouKnow: React.FC<DoYouKnowProps> = () => {
-  const location = useLocation();
+export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave, initialSlide, templateId }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-
-  const selectedDoYouKnowTemplate = useAppSelector((state) => state.app.selectedDoYouKnowTemplate);
   const selectedIdea = useAppSelector((state) => state.app.selectedIdea);
-  const { generatedImageUrl, showLogo: initialShowLogo, defaultLogoUrl } = location.state || {};
+  const defaultLogoUrl = '/images/Logo1.png';
 
-  const [slide, setSlide] = useState<DoYouKnowSlide | null>(null);
-  const [showLogo, setShowLogo] = useState<boolean>(initialShowLogo !== undefined ? initialShowLogo : true);
+  const selectedTemplate = doYouKnowTemplates.find((t) => t.id === templateId) || doYouKnowTemplates[0];
+  const [slide, setSlide] = useState<DoYouKnowSlide>(
+    initialSlide
+      ? {
+          ...selectedTemplate.slides[0],
+          title: initialSlide.title,
+          fact: initialSlide.fact,
+          footer: initialSlide.footer || '',
+          websiteUrl: initialSlide.websiteUrl || '',
+          imageUrl: initialSlide.imageUrl || selectedTemplate.slides[0].imageUrl,
+        }
+      : selectedTemplate.slides[0]
+  );
+  const [showLogo, setShowLogo] = useState<boolean>(true);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [customTitle, setCustomTitle] = useState<string>('');
-  const [customFact, setCustomFact] = useState<string>('');
-  const [customFooter, setCustomFooter] = useState<string>('');
-  const [customWebsiteUrl, setCustomWebsiteUrl] = useState<string>('');
+  const [customTitle, setCustomTitle] = useState<string>(slide.title);
+  const [customFact, setCustomFact] = useState<string>(slide.fact);
+  const [customFooter, setCustomFooter] = useState<string>(slide.footer || '');
+  const [customWebsiteUrl, setCustomWebsiteUrl] = useState<string>(slide.websiteUrl || '');
 
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [generateDoYouKnow, { isLoading: isGenerating }] = useGenerateDoYouKnowMutation();
   const slideRef = useRef<HTMLDivElement>(null);
 
-  const selectedTemplate = doYouKnowTemplates.find((template) => template.id === selectedDoYouKnowTemplate);
-
   const preloadSlideImages = async (slide: DoYouKnowSlide) => {
-    const images = [generatedImageUrl || slide.imageUrl, showLogo ? defaultLogoUrl : ''].filter(Boolean);
+    const images = [slide.imageUrl, showLogo ? defaultLogoUrl : ''].filter(Boolean);
     await Promise.all(
       images.map(
         (url) =>
@@ -51,33 +63,39 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = () => {
 
   useEffect(() => {
     const loadSlide = async () => {
-      if (selectedTemplate) {
-        const slideToRender = selectedTemplate.slides[0];
-        if (slideToRender) {
-          await preloadSlideImages(slideToRender);
-          const updatedSlide = {
-            ...slideToRender,
-            imageUrl: generatedImageUrl || slideToRender.imageUrl,
-            title: customTitle || slideToRender.title,
-            fact: customFact || slideToRender.fact,
-            footer: customFooter || slideToRender.footer,
-            websiteUrl: customWebsiteUrl || slideToRender.websiteUrl,
-          };
-          setSlide(updatedSlide);
-          if (!customTitle) setCustomTitle(slideToRender.title);
-          if (!customFact) setCustomFact(slideToRender.fact);
-          if (!customFooter) setCustomFooter(slideToRender.footer);
-          if (!customWebsiteUrl) setCustomWebsiteUrl(slideToRender.websiteUrl);
-        }
+      const updatedSlide = {
+        ...selectedTemplate.slides[0],
+        title: customTitle,
+        fact: customFact,
+        footer: customFooter,
+        websiteUrl: customWebsiteUrl,
+        imageUrl: slide.imageUrl,
+      };
+      await preloadSlideImages(updatedSlide);
+      setSlide(updatedSlide);
+
+      if (onImagesGenerated) {
+        const image = await captureScreenshot(updatedSlide);
+        onImagesGenerated(image);
       }
     };
-
     loadSlide();
-  }, [selectedTemplate, generatedImageUrl, showLogo, defaultLogoUrl, customTitle, customFact, customFooter, customWebsiteUrl]);
+  }, [customTitle, customFact, customFooter, customWebsiteUrl, showLogo, onImagesGenerated]);
+
+  const captureScreenshot = async (slideToCapture: DoYouKnowSlide) => {
+    if (!slideRef.current) return '';
+    await preloadSlideImages(slideToCapture);
+    const canvas = await html2canvas(slideRef.current, {
+      useCORS: true,
+      scale: 2,
+      backgroundColor: '#1A2526',
+      logging: true,
+    });
+    return canvas.toDataURL('image/png');
+  };
 
   const handleBack = () => {
-    dispatch(setSelectedDoYouKnowTemplate(null));
-    navigate('/images', { state: { generatedImageUrl } });
+    navigate('/auto-post-creator');
   };
 
   const handleGenerateContent = async () => {
@@ -88,31 +106,27 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = () => {
 
     try {
       const response = await generateDoYouKnow({ topic: selectedIdea.title }).unwrap();
-      console.log('Generated content:', response.data);
       const generatedContent = response.data;
-
 
       setCustomTitle(generatedContent.title || 'DID YOU KNOW?');
       setCustomFact(generatedContent.description || 'No description provided.');
       setCustomFooter('bitrox.tech');
       setCustomWebsiteUrl('https://bitrox.tech');
 
-      if (slide) {
-        setSlide({
-          ...slide,
-          title: generatedContent.title || 'DID YOU KNOW?',
-          fact: generatedContent.description || 'No description provided.',
-          footer: 'bitrox.tech',
-          websiteUrl: 'https://bitrox.tech',
-        });
-      }
+      setSlide({
+        ...slide,
+        title: generatedContent.title || 'DID YOU KNOW?',
+        fact: generatedContent.description || 'No description provided.',
+        footer: 'bitrox.tech',
+        websiteUrl: 'https://bitrox.tech',
+      });
     } catch (error: any) {
       console.error('Error generating content:', error);
       alert('Failed to generate content. Please try again.');
     }
   };
 
-  const handleContinueToPost = async () => {
+  const handleSave = async () => {
     if (!slideRef.current || !slide) {
       alert('Slide not rendered yet. Please try again.');
       return;
@@ -143,20 +157,20 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = () => {
 
       dispatch(setSelectedFile({ name: 'do-you-know-slide.png', url: cloudinaryUrl }));
 
-      setTimeout(() => {
-        navigate('/post', { state: { cloudinaryUrl, generatedImageUrl } });
-      }, 3000);
+      if (onSave && slideRef.current) {
+        onSave(slide, slideRef.current); // Pass the ref to onSave
+      } else {
+        setTimeout(() => {
+          navigate('/post', { state: { cloudinaryUrl } });
+        }, 3000);
+      }
     } catch (error) {
-      console.error('Error in handleContinueToPost:', error);
+      console.error('Error in handleSave:', error);
       alert('Failed to process and upload image. Please try again.');
     } finally {
       setIsUploading(false);
     }
   };
-
-  if (!selectedTemplate) {
-    return <div className="text-white">No template selected. Please go back and select a template.</div>;
-  }
 
   if (!slide) {
     return <div className="text-white">Loading...</div>;
@@ -164,9 +178,9 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-6 md:p-10">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto flex flex-col space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between">
           <button
             onClick={handleBack}
             className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-all duration-300"
@@ -179,149 +193,142 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = () => {
           </h1>
         </div>
 
-        {/* Main Content */}
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Side: Template Preview */}
-          <motion.div
-            className="lg:w-1/1 bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
+        {/* Template Preview */}
+        <motion.div
+          className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-2xl font-semibold text-gray-100 mb-4">Template Preview</h2>
+          <div
+            ref={slideRef}
+            className="relative rounded-xl overflow-hidden max-w-2xl max-h-[600px] mx-auto"
+            style={{
+              background: 'linear-gradient(180deg, #1A2526 0%, #0F1516 100%)',
+              width: '500px',
+              height: '700px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '20px',
+              boxSizing: 'border-box',
+            }}
           >
-            <h2 className="text-2xl font-semibold text-gray-100 mb-4">Template Preview</h2>
-            <div
-              ref={slideRef}
-              className="relative rounded-xl overflow-hidden max-w-2xl max-h-[600px] mx-auto"
-              style={{
-                background: 'linear-gradient(180deg, #1A2526 0%, #0F1516 100%)',
-                width: '500px',
-                height: '700px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '20px',
-                boxSizing: 'border-box',
-              }}
-            >
-              {selectedTemplate.renderSlide(slide, showLogo, defaultLogoUrl)}
-            </div>
-            <div className="flex items-center space-x-2 mt-4">
+            {selectedTemplate.renderSlide(slide, showLogo, defaultLogoUrl)}
+          </div>
+          <div className="flex items-center space-x-2 mt-4">
+            <input
+              type="checkbox"
+              checked={showLogo}
+              onChange={(e) => setShowLogo(e.target.checked)}
+              className="w-5 h-5 text-yellow-400 border-gray-600 rounded focus:ring-2 focus:ring-yellow-400"
+            />
+            <label className="text-gray-300">Add Logo</label>
+          </div>
+        </motion.div>
+
+        {/* Content Editor */}
+        <motion.div
+          className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-2xl font-semibold text-gray-100 mb-4">Edit Content</h2>
+          <div className="space-y-4">
+            {/* Title Input */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Title</label>
               <input
-                type="checkbox"
-                checked={showLogo}
-                onChange={(e) => setShowLogo(e.target.checked)}
-                className="w-5 h-5 text-yellow-400 border-gray-600 rounded focus:ring-2 focus:ring-yellow-400"
+                type="text"
+                value={customTitle || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setCustomTitle(newValue);
+                  setSlide({ ...slide, title: newValue });
+                }}
+                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
+                placeholder="Enter the title (e.g., DID YOU KNOW?)"
               />
-              <label className="text-gray-300">Add Logo</label>
             </div>
-          </motion.div>
 
-          {/* Right Side: Content Editor */}
-          <motion.div
-            className="lg:w-1/2 bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-2xl font-semibold text-gray-100 mb-4">Edit Content</h2>
-            <div className="space-y-4">
-              {/* Title Input */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Title</label>
+            {/* Fact Input */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Fact</label>
+              <textarea
+                value={customFact || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setCustomFact(newValue);
+                  setSlide({ ...slide, fact: newValue });
+                }}
+                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600 h-24 resize-none"
+                placeholder="Enter the 'Do You Know' fact here..."
+              />
+            </div>
+
+            {/* Username (Footer) Input */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Username (e.g., @bitrox.tech)</label>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-300">@</span>
                 <input
                   type="text"
-                  value={customTitle || ''}
+                  value={customFooter || ''}
                   onChange={(e) => {
                     const newValue = e.target.value;
-                    setCustomTitle(newValue);
-                    if (slide) setSlide({ ...slide, title: newValue });
+                    setCustomFooter(newValue);
+                    setSlide({ ...slide, footer: newValue });
                   }}
                   className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                  placeholder="Enter the title (e.g., DID YOU KNOW?)"
+                  placeholder="Enter the username (e.g., bitrox.tech)"
                 />
               </div>
+            </div>
 
-              {/* Fact Input */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Fact</label>
-                <textarea
-                  value={customFact || ''}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setCustomFact(newValue);
-                    if (slide) setSlide({ ...slide, fact: newValue });
-                  }}
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600 h-24 resize-none"
-                  placeholder="Enter the 'Do You Know' fact here..."
-                />
-              </div>
+            {/* Website URL Input */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Website URL (Optional)</label>
+              <input
+                type="text"
+                value={customWebsiteUrl || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setCustomWebsiteUrl(newValue);
+                  setSlide({ ...slide, websiteUrl: newValue });
+                }}
+                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
+                placeholder="Enter the website URL (e.g., https://bitrox.tech)"
+              />
+            </div>
 
-              {/* Username (Footer) Input */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Username (e.g., @bitrox.tech)</label>
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-300">@</span>
-                  <input
-                    type="text"
-                    value={customFooter || ''}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      setCustomFooter(newValue);
-                      if (slide) setSlide({ ...slide, footer: newValue });
-                    }}
-                    className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                    placeholder="Enter the username (e.g., bitrox.tech)"
-                  />
-                </div>
-              </div>
-
-              {/* Website URL Input */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Website URL (Optional)</label>
-                <input
-                  type="text"
-                  value={customWebsiteUrl || ''}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setCustomWebsiteUrl(newValue);
-                    if (slide) setSlide({ ...slide, websiteUrl: newValue });
-                  }}
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                  placeholder="Enter the website URL (e.g., https://bitrox.tech)"
-                />
-              </div>
-
-              {/* Generate Content Button */}
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4">
               <motion.button
                 onClick={handleGenerateContent}
                 disabled={isGenerating}
-                className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 {isGenerating ? 'Generating...' : 'Generate Content'}
               </motion.button>
-            </div>
-          </motion.div>
-        </div>
 
-        {/* Fixed Continue to Post Button */}
-        <motion.div
-          className="fixed bottom-6 right-6 z-50"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <motion.button
-            onClick={handleContinueToPost}
-            disabled={isUploading}
-            className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg shadow-lg hover:from-green-400 hover:to-teal-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {isUploading ? 'Uploading...' : 'Continue to Post'}
-          </motion.button>
+              {(!onImagesGenerated || onSave) && (
+                <motion.button
+                  onClick={handleSave}
+                  disabled={isUploading}
+                  className="w-full sm:w-auto px-6 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg hover:from-green-400 hover:to-teal-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {isUploading ? 'Uploading...' : 'Save'}
+                </motion.button>
+              )}
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>

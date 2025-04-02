@@ -23,11 +23,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <Navbar toggleDashboard={toggleDashboard} isDashboardOpen={isDashboardOpen} />
       )}
       <div className="flex flex-1">
-        {!isAuthPage && <Dashboard isOpen={isDashboardOpen} />}
+        {!isAuthPage && (
+          <Dashboard isOpen={isDashboardOpen} toggleDashboard={toggleDashboard} />
+        )}
         <div className="flex flex-col flex-1">
-          <main className={`flex-1 p-4 ${!isAuthPage ? 'md:ml-64' : ''}`}>
-            {children}
-          </main>
+          <main className="flex-1 p-4">{children}</main>
           {!isAuthPage && <Footer />}
         </div>
       </div>

@@ -97,7 +97,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
   };
 
   const handleBack = () => {
-    navigate(-1); // Browser back, Redux state persists
+    navigate("/"); // Browser back, Redux state persists
   };
 
   return (
