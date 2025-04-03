@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 
 interface DoYouKnowProps {
   onImagesGenerated?: (image: string) => void;
-  onSave?: (updatedSlide: DoYouKnowSlide, ref: HTMLDivElement) => void; // Updated to include ref
+  onSave?: (updatedSlide: DoYouKnowSlide, ref: HTMLDivElement) => void;
   initialSlide?: { title: string; fact: string; footer?: string; websiteUrl?: string; imageUrl?: string };
   templateId?: string;
 }
@@ -40,6 +40,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
   const [customFact, setCustomFact] = useState<string>(slide.fact);
   const [customFooter, setCustomFooter] = useState<string>(slide.footer || '');
   const [customWebsiteUrl, setCustomWebsiteUrl] = useState<string>(slide.websiteUrl || '');
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [generateDoYouKnow, { isLoading: isGenerating }] = useGenerateDoYouKnowMutation();
@@ -61,8 +62,11 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
     );
   };
 
+  // Initialize slide on mount
   useEffect(() => {
-    const loadSlide = async () => {
+    const initializeSlide = async () => {
+      if (isInitialized) return;
+
       const updatedSlide = {
         ...selectedTemplate.slides[0],
         title: customTitle,
@@ -78,9 +82,28 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
         const image = await captureScreenshot(updatedSlide);
         onImagesGenerated(image);
       }
+
+      setIsInitialized(true);
     };
-    loadSlide();
-  }, [customTitle, customFact, customFooter, customWebsiteUrl, showLogo, onImagesGenerated]);
+    initializeSlide();
+  }, [onImagesGenerated, isInitialized]);
+
+  // Update slide when custom fields change
+  useEffect(() => {
+    const updateSlide = async () => {
+      const updatedSlide = {
+        ...slide,
+        title: customTitle,
+        fact: customFact,
+        footer: customFooter,
+        websiteUrl: customWebsiteUrl,
+        imageUrl: slide.imageUrl,
+      };
+      await preloadSlideImages(updatedSlide);
+      setSlide(updatedSlide);
+    };
+    updateSlide();
+  }, [customTitle, customFact, customFooter, customWebsiteUrl, showLogo]);
 
   const captureScreenshot = async (slideToCapture: DoYouKnowSlide) => {
     if (!slideRef.current) return '';
@@ -158,7 +181,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
       dispatch(setSelectedFile({ name: 'do-you-know-slide.png', url: cloudinaryUrl }));
 
       if (onSave && slideRef.current) {
-        onSave(slide, slideRef.current); // Pass the ref to onSave
+        onSave(slide, slideRef.current);
       } else {
         setTimeout(() => {
           navigate('/post', { state: { cloudinaryUrl } });
@@ -179,7 +202,6 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-6 md:p-10">
       <div className="max-w-6xl mx-auto flex flex-col space-y-8">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <button
             onClick={handleBack}
@@ -193,7 +215,6 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
           </h1>
         </div>
 
-        {/* Template Preview */}
         <motion.div
           className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
           initial={{ opacity: 0, y: -50 }}
@@ -229,7 +250,6 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
           </div>
         </motion.div>
 
-        {/* Content Editor */}
         <motion.div
           className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
           initial={{ opacity: 0, y: 50 }}
@@ -238,7 +258,6 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
         >
           <h2 className="text-2xl font-semibold text-gray-100 mb-4">Edit Content</h2>
           <div className="space-y-4">
-            {/* Title Input */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">Title</label>
               <input
@@ -254,7 +273,6 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
               />
             </div>
 
-            {/* Fact Input */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">Fact</label>
               <textarea
@@ -269,7 +287,6 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
               />
             </div>
 
-            {/* Username (Footer) Input */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">Username (e.g., @bitrox.tech)</label>
               <div className="flex items-center space-x-2">
@@ -288,7 +305,6 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
               </div>
             </div>
 
-            {/* Website URL Input */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">Website URL (Optional)</label>
               <input
@@ -304,7 +320,6 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
               />
             </div>
 
-            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
               <motion.button
                 onClick={handleGenerateContent}

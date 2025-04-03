@@ -7,6 +7,7 @@ import {
   useGenerateCarouselMutation,
   useGenerateDoYouKnowMutation,
   useUploadImageToCloudinaryMutation,
+  useGenerateImageContentMutation
 } from '../../store/api';
 import { setPosts } from '../../store/appSlice';
 import { motion } from 'framer-motion';
@@ -68,6 +69,7 @@ export const AutoPostCreator = () => {
   const [generateCarousel] = useGenerateCarouselMutation();
   const [generateDoYouKnow] = useGenerateDoYouKnowMutation();
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
+  const [generateImageContent] = useGenerateImageContentMutation();
 
   const topics = selectedTopic ? selectedTopic.split(', ').filter(Boolean).slice(0, 7) : [];
   const postTypes: ('image' | 'carousel' | 'doyouknow')[] = [
@@ -103,10 +105,14 @@ export const AutoPostCreator = () => {
         case 'image':
           const randomTemplateIndex = Math.floor(Math.random() * imageTemplates.length);
           const randomTemplate = imageTemplates[randomTemplateIndex];
+          const contentRes = await generateImageContent({ topic: topic }).unwrap();
+          const generatedContent = contentRes.data;
+
           const imageRes = await generateImage({ prompt: topic }).unwrap();
           const imageUrl = imageRes.data;
-          const contentRes = await generateDoYouKnow({ topic: topic }).unwrap();
-          const generatedContent = contentRes.data;
+
+          console.log('imageUrl', imageUrl);
+          console.log('generatedContent', generatedContent);
 
           const newImageSlide: ImageContent = {
             title: generatedContent.title || randomTemplate.slides[0].title,
@@ -116,8 +122,14 @@ export const AutoPostCreator = () => {
             imageUrl: imageUrl,
           };
 
+          console.log('newImageSlide', newImageSlide);
+
           newPost = { topic, type, content: newImageSlide, templateId: randomTemplate.id };
           setActiveImageTopic(topic);
+
+          // Update the post with the new slide immediately
+          const updatedPostsWithSlide = [...posts.filter((p) => p.topic !== topic), newPost];
+          setLocalPosts(updatedPostsWithSlide);
           break;
 
         case 'carousel':
@@ -240,44 +252,29 @@ export const AutoPostCreator = () => {
   };
 
   const handleCarouselImagesGenerated = (topic: string, images: string[]) => {
-    // Do not upload to Cloudinary here; wait for user to edit and save
     const labeledImages = images.map((url, idx) => ({ url, label: `Carousel Slide ${idx + 1}` }));
     const updatedPosts = posts.map((post) =>
       post.topic === topic && post.type === 'carousel' ? { ...post, images: labeledImages } : post
     );
     setLocalPosts(updatedPosts);
     // dispatch(setPosts(updatedPosts));
-    // Instead of clearing active state, set to edit mode to allow user to edit
     setActiveCarouselTopic(null);
     setEditCarouselTopic(topic);
   };
 
-  const handleCarouselUpdated = async (topic: string, updatedSlides: Slide[], carouselRef: HTMLDivElement) => {
-    try {
-      const canvas = await html2canvas(carouselRef, { useCORS: true, scale: 2 });
-      const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'));
-      const formData = new FormData();
-      formData.append('image', blob, `${topic}-carousel.png`);
-      const result = await uploadImageToCloudinary(formData).unwrap();
-      const cloudinaryUrl = result?.data?.secure_url;
-
-      if (!cloudinaryUrl) throw new Error('Failed to upload carousel image');
-
-      const labeledImages = updatedSlides.map((_, idx) => ({
-        url: cloudinaryUrl,
-        label: `Carousel Slide ${idx + 1}`,
-      }));
-      const updatedPosts = posts.map((post) =>
-        post.topic === topic && post.type === 'carousel'
-          ? { ...post, content: updatedSlides, images: labeledImages }
-          : post
-      );
-      setLocalPosts(updatedPosts);
-      // dispatch(setPosts(updatedPosts));
-      setEditCarouselTopic(null);
-    } catch (error) {
-      console.error('Error uploading carousel screenshot:', error);
-    }
+  const handleCarouselUpdated = (topic: string, updatedSlides: Slide[], images: string[]) => {
+    const labeledImages = images.map((url, idx) => ({
+      url: url,
+      label: `Carousel Slide ${idx + 1}`,
+    }));
+    const updatedPosts = posts.map((post) =>
+      post.topic === topic && post.type === 'carousel'
+        ? { ...post, content: updatedSlides, images: labeledImages }
+        : post
+    );
+    setLocalPosts(updatedPosts);
+    // dispatch(setPosts(updatedPosts));
+    setEditCarouselTopic(null);
   };
 
   const handleDoYouKnowImagesGenerated = (topic: string, image: string) => {
@@ -322,7 +319,7 @@ export const AutoPostCreator = () => {
           : post
       );
       setLocalPosts(updatedPosts);
-      // dispatch(setPosts(updatedPosts));    10 
+      // dispatch(setPosts(updatedPosts));
       setEditDoYouKnowTopic(null);
     } catch (error) {
       console.error('Error uploading Do You Know screenshot:', error);
@@ -377,12 +374,14 @@ export const AutoPostCreator = () => {
                                 onImagesGenerated={(image) => handleImageGenerated(topic, image)}
                                 initialSlide={post.content as ImageContent}
                                 templateId={post.templateId || imageTemplates[0].id}
+                                topic={topic}
                               />
                             ) : editImageTopic === topic ? (
                               <ImageGeneration
                                 onSave={(updatedSlide, ref) => handleImageUpdated(topic, updatedSlide, ref)}
                                 initialSlide={post.content as ImageContent}
                                 templateId={post.templateId || imageTemplates[0].id}
+                                topic={topic}
                               />
                             ) : post.images ? (
                               <div>
@@ -426,7 +425,7 @@ export const AutoPostCreator = () => {
                                 initialTopic={topic}
                                 template={post.templateId || carouselTemplates[0].id}
                                 slides={post.content as Slide[]}
-                                onSave={(updatedSlides, ref) => handleCarouselUpdated(topic, updatedSlides, ref)}
+                                onSave={(updatedSlides, images) => handleCarouselUpdated(topic, updatedSlides, images)}
                               />
                             ) : post.images ? (
                               <div>

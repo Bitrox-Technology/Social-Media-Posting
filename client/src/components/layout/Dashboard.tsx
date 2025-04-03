@@ -63,16 +63,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isOpen, toggleDashboard }) => {
           </li>
           <li>
             <Link
-              to="/image-generator"
-              onClick={toggleDashboard}
-              className="block py-2 px-4 hover:bg-gray-700 rounded"
-            >
-             Image Generator
-            </Link>
-          </li>
-
-          <li>
-            <Link
               to="/tmimagegeneration"
               onClick={toggleDashboard}
               className="block py-2 px-4 hover:bg-gray-700 rounded"

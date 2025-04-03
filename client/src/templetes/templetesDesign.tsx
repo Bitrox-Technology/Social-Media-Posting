@@ -1575,7 +1575,7 @@ const Template6: CarouselTemplate = {
 
           {/* Title with Updated Style */}
           <h2
-            className={`font-extrabold tracking-wide uppercase ${slide.slideNumber === 1 ? 'text-6xl md:text-8xl' : 'text-4xl md:text-6xl'}`}
+            className={`font-extrabold tracking-wide uppercase ${slide.slideNumber === 1 ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl'}`}
             style={{
               fontFamily: "'Orbitron', sans-serif",
               color: '#FFFFFF',
@@ -1867,7 +1867,7 @@ const Template7: CarouselTemplate = {
 
           {/* Title with 3D Font and Glow */}
           <h2
-            className={`font-extrabold tracking-wide uppercase ${slide.slideNumber === 1 ? 'text-5xl md:text-8xl' : 'text-4xl md:text-5xl'}`}
+            className={`font-extrabold tracking-wide uppercase ${slide.slideNumber === 1 ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl'}`}
             style={{
               fontFamily: "'Exo 2', sans-serif",
               color: '#FFFFFF',
@@ -2668,7 +2668,7 @@ const Template10: CarouselTemplate = {
           {/* Title */}
           {slide.title && (
             <h2
-              className={`font-extrabold leading-tight mb-6 ${slide.slideNumber === 5 ? 'text-5xl' : 'text-6xl'} ${slide.slideNumber === 1? 'text-8xl': ''}`}
+              className={`font-extrabold leading-tight mb-6 ${slide.slideNumber === 5 ? 'text-4xl' : 'text-3xl'} ${slide.slideNumber === 1? 'text-4xl': ''}`}
               style={{
                 fontFamily: "'Inter', sans-serif",
                 color: '#FFFFFF', // White for last slide, black for others

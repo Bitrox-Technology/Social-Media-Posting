@@ -7,7 +7,7 @@ import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
-import { generateCarouselContent, generateDoYouKnow, generateTopics } from "../services/generateCarousel.js";
+import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent } from "../services/generateCarousel.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
@@ -445,7 +445,21 @@ const GenerateTopics = async (req, res, next) => {
     next(error);
   }
 };
+const GenerateImageContent = async (req, res, next) => {
+  
+  const { topic } = req.body;
+
+  if (!topic) {
+    throw new ApiError(400, "Topic is required");
+  }
+  try {
+    const result = await generateImageContent(topic);
+    return res.status(200).json(new ApiResponse(200, result, "Content genrated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 
-export { Post, Content, Ideas, GenerateImage, GenerateCarousel, UploadCarouselImages , UploadSingleImage, GenerateDoYouKnow, GenerateTopics};
+export { Post, Content, Ideas, GenerateImage, GenerateCarousel, UploadCarouselImages , UploadSingleImage, GenerateDoYouKnow, GenerateTopics, GenerateImageContent};

@@ -20,7 +20,7 @@ export interface ImageTemplate {
 const ImageTemplate1: ImageTemplate = {
     id: 'teddy-bear-love',
     name: 'Teddy Bear Love',
-    coverImageUrl: '/images/teddy-bear-cover/cover1.png', // Thumbnail for the template
+    coverImageUrl: '/images/image-cover/cover1.png', // Thumbnail for the template
     slides: [
         {
             title: 'ENCOURAGING WORDS',
@@ -79,9 +79,9 @@ const ImageTemplate2: ImageTemplate = {
         {
             title: 'FUN FACT',
             description: 'Butterflies taste with their feet!',
-            imageUrl: '/images/whimsical-garden-default.jpg',
-            footer: 'meta.ai',
-            websiteUrl: 'https://meta.ai',
+            imageUrl: '/images/background15.jpg',
+            footer: 'bitrox.tech',
+            websiteUrl: 'https://bitrox.tech',
         },
     ],
     renderSlide: (slide, addLogo, defaultLogoUrl) => (
@@ -97,12 +97,13 @@ const ImageTemplate2: ImageTemplate = {
                 <img
                     src={defaultLogoUrl}
                     alt="Logo"
-                    className="absolute top-4 left-4 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+                    className="absolute top-4 right-4 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+                    
                 />
             )}
             <div className="relative z-10 flex flex-col items-center justify-center p-6 md:p-8">
                 <div
-                    className="bg-white bg-opacity-20 backdrop-blur-md rounded-lg p-6 border-4 border-dashed border-yellow-300 shadow-lg"
+                    className="bg-white bg-opacity-20 backdrop-blur-md rounded-lg p-6 border-4 border-dashed border-black-300 shadow-lg"
                     style={{ maxWidth: '80%' }}
                 >
                     <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center text-yellow-300 uppercase">
@@ -122,4 +123,62 @@ const ImageTemplate2: ImageTemplate = {
     ),
 };
 
-export const imageTemplates: ImageTemplate[] = [ImageTemplate1, ImageTemplate2];
+const ImageTemplate3: ImageTemplate = {
+    id: 'dna-mystery',
+    name: 'DNA Mystery',
+    coverImageUrl: '/images/image-cover/cover2.png', // Thumbnail for the template
+    slides: [
+        {
+            title: 'A MYSTERIOUS DISCOVERY',
+            description: '"Unraveling the secrets of ancient DNA hidden within us."',
+            imageUrl: '/images/background16.jpg', // Default background image with DNA theme
+            footer: 'bitrox.tech',
+            websiteUrl: 'https://bitrox.tech',
+        },
+    ],
+    renderSlide: (slide, addLogo, defaultLogoUrl) => (
+        <div
+            className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden flex flex-col justify-end text-white"
+            style={{
+                backgroundImage: `url(${slide.imageUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundColor: '#0A1A2F', // Dark blue background as fallback
+            }}
+        >
+            {/* Logo (Top-Center) */}
+            {addLogo && (
+                <img
+                    src={defaultLogoUrl}
+                    alt="Logo"
+                    className="absolute top-4 right-4 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+                    style={{
+                        filter: "invert(100%)"
+                    }}
+                />
+            )}
+
+            {/* Content Section (Bottom) */}
+            <div className="relative z-10 bg-black bg-opacity-60 p-6 md:p-8">
+                {/* Title */}
+                <h2 className="text-3xl md:text-5xl font-extrabold mb-3 text-center uppercase tracking-wide">
+                    {slide.title}
+                </h2>
+
+                {/* Description */}
+                <p className="text-lg md:text-2xl text-center font-light">
+                    {slide.description}
+                </p>
+
+                {/* Footer (Bottom-Right) */}
+                <div className="flex justify-end mt-4">
+                    <span className="text-sm md:text-base text-gray-400">
+                        @{slide.footer}
+                    </span>
+                </div>
+            </div>
+        </div>
+    ),
+};
+
+export const imageTemplates: ImageTemplate[] = [ImageTemplate1, ImageTemplate2, ImageTemplate3];

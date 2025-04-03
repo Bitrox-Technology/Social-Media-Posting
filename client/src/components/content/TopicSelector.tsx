@@ -18,6 +18,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
   const [customBusiness, setCustomBusiness] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [customTopic, setCustomTopic] = useState('');
+  const [fetchingTopics, setFetchingTopics] = useState(false);
   const [generateTopics, { isLoading, error }] = useGenerateTopicsMutation();
 
   const businesses = [
@@ -28,56 +29,58 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
     'Education',
   ];
 
-  // Restore state from Redux on mount
+  // Sync local state with Redux on mount
   useEffect(() => {
-    if (selectedBusiness) {
-      // Use Redux apiTopics if available, otherwise fetch
-      if (reduxApiTopics.length > 0) {
-        setApiTopics(reduxApiTopics);
-      } else {
-        fetchTopics(selectedBusiness);
-      }
-    }
     if (selectedTopic) {
-      setSelectedTopics(selectedTopic.split(', ').filter(Boolean));
+      const topicsFromRedux = selectedTopic.split(', ').filter(Boolean);
+      setSelectedTopics(topicsFromRedux);
+    } else {
+      setSelectedTopics([]); // Ensure local state is cleared if Redux state is empty
     }
-  }, [selectedBusiness, selectedTopic, reduxApiTopics]);
+  }, [selectedTopic]);
 
   const fetchTopics = async (business: string) => {
+    if (fetchingTopics) return; // Prevent multiple calls
+    setFetchingTopics(true);
     try {
       const response = await generateTopics({ business }).unwrap();
       const topicsArray = Object.values(response.data).filter((topic): topic is string => typeof topic === 'string');
-      setApiTopics(topicsArray);
       dispatch(setApiTopics(topicsArray)); // Store in Redux
     } catch (err) {
       console.error('Failed to fetch topics:', err);
-      setApiTopics([]);
       dispatch(setApiTopics([]));
+    } finally {
+      setFetchingTopics(false);
     }
   };
 
   const handleBusinessSelect = (business: string) => {
-    // Only reset topics and fetch if business changes
     if (business !== selectedBusiness) {
-      setSelectedBusiness(business);
       dispatch(setSelectedBusiness(business));
-      setSelectedTopics([]);
+      setCustomBusiness(''); // Clear custom business input
+      setSelectedTopics([]); // Clear selected topics
       dispatch(setSelectedTopic('')); // Clear selected topics in Redux
       fetchTopics(business); // Fetch new topics
     }
   };
 
   const handleTopicToggle = (topic: string) => {
-    let newSelectedTopics: string[];
-    if (selectedTopics.includes(topic)) {
-      newSelectedTopics = selectedTopics.filter((t) => t !== topic);
-    } else if (selectedTopics.length < 7) {
-      newSelectedTopics = [...selectedTopics, topic];
-    } else {
-      return; // Do nothing if limit reached
-    }
-    setSelectedTopics(newSelectedTopics);
-    dispatch(setSelectedTopic(newSelectedTopics.join(', '))); // Update Redux immediately
+    setSelectedTopics((prevSelectedTopics) => {
+      let newSelectedTopics: string[];
+      if (prevSelectedTopics.includes(topic)) {
+        // Unselect the topic
+        newSelectedTopics = prevSelectedTopics.filter((t) => t !== topic);
+      } else if (prevSelectedTopics.length < 7) {
+        // Select the topic if under the limit
+        newSelectedTopics = [...prevSelectedTopics, topic];
+      } else {
+        // Do nothing if limit is reached
+        return prevSelectedTopics;
+      }
+      // Update Redux immediately
+      dispatch(setSelectedTopic(newSelectedTopics.join(', ')));
+      return newSelectedTopics;
+    });
   };
 
   const handleCustomTopic = () => {
@@ -164,31 +167,48 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
           <h3 className="text-xl font-semibold text-white mb-4">
             Select Topics (up to 7) for {selectedBusiness}
           </h3>
-          {isLoading && <p className="text-white">Loading topics...</p>}
-          {error && <p className="text-red-500">Failed to load topics</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {reduxApiTopics.map((topic) => {
-              const isSelected = selectedTopics.includes(topic);
-              return (
-                <motion.button
-                  key={topic}
-                  onClick={() => handleTopicToggle(topic)}
-                  className={`p-4 rounded-lg text-white text-left transition-colors border ${
-                    isSelected
-                      ? 'bg-gray-700 border-yellow-500'
-                      : 'bg-gray-800 border-yellow-500/50'
-                  } focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900`}
-                  whileHover={{ scale: 1.05, borderColor: '#FBBF24' }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                  aria-label={`${isSelected ? 'Unselect' : 'Select'} topic: ${topic}`}
-                  disabled={!isSelected && selectedTopics.length >= 7}
-                >
-                  {topic}
-                </motion.button>
-              );
-            })}
-          </div>
+          {(isLoading || fetchingTopics) && <p className="text-white">Loading topics...</p>}
+          {error && <p className="text-red-500">Failed to load topics. Click "Generate Topics" to retry.</p>}
+          {!reduxApiTopics.length && !isLoading && !fetchingTopics && (
+            <motion.button
+              onClick={() => fetchTopics(selectedBusiness)}
+              className="px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+              whileHover={{ scale: 1.05, backgroundColor: '#FBBF24' }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+              aria-label="Generate topics"
+            >
+              Generate Topics
+            </motion.button>
+          )}
+          {reduxApiTopics.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {reduxApiTopics.map((topic) => {
+                const isSelected = selectedTopics.includes(topic);
+                return (
+                  <motion.button
+                    key={topic}
+                    onClick={() => handleTopicToggle(topic)}
+                    className={`p-4 rounded-lg text-white text-left transition-colors border ${
+                      isSelected
+                        ? 'bg-gray-700 border-yellow-500'
+                        : 'bg-gray-800 border-yellow-500/50'
+                    } focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900`}
+                    whileHover={{
+                      scale: 1.05,
+                      borderColor: '#FBBF24',
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 300 }}
+                    aria-label={`${isSelected ? 'Unselect' : 'Select'} topic: ${topic}`}
+                    disabled={!isSelected && selectedTopics.length >= 7}
+                  >
+                    {topic}
+                  </motion.button>
+                );
+              })}
+            </div>
+          )}
           <div className="mt-4">
             <h4 className="text-lg font-semibold text-white mb-2">Add Custom Topic</h4>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
@@ -218,7 +238,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
           </div>
           <motion.button
             onClick={handleSubmit}
-            disabled={selectedTopics.length === 0 || isLoading}
+            disabled={selectedTopics.length === 0 || isLoading || fetchingTopics}
             className="mt-6 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
             whileHover={{ scale: 1.05, backgroundColor: '#FBBF24' }}
             whileTap={{ scale: 0.95 }}

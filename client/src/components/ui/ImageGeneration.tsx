@@ -1,4 +1,3 @@
-// ImageGeneration.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch } from '../../store/hooks';
@@ -14,7 +13,7 @@ interface ImageGenerationProps {
   onSave?: (updatedSlide: ImageSlide, ref: HTMLDivElement) => void;
   initialSlide?: { title: string; description: string; footer?: string; websiteUrl?: string; imageUrl?: string };
   templateId?: string;
-  topic?: string; // Added to generate content based on topic
+  topic?: string;
 }
 
 export const ImageGeneration: React.FC<ImageGenerationProps> = ({
@@ -49,6 +48,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const [customTitle, setCustomTitle] = useState<string>(slide.title);
   const [customDescription, setCustomDescription] = useState<string>(slide.description);
   const [customFooter, setCustomFooter] = useState<string>(slide.footer || '');
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [generateImage, { isLoading: isGeneratingImage }] = useGenerateImageMutation();
@@ -71,88 +71,101 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     );
   };
 
-  // Generate image and content on mount if no initial slide is provided
+  // Initialize slide without generating content/image on mount
   useEffect(() => {
     const initializeSlide = async () => {
+      if (isInitialized) return; // Skip if already initialized
+
       let updatedSlide = { ...slide };
-
-      // Generate image if no imageUrl is provided
-      if (!updatedSlide.imageUrl || updatedSlide.imageUrl === selectedTemplate.slides[0].imageUrl) {
-        try {
-          const response = await generateImage({ prompt: `${topic}` }).unwrap();
-          updatedSlide = { ...updatedSlide, imageUrl: response.data };
-        } catch (error) {
-          console.error('Error generating image:', error);
-          alert('Failed to generate image. Using default image.');
-        }
-      }
-
-      // Generate content if no custom title or description is provided
-      if (topic && (!customTitle || !customDescription || customTitle === selectedTemplate.slides[0].title)) {
-        try {
-          const contentResponse = await generateImageContent({
-            prompt: `${topic}`,
-          }).unwrap();
-          const { title, description } = contentResponse.data;
-          setCustomTitle(title);
-          setCustomDescription(description);
-          updatedSlide = { ...updatedSlide, title, description };
-        } catch (error) {
-          console.error('Error generating content:', error);
-          alert('Failed to generate content. Using default content.');
-        }
-      }
 
       await preloadSlideImages(updatedSlide);
       setSlide(updatedSlide);
 
-      if (onImagesGenerated) {
+      if (onImagesGenerated && updatedSlide.imageUrl) {
         const image = await captureScreenshot(updatedSlide);
         onImagesGenerated(image);
       }
+
+      setIsInitialized(true);
     };
 
     initializeSlide();
-  }, [topic, selectedTemplate, onImagesGenerated]);
+  }, [selectedTemplate, onImagesGenerated, isInitialized]);
 
+  // Update slide when custom fields change
   useEffect(() => {
-    const loadSlide = async () => {
+    const updateSlide = async () => {
       const updatedSlide = {
-        ...selectedTemplate.slides[0],
+        ...slide,
         title: customTitle,
         description: customDescription,
         footer: customFooter,
         websiteUrl: slide.websiteUrl,
-        imageUrl: slide.imageUrl,
+        imageUrl: slide.imageUrl || '',
       };
       await preloadSlideImages(updatedSlide);
       setSlide(updatedSlide);
 
-      if (onImagesGenerated) {
+      // If onImagesGenerated is provided, capture a new screenshot after updating the slide
+      if (onImagesGenerated && updatedSlide.imageUrl) {
         const image = await captureScreenshot(updatedSlide);
         onImagesGenerated(image);
       }
     };
-    loadSlide();
+    updateSlide();
   }, [customTitle, customDescription, customFooter, showLogo, onImagesGenerated]);
+
+  // Update slide when initialSlide changes (e.g., when imageUrl is updated from AutoPostCreator)
+  useEffect(() => {
+    if (initialSlide && initialSlide.imageUrl !== slide.imageUrl) {
+      const updatedSlide = { ...slide, imageUrl: initialSlide.imageUrl || '' };
+      setSlide(updatedSlide);
+      // Preload the new image and capture a screenshot
+      const updateAndCapture = async () => {
+        await preloadSlideImages(updatedSlide);
+        if (onImagesGenerated && updatedSlide.imageUrl) {
+          const image = await captureScreenshot(updatedSlide);
+          onImagesGenerated(image);
+        }
+      };
+      updateAndCapture();
+    }
+  }, [initialSlide, onImagesGenerated]);
 
   const captureScreenshot = async (slideToCapture: ImageSlide) => {
     if (!slideRef.current) return '';
     await preloadSlideImages(slideToCapture);
+    // Clear the slideRef content to prevent duplication
+    if (slideRef.current) {
+      slideRef.current.innerHTML = '';
+    }
     const canvas = await html2canvas(slideRef.current, {
       useCORS: true,
       scale: 2,
       backgroundColor: null,
       logging: true,
+      windowWidth: 500,
+      windowHeight: 700,
     });
     return canvas.toDataURL('image/png');
   };
 
   const handleGenerateImage = async () => {
     try {
-      const response = await generateImage({ prompt: `${topic}` }).unwrap();
+      if (!topic) {
+        throw new Error('Topic is required to generate an image.');
+      }
+      const response = await generateImage({ prompt: topic }).unwrap();
       const generatedImageUrl = response.data;
-      setSlide({ ...slide, imageUrl: generatedImageUrl });
+      const updatedSlide = { ...slide, imageUrl: generatedImageUrl || '' };
+      setSlide(updatedSlide);
+
+      // Preload the new image and capture a screenshot
+      await preloadSlideImages(updatedSlide);
+      if (onImagesGenerated) {
+        const image = await captureScreenshot(updatedSlide);
+        onImagesGenerated(image);
+      }
     } catch (error) {
       console.error('Error generating image:', error);
       alert('Failed to generate image. Please try again.');
@@ -162,9 +175,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const handleGenerateContent = async () => {
     if (!topic) return;
     try {
-      const contentResponse = await generateImageContent({
-        prompt: ` ${topic}`,
-      }).unwrap();
+      const contentResponse = await generateImageContent({ topic }).unwrap();
       const { title, description } = contentResponse.data;
       setCustomTitle(title);
       setCustomDescription(description);
@@ -190,6 +201,8 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
         scale: 2,
         backgroundColor: null,
         logging: true,
+        windowWidth: 500,
+        windowHeight: 700,
       });
 
       const blob = await new Promise<Blob>((resolve) => {
@@ -232,7 +245,6 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-6 md:p-10">
       <div className="max-w-6xl mx-auto flex flex-col space-y-8">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <button
             onClick={handleBack}
@@ -246,7 +258,6 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
           </h1>
         </div>
 
-        {/* Image Preview */}
         <motion.div
           className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
           initial={{ opacity: 0, y: -50 }}
@@ -256,7 +267,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
           <h2 className="text-2xl font-semibold text-gray-100 mb-4">Image Preview</h2>
           <div
             ref={slideRef}
-            className="relative rounded-xl overflow-hidden max-w-2xl max-h-[600px] mx-auto"
+            className="relative rounded-xl overflow-hidden max-w-2xl max-h-[600px] mx-auto shadow-none"
             style={{
               width: '500px',
               height: '700px',
@@ -280,7 +291,6 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
           </div>
         </motion.div>
 
-        {/* Content Editor */}
         <motion.div
           className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
           initial={{ opacity: 0, y: 50 }}
@@ -289,7 +299,6 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
         >
           <h2 className="text-2xl font-semibold text-gray-100 mb-4">Edit Content</h2>
           <div className="space-y-4">
-            {/* Title Input */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">Title</label>
               <input
@@ -298,14 +307,13 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                 onChange={(e) => {
                   const newValue = e.target.value;
                   setCustomTitle(newValue);
-                  setSlide({ ...slide, title: newValue });
+                  setSlide((prev) => ({ ...prev, title: newValue }));
                 }}
                 className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                placeholder="Enter the title (e.g., ENCOURAGING WORDS)"
+                placeholder="Enter the title (e.g., MENTAL HEALTH INTEGRATION)"
               />
             </div>
 
-            {/* Description Input */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">Description</label>
               <textarea
@@ -313,16 +321,15 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                 onChange={(e) => {
                   const newValue = e.target.value;
                   setCustomDescription(newValue);
-                  setSlide({ ...slide, description: newValue });
+                  setSlide((prev) => ({ ...prev, description: newValue }));
                 }}
                 className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600 h-24 resize-none"
-                placeholder="Enter the description (e.g., 'Is it too soon to say I love you?')"
+                placeholder="Enter the description (e.g., The integration of mental health services into healthcare is crucial for holistic well-being...)"
               />
             </div>
 
-            {/* Footer Input */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Footer (e.g., @meta.ai)</label>
+              <label className="block text-sm font-medium text-gray-300">Footer (e.g., @bitrox.tech)</label>
               <div className="flex items-center space-x-2">
                 <span className="text-gray-300">@</span>
                 <input
@@ -331,26 +338,15 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                   onChange={(e) => {
                     const newValue = e.target.value;
                     setCustomFooter(newValue);
-                    setSlide({ ...slide, footer: newValue });
+                    setSlide((prev) => ({ ...prev, footer: newValue }));
                   }}
                   className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                  placeholder="Enter the footer (e.g., meta.ai)"
+                  placeholder="Enter the footer (e.g., bitrox.tech)"
                 />
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <motion.button
-                onClick={handleGenerateImage}
-                disabled={isGeneratingImage}
-                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {isGeneratingImage ? 'Generating Image...' : 'Generate Image'}
-              </motion.button>
-
               <motion.button
                 onClick={handleGenerateContent}
                 disabled={isGeneratingContent || !topic}
@@ -359,6 +355,16 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                 whileTap={{ scale: 0.95 }}
               >
                 {isGeneratingContent ? 'Generating Content...' : 'Generate Content'}
+              </motion.button>
+
+              <motion.button
+                onClick={handleGenerateImage}
+                disabled={isGeneratingImage || !topic}
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isGeneratingImage ? 'Generating Image...' : 'Generate Image'}
               </motion.button>
 
               {(!onImagesGenerated || onSave) && (

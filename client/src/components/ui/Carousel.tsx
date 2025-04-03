@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Swiper, SwiperSlide, SwiperRef } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import { Swiper as SwiperCore } from 'swiper';
@@ -10,13 +10,14 @@ import { useNavigate } from 'react-router-dom';
 import { useGenerateCarouselMutation, useUploadImageToCloudinaryMutation } from '../../store/api';
 import { carouselTemplates, Slide, CarouselTemplate } from '../../templetes/templetesDesign';
 import { ArrowLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface CarouselProps {
   initialTopic: string;
   template: string;
   slides: Slide[];
   onImagesGenerated?: (images: string[]) => void;
-  onSave?: (updatedSlides: Slide[], ref: HTMLDivElement) => void; // Updated to include ref
+  onSave?: (updatedSlides: Slide[], images: string[]) => void; // Updated to pass images instead of ref
 }
 
 export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slides: initialSlides, onImagesGenerated, onSave }) => {
@@ -33,23 +34,29 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
   const [platform, setPlatform] = useState<'instagram' | 'facebook'>('instagram');
   const defaultLogoUrl = '/images/Logo1.png';
   const swiperRef = useRef<SwiperRef>(null);
-  const carouselRef = useRef<HTMLDivElement>(null); // Added for entire carousel screenshot
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const navigate = useNavigate();
 
   const [generateCarousel] = useGenerateCarouselMutation();
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
 
-  useEffect(() => {
-    const newTemplate = carouselTemplates.find((t) => t.id === template) || carouselTemplates[0];
+  const handleTemplateChange = (templateId: string) => {
+    const newTemplate = carouselTemplates.find((t) => t.id === templateId) || carouselTemplates[0];
     setSelectedTemplate(newTemplate);
-  }, [template]);
 
-  useEffect(() => {
-    if (onImagesGenerated) {
-      generateAndCaptureScreenshots();
-    }
-  }, [onImagesGenerated]);
+    const updatedSlides = newTemplate.slides.map((slide, index) => {
+      const existingSlide = slides[index] || {};
+      return {
+        ...slide,
+        tagline: existingSlide.tagline || slide.tagline,
+        title: existingSlide.title || slide.title,
+        description: existingSlide.description || slide.description,
+        imageUrl: existingSlide.imageUrl || slide.imageUrl || '',
+      };
+    });
+    setSlides(updatedSlides);
+    setEditedSlides([...updatedSlides]);
+  };
 
   const generateAndCaptureScreenshots = async () => {
     setLoading(true);
@@ -96,24 +103,6 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
     }
   };
 
-  const handleTemplateChange = (templateId: string) => {
-    const newTemplate = carouselTemplates.find((t) => t.id === templateId) || carouselTemplates[0];
-    setSelectedTemplate(newTemplate);
-
-    const updatedSlides = newTemplate.slides.map((slide, index) => {
-      const existingSlide = slides[index] || {};
-      return {
-        ...slide,
-        tagline: existingSlide.tagline || slide.tagline,
-        title: existingSlide.title || slide.title,
-        description: existingSlide.description || slide.description,
-        imageUrl: existingSlide.imageUrl || slide.imageUrl || '',
-      };
-    });
-    setSlides(updatedSlides);
-    setEditedSlides([...updatedSlides]);
-  };
-
   const captureScreenshots = async (slidesToCapture: Slide[]) => {
     const images: string[] = [];
     for (let i = 0; i < slidesToCapture.length; i++) {
@@ -155,8 +144,8 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
   const handleSaveChanges = async () => {
     setSlides([...editedSlides]);
     const updatedImages = await captureScreenshots(editedSlides);
-    if (onSave && carouselRef.current) {
-      onSave(editedSlides, carouselRef.current); // Pass the entire carousel ref
+    if (onSave) {
+      onSave(editedSlides, updatedImages); // Pass the updated slides and images
     }
     setEditMode(false);
   };
@@ -189,7 +178,7 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
   };
 
   const handleBack = () => {
-    navigate('/auto-post-creator'); // Updated to match navigation flow
+    navigate('/auto-post-creator');
   };
 
   const getSlideDimensions = () => {
@@ -204,7 +193,7 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
 
   return (
     <div className="bg-gray-900 text-white p-6">
-      <div className="max-w-5xl mx-auto" ref={carouselRef}>
+      <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={handleBack}
@@ -234,46 +223,61 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
           </select>
         </div>
 
-        <Swiper
-          modules={[Navigation, Pagination]}
-          navigation={{ nextEl: '.swiper-button-next-custom', prevEl: '.swiper-button-prev-custom' }}
-          pagination={{ clickable: true }}
-          spaceBetween={20}
-          slidesPerView={1}
-          onSlideChange={handleSlideChange}
-          ref={swiperRef}
-          className="mb-8"
+        {/* Generate Button */}
+        <motion.button
+          onClick={generateAndCaptureScreenshots}
+          disabled={loading}
+          className="mb-4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          {slides.map((slide, index) => (
-            <SwiperSlide key={index}>
-              <div
-                ref={(el) => (slideRefs.current[index] = el)}
-                style={{
-                  width: getSlideDimensions().width,
-                  height: getSlideDimensions().height,
-                  maxWidth: '100%',
-                  maxHeight: getSlideDimensions().maxHeight,
-                  aspectRatio: getSlideDimensions().aspectRatio,
-                  margin: '0 auto',
-                  overflow: 'hidden',
-                }}
-              >
-                {selectedTemplate.renderSlide(slide, addLogo, defaultLogoUrl)}
-              </div>
-            </SwiperSlide>
-          ))}
-          <div className="swiper-button-prev-custom absolute top-1/2 left-4 text-yellow-400 -translate-y-1/2 z-10">
-            <svg className="w-10 h-10" viewBox="0 0 24 24">
-              <path d="M14 18l-6-6 6-6v12z" fill="currentColor" />
-            </svg>
-          </div>
-          <div className="swiper-button-next-custom absolute top-1/2 right-4 text-yellow-400 -translate-y-1/2 z-10">
-            <svg className="w-10 h-10" viewBox="0 0 24 24">
-              <path d="M10 6l6 6-6 6V6z" fill="currentColor" />
-            </svg>
-          </div>
-        </Swiper>
+          {loading ? 'Generating...' : 'Generate Carousel'}
+        </motion.button>
 
+        {/* Carousel Part */}
+        <div>
+          <Swiper
+            modules={[Navigation, Pagination]}
+            navigation={{ nextEl: '.swiper-button-next-custom', prevEl: '.swiper-button-prev-custom' }}
+            pagination={{ clickable: true }}
+            spaceBetween={20}
+            slidesPerView={1}
+            onSlideChange={handleSlideChange}
+            ref={swiperRef}
+            className="mb-8"
+          >
+            {slides.map((slide, index) => (
+              <SwiperSlide key={index}>
+                <div
+                  ref={(el) => (slideRefs.current[index] = el)}
+                  style={{
+                    width: getSlideDimensions().width,
+                    height: getSlideDimensions().height,
+                    maxWidth: '100%',
+                    maxHeight: getSlideDimensions().maxHeight,
+                    aspectRatio: getSlideDimensions().aspectRatio,
+                    margin: '0 auto',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {selectedTemplate.renderSlide(slide, addLogo, defaultLogoUrl)}
+                </div>
+              </SwiperSlide>
+            ))}
+            <div className="swiper-button-prev-custom absolute top-1/2 left-4 text-yellow-400 -translate-y-1/2 z-10">
+              <svg className="w-10 h-10" viewBox="0 0 24 24">
+                <path d="M14 18l-6-6 6-6v12z" fill="currentColor" />
+              </svg>
+            </div>
+            <div className="swiper-button-next-custom absolute top-1/2 right-4 text-yellow-400 -translate-y-1/2 z-10">
+              <svg className="w-10 h-10" viewBox="0 0 24 24">
+                <path d="M10 6l6 6-6 6V6z" fill="currentColor" />
+              </svg>
+            </div>
+          </Swiper>
+        </div>
+
+        {/* Editor Part */}
         {editMode && (
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
             <h3 className="text-2xl font-semibold mb-6">Edit Slide {activeIndex + 1}</h3>
