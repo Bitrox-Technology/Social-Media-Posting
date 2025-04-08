@@ -1,14 +1,15 @@
 import { configDotenv } from "dotenv";
-import express from "express";
+import express, { Router } from "express";
 import cors from "cors";
 import router from "./routes/router.js";
 import morgan from "morgan";
 import helmet from "helmet";
-import { ApiError } from "./utils/ApiError.js";
+import { ApiError } from "./utils/apiError.js";
 import session from "express-session";
 import path from "path";
 import { fileURLToPath } from 'url';
 import connectDB from "./config/db.js";
+import Routers from "./routes/index.js";
 
 // Get the equivalent of __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -47,6 +48,7 @@ app.use(
   })
 );
 
+app.use("/api/v1/user", Routers.userRouter);
 app.use("/api/v1", router);
 
 app.use(function (err, req, res, next) {
@@ -71,8 +73,8 @@ app.use(function (err, req, res, next) {
 });
 
 connectDB().then(() => {
-  app.listen((process.env.PORT || 8000), () => {
-      console.log(`Server is running at port: ${process.env.PORT} `)
+  app.listen((PORT), () => {
+      console.log(`Server is running at port: ${PORT} `)
   })
 }).catch((err) => [
   console.log("MongoDB connection failed!!!", err)

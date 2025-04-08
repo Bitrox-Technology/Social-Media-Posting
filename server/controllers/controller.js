@@ -1,7 +1,7 @@
 import { postToInsta, schedulePost } from "../services/insta.js";
 import { Ollama } from "ollama";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/apiResponse.js";
+import { ApiError } from "../utils/apiError.js";
 import fs from "fs/promises";
 import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
@@ -22,7 +22,7 @@ const Content = async (req, res, next) => {
     const prompt = `Write a short paragraph (50-70 words) about ${topic}. Make it engaging, friendly, and highlight efficiency or innovation. Format the response with "**Title:** [Your Title]" on the first line, then the paragraph with 5 business ideas  without extra newlines or bold markers in the description, and end with hashtags on a new line starting with "#". Exclude any <think> sections.`;
 
     const response = await ollama.chat({
-      model: "deepseek-r1:7b",
+      model: "deepseek-r1:14b",
       messages: [
         {
           role: "user",
@@ -128,7 +128,7 @@ const Ideas = async (req, res, next) => {
     `;
 
     const response = await ollama.chat({
-      model: "deepseek-r1:7b",
+      model: "deepseek-r1:14b",
       messages: [
         {
           role: "user",

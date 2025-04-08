@@ -43,7 +43,7 @@ const generateCarouselContent = async (topic) => {
 
     // Call Ollama DeepSeek API once
     const response = await ollama.chat({
-      model: "deepseek-r1:7b",
+      model: "deepseek-r1:14b",
       messages: [
         {
           role: "user",
@@ -65,7 +65,7 @@ const generateDoYouKnow = async (topic) => {
   try {
     const prompt = `Generate a "Did You Know?" fact about the topic "${topic}" in JSON format. The JSON must have two fields: "title" and "description". The "title" must be "DID YOU KNOW?" in uppercase. The "description" must be a concise, interesting fact (1-2 sentences, 15-25 words, max 30 words). Example: {"title": "DID YOU KNOW?", "description": "Social media in digital marketing reaches billions, surpassing traditional ads with real-time engagement."}`;
     const response = await ollama.chat({
-      model: "deepseek-r1:7b",
+      model: "deepseek-r1:14b",
       messages: [
         {
           role: "user",
@@ -96,7 +96,7 @@ const generateImageContent = async (topic) => {
       - "description": A brief description or quote (1-2 sentences, 15-25 words, max 30 words), (e.g., "Is it too soon to say 'I love you'?").`;
 
     const response = await ollama.chat({
-      model: "deepseek-r1:7b",
+      model: "deepseek-r1:14b",
       messages: [
         {
           role: "user",
@@ -125,7 +125,7 @@ const generateTopics = async (topic) => {
     const prompt = `Generate 10 topics related to "${topic}" in JSON format. The JSON must have keys "topic1" through "topic10", each with a string value representing a topic. Example: {"topic1": "Example Topic 1", "topic2": "Example Topic 2", ...}`;
 
     const response = await ollama.chat({
-      model: "deepseek-r1:7b",
+      model: "deepseek-r1:14b",
       messages: [
         {
           role: "user",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import {
   useGenerateImageMutation,
   useGenerateCarouselMutation,
@@ -48,16 +48,16 @@ interface Post {
   content: ImageContent | DoYouKnowContent | Slide[] | string;
   images?: { url: string; label: string }[];
   templateId?: string;
+  status: 'pending' | 'success' | 'error';
+  errorMessage?: string;
 }
 
 export const AutoPostCreator = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const selectedTopic = useAppSelector((state) => state.app.selectedTopic);
-  const postsFromRedux = useAppSelector((state) => state.app.posts);
   const [posts, setLocalPosts] = useState<Post[]>([]);
-  const [isLoadingMap, setIsLoadingMap] = useState<Record<string, boolean>>({});
-  const [errorMap, setErrorMap] = useState<Record<string, string | null>>({});
+  const [isGenerating, setIsGenerating] = useState(false);
   const [activeCarouselTopic, setActiveCarouselTopic] = useState<string | null>(null);
   const [editCarouselTopic, setEditCarouselTopic] = useState<string | null>(null);
   const [activeDoYouKnowTopic, setActiveDoYouKnowTopic] = useState<string | null>(null);
@@ -85,19 +85,23 @@ export const AutoPostCreator = () => {
   useEffect(() => {
     if (!selectedTopic) {
       navigate('/topic');
+    } else {
+      // Initialize posts with pending status
+      const initialPosts: Post[] = topics.map((topic, index) => ({
+        topic,
+        type: postTypes[index],
+        content: '',
+        status: 'pending',
+      }));
+      setLocalPosts(initialPosts);
     }
   }, [selectedTopic, navigate]);
 
   const generatePost = async (topic: string, index: number) => {
     const type = postTypes[index];
-    setIsLoadingMap((prev) => ({ ...prev, [topic]: true }));
-    setErrorMap((prev) => ({ ...prev, [topic]: null }));
-    setActiveCarouselTopic(null);
-    setEditCarouselTopic(null);
-    setActiveDoYouKnowTopic(null);
-    setEditDoYouKnowTopic(null);
-    setActiveImageTopic(null);
-    setEditImageTopic(null);
+    setLocalPosts(prev => prev.map(p => 
+      p.topic === topic ? { ...p, status: 'pending' } : p
+    ));
 
     try {
       let newPost: Post;
@@ -107,12 +111,8 @@ export const AutoPostCreator = () => {
           const randomTemplate = imageTemplates[randomTemplateIndex];
           const contentRes = await generateImageContent({ topic: topic }).unwrap();
           const generatedContent = contentRes.data;
-
           const imageRes = await generateImage({ prompt: topic }).unwrap();
           const imageUrl = imageRes.data;
-
-          console.log('imageUrl', imageUrl);
-          console.log('generatedContent', generatedContent);
 
           const newImageSlide: ImageContent = {
             title: generatedContent.title || randomTemplate.slides[0].title,
@@ -122,14 +122,8 @@ export const AutoPostCreator = () => {
             imageUrl: imageUrl,
           };
 
-          console.log('newImageSlide', newImageSlide);
-
-          newPost = { topic, type, content: newImageSlide, templateId: randomTemplate.id };
+          newPost = { topic, type, content: newImageSlide, templateId: randomTemplate.id, status: 'success' };
           setActiveImageTopic(topic);
-
-          // Update the post with the new slide immediately
-          const updatedPostsWithSlide = [...posts.filter((p) => p.topic !== topic), newPost];
-          setLocalPosts(updatedPostsWithSlide);
           break;
 
         case 'carousel':
@@ -161,7 +155,7 @@ export const AutoPostCreator = () => {
             };
           });
 
-          newPost = { topic, type, content: newSlides, templateId: randomCarouselTemplate.id };
+          newPost = { topic, type, content: newSlides, templateId: randomCarouselTemplate.id, status: 'success' };
           setActiveCarouselTopic(topic);
           break;
 
@@ -178,9 +172,8 @@ export const AutoPostCreator = () => {
             websiteUrl: randomDoYouKnowTemplate.slides[0].websiteUrl || '',
             imageUrl: randomDoYouKnowTemplate.slides[0].imageUrl || '',
           };
-          console.log('newDoYouKnowSlide', newDoYouKnowSlide);
 
-          newPost = { topic, type, content: newDoYouKnowSlide, templateId: randomDoYouKnowTemplate.id };
+          newPost = { topic, type, content: newDoYouKnowSlide, templateId: randomDoYouKnowTemplate.id, status: 'success' };
           setActiveDoYouKnowTopic(topic);
           break;
 
@@ -188,18 +181,25 @@ export const AutoPostCreator = () => {
           throw new Error(`Unknown post type: ${type}`);
       }
 
-      const updatedPosts = [...posts.filter((p) => p.topic !== topic), newPost];
-      setLocalPosts(updatedPosts);
-      // dispatch(setPosts(updatedPosts));
+      setLocalPosts(prev => prev.map(p => p.topic === topic ? newPost : p));
     } catch (err) {
       console.error(`Error generating post for ${topic}:`, err);
-      setErrorMap((prev) => ({
-        ...prev,
-        [topic]: err instanceof Error ? err.message : 'An error occurred',
-      }));
-    } finally {
-      setIsLoadingMap((prev) => ({ ...prev, [topic]: false }));
+      setLocalPosts(prev => prev.map(p => 
+        p.topic === topic ? { 
+          ...p, 
+          status: 'error', 
+          errorMessage: err instanceof Error ? err.message : 'An error occurred' 
+        } : p
+      ));
     }
+  };
+
+  const generateAllPosts = async () => {
+    setIsGenerating(true);
+    for (let i = 0; i < topics.length; i++) {
+      await generatePost(topics[i], i);
+    }
+    setIsGenerating(false);
   };
 
   const handleImageGenerated = (topic: string, image: string) => {
@@ -213,7 +213,6 @@ export const AutoPostCreator = () => {
         : post
     );
     setLocalPosts(updatedPosts);
-    // dispatch(setPosts(updatedPosts));
     setActiveImageTopic(null);
   };
 
@@ -244,7 +243,6 @@ export const AutoPostCreator = () => {
           : post
       );
       setLocalPosts(updatedPosts);
-      // dispatch(setPosts(updatedPosts));
       setEditImageTopic(null);
     } catch (error) {
       console.error('Error uploading image screenshot:', error);
@@ -257,7 +255,6 @@ export const AutoPostCreator = () => {
       post.topic === topic && post.type === 'carousel' ? { ...post, images: labeledImages } : post
     );
     setLocalPosts(updatedPosts);
-    // dispatch(setPosts(updatedPosts));
     setActiveCarouselTopic(null);
     setEditCarouselTopic(topic);
   };
@@ -273,7 +270,6 @@ export const AutoPostCreator = () => {
         : post
     );
     setLocalPosts(updatedPosts);
-    // dispatch(setPosts(updatedPosts));
     setEditCarouselTopic(null);
   };
 
@@ -288,7 +284,6 @@ export const AutoPostCreator = () => {
         : post
     );
     setLocalPosts(updatedPosts);
-    // dispatch(setPosts(updatedPosts));
     setActiveDoYouKnowTopic(null);
   };
 
@@ -319,7 +314,6 @@ export const AutoPostCreator = () => {
           : post
       );
       setLocalPosts(updatedPosts);
-      // dispatch(setPosts(updatedPosts));
       setEditDoYouKnowTopic(null);
     } catch (error) {
       console.error('Error uploading Do You Know screenshot:', error);
@@ -328,6 +322,19 @@ export const AutoPostCreator = () => {
 
   const handleBack = () => {
     navigate('/topic');
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Loader2 className="w-5 h-5 text-gray-500 animate-spin" />;
+      case 'success':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'error':
+        return <XCircle className="w-5 h-5 text-red-500" />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -343,6 +350,16 @@ export const AutoPostCreator = () => {
           </button>
           <h2 className="text-2xl font-bold text-white ml-4">Auto Post Creator</h2>
         </div>
+        <motion.button
+          onClick={generateAllPosts}
+          disabled={isGenerating}
+          className="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+          whileHover={{ scale: 1.05, backgroundColor: '#FBBF24' }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+        >
+          {isGenerating ? 'Generating...' : 'Generate All Posts'}
+        </motion.button>
       </div>
 
       {topics.length === 0 ? (
@@ -351,170 +368,158 @@ export const AutoPostCreator = () => {
         <p className="text-red-500">Please select exactly 7 topics to proceed.</p>
       ) : (
         <div className="space-y-4">
-          {topics.map((topic, index) => {
-            const post = posts.find((p) => p.topic === topic);
-            const isLoading = isLoadingMap[topic] || false;
-            const error = errorMap[topic];
-
-            return (
-              <div key={topic} className="bg-gray-800 p-4 rounded-lg border border-yellow-500/50">
-                <div className="flex items-center justify-between">
-                  <div className="w-full">
-                    <h3 className="text-lg font-semibold text-white">
-                      {topic} ({postTypes[index]})
+          {posts.map((post) => (
+            <div key={post.topic} className="bg-gray-800 p-4 rounded-lg border border-yellow-500/50">
+              <div className="flex items-center justify-between">
+                <div className="w-full">
+                  <div className="flex items-center">
+                    {getStatusIcon(post.status)}
+                    <h3 className="text-lg font-semibold text-white ml-2">
+                      {post.topic} ({post.type})
                     </h3>
-                    {isLoading && <p className="text-gray-500 mt-2">Generating...</p>}
-                    {error && <p className="text-red-500 mt-2">{error}</p>}
-                    {post && (
-                      <div className="mt-2">
-                        {post.type === 'image' ? (
-                          <>
-                            {activeImageTopic === topic && !editImageTopic ? (
-                              <ImageGeneration
-                                onImagesGenerated={(image) => handleImageGenerated(topic, image)}
-                                initialSlide={post.content as ImageContent}
-                                templateId={post.templateId || imageTemplates[0].id}
-                                topic={topic}
-                              />
-                            ) : editImageTopic === topic ? (
-                              <ImageGeneration
-                                onSave={(updatedSlide, ref) => handleImageUpdated(topic, updatedSlide, ref)}
-                                initialSlide={post.content as ImageContent}
-                                templateId={post.templateId || imageTemplates[0].id}
-                                topic={topic}
-                              />
-                            ) : post.images ? (
-                              <div>
-                                {post.images.map((img, idx) => (
-                                  <div key={idx}>
-                                    <img
-                                      src={img.url}
-                                      alt={img.label}
-                                      className="w-32 h-32 object-cover inline-block mr-2"
-                                    />
-                                    <span className="text-gray-300">{img.label}</span>
-                                  </div>
-                                ))}
-                                <button
-                                  onClick={() => setEditImageTopic(topic)}
-                                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                                >
-                                  Edit Image
-                                </button>
-                              </div>
-                            ) : (
+                  </div>
+                  {post.status === 'error' && (
+                    <p className="text-red-500 mt-2">{post.errorMessage}</p>
+                  )}
+                  {post.status === 'success' && (
+                    <div className="mt-2">
+                      {post.type === 'image' ? (
+                        <>
+                          {activeImageTopic === post.topic && !editImageTopic ? (
+                            <ImageGeneration
+                              onImagesGenerated={(image) => handleImageGenerated(post.topic, image)}
+                              initialSlide={post.content as ImageContent}
+                              templateId={post.templateId || imageTemplates[0].id}
+                              topic={post.topic}
+                            />
+                          ) : editImageTopic === post.topic ? (
+                            <ImageGeneration
+                              onSave={(updatedSlide, ref) => handleImageUpdated(post.topic, updatedSlide, ref)}
+                              initialSlide={post.content as ImageContent}
+                              templateId={post.templateId || imageTemplates[0].id}
+                              topic={post.topic}
+                            />
+                          ) : post.images ? (
+                            <div>
+                              {post.images.map((img, idx) => (
+                                <div key={idx}>
+                                  <img
+                                    src={img.url}
+                                    alt={img.label}
+                                    className="w-32 h-32 object-cover inline-block mr-2"
+                                  />
+                                  <span className="text-gray-300">{img.label}</span>
+                                </div>
+                              ))}
                               <button
-                                onClick={() => setEditImageTopic(topic)}
+                                onClick={() => setEditImageTopic(post.topic)}
                                 className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
                               >
                                 Edit Image
                               </button>
-                            )}
-                          </>
-                        ) : post.type === 'carousel' ? (
-                          <>
-                            {activeCarouselTopic === topic && !editCarouselTopic ? (
-                              <Carousel
-                                initialTopic={topic}
-                                template={post.templateId || carouselTemplates[0].id}
-                                slides={post.content as Slide[]}
-                                onImagesGenerated={(images) => handleCarouselImagesGenerated(topic, images)}
-                              />
-                            ) : editCarouselTopic === topic ? (
-                              <Carousel
-                                initialTopic={topic}
-                                template={post.templateId || carouselTemplates[0].id}
-                                slides={post.content as Slide[]}
-                                onSave={(updatedSlides, images) => handleCarouselUpdated(topic, updatedSlides, images)}
-                              />
-                            ) : post.images ? (
-                              <div>
-                                {post.images.map((img, idx) => (
-                                  <div key={idx}>
-                                    <img
-                                      src={img.url}
-                                      alt={img.label}
-                                      className="w-32 h-32 object-cover inline-block mr-2"
-                                    />
-                                    <span className="text-gray-300">{img.label}</span>
-                                  </div>
-                                ))}
-                                <button
-                                  onClick={() => setEditCarouselTopic(topic)}
-                                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                                >
-                                  Edit Carousel
-                                </button>
-                              </div>
-                            ) : (
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEditImageTopic(post.topic)}
+                              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
+                            >
+                              Edit Image
+                            </button>
+                          )}
+                        </>
+                      ) : post.type === 'carousel' ? (
+                        <>
+                          {activeCarouselTopic === post.topic && !editCarouselTopic ? (
+                            <Carousel
+                              initialTopic={post.topic}
+                              template={post.templateId || carouselTemplates[0].id}
+                              slides={post.content as Slide[]}
+                              onImagesGenerated={(images) => handleCarouselImagesGenerated(post.topic, images)}
+                            />
+                          ) : editCarouselTopic === post.topic ? (
+                            <Carousel
+                              initialTopic={post.topic}
+                              template={post.templateId || carouselTemplates[0].id}
+                              slides={post.content as Slide[]}
+                              onSave={(updatedSlides, images) => handleCarouselUpdated(post.topic, updatedSlides, images)}
+                            />
+                          ) : post.images ? (
+                            <div>
+                              {post.images.map((img, idx) => (
+                                <div key={idx}>
+                                  <img
+                                    src={img.url}
+                                    alt={img.label}
+                                    className="w-32 h-32 object-cover inline-block mr-2"
+                                  />
+                                  <span className="text-gray-300">{img.label}</span>
+                                </div>
+                              ))}
                               <button
-                                onClick={() => setEditCarouselTopic(topic)}
+                                onClick={() => setEditCarouselTopic(post.topic)}
                                 className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
                               >
                                 Edit Carousel
                               </button>
-                            )}
-                          </>
-                        ) : post.type === 'doyouknow' ? (
-                          <>
-                            {activeDoYouKnowTopic === topic && !editDoYouKnowTopic ? (
-                              <DoYouKnow
-                                onImagesGenerated={(image) => handleDoYouKnowImagesGenerated(topic, image)}
-                                initialSlide={post.content as DoYouKnowContent}
-                                templateId={post.templateId || doYouKnowTemplates[0].id}
-                              />
-                            ) : editDoYouKnowTopic === topic ? (
-                              <DoYouKnow
-                                onSave={(updatedSlide, ref) => handleDoYouKnowUpdated(topic, updatedSlide, ref)}
-                                initialSlide={post.content as DoYouKnowContent}
-                                templateId={post.templateId || doYouKnowTemplates[0].id}
-                              />
-                            ) : post.images ? (
-                              <div>
-                                {post.images.map((img, idx) => (
-                                  <div key={idx}>
-                                    <img
-                                      src={img.url}
-                                      alt={img.label}
-                                      className="w-32 h-32 object-cover inline-block mr-2"
-                                    />
-                                    <span className="text-gray-300">{img.label}</span>
-                                  </div>
-                                ))}
-                                <button
-                                  onClick={() => setEditDoYouKnowTopic(topic)}
-                                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                                >
-                                  Edit Do You Know
-                                </button>
-                              </div>
-                            ) : (
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEditCarouselTopic(post.topic)}
+                              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
+                            >
+                              Edit Carousel
+                            </button>
+                          )}
+                        </>
+                      ) : post.type === 'doyouknow' ? (
+                        <>
+                          {activeDoYouKnowTopic === post.topic && !editDoYouKnowTopic ? (
+                            <DoYouKnow
+                              onImagesGenerated={(image) => handleDoYouKnowImagesGenerated(post.topic, image)}
+                              initialSlide={post.content as DoYouKnowContent}
+                              templateId={post.templateId || doYouKnowTemplates[0].id}
+                            />
+                          ) : editDoYouKnowTopic === post.topic ? (
+                            <DoYouKnow
+                              onSave={(updatedSlide, ref) => handleDoYouKnowUpdated(post.topic, updatedSlide, ref)}
+                              initialSlide={post.content as DoYouKnowContent}
+                              templateId={post.templateId || doYouKnowTemplates[0].id}
+                            />
+                          ) : post.images ? (
+                            <div>
+                              {post.images.map((img, idx) => (
+                                <div key={idx}>
+                                  <img
+                                    src={img.url}
+                                    alt={img.label}
+                                    className="w-32 h-32 object-cover inline-block mr-2"
+                                  />
+                                  <span className="text-gray-300">{img.label}</span>
+                                </div>
+                              ))}
                               <button
-                                onClick={() => setEditDoYouKnowTopic(topic)}
+                                onClick={() => setEditDoYouKnowTopic(post.topic)}
                                 className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
                               >
                                 Edit Do You Know
                               </button>
-                            )}
-                          </>
-                        ) : null}
-                      </div>
-                    )}
-                  </div>
-                  <motion.button
-                    onClick={() => generatePost(topic, index)}
-                    disabled={isLoading}
-                    className="ml-4 px-4 py-2 bg-yellow-500 text-black font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-                    whileHover={{ scale: 1.05, backgroundColor: '#FBBF24' }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                  >
-                    {isLoading ? 'Generating...' : post ? 'Regenerate' : 'Generate'}
-                  </motion.button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEditDoYouKnowTopic(post.topic)}
+                              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
+                            >
+                              Edit Do You Know
+                            </button>
+                          )}
+                        </>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
     </div>
