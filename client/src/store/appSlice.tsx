@@ -38,11 +38,15 @@ interface AppState {
   posted: string[]; // Array of post identifiers (e.g., URLs or IDs)
   ideas: ContentIdea[];
   selectedDoYouKnowTemplate: string | null;
-  user: { email: string } | null;
+  user: {
+    email: string | null;
+    token: string | null;
+  } | null;
   token: string | null;
   selectedBusiness: string | null;
   posts: Post[];
   apiTopics: string[];
+  
 }
 
 const initialState: AppState = {
@@ -92,9 +96,11 @@ const appSlice = createSlice({
     setSelectedDoYouKnowTemplate(state, action: PayloadAction<string | null>) {
       state.selectedDoYouKnowTemplate = action.payload;
     },
-    setUser(state, action: PayloadAction<{ email: string; token: string }>) {
-      state.user = { email: action.payload.email };
-      state.token = action.payload.token;
+    setUser: (state, action: PayloadAction<{ email: string; token: string }>) => {
+      state.user = {
+        email: action.payload.email,
+        token: action.payload.token,
+      };
     },
 
     setPosts: (state, action: PayloadAction<Post[]>) => {
@@ -102,7 +108,6 @@ const appSlice = createSlice({
     },
     logout(state) {
       state.user = null;
-      state.token = null;
     },
     setApiTopics: (state, action: PayloadAction<string[]>) => {
       state.apiTopics = action.payload;

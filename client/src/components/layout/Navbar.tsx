@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { logout } from '../../store/appSlice';
-import { BrainCog, User, Menu } from 'lucide-react';
+import { BrainCog, User, Menu, LogOut } from 'lucide-react';
 
 interface NavbarProps {
   toggleDashboard: () => void;
@@ -18,7 +18,7 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleDashboard, isDashboardOpen
   const handleLogout = () => {
     dispatch(logout());
     setIsDropdownOpen(false);
-    navigate('/');
+    navigate('/signin');
   };
 
   return (
@@ -28,6 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleDashboard, isDashboardOpen
           <button
             onClick={toggleDashboard}
             className="text-white hover:text-yellow-500 focus:outline-none"
+            aria-label="Toggle dashboard"
           >
             <Menu className="w-6 h-6" />
           </button>
@@ -42,26 +43,35 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleDashboard, isDashboardOpen
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="text-white hover:text-yellow-500 focus:outline-none"
+            className="text-white hover:text-yellow-500 focus:outline-none flex items-center"
+            aria-label="User menu"
           >
             <User className="w-6 h-6" />
+            {user && user.email && (
+              <span className="ml-2 text-sm text-white hidden md:inline">
+                {user.email.split('@')[0]}
+              </span>
+            )}
           </button>
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-              {user ? (
-                <>
+              {user && user.email ? (
+                <div className="py-1">
                   <div className="px-4 py-2 text-gray-800 border-b">
-                    <span className="block text-sm font-semibold">{user.email}</span>
+                    <span className="block text-sm font-semibold truncate">
+                      {user.email}
+                    </span>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
+                    className="flex items-center w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
                   >
+                    <LogOut className="w-4 h-4 mr-2" />
                     Logout
                   </button>
-                </>
+                </div>
               ) : (
-                <>
+                <div className="py-1">
                   <Link
                     to="/signup"
                     onClick={() => setIsDropdownOpen(false)}
@@ -76,7 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleDashboard, isDashboardOpen
                   >
                     Sign In
                   </Link>
-                </>
+                </div>
               )}
             </div>
           )}

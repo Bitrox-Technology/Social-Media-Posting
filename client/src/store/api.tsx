@@ -21,7 +21,6 @@ interface GenerateTopicsResponse {
   topics: string[];
 }
 
-// Generic API response structure
 interface ApiResponse<T> {
   statusCode: number;
   data: T;
@@ -33,14 +32,20 @@ export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:4000/api/v1',
-    // prepareHeaders: (headers, { getState }) => {
-    //   const token = (getState() as any).auth.token; // Assuming auth slice has a token
-    //   if (token) {
-    //     headers.set('Authorization', `Bearer ${token}`);
-    //   }
-    //   return headers;
-    // },
+    prepareHeaders: (headers, { getState }) => {
+      const state = getState() as { app?: { user?: { token?: string } } };
+      
+      console.log(state);
+      const token = state.app?.user?.token;
+      console.log('Token:', token);
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      console.log('Headers:', headers);
+      return headers;
+    },
   }),
+  tagTypes: ['Auth'],
   endpoints: (builder) => ({
     generateIdeas: builder.mutation<ApiResponse<ContentIdea[]>, { topic: string }>({
       query: (body) => ({
@@ -91,19 +96,20 @@ export const api = createApi({
         body,
       }),
     }),
-    signUp: builder.mutation<ApiResponse<{ email: string; token: string }>, { email: string; password: string }>({
+    signUp: builder.mutation<ApiResponse<any>, { email: string; password: string }>({
       query: (body) => ({
-        url: '/signup',
+        url: '/user/signup',
         method: 'POST',
         body,
       }),
     }),
-    signIn: builder.mutation<ApiResponse<{ email: string; token: string }>, { email: string; password: string }>({
+    signIn: builder.mutation<ApiResponse<any>, { email: string; password: string }>({
       query: (body) => ({
-        url: '/signin',
+        url: '/user/signin',
         method: 'POST',
         body,
       }),
+      invalidatesTags: ['Auth'],
     }),
     generateTopics: builder.mutation<ApiResponse<GenerateTopicsResponse>, { business: string }>({
       query: (body) => ({

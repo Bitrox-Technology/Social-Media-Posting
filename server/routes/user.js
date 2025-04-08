@@ -8,7 +8,7 @@ userRouter.post("/signup", Signup)
 // userRouter.post("/otp_verification", UserControllers.VerifyOTP)
 // userRouter.post("/resend", UserControllers.ResendOTP)
 // userRouter.post("/forget-password", UserControllers.ForgetPassword)
-userRouter.post("/login", Login)
+userRouter.post("/signin", Login)
 
 // userRouter.post("/update-profile", AuthMiddleware, upload.single("avatar"), UserControllers.UpdateProfile)
 // userRouter.get("/get-profile", AuthMiddleware, UserControllers.GetProfile)

@@ -1,4 +1,4 @@
-import { ApiError } from "./apiError.js";
+import { ApiError } from "./ApiError.js";
 import bcrypt from "bcrypt"
 import otpGenerator from "otp-generator";
 import jwt from "jsonwebtoken"

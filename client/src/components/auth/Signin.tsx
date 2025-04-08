@@ -14,12 +14,17 @@ export const SignIn = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    
     try {
       const response = await signIn({ email, password }).unwrap();
-      dispatch(setUser({ email: response.data.email, token: response.data.token }));
-      navigate('/');
-    } catch (err) {
-      setError('Signin failed. Check credentials.');
+      console.log(response)
+      if (response.success) {
+        dispatch(setUser({ email: response.data.email, token: response.data.accessToken }));
+        navigate('/');
+      }
+    } catch (err: any) {
+      setError(err?.data?.message || 'Signin failed. Please check your credentials.');
     }
   };
 
@@ -29,9 +34,7 @@ export const SignIn = () => {
         <h2 className="text-2xl font-bold text-yellow-500 mb-6 text-center">Sign In</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-white mb-2" htmlFor="email">
-              Email
-            </label>
+            <label className="block text-white mb-2" htmlFor="email">Email</label>
             <input
               type="email"
               id="email"
@@ -42,9 +45,7 @@ export const SignIn = () => {
             />
           </div>
           <div className="mb-6">
-            <label className="block text-white mb-2" htmlFor="password">
-              Password
-            </label>
+            <label className="block text-white mb-2" htmlFor="password">Password</label>
             <input
               type="password"
               id="password"
@@ -65,9 +66,7 @@ export const SignIn = () => {
         </form>
         <p className="text-white text-center mt-4">
           Don’t have an account?{' '}
-          <Link to="/signup" className="text-yellow-500 hover:underline">
-            Sign Up
-          </Link>
+          <Link to="/signup" className="text-yellow-500 hover:underline">Sign Up</Link>
         </p>
       </div>
     </div>

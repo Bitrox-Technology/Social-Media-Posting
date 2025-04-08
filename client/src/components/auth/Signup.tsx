@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../store/hooks';
 import { useSignUpMutation } from '../../store/api';
-import { setUser } from '../../store/appSlice';
 
 export const SignUp = () => {
   const [email, setEmail] = useState('');
@@ -14,12 +13,17 @@ export const SignUp = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    
     try {
-      const response = await signUp({ email, password }).unwrap();
-      dispatch(setUser({ email: response.data.email, token: response.data.token }));
-      navigate('/');
-    } catch (err) {
-      setError('Signup failed. Try again.');
+      const signUpResponse = await signUp({ email, password }).unwrap();
+      console.log(signUpResponse)
+      if (signUpResponse.success) {
+        // Redirect to signin without setting token
+        navigate('/signin');
+      }
+    } catch (err: any) {
+      setError(err?.data?.message || 'Signup failed. Please try again.');
     }
   };
 
@@ -29,9 +33,7 @@ export const SignUp = () => {
         <h2 className="text-2xl font-bold text-yellow-500 mb-6 text-center">Sign Up</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-white mb-2" htmlFor="email">
-              Email
-            </label>
+            <label className="block text-white mb-2" htmlFor="email">Email</label>
             <input
               type="email"
               id="email"
@@ -42,9 +44,7 @@ export const SignUp = () => {
             />
           </div>
           <div className="mb-6">
-            <label className="block text-white mb-2" htmlFor="password">
-              Password
-            </label>
+            <label className="block text-white mb-2" htmlFor="password">Password</label>
             <input
               type="password"
               id="password"
@@ -65,9 +65,7 @@ export const SignUp = () => {
         </form>
         <p className="text-white text-center mt-4">
           Already have an account?{' '}
-          <Link to="/signin" className="text-yellow-500 hover:underline">
-            Sign In
-          </Link>
+          <Link to="/signin" className="text-yellow-500 hover:underline">Sign In</Link>
         </p>
       </div>
     </div>
