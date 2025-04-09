@@ -14,7 +14,7 @@ interface ContentIdea {
 }
 
 interface ImageGeneratorProps {
-  contentType: 'post' | 'reel' | 'carousel' | 'doyouknow';
+  contentType: 'post' | 'blog' | 'carousel' | 'doyouknow';
 }
 
 export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ contentType }) => {

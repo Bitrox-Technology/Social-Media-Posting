@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { ArrowLeft, Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -7,7 +7,8 @@ import {
   useGenerateCarouselMutation,
   useGenerateDoYouKnowMutation,
   useUploadImageToCloudinaryMutation,
-  useGenerateImageContentMutation
+  useGenerateImageContentMutation,
+  useSavePostsMutation,
 } from '../../store/api';
 import { setPosts } from '../../store/appSlice';
 import { motion } from 'framer-motion';
@@ -57,7 +58,9 @@ export const AutoPostCreator = () => {
   const dispatch = useAppDispatch();
   const selectedTopic = useAppSelector((state) => state.app.selectedTopic);
   const [posts, setLocalPosts] = useState<Post[]>([]);
+  const [completedPosts, setCompletedPosts] = useState<Post[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastGeneratedIndex, setLastGeneratedIndex] = useState(-1);
   const [activeCarouselTopic, setActiveCarouselTopic] = useState<string | null>(null);
   const [editCarouselTopic, setEditCarouselTopic] = useState<string | null>(null);
   const [activeDoYouKnowTopic, setActiveDoYouKnowTopic] = useState<string | null>(null);
@@ -70,6 +73,9 @@ export const AutoPostCreator = () => {
   const [generateDoYouKnow] = useGenerateDoYouKnowMutation();
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [generateImageContent] = useGenerateImageContentMutation();
+  const [savePosts] = useSavePostsMutation();
+
+  const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const topics = selectedTopic ? selectedTopic.split(', ').filter(Boolean).slice(0, 7) : [];
   const postTypes: ('image' | 'carousel' | 'doyouknow')[] = [
@@ -86,7 +92,6 @@ export const AutoPostCreator = () => {
     if (!selectedTopic) {
       navigate('/topic');
     } else {
-      // Initialize posts with pending status
       const initialPosts: Post[] = topics.map((topic, index) => ({
         topic,
         type: postTypes[index],
@@ -96,6 +101,18 @@ export const AutoPostCreator = () => {
       setLocalPosts(initialPosts);
     }
   }, [selectedTopic, navigate]);
+
+  const captureScreenshot = async (ref: HTMLDivElement | null) => {
+    if (!ref) return '';
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Ensure rendering
+    const canvas = await html2canvas(ref, {
+      useCORS: true,
+      scale: 2,
+      backgroundColor: null,
+      logging: true,
+    });
+    return canvas.toDataURL('image/png');
+  };
 
   const generatePost = async (topic: string, index: number) => {
     const type = postTypes[index];
@@ -109,7 +126,7 @@ export const AutoPostCreator = () => {
         case 'image':
           const randomTemplateIndex = Math.floor(Math.random() * imageTemplates.length);
           const randomTemplate = imageTemplates[randomTemplateIndex];
-          const contentRes = await generateImageContent({ topic: topic }).unwrap();
+          const contentRes = await generateImageContent({ topic }).unwrap();
           const generatedContent = contentRes.data;
           const imageRes = await generateImage({ prompt: topic }).unwrap();
           const imageUrl = imageRes.data;
@@ -181,7 +198,21 @@ export const AutoPostCreator = () => {
           throw new Error(`Unknown post type: ${type}`);
       }
 
-      setLocalPosts(prev => prev.map(p => p.topic === topic ? newPost : p));
+      setLocalPosts(prev => prev.filter(p => p.topic !== topic));
+      setCompletedPosts(prev => [...prev, newPost]);
+      setLastGeneratedIndex(index);
+
+      // Wait for the component to render and capture screenshot
+      await new Promise(resolve => setTimeout(resolve, 500)); // Delay to ensure rendering
+      const ref = postRefs.current.get(topic);
+      if (ref) {
+        const screenshot = await captureScreenshot(ref);
+        setCompletedPosts(prev => prev.map(p =>
+          p.topic === topic ? { ...p, images: [{ url: screenshot, label: `${type} Post` }] } : p
+        ));
+      }
+
+      return true;
     } catch (err) {
       console.error(`Error generating post for ${topic}:`, err);
       setLocalPosts(prev => prev.map(p => 
@@ -191,28 +222,33 @@ export const AutoPostCreator = () => {
           errorMessage: err instanceof Error ? err.message : 'An error occurred' 
         } : p
       ));
+      setLastGeneratedIndex(index - 1);
+      return false;
     }
   };
 
   const generateAllPosts = async () => {
+    if (isGenerating) return;
     setIsGenerating(true);
-    for (let i = 0; i < topics.length; i++) {
-      await generatePost(topics[i], i);
+
+    const startIndex = lastGeneratedIndex + 1;
+    for (let i = startIndex; i < topics.length; i++) {
+      const success = await generatePost(topics[i], i);
+      if (!success) {
+        break;
+      }
     }
+    
     setIsGenerating(false);
   };
 
   const handleImageGenerated = (topic: string, image: string) => {
-    const updatedPosts = posts.map((post) =>
-      post.topic === topic && post.type === 'image'
-        ? {
-            ...post,
-            images: [{ url: image, label: 'Image Post' }],
-            content: { ...(post.content as ImageContent), imageUrl: image },
-          }
-        : post
-    );
-    setLocalPosts(updatedPosts);
+    const updatedPost = completedPosts.find(post => post.topic === topic && post.type === 'image');
+    if (updatedPost) {
+      setCompletedPosts(prev => prev.map(p =>
+        p.topic === topic ? { ...p, images: [{ url: image, label: 'Image Post' }] } : p
+      ));
+    }
     setActiveImageTopic(null);
   };
 
@@ -227,22 +263,15 @@ export const AutoPostCreator = () => {
 
       if (!cloudinaryUrl) throw new Error('Failed to upload image');
 
-      const updatedPosts = posts.map((post) =>
+      setCompletedPosts(prev => prev.map(post =>
         post.topic === topic && post.type === 'image'
           ? {
               ...post,
-              content: {
-                title: updatedSlide.title,
-                description: updatedSlide.description,
-                footer: updatedSlide.footer,
-                websiteUrl: updatedSlide.websiteUrl,
-                imageUrl: cloudinaryUrl,
-              },
+              content: { ...updatedSlide, imageUrl: cloudinaryUrl },
               images: [{ url: cloudinaryUrl, label: 'Image Post' }],
             }
           : post
-      );
-      setLocalPosts(updatedPosts);
+      ));
       setEditImageTopic(null);
     } catch (error) {
       console.error('Error uploading image screenshot:', error);
@@ -251,10 +280,11 @@ export const AutoPostCreator = () => {
 
   const handleCarouselImagesGenerated = (topic: string, images: string[]) => {
     const labeledImages = images.map((url, idx) => ({ url, label: `Carousel Slide ${idx + 1}` }));
-    const updatedPosts = posts.map((post) =>
-      post.topic === topic && post.type === 'carousel' ? { ...post, images: labeledImages } : post
-    );
-    setLocalPosts(updatedPosts);
+    setCompletedPosts(prev => prev.map(post =>
+      post.topic === topic && post.type === 'carousel'
+        ? { ...post, images: labeledImages }
+        : post
+    ));
     setActiveCarouselTopic(null);
     setEditCarouselTopic(topic);
   };
@@ -264,26 +294,21 @@ export const AutoPostCreator = () => {
       url: url,
       label: `Carousel Slide ${idx + 1}`,
     }));
-    const updatedPosts = posts.map((post) =>
+    setCompletedPosts(prev => prev.map(post =>
       post.topic === topic && post.type === 'carousel'
         ? { ...post, content: updatedSlides, images: labeledImages }
         : post
-    );
-    setLocalPosts(updatedPosts);
+    ));
     setEditCarouselTopic(null);
   };
 
   const handleDoYouKnowImagesGenerated = (topic: string, image: string) => {
-    const updatedPosts = posts.map((post) =>
-      post.topic === topic && post.type === 'doyouknow'
-        ? {
-            ...post,
-            images: [{ url: image, label: 'Do You Know' }],
-            content: { ...(post.content as DoYouKnowContent), imageUrl: image },
-          }
-        : post
-    );
-    setLocalPosts(updatedPosts);
+    const updatedPost = completedPosts.find(post => post.topic === topic && post.type === 'doyouknow');
+    if (updatedPost) {
+      setCompletedPosts(prev => prev.map(p =>
+        p.topic === topic ? { ...p, images: [{ url: image, label: 'Do You Know' }] } : p
+      ));
+    }
     setActiveDoYouKnowTopic(null);
   };
 
@@ -298,25 +323,35 @@ export const AutoPostCreator = () => {
 
       if (!cloudinaryUrl) throw new Error('Failed to upload Do You Know image');
 
-      const updatedPosts = posts.map((post) =>
+      setCompletedPosts(prev => prev.map(post =>
         post.topic === topic && post.type === 'doyouknow'
           ? {
               ...post,
-              content: {
-                title: updatedSlide.title,
-                fact: updatedSlide.fact,
-                footer: updatedSlide.footer,
-                websiteUrl: updatedSlide.websiteUrl,
-                imageUrl: cloudinaryUrl,
-              },
+              content: { ...updatedSlide, imageUrl: cloudinaryUrl },
               images: [{ url: cloudinaryUrl, label: 'Do You Know' }],
             }
           : post
-      );
-      setLocalPosts(updatedPosts);
+      ));
       setEditDoYouKnowTopic(null);
     } catch (error) {
       console.error('Error uploading Do You Know screenshot:', error);
+    }
+  };
+
+  const handleContinueToPost = async () => {
+    try {
+      const postsToSave = completedPosts.map(post => ({
+        type: post.type, // e.g., "image", "carousel", "doyouknow"
+        images: post.images?.map(image => image.url) || [], // Only save the URLs
+      }));
+  
+      console.log('Saving posts:', postsToSave);
+  
+      await savePosts(postsToSave).unwrap();
+      navigate('/next-component');
+    } catch (error) {
+      console.error('Error saving posts:', error);
+      alert('Failed to save posts. Please try again.');
     }
   };
 
@@ -358,7 +393,7 @@ export const AutoPostCreator = () => {
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 300 }}
         >
-          {isGenerating ? 'Generating...' : 'Generate All Posts'}
+          {isGenerating ? 'Generating...' : lastGeneratedIndex < topics.length - 1 ? 'Generate Posts' : 'Regenerate Posts'}
         </motion.button>
       </div>
 
@@ -368,158 +403,135 @@ export const AutoPostCreator = () => {
         <p className="text-red-500">Please select exactly 7 topics to proceed.</p>
       ) : (
         <div className="space-y-4">
-          {posts.map((post) => (
-            <div key={post.topic} className="bg-gray-800 p-4 rounded-lg border border-yellow-500/50">
-              <div className="flex items-center justify-between">
-                <div className="w-full">
-                  <div className="flex items-center">
-                    {getStatusIcon(post.status)}
-                    <h3 className="text-lg font-semibold text-white ml-2">
-                      {post.topic} ({post.type})
-                    </h3>
+          {/* Pending/Error Posts Section */}
+          {posts.length > 0 && (
+            <div className="space-y-4 mb-8">
+              <h3 className="text-xl font-semibold text-white">In Progress</h3>
+              {posts.map((post) => (
+                <div key={post.topic} className="bg-gray-800 p-4 rounded-lg border border-yellow-500/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      {getStatusIcon(post.status)}
+                      <h3 className="text-lg font-semibold text-white ml-2">
+                        {post.topic} ({post.type})
+                      </h3>
+                    </div>
+                    {post.status === 'error' && (
+                      <p className="text-red-500">{post.errorMessage}</p>
+                    )}
                   </div>
-                  {post.status === 'error' && (
-                    <p className="text-red-500 mt-2">{post.errorMessage}</p>
-                  )}
-                  {post.status === 'success' && (
-                    <div className="mt-2">
-                      {post.type === 'image' ? (
-                        <>
-                          {activeImageTopic === post.topic && !editImageTopic ? (
-                            <ImageGeneration
-                              onImagesGenerated={(image) => handleImageGenerated(post.topic, image)}
-                              initialSlide={post.content as ImageContent}
-                              templateId={post.templateId || imageTemplates[0].id}
-                              topic={post.topic}
-                            />
-                          ) : editImageTopic === post.topic ? (
-                            <ImageGeneration
-                              onSave={(updatedSlide, ref) => handleImageUpdated(post.topic, updatedSlide, ref)}
-                              initialSlide={post.content as ImageContent}
-                              templateId={post.templateId || imageTemplates[0].id}
-                              topic={post.topic}
-                            />
-                          ) : post.images ? (
-                            <div>
-                              {post.images.map((img, idx) => (
-                                <div key={idx}>
-                                  <img
-                                    src={img.url}
-                                    alt={img.label}
-                                    className="w-32 h-32 object-cover inline-block mr-2"
-                                  />
-                                  <span className="text-gray-300">{img.label}</span>
-                                </div>
-                              ))}
-                              <button
-                                onClick={() => setEditImageTopic(post.topic)}
-                                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                              >
-                                Edit Image
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setEditImageTopic(post.topic)}
-                              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                            >
-                              Edit Image
-                            </button>
-                          )}
-                        </>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Completed Posts Section */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-white">Completed Posts</h3>
+            {completedPosts.map((post) => (
+              <motion.div
+                key={post.topic}
+                className="bg-gray-800 p-4 rounded-lg border border-green-500/50"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                ref={(el) => el && postRefs.current.set(post.topic, el)}
+              >
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      {getStatusIcon(post.status)}
+                      <h3 className="text-lg font-semibold text-white ml-2">
+                        {post.topic} ({post.type})
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (post.type === 'image') setEditImageTopic(post.topic);
+                        if (post.type === 'carousel') setEditCarouselTopic(post.topic);
+                        if (post.type === 'doyouknow') setEditDoYouKnowTopic(post.topic);
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <div>
+                    {post.type === 'image' && editImageTopic === post.topic ? (
+                      <ImageGeneration
+                        onSave={(updatedSlide, ref) => handleImageUpdated(post.topic, updatedSlide, ref)}
+                        initialSlide={post.content as ImageContent}
+                        templateId={post.templateId || imageTemplates[0].id}
+                        topic={post.topic}
+                      />
+                    ) : post.type === 'carousel' && editCarouselTopic === post.topic ? (
+                      <Carousel
+                        initialTopic={post.topic}
+                        template={post.templateId || carouselTemplates[0].id}
+                        slides={post.content as Slide[]}
+                        onSave={(updatedSlides, images) => handleCarouselUpdated(post.topic, updatedSlides, images)}
+                      />
+                    ) : post.type === 'doyouknow' && editDoYouKnowTopic === post.topic ? (
+                      <DoYouKnow
+                        onSave={(updatedSlide, ref) => handleDoYouKnowUpdated(post.topic, updatedSlide, ref)}
+                        initialSlide={post.content as DoYouKnowContent}
+                        templateId={post.templateId || doYouKnowTemplates[0].id}
+                      />
+                    ) : (
+                      post.type === 'image' ? (
+                        <ImageGeneration
+                          initialSlide={post.content as ImageContent}
+                          templateId={post.templateId || imageTemplates[0].id}
+                          topic={post.topic}
+                          onImagesGenerated={(image) => handleImageGenerated(post.topic, image)}
+                        />
                       ) : post.type === 'carousel' ? (
-                        <>
-                          {activeCarouselTopic === post.topic && !editCarouselTopic ? (
-                            <Carousel
-                              initialTopic={post.topic}
-                              template={post.templateId || carouselTemplates[0].id}
-                              slides={post.content as Slide[]}
-                              onImagesGenerated={(images) => handleCarouselImagesGenerated(post.topic, images)}
-                            />
-                          ) : editCarouselTopic === post.topic ? (
-                            <Carousel
-                              initialTopic={post.topic}
-                              template={post.templateId || carouselTemplates[0].id}
-                              slides={post.content as Slide[]}
-                              onSave={(updatedSlides, images) => handleCarouselUpdated(post.topic, updatedSlides, images)}
-                            />
-                          ) : post.images ? (
-                            <div>
-                              {post.images.map((img, idx) => (
-                                <div key={idx}>
-                                  <img
-                                    src={img.url}
-                                    alt={img.label}
-                                    className="w-32 h-32 object-cover inline-block mr-2"
-                                  />
-                                  <span className="text-gray-300">{img.label}</span>
-                                </div>
-                              ))}
-                              <button
-                                onClick={() => setEditCarouselTopic(post.topic)}
-                                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                              >
-                                Edit Carousel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setEditCarouselTopic(post.topic)}
-                              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                            >
-                              Edit Carousel
-                            </button>
-                          )}
-                        </>
+                        <Carousel
+                          initialTopic={post.topic}
+                          template={post.templateId || carouselTemplates[0].id}
+                          slides={post.content as Slide[]}
+                          onImagesGenerated={(images) => handleCarouselImagesGenerated(post.topic, images)}
+                        />
                       ) : post.type === 'doyouknow' ? (
-                        <>
-                          {activeDoYouKnowTopic === post.topic && !editDoYouKnowTopic ? (
-                            <DoYouKnow
-                              onImagesGenerated={(image) => handleDoYouKnowImagesGenerated(post.topic, image)}
-                              initialSlide={post.content as DoYouKnowContent}
-                              templateId={post.templateId || doYouKnowTemplates[0].id}
-                            />
-                          ) : editDoYouKnowTopic === post.topic ? (
-                            <DoYouKnow
-                              onSave={(updatedSlide, ref) => handleDoYouKnowUpdated(post.topic, updatedSlide, ref)}
-                              initialSlide={post.content as DoYouKnowContent}
-                              templateId={post.templateId || doYouKnowTemplates[0].id}
-                            />
-                          ) : post.images ? (
-                            <div>
-                              {post.images.map((img, idx) => (
-                                <div key={idx}>
-                                  <img
-                                    src={img.url}
-                                    alt={img.label}
-                                    className="w-32 h-32 object-cover inline-block mr-2"
-                                  />
-                                  <span className="text-gray-300">{img.label}</span>
-                                </div>
-                              ))}
-                              <button
-                                onClick={() => setEditDoYouKnowTopic(post.topic)}
-                                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                              >
-                                Edit Do You Know
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setEditDoYouKnowTopic(post.topic)}
-                              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                            >
-                              Edit Do You Know
-                            </button>
-                          )}
-                        </>
-                      ) : null}
+                        <DoYouKnow
+                          initialSlide={post.content as DoYouKnowContent}
+                          templateId={post.templateId || doYouKnowTemplates[0].id}
+                          onImagesGenerated={(image) => handleDoYouKnowImagesGenerated(post.topic, image)}
+                        />
+                      ) : null
+                    )}
+                  </div>
+                  {post.images && (
+                    <div className="flex flex-wrap gap-2">
+                      {post.images.map((img, idx) => (
+                        <div key={idx} className="flex flex-col items-center">
+                          <img
+                            src={img.url}
+                            alt={img.label}
+                            className="w-32 h-32 object-cover rounded"
+                          />
+                          <span className="text-gray-300 text-sm mt-1">{img.label}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Continue to Post Button */}
+          {completedPosts.length === topics.length && (
+            <motion.button
+              onClick={handleContinueToPost}
+              className="mt-6 px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+            >
+              Continue to Post
+            </motion.button>
+          )}
         </div>
       )}
     </div>

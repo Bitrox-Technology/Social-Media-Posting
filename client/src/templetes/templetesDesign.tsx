@@ -292,7 +292,7 @@ const Template1: CarouselTemplate = {
 const Template2: CarouselTemplate = {
   id: 'template-social-media',
   name: 'Social Media Growth Hacks',
-  coverImageUrl: '/images/background1.png',
+  coverImageUrl: '/images/carousel-cover/cover4.png',
   slides: [
     {
       title: 'Growth Hacks for Your Social Media Business',
@@ -659,7 +659,7 @@ const Template3: CarouselTemplate = {
 const Template4: CarouselTemplate = {
   id: 'template-ai-agents',
   name: 'AI Agents',
-  coverImageUrl: '/images/background1.png',
+  coverImageUrl: '',
   slides: [
     {
       title: 'Integrate The Power Of AI In Your Business.',
@@ -1690,7 +1690,7 @@ const Template6: CarouselTemplate = {
 const Template7: CarouselTemplate = {
   id: 'template7',
   name: 'Cosmic Tech Galaxy',
-  coverImageUrl: '/images/carousel-cover/cosmic-cover.png',
+  coverImageUrl: '/images/carousel-cover/cover5.png',
   slides: [
     {
       tagline: 'Welcome to GalaxyTech',

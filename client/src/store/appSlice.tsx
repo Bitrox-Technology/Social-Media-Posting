@@ -31,7 +31,7 @@ interface Post {
   templateId?: string; 
 }
 interface AppState {
-  contentType: 'post' | 'reel' | 'carousel' | 'doyouknow' | null; // Added more types
+  contentType: 'post' | 'blog' | 'carousel' | 'doyouknow' | null; // Added more types
   selectedTopic: string;
   selectedIdea: ContentIdea | null;
   selectedFile: SelectedFileData | null;
@@ -71,7 +71,7 @@ const appSlice = createSlice({
   reducers: {
     setContentType(
       state,
-      action: PayloadAction<'post' | 'reel' | 'carousel' | 'doyouknow' | null>
+      action: PayloadAction<'post' | 'blog' | 'carousel' | 'doyouknow' | null>
     ) {
       state.contentType = action.payload;
     },

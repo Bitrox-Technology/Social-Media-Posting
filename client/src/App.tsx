@@ -16,6 +16,7 @@ import { TemplateCarousel } from './components/ui/TemplateCarousel';
 import { DoYouKnowTemplateSelector } from './components/ui/DoYouKnowTemplate';
 import { ImageGeneration } from './components/ui/ImageGeneration';
 import { ImageGenerationTemplate } from './components/ui/ImageGenerationTemplate';
+import { Blog } from './components/content/Blog';
 
 function App() {
   // Access state from Redux store
@@ -70,6 +71,7 @@ function App() {
             <Route path='/tmcarousel' element={<TemplateCarousel initialTopic="defaultTopic" />} />
             <Route path='/tmimagegeneration' element={<ImageGenerationTemplate/>} />
             <Route path='/tmdoyouknow' element={<DoYouKnowTemplateSelector />} />
+            <Route path="/blog" element={<Blog />} />
             <Route path="/doyouknow" element={<DoYouKnow />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/signin" element={<SignIn />} />

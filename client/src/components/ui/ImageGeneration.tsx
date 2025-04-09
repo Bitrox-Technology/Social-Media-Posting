@@ -71,19 +71,17 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     );
   };
 
-  // Initialize slide without generating content/image on mount
   useEffect(() => {
     const initializeSlide = async () => {
-      if (isInitialized) return; // Skip if already initialized
+      if (isInitialized) return;
 
       let updatedSlide = { ...slide };
-
       await preloadSlideImages(updatedSlide);
       setSlide(updatedSlide);
 
       if (onImagesGenerated && updatedSlide.imageUrl) {
-        const image = await captureScreenshot(updatedSlide);
-        onImagesGenerated(image);
+        const image = await captureScreenshot();
+        if (image) onImagesGenerated(image);
       }
 
       setIsInitialized(true);
@@ -92,7 +90,6 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     initializeSlide();
   }, [selectedTemplate, onImagesGenerated, isInitialized]);
 
-  // Update slide when custom fields change
   useEffect(() => {
     const updateSlide = async () => {
       const updatedSlide = {
@@ -106,39 +103,34 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
       await preloadSlideImages(updatedSlide);
       setSlide(updatedSlide);
 
-      // If onImagesGenerated is provided, capture a new screenshot after updating the slide
       if (onImagesGenerated && updatedSlide.imageUrl) {
-        const image = await captureScreenshot(updatedSlide);
-        onImagesGenerated(image);
+        const image = await captureScreenshot();
+        if (image) onImagesGenerated(image);
       }
     };
     updateSlide();
   }, [customTitle, customDescription, customFooter, showLogo, onImagesGenerated]);
 
-  // Update slide when initialSlide changes (e.g., when imageUrl is updated from AutoPostCreator)
   useEffect(() => {
     if (initialSlide && initialSlide.imageUrl !== slide.imageUrl) {
       const updatedSlide = { ...slide, imageUrl: initialSlide.imageUrl || '' };
       setSlide(updatedSlide);
-      // Preload the new image and capture a screenshot
       const updateAndCapture = async () => {
         await preloadSlideImages(updatedSlide);
         if (onImagesGenerated && updatedSlide.imageUrl) {
-          const image = await captureScreenshot(updatedSlide);
-          onImagesGenerated(image);
+          const image = await captureScreenshot();
+          if (image) onImagesGenerated(image);
         }
       };
       updateAndCapture();
     }
   }, [initialSlide, onImagesGenerated]);
 
-  const captureScreenshot = async (slideToCapture: ImageSlide) => {
+  const captureScreenshot = async () => {
     if (!slideRef.current) return '';
-    await preloadSlideImages(slideToCapture);
-    // Clear the slideRef content to prevent duplication
-    if (slideRef.current) {
-      slideRef.current.innerHTML = '';
-    }
+
+    // Ensure the slide is rendered before capturing
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay to ensure rendering
     const canvas = await html2canvas(slideRef.current, {
       useCORS: true,
       scale: 2,
@@ -160,11 +152,10 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
       const updatedSlide = { ...slide, imageUrl: generatedImageUrl || '' };
       setSlide(updatedSlide);
 
-      // Preload the new image and capture a screenshot
       await preloadSlideImages(updatedSlide);
       if (onImagesGenerated) {
-        const image = await captureScreenshot(updatedSlide);
-        onImagesGenerated(image);
+        const image = await captureScreenshot();
+        if (image) onImagesGenerated(image);
       }
     } catch (error) {
       console.error('Error generating image:', error);

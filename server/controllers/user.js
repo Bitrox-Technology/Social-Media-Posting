@@ -25,4 +25,14 @@ const Login = async (req, res, next) => {
 }
 
 
-export { Signup, Login }
+const SavePosts = async (req, res, next) => {
+    try {
+        let user = await login(req.body)
+        return res.status(OK).json(new ApiResponse(OK, user, "User Login Successfully" ))
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+export { Signup, Login, SavePosts }

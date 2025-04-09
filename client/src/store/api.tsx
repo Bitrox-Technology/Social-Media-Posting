@@ -125,6 +125,13 @@ export const api = createApi({
         body,
       }),
     }),
+    savePosts: builder.mutation<void, Post[]>({
+      query: (posts) => ({
+        url: '/posts',
+        method: 'POST',
+        body: posts,
+      }),
+    }),
   }),
 });
 
@@ -139,5 +146,6 @@ export const {
   useSignUpMutation,
   useSignInMutation,
   useGenerateTopicsMutation,
-  useGenerateImageContentMutation
+  useGenerateImageContentMutation,
+  useSavePostsMutation
 } = api;
