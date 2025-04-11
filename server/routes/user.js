@@ -1,5 +1,6 @@
 import { Router } from "express"
 import {Signup, Login, SavePosts} from "../controllers/user.js"
+import { AuthMiddleware } from "../middlewares/auth.js"
 // import AuthMiddleware from "../middlewares/auth.js"
 // import { upload } from "../middlewares/multer.js"
 

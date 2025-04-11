@@ -43,7 +43,7 @@ const generateCarouselContent = async (topic) => {
 
     // Call Ollama DeepSeek API once
     const response = await ollama.chat({
-      model: "deepseek-r1:14b",
+      model: "gemma3:latest",
       messages: [
         {
           role: "user",
@@ -65,7 +65,7 @@ const generateDoYouKnow = async (topic) => {
   try {
     const prompt = `Generate a "Did You Know?" fact about the topic "${topic}" in JSON format. The JSON must have two fields: "title" and "description". The "title" must be "DID YOU KNOW?" in uppercase. The "description" must be a concise, interesting fact (1-2 sentences, 15-25 words, max 30 words). Example: {"title": "DID YOU KNOW?", "description": "Social media in digital marketing reaches billions, surpassing traditional ads with real-time engagement."}`;
     const response = await ollama.chat({
-      model: "deepseek-r1:14b",
+      model: "gemma3:latest",
       messages: [
         {
           role: "user",
@@ -96,7 +96,7 @@ const generateImageContent = async (topic) => {
       - "description": A brief description or quote (1-2 sentences, 15-25 words, max 30 words), (e.g., "Is it too soon to say 'I love you'?").`;
 
     const response = await ollama.chat({
-      model: "deepseek-r1:14b",
+      model: "gemma3:latest",
       messages: [
         {
           role: "user",
@@ -125,7 +125,7 @@ const generateTopics = async (topic) => {
     const prompt = `Generate 10 topics related to "${topic}" in JSON format. The JSON must have keys "topic1" through "topic10", each with a string value representing a topic. Example: {"topic1": "Example Topic 1", "topic2": "Example Topic 2", ...}`;
 
     const response = await ollama.chat({
-      model: "deepseek-r1:14b",
+      model: "gemma3:latest",
       messages: [
         {
           role: "user",
@@ -178,9 +178,84 @@ const generateTopics = async (topic) => {
   }
 };
 
+
+const generateBlog = async (topic) => {
+  try {
+    // Handle topic as string or object
+    const topicString = typeof topic === 'object' && topic.topic ? topic.topic.trim() : topic.trim();
+    console.log("Processed Topic:", topicString);
+
+    const prompt = `Generate content for a blog post strictly about the topic "${topicString}". Do not deviate to unrelated topics like the metaverse unless explicitly part of "${topicString}". Provide the following in JSON format:
+      - "title": A compelling and descriptive title directly related to "${topicString}" (e.g., "The Future of Technologies: What Lies Ahead").
+      - "content": A detailed blog post (400-500 words) in an engaging tone, structured as follows:
+        - Introduction: Briefly introduce "${topicString}" and its importance (2-3 sentences).
+        - Why It Matters: Explain key reasons "${topicString}" is impactful with 1-2 sentences per point.
+        - Applications: List 3-4 specific examples of "${topicString}" in action across industries (1-2 sentences each).
+        - Key Benefits: Highlight 3-5 benefits of "${topicString}" in concise points (1 sentence each).
+        - Challenges: Mention 2-3 challenges or limitations of "${topicString}" (1-2 sentences each).
+        - Future Outlook: Discuss the future potential or trends of "${topicString}" (2-3 sentences).
+        - Conclusion: Wrap up with a summary and forward-looking statement about "${topicString}" (2-3 sentences).
+      Ensure the content is informative, structured, and avoids excessive repetition. Return only the JSON object with all special characters (e.g., newlines, tabs, quotes) properly escaped in the "content" string to ensure valid JSON.`;
+
+    const response = await ollama.chat({
+      model: "gemma3:latest",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+
+    // console.log("Raw Response:", response.message.content);   
+
+    // Extract JSON between first '{' and last '}'
+    const jsonStart = response.message.content.indexOf('{');
+    const jsonEnd = response.message.content.lastIndexOf('}') + 1;
+    if (jsonStart === -1 || jsonEnd === -1) {
+      throw new Error("No valid JSON object found in response");
+    }
+    let jsonString = response.message.content.substring(jsonStart, jsonEnd)
+      .replace(/```json|```/g, "") // Remove code fences
+      .trim();
+
+    // console.log("Initial Extracted JSON:", jsonString);
+
+    // Extract and escape the content field
+    const contentMatch = jsonString.match(/"content"\s*:\s*"((?:[^"\\]|\\.)*?)"/s);
+    if (contentMatch && contentMatch[1]) {
+      const rawContent = contentMatch[1];
+      const escapedContent = rawContent
+        .replace(/\n/g, "\\n") // Escape newlines
+        .replace(/\t/g, "\\t") // Escape tabs
+        .replace(/\r/g, "\\r") // Escape carriage returns
+        .replace(/"/g, "\\\"") // Escape double quotes within content
+        .replace(/\\(?![nrt"])/g, "\\\\"); // Escape lone backslashes
+      jsonString = jsonString.replace(`"${rawContent}"`, `"${escapedContent}"`);
+    } else {
+      throw new Error("Failed to extract or escape content field");
+    }
+
+    // console.log("Fixed JSON:", jsonString);
+
+    const generatedContent = JSON.parse(jsonString);
+    console.log("Parsed Content:", generatedContent);
+
+    // Return only the { title, content } object
+    return {
+      title: generatedContent.title,
+      content: generatedContent.content
+    };
+  } catch (error) {
+    console.error("Error:", error);
+    throw new ApiError(400, error.message || "Failed to generate blog content");
+  }
+};
+
 export {
   generateCarouselContent,
   generateDoYouKnow,
   generateTopics,
   generateImageContent,
+  generateBlog
 };

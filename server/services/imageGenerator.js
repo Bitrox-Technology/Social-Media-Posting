@@ -15,7 +15,7 @@ async function generateImage(prompt, negativePrompt) {
     cfg_scale: 7.0, // Slightly increased for sharper features
     batch_size: 1,
     override_settings: {
-      sd_model_checkpoint: 'sd_xl_base_1.0.safetensors',
+      sd_model_checkpoint: 'fluxUnchainedBySCG_hyfu8StepHybridV10.safetensors',
       // sd_vae: 'sdxl_vae.safetensors', // Uncomment if sharper VAE helps
     },
     enable_hr: true,

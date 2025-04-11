@@ -7,7 +7,8 @@ import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
-import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent } from "../services/generateCarousel.js";
+import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent, generateBlog } from "../services/generateCarousel.js";
+import { postBlog } from "../services/blogPost.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
@@ -227,8 +228,8 @@ const Post = async (req, res, next) => {
     const mediaType = file.mimetype.startsWith("image")
       ? "photo"
       : file.mimetype.startsWith("video")
-      ? "video"
-      : null;
+        ? "video"
+        : null;
     if (!mediaType)
       throw new ApiError(
         400,
@@ -258,11 +259,10 @@ const Post = async (req, res, next) => {
       parsedHashtags = hashtags.split(",");
     }
 
-    const finalCaption = `${title}\n\n${content}${
-      parsedHashtags && Array.isArray(parsedHashtags)
+    const finalCaption = `${title}\n\n${content}${parsedHashtags && Array.isArray(parsedHashtags)
         ? "\n\n" + parsedHashtags.map((tag) => `${tag.trim()}`).join(" ")
         : ""
-    }`;
+      }`;
 
     // Log the final caption to verify title inclusion
     console.log("Final caption to be posted:", finalCaption);
@@ -409,7 +409,7 @@ const UploadSingleImage = async (req, res, next) => {
 
   try {
     const result = await uploadOnClodinary(req.file.path);
-    
+
     return res.status(200).json(new ApiResponse(200, result, "Image uploaded successfully"));
   } catch (error) {
     next(error);
@@ -417,7 +417,7 @@ const UploadSingleImage = async (req, res, next) => {
 };
 
 const GenerateDoYouKnow = async (req, res, next) => {
-  
+
   const { topic } = req.body;
 
   if (!topic) {
@@ -432,7 +432,7 @@ const GenerateDoYouKnow = async (req, res, next) => {
 };
 
 const GenerateTopics = async (req, res, next) => {
-  
+
   const { business } = req.body;
 
   if (!business) {
@@ -445,8 +445,9 @@ const GenerateTopics = async (req, res, next) => {
     next(error);
   }
 };
+
 const GenerateImageContent = async (req, res, next) => {
-  
+
   const { topic } = req.body;
 
   if (!topic) {
@@ -461,5 +462,73 @@ const GenerateImageContent = async (req, res, next) => {
 };
 
 
+const BlogPost = async (req, res, next) => {
 
-export { Post, Content, Ideas, GenerateImage, GenerateCarousel, UploadCarouselImages , UploadSingleImage, GenerateDoYouKnow, GenerateTopics, GenerateImageContent};
+  const postData = {
+    title: 'Exploring the Universe with AI: The Future of Space Exploration',
+    content: `The universe has always been a source of wonder and mystery for humanity. From ancient civilizations gazing at the stars to modern-day telescopes peering into the farthest reaches of space, our quest to understand the cosmos has never waned. However, as we delve deeper into the vastness of the universe, the challenges grow more complex. Enter Artificial Intelligence (AI), a transformative technology that is revolutionizing how we explore space. In this blog, we’ll explore how AI is helping us unlock the secrets of the universe and what the future holds for this exciting intersection of science and technology.
+
+1. AI in Astronomy: A New Era of Discovery
+Astronomy has traditionally relied on human observation and manual data analysis. However, modern telescopes like the Hubble Space Telescope and the James Webb Space Telescope generate an overwhelming amount of data—terabytes every day. Sorting through this data manually would be impossible, but AI is stepping in to help.
+
+Data Processing and Pattern Recognition : Machine learning algorithms excel at identifying patterns in large datasets. For example, AI systems can detect exoplanets by analyzing light curves from distant stars, spotting tiny dips in brightness caused by planets passing in front of them. NASA’s Kepler mission used AI to discover thousands of exoplanets, some of which may harbor conditions suitable for life.
+Classifying Celestial Objects : AI models can classify galaxies, stars, and other celestial objects with remarkable accuracy. Tools like Google’s TensorFlow have been used to categorize millions of galaxies based on their shapes, aiding astronomers in understanding galaxy formation and evolution.
+2. Autonomous Space Missions: Letting AI Take the Wheel
+Space exploration often involves sending probes and rovers to distant planets or moons. These missions operate in environments where real-time communication with Earth is impossible due to signal delays. This is where AI-powered autonomy becomes crucial.
+
+Mars Rovers : NASA’s Perseverance rover uses AI to navigate Martian terrain independently. Its onboard computer processes images of the landscape to avoid obstacles and find the safest path forward. Similarly, the Ingenuity helicopter relies on AI for autonomous flight in Mars’ thin atmosphere.
+Satellite Operations : AI enables satellites to make decisions without waiting for commands from Earth. For instance, ESA’s Earth Observation satellites use AI to prioritize imaging tasks during natural disasters, ensuring critical data reaches emergency responders quickly.
+3. Searching for Extraterrestrial Life
+One of humanity’s greatest questions is whether we are alone in the universe. AI is playing a pivotal role in this search by enhancing our ability to analyze signals and chemical signatures that might indicate life.
+
+Signal Detection : Projects like SETI (Search for Extraterrestrial Intelligence) use AI to sift through radio signals from space, looking for patterns that could suggest intelligent communication. Algorithms trained to distinguish between noise and potential signals increase the chances of detecting alien broadcasts.
+Biosignature Analysis : On missions to icy moons like Europa and Enceladus, AI will help analyze subsurface oceans for signs of microbial life. By identifying specific chemical compounds or anomalies in spectral data, AI can guide scientists toward promising locations for further investigation.
+4. Simulating Cosmic Phenomena
+Understanding the universe requires modeling its most complex phenomena, such as black holes, supernovae, and galaxy collisions. AI-driven simulations allow researchers to create highly detailed models that were previously computationally expensive or even unfeasible.
+
+Neural Networks for Physics Simulations : AI tools like neural networks can simulate gravitational interactions and particle dynamics faster and more accurately than traditional methods. This helps astrophysicists test theories about dark matter, dark energy, and the early universe.
+Predictive Modeling : AI can predict outcomes of cosmic events, such as asteroid impacts or solar flares, helping us prepare for potential threats to Earth.
+5. Challenges and Ethical Considerations
+While AI offers immense potential, it also presents challenges:
+
+Bias in Data : If training datasets are incomplete or biased, AI models may produce inaccurate results. Ensuring diverse and representative data is essential for reliable discoveries.
+Overreliance on Automation : As AI takes over more aspects of space exploration, there’s a risk of losing human intuition and creativity, which have historically driven groundbreaking discoveries.
+Ethics of Exploration : As we venture deeper into space, ethical questions arise about resource extraction, colonization, and the impact of human activities on extraterrestrial ecosystems. AI must be developed responsibly to address these concerns.
+
+Conclusion
+Artificial Intelligence is not just a tool; it’s a partner in humanity’s journey to explore the universe. From discovering new worlds to simulating cosmic events and searching for extraterrestrial life, AI is reshaping how we interact with the cosmos. While challenges remain, the synergy between human ingenuity and machine intelligence promises to accelerate our understanding of the universe—and perhaps one day answer the ultimate question: Are we alone?
+
+As we continue to push the boundaries of knowledge, one thing is clear: AI will play a central role in writing the next chapter of space exploration. So, the next time you look up at the night sky, remember that AI is out there, helping us uncover the mysteries hidden among the stars.`,
+    status: 'publish', // 'draft' or 'publish'
+    categories: [], // Replace with your category ID (fetch from /wp-json/wp/v2/categories if unknown)
+    tags: [] // Optional: Add tag IDs
+  };
+
+
+  try {
+    const result = await postBlog(postData);
+    return res.status(200).json(new ApiResponse(200, result, "Blog posted successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+const GenerateBlog = async (req, res, next) => {
+
+  const { topic } = req.body;
+  console.log("Received topic:", topic);
+
+  if (!topic) {
+    throw new ApiError(400, "Topic is required");
+  }
+  try {
+    const result = await generateBlog(topic);
+    return res.status(200).json(new ApiResponse(200, result, "Blog generated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export { Post, Content, Ideas, GenerateImage, GenerateCarousel,GenerateBlog, UploadCarouselImages, UploadSingleImage, GenerateDoYouKnow, GenerateTopics, GenerateImageContent, BlogPost };

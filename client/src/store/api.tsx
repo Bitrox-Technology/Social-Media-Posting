@@ -125,6 +125,13 @@ export const api = createApi({
         body,
       }),
     }),
+    generateBlog: builder.mutation({
+      query: (topic) => ({
+        url: '/generate-blog', // Adjust to your actual endpoint
+        method: 'POST',
+        body: { topic },
+      }),
+    }),
     savePosts: builder.mutation<void, Post[]>({
       query: (posts) => ({
         url: '/posts',
@@ -134,7 +141,7 @@ export const api = createApi({
     }),
   }),
 });
-
+      
 export const {
   useGenerateIdeasMutation,
   useGenerateImageMutation,
@@ -147,5 +154,6 @@ export const {
   useSignInMutation,
   useGenerateTopicsMutation,
   useGenerateImageContentMutation,
-  useSavePostsMutation
+  useSavePostsMutation,
+  useGenerateBlogMutation
 } = api;

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '../../store/hooks';
+import { useGenerateBlogMutation } from '../../store/api';
 
 export const Blog: React.FC = () => {
   const contentType = useAppSelector((state) => state.app.contentType);
-  const [topic, setTopic] = useState<string>('');
+  const [topic, setTopic] = useState('');
   const [generatedBlog, setGeneratedBlog] = useState<{ title: string; content: string } | null>(null);
 
+  const [generateBlog, { isLoading }] = useGenerateBlogMutation();
+  console.log("Topic:", topic);
   const suggestedTopics = [
     'The Future of Technology in 2025',
     'How to Boost Your Productivity',
@@ -14,18 +17,22 @@ export const Blog: React.FC = () => {
     'The Impact of AI on Everyday Life',
   ];
 
-  const handleGenerateBlog = () => {
+  const handleGenerateBlog = async () => {
     if (!topic.trim()) {
       alert('Please enter or select a topic!');
       return;
     }
 
-    // Simulated AI generation (replace with actual API call if needed)
-    const generated = {
-      title: `${topic}`,
-      content: `## ${topic}\n\nHere’s a blog post about ${topic}. Imagine a world where this topic shapes our daily lives. Let’s dive in!\n\n### Why It Matters\nThe essence of ${topic} lies in its ability to inspire and transform. Whether it’s a new idea, a lifestyle change, or a technological leap, it starts with curiosity. For instance, exploring this topic can lead to unexpected discoveries that enrich our understanding.\n\n### Taking Action\nWhat can you do today? Start small—read up, experiment, or share your thoughts. Every step forward builds momentum. Over time, ${topic} becomes less of a mystery and more of a passion.\n\n### Looking Ahead\nThe future of ${topic} is bright. As we embrace it, we’ll find new ways to connect, grow, and thrive. What’s your take on it? Let’s keep the conversation going!`,
-    };
-    setGeneratedBlog(generated);
+    try {
+      console.log('Generating blog for topic:', topic);
+      const result = await generateBlog({ topic }).unwrap();
+      console.log('Generated Blog:', result);
+      
+      setGeneratedBlog(result.data);
+    } catch (err) {
+      console.error('Error generating blog:', err);
+      alert('Failed to generate blog. Please try again later.');
+    }
   };
 
   const handleSave = () => {
@@ -75,12 +82,13 @@ export const Blog: React.FC = () => {
 
         <button
           onClick={handleGenerateBlog}
-          className="w-full py-4 bg-yellow-500 text-gray-900 font-semibold rounded-xl hover:bg-yellow-400 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+          disabled={isLoading}
+          className={`w-full py-4 bg-yellow-500 text-gray-900 font-semibold rounded-xl hover:bg-yellow-400 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          Generate Blog
+          {isLoading ? 'Generating...' : 'Generate Blog'}
         </button>
 
-        {generatedBlog && (
+        {generatedBlog && generatedBlog.content && (
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-white">{generatedBlog.title}</h2>
             <div className="p-4 bg-gray-800 text-white rounded-xl border-2 border-gray-700">
