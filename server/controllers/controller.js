@@ -359,7 +359,7 @@ const GenerateImage = async (req, res, next) => {
   queue.push({
     prompt: `A highly detailed, photorealistic scene of ${prompt}, showcasing futuristic innovation, ultra-sharp details, realistic lighting with soft highlights, intricate textures, vibrant yet professional color palette, visually striking composition, modern and optimistic tone`,
     negativePrompt:
-      "cartoon, anime, blurry, low detail, unrealistic, dark, dystopian, overly saturated, chaotic composition, amateurish, dull colors, distorted proportions",
+      "cartoon, anime, blurry, unrealistic, dark, dystopian, overly saturated, chaotic composition, amateurish",
     res,
   });
   try {
@@ -499,9 +499,7 @@ Conclusion
 Artificial Intelligence is not just a tool; it’s a partner in humanity’s journey to explore the universe. From discovering new worlds to simulating cosmic events and searching for extraterrestrial life, AI is reshaping how we interact with the cosmos. While challenges remain, the synergy between human ingenuity and machine intelligence promises to accelerate our understanding of the universe—and perhaps one day answer the ultimate question: Are we alone?
 
 As we continue to push the boundaries of knowledge, one thing is clear: AI will play a central role in writing the next chapter of space exploration. So, the next time you look up at the night sky, remember that AI is out there, helping us uncover the mysteries hidden among the stars.`,
-    status: 'publish', // 'draft' or 'publish'
-    categories: [], // Replace with your category ID (fetch from /wp-json/wp/v2/categories if unknown)
-    tags: [] // Optional: Add tag IDs
+    status: 'publish',
   };
 
 

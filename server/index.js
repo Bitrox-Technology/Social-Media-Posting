@@ -4,7 +4,7 @@ import cors from "cors";
 import router from "./routes/router.js";
 import morgan from "morgan";
 import helmet from "helmet";
-import { ApiError } from "./utils/ApiError.js";
+import { ApiError } from "./utils/apiError.js";
 import session from "express-session";
 import path from "path";
 import { fileURLToPath } from 'url';

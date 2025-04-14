@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setSelectedTopic, setSelectedBusiness, setApiTopics } from '../../store/appSlice';
 import { motion } from 'framer-motion';
-import { useGenerateTopicsMutation } from '../../store/api';
+import { useGenerateTopicsMutation, useSavePostContentMutation } from '../../store/api';
 
 interface TopicSelectorProps {
   // No props needed since we're using Redux
@@ -20,6 +20,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
   const [customTopic, setCustomTopic] = useState('');
   const [fetchingTopics, setFetchingTopics] = useState(false);
   const [generateTopics, { isLoading, error }] = useGenerateTopicsMutation();
+  const [savePostContent] = useSavePostContentMutation();
 
   const businesses = [
     'E-commerce',
@@ -92,10 +93,18 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async() => {
     if (selectedTopics.length > 0) {
-      dispatch(setSelectedTopic(selectedTopics.join(', ')));
-      navigate('/auto');
+      try {
+        // Save selected topics to backend
+        const response = await savePostContent({ topics: selectedTopics }).unwrap();
+        dispatch(setSelectedTopic(selectedTopics.join(', ')));
+        navigate('/auto', { state: { postContentId: response.data._id} });
+      } catch (err) {
+        console.error('Failed to save selected topics:', err);
+        const errorMessage = (err as { data?: { message?: string } })?.data?.message || 'Unknown error';
+        alert(`Failed to save topics. Please try again: ${errorMessage}`);
+      }
     }
   };
 

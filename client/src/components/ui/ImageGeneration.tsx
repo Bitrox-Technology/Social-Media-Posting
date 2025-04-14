@@ -2,8 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch } from '../../store/hooks';
 import { setSelectedFile } from '../../store/appSlice';
-import { useUploadImageToCloudinaryMutation, useGenerateImageMutation, useGenerateImageContentMutation } from '../../store/api';
-import { imageTemplates, ImageSlide, ImageTemplate } from '../../templetes/ImageTemplate';
+import {
+  useUploadImageToCloudinaryMutation,
+  useGenerateImageMutation,
+  useGenerateImageContentMutation,
+} from '../../store/api';
+import { imageTemplates, ImageSlide } from '../../templetes/ImageTemplate';
 import { ArrowLeft } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { motion } from 'framer-motion';
@@ -28,21 +32,27 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const dispatch = useAppDispatch();
   const defaultLogoUrl = '/images/Logo1.png';
 
-  const { templateId: locationTemplateId, initialSlide: locationInitialSlide } = location.state || {};
+  const { templateId: locationTemplateId, fromAutoPostCreator, generatedImageUrl, generatedContent } = location.state || {};
 
+  // Select the template based on templateId
   const selectedTemplate = imageTemplates.find((t) => t.id === (templateId || locationTemplateId)) || imageTemplates[0];
-  const [slide, setSlide] = useState<ImageSlide>(
-    initialSlide || locationInitialSlide
-      ? {
-          ...selectedTemplate.slides[0],
-          title: (initialSlide || locationInitialSlide).title,
-          description: (initialSlide || locationInitialSlide).description,
-          footer: (initialSlide || locationInitialSlide).footer || selectedTemplate.slides[0].footer,
-          websiteUrl: (initialSlide || locationInitialSlide).websiteUrl || selectedTemplate.slides[0].websiteUrl,
-          imageUrl: (initialSlide || locationInitialSlide).imageUrl || selectedTemplate.slides[0].imageUrl,
-        }
-      : selectedTemplate.slides[0]
-  );
+
+  // Initialize slide with data from generatedContent or initialSlide
+  const [slide, setSlide] = useState<ImageSlide>(() => {
+    const content = generatedContent || initialSlide;
+    if (content) {
+      return {
+        ...selectedTemplate.slides[0],
+        title: content.title || selectedTemplate.slides[0].title,
+        description: content.description || selectedTemplate.slides[0].description,
+        footer: content.footer || selectedTemplate.slides[0].footer || '',
+        websiteUrl: content.websiteUrl || selectedTemplate.slides[0].websiteUrl || '',
+        imageUrl: content.imageUrl || selectedTemplate.slides[0].imageUrl || '',
+      };
+    }
+    return selectedTemplate.slides[0];
+  });
+
   const [showLogo, setShowLogo] = useState<boolean>(true);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [customTitle, setCustomTitle] = useState<string>(slide.title);
@@ -75,9 +85,24 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     const initializeSlide = async () => {
       if (isInitialized) return;
 
+      const content = generatedContent || initialSlide;
       let updatedSlide = { ...slide };
+      if (content) {
+        updatedSlide = {
+          ...selectedTemplate.slides[0],
+          title: content.title || updatedSlide.title,
+          description: content.description || updatedSlide.description,
+          footer: content.footer || updatedSlide.footer || '',
+          websiteUrl: content.websiteUrl || updatedSlide.websiteUrl || '',
+          imageUrl: content.imageUrl || updatedSlide.imageUrl || '',
+        };
+      }
+
       await preloadSlideImages(updatedSlide);
       setSlide(updatedSlide);
+      setCustomTitle(updatedSlide.title);
+      setCustomDescription(updatedSlide.description);
+      setCustomFooter(updatedSlide.footer || '');
 
       if (onImagesGenerated && updatedSlide.imageUrl) {
         const image = await captureScreenshot();
@@ -88,7 +113,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     };
 
     initializeSlide();
-  }, [selectedTemplate, onImagesGenerated, isInitialized]);
+  }, [selectedTemplate, onImagesGenerated, isInitialized, generatedContent, initialSlide]);
 
   useEffect(() => {
     const updateSlide = async () => {
@@ -97,7 +122,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
         title: customTitle,
         description: customDescription,
         footer: customFooter,
-        websiteUrl: slide.websiteUrl,
+        websiteUrl: slide.websiteUrl || '',
         imageUrl: slide.imageUrl || '',
       };
       await preloadSlideImages(updatedSlide);
@@ -111,26 +136,10 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     updateSlide();
   }, [customTitle, customDescription, customFooter, showLogo, onImagesGenerated]);
 
-  useEffect(() => {
-    if (initialSlide && initialSlide.imageUrl !== slide.imageUrl) {
-      const updatedSlide = { ...slide, imageUrl: initialSlide.imageUrl || '' };
-      setSlide(updatedSlide);
-      const updateAndCapture = async () => {
-        await preloadSlideImages(updatedSlide);
-        if (onImagesGenerated && updatedSlide.imageUrl) {
-          const image = await captureScreenshot();
-          if (image) onImagesGenerated(image);
-        }
-      };
-      updateAndCapture();
-    }
-  }, [initialSlide, onImagesGenerated]);
-
   const captureScreenshot = async () => {
     if (!slideRef.current) return '';
 
-    // Ensure the slide is rendered before capturing
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay to ensure rendering
+    await new Promise((resolve) => setTimeout(resolve, 100));
     const canvas = await html2canvas(slideRef.current, {
       useCORS: true,
       scale: 2,
@@ -212,6 +221,21 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
 
       if (onSave && slideRef.current) {
         onSave(slide, slideRef.current);
+      }
+
+      if (fromAutoPostCreator) {
+        navigate('/auto', {
+          state: {
+            updatedPost: {
+              topic,
+              type: 'image',
+              content: slide,
+              images: [{ url: cloudinaryUrl, label: 'Image Post' }],
+              templateId: selectedTemplate.id,
+              status: 'success',
+            },
+          },
+        });
       } else {
         setTimeout(() => {
           navigate('/post', { state: { cloudinaryUrl } });
@@ -226,7 +250,11 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   };
 
   const handleBack = () => {
-    navigate('/auto-post-creator');
+    if (fromAutoPostCreator) {
+      navigate('/auto-post-creator');
+    } else {
+      navigate('/auto-post-creator');
+    }
   };
 
   if (!slide) {
@@ -294,7 +322,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
               <label className="block text-sm font-medium text-gray-300">Title</label>
               <input
                 type="text"
-                value={customTitle || ''}
+                value={customTitle}
                 onChange={(e) => {
                   const newValue = e.target.value;
                   setCustomTitle(newValue);
@@ -308,7 +336,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">Description</label>
               <textarea
-                value={customDescription || ''}
+                value={customDescription}
                 onChange={(e) => {
                   const newValue = e.target.value;
                   setCustomDescription(newValue);
@@ -325,7 +353,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                 <span className="text-gray-300">@</span>
                 <input
                   type="text"
-                  value={customFooter || ''}
+                  value={customFooter}
                   onChange={(e) => {
                     const newValue = e.target.value;
                     setCustomFooter(newValue);
@@ -338,7 +366,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <motion.button
+              {/* <motion.button
                 onClick={handleGenerateContent}
                 disabled={isGeneratingContent || !topic}
                 className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -346,9 +374,9 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                 whileTap={{ scale: 0.95 }}
               >
                 {isGeneratingContent ? 'Generating Content...' : 'Generate Content'}
-              </motion.button>
+              </motion.button> */}
 
-              <motion.button
+              {/* <motion.button
                 onClick={handleGenerateImage}
                 disabled={isGeneratingImage || !topic}
                 className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -356,19 +384,17 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                 whileTap={{ scale: 0.95 }}
               >
                 {isGeneratingImage ? 'Generating Image...' : 'Generate Image'}
-              </motion.button>
+              </motion.button> */}
 
-              {(!onImagesGenerated || onSave) && (
-                <motion.button
-                  onClick={handleSave}
-                  disabled={isUploading}
-                  className="w-full sm:w-auto px-6 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg hover:from-green-400 hover:to-teal-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {isUploading ? 'Uploading...' : 'Save'}
-                </motion.button>
-              )}
+              <motion.button
+                onClick={handleSave}
+                disabled={isUploading}
+                className="w-full sm:w-auto px-6 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg hover:from-green-400 hover:to-teal-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isUploading ? 'Uploading...' : 'Save'}
+              </motion.button>
             </div>
           </div>
         </motion.div>

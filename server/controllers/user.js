@@ -1,7 +1,7 @@
-import { login, signup } from "../services/user.js"
-import { ApiResponse } from "../utils/apiResponse.js"
+import { getPostContent, login, postContent, signup, saveImageContent } from "../services/user.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
 import { OK } from "../utils/apiResponseCode.js"
-import { validateSignup, validateLogin } from "../validations/user.js"
+import { validateSignup, validateLogin, validatePostContent, validateImageContent } from "../validations/user.js"
 
 const Signup = async (req, res, next) => {
     try {
@@ -24,6 +24,36 @@ const Login = async (req, res, next) => {
     }
 }
 
+const PostContent = async (req, res, next) => {
+    try {
+        await validatePostContent(req.body)
+        let user = await postContent(req.body, req.user) 
+        return res.status(OK).json(new ApiResponse(OK, user, "Topics saved Successfully" ))
+    } catch (error) {
+        next(error)
+    }
+}
+
+const GetPostContent = async (req, res, next) => {
+    try {
+        let user = await getPostContent(req.user, req.params.postcontentid) 
+        return res.status(OK).json(new ApiResponse(OK, user, "Topics fetched Successfully" ))
+    } catch (error) {
+        next(error)
+    }
+}
+
+const SaveImageContent = async (req, res, next) => {
+    try {
+        await validateImageContent(req.body)
+        let user = await saveImageContent(req.body, req.user) 
+        return res.status(OK).json(new ApiResponse(OK, user, "Image content saved Successfully" ))
+    } catch (error) {
+        next(error)
+    }
+}
+
+
 
 const SavePosts = async (req, res, next) => {
     try {
@@ -35,4 +65,6 @@ const SavePosts = async (req, res, next) => {
 }
 
 
-export { Signup, Login, SavePosts }
+
+
+export { Signup, Login, SavePosts, PostContent, GetPostContent, SaveImageContent }

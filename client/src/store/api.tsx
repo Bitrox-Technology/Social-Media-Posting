@@ -132,6 +132,19 @@ export const api = createApi({
         body: { topic },
       }),
     }),
+    savePostContent: builder.mutation<ApiResponse<any>, { topics: string[] }>({
+      query: (topics) => ({ 
+        url: '/user/save-topics',
+        method: 'POST',
+        body: topics,
+      }),
+    }),
+    getPostContent: builder.query<ApiResponse<any>, { postContentId: string }>({
+      query: ({postContentId}) => ({
+        url: `/user/get-topics/${postContentId}`, 
+        method: 'GET',
+      }),
+    }),
     savePosts: builder.mutation<void, Post[]>({
       query: (posts) => ({
         url: '/posts',
@@ -155,5 +168,7 @@ export const {
   useGenerateTopicsMutation,
   useGenerateImageContentMutation,
   useSavePostsMutation,
-  useGenerateBlogMutation
+  useGenerateBlogMutation,
+  useSavePostContentMutation,
+  useLazyGetPostContentQuery,
 } = api;

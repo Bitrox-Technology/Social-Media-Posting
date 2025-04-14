@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 import axios from "axios";
 
-const SD_API_URL = "http://127.0.0.1:7860";
+const SD_API_URL = process.env.SD_API_URL || "http://127.0.0.1:7860";
 
 // Generate image with base model and hires fix
 async function generateImage(prompt, negativePrompt) {
@@ -15,14 +15,14 @@ async function generateImage(prompt, negativePrompt) {
     cfg_scale: 7.0, // Slightly increased for sharper features
     batch_size: 1,
     override_settings: {
-      sd_model_checkpoint: 'fluxUnchainedBySCG_hyfu8StepHybridV10.safetensors',
+      sd_model_checkpoint: 'realisticVisionV60B1_v51HyperVAE.safetensors',
       // sd_vae: 'sdxl_vae.safetensors', // Uncomment if sharper VAE helps
     },
     enable_hr: true,
     hr_scale: 1.5, // Upscale to ~864x864 (still under 1024x1024)
-    hr_upscaler: 'Lanczos', // Switch to Lanczos for sharper upscaling
-    hr_second_pass_steps: 10, // Increased slightly for refinement
-    denoising_strength: 0.3, // Lowered to preserve base details
+    hr_upscaler: 'Latent', // Switch to Lanczos for sharper upscaling
+    hr_second_pass_steps: 0, // Increased slightly for refinement
+    denoising_strength: 0.7, // Lowered to preserve base details
     // refiner_checkpoint: 'lumina_2.safetensors', // Uncomment if refiner improves sharpness
     // refiner_switch_at: 0.8,
   };
