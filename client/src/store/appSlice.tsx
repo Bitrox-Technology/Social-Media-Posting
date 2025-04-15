@@ -1,4 +1,3 @@
-// src/store/slices/appSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface ContentIdea {
@@ -28,25 +27,27 @@ interface Post {
   type: 'image' | 'carousel' | 'doyouknow';
   content: string | CarouselContent[] | DoYouKnowContent;
   images?: string[];
-  templateId?: string; 
+  templateId?: string;
 }
+
+interface User {
+  email: string | null;
+  token: string | null;
+  expiresAt: number | null;
+}
+
 interface AppState {
-  contentType: 'post' | 'blog' | 'carousel' | 'doyouknow' | null; // Added more types
+  contentType: 'post' | 'blog' | 'carousel' | 'doyouknow' | null;
   selectedTopic: string;
   selectedIdea: ContentIdea | null;
   selectedFile: SelectedFileData | null;
-  posted: string[]; // Array of post identifiers (e.g., URLs or IDs)
+  posted: string[];
   ideas: ContentIdea[];
   selectedDoYouKnowTemplate: string | null;
-  user: {
-    email: string | null;
-    token: string | null;
-  } | null;
-  token: string | null;
+  user: User | null;
   selectedBusiness: string | null;
   posts: Post[];
   apiTopics: string[];
-  
 }
 
 const initialState: AppState = {
@@ -58,12 +59,10 @@ const initialState: AppState = {
   ideas: [],
   selectedDoYouKnowTemplate: null,
   user: null,
-  token: null,
   selectedBusiness: null,
   posts: [],
   apiTopics: [],
 };
-
 
 const appSlice = createSlice({
   name: 'app',
@@ -96,18 +95,24 @@ const appSlice = createSlice({
     setSelectedDoYouKnowTemplate(state, action: PayloadAction<string | null>) {
       state.selectedDoYouKnowTemplate = action.payload;
     },
-    setUser: (state, action: PayloadAction<{ email: string; token: string }>) => {
+    setUser: (
+      state,
+      action: PayloadAction<{ email: string; token: string; expiresAt: number }>
+    ) => {
       state.user = {
         email: action.payload.email,
         token: action.payload.token,
+        expiresAt: action.payload.expiresAt,
       };
     },
-
-    setPosts: (state, action: PayloadAction<Post[]>) => {
-      state.posts = action.payload;
+    clearUser(state) {
+      state.user = null;
     },
     logout(state) {
       state.user = null;
+    },
+    setPosts: (state, action: PayloadAction<Post[]>) => {
+      state.posts = action.payload;
     },
     setApiTopics: (state, action: PayloadAction<string[]>) => {
       state.apiTopics = action.payload;
@@ -133,11 +138,12 @@ export const {
   setIdeas,
   setSelectedDoYouKnowTemplate,
   resetState,
-  setUser, 
+  setUser,
   logout,
+  clearUser,
   setSelectedBusiness,
   setPosts,
-  setApiTopics
+  setApiTopics,
 } = appSlice.actions;
 
 export default appSlice.reducer;

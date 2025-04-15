@@ -15,16 +15,26 @@ export const SignIn = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     try {
       const response = await signIn({ email, password }).unwrap();
-      console.log(response)
       if (response.success) {
-        dispatch(setUser({ email: response.data.email, token: response.data.accessToken }));
+        const { accessToken, email: responseEmail } = response.data;
+        const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
+
+        // Prepare user data
+        const userData = { email: responseEmail, token: accessToken, expiresAt };
+
+        // Store in Redux
+        dispatch(setUser(userData));
+
+        // Store in localStorage
+        localStorage.setItem('user', JSON.stringify(userData));
+
         navigate('/');
       }
     } catch (err: any) {
-      setError(err?.data?.message || 'Signin failed. Please check your credentials.');
+      setError(err?.data?.message || 'Sign-in failed. Please check your credentials.');
     }
   };
 

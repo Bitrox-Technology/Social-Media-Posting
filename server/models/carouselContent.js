@@ -11,12 +11,19 @@ const carouselContentSchema = new mongoose.Schema({
           tagline: { type: String, trim: true },
           title: { type: String, trim: true},
           description: { type: String, trim: true},
-          templateImageUrl: { type: String , trim: true},
         },
     ],
     topic: {
         type: String,
         trim: true
-    }
+    },
+    status: {
+        type: String,
+        enum: ["pending", "error", "success"],
+        default: "pending",
+    },
 }, { timestamp: true });
 
+
+const CarouselContent = mongoose.model("CarouselContent", carouselContentSchema);
+export default CarouselContent;

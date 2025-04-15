@@ -1,4 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { setUser, clearUser } from './appSlice'; // Adjust path to your appSlice
+import { AppDispatch } from '../store'; // Adjust path to your store.ts
 
 interface ContentIdea {
   title: string;
@@ -28,20 +30,48 @@ interface ApiResponse<T> {
   success: boolean;
 }
 
+interface SavePostRequest {
+  postContentId: string;
+  topic: string;
+  type: 'image' | 'carousel' | 'doyouknow';
+  status?: 'pending' | 'error' | 'success';
+  images?: { url: string; label: string }[];
+}
+
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:4000/api/v1',
-    prepareHeaders: (headers, { getState }) => {
-      const state = getState() as { app?: { user?: { token?: string } } };
-      
-      console.log(state);
-      const token = state.app?.user?.token;
-      console.log('Token:', token);
+    prepareHeaders: (headers, { getState }: { getState: () => unknown }) => {
+      const dispatch = (action: any) => {}; // Add a placeholder dispatch function if needed
+      const state = getState() as { app?: { user?: { token?: string; expiresAt?: number; email?: string } } };
+      let token = state.app?.user?.token;
+
+      // Fallback to localStorage if token is not in state
+      if (!token) {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.token;
+          const expiresAt = user.expiresAt;
+
+          // Check if token is expired
+          if (expiresAt && Date.now() > expiresAt) {
+            dispatch(clearUser());
+            localStorage.removeItem('user');
+            window.location.href = '/signin';
+            return headers;
+          }
+
+          // Restore user to Redux
+          dispatch(setUser(user));
+        }
+      }
+
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
-      console.log('Headers:', headers);
+
       return headers;
     },
   }),
@@ -109,6 +139,22 @@ export const api = createApi({
         method: 'POST',
         body,
       }),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const { accessToken, email } = data.data;
+          const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
+
+          // Store in Redux
+          const userData = { email, token: accessToken, expiresAt };
+          dispatch(setUser(userData));
+
+          // Store in localStorage
+          localStorage.setItem('user', JSON.stringify(userData));
+        } catch (error) {
+          console.error('Sign-in failed:', error);
+        }
+      },
       invalidatesTags: ['Auth'],
     }),
     generateTopics: builder.mutation<ApiResponse<GenerateTopicsResponse>, { business: string }>({
@@ -127,34 +173,61 @@ export const api = createApi({
     }),
     generateBlog: builder.mutation({
       query: (topic) => ({
-        url: '/generate-blog', // Adjust to your actual endpoint
+        url: '/generate-blog',
         method: 'POST',
         body: { topic },
       }),
     }),
     savePostContent: builder.mutation<ApiResponse<any>, { topics: string[] }>({
-      query: (topics) => ({ 
+      query: (topics) => ({
         url: '/user/save-topics',
         method: 'POST',
         body: topics,
       }),
     }),
     getPostContent: builder.query<ApiResponse<any>, { postContentId: string }>({
-      query: ({postContentId}) => ({
-        url: `/user/get-topics/${postContentId}`, 
+      query: ({ postContentId }) => ({
+        url: `/user/get-topics/${postContentId}`,
         method: 'GET',
       }),
     }),
-    savePosts: builder.mutation<void, Post[]>({
+    imageContent: builder.mutation<ApiResponse<any>, { postContentId: string; topic: string; templateId: string; content: object; status: string }>({
+      query: (body) => ({
+        url: '/user/image-content',
+        method: 'POST',
+        body,
+      }),
+    }),
+    carouselContent: builder.mutation<ApiResponse<any>, { postContentId: string; topic: string; templateId: string; content: any[]; status: string }>({
+      query: (body) => ({
+        url: '/user/carousel-content',
+        method: 'POST',
+        body,
+      }),
+    }),
+    dykContent: builder.mutation<ApiResponse<any>, { postContentId: string; topic: string; templateId: string; content: object; status: string }>({
+      query: (body) => ({
+        url: '/user/dyk-content',
+        method: 'POST',
+        body,
+      }),
+    }),
+    savePosts: builder.mutation<ApiResponse<any>, SavePostRequest>({
       query: (posts) => ({
-        url: '/posts',
+        url: '/user/save-posts',
         method: 'POST',
         body: posts,
       }),
     }),
+    getSavePosts: builder.query<ApiResponse<any>, { postContentId: string }>({
+      query: ({ postContentId }) => ({
+        url: `/user/get-posts/${postContentId}`,
+        method: 'GET',
+      }),
+    }),
   }),
 });
-      
+
 export const {
   useGenerateIdeasMutation,
   useGenerateImageMutation,
@@ -171,4 +244,8 @@ export const {
   useGenerateBlogMutation,
   useSavePostContentMutation,
   useLazyGetPostContentQuery,
+  useImageContentMutation,
+  useCarouselContentMutation,
+  useDykContentMutation,
+  useLazyGetSavePostsQuery
 } = api;

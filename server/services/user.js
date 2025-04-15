@@ -5,6 +5,10 @@ import { BAD_REQUEST } from "../utils/apiResponseCode.js";
 import { comparePasswordUsingBcrypt, Hashed_Password, isEmail } from "../utils/utilities.js";
 import PostContent from "../models/postContent.js";
 import ImageContent from "../models/imageContent.js";
+import CarouselContent from "../models/carouselContent.js";
+import DYKContent from "../models/dykContent.js";
+import SavePosts from "../models/savePosts.js";
+import mongoose from "mongoose";
 
 const signup = async (inputs) => {
     let user;
@@ -88,11 +92,67 @@ const saveImageContent = async (inputs, user) => {
 
     let topic = postContent.topics.find((topic) => topic === inputs.topic)
     if (!topic) throw new ApiError(BAD_REQUEST, "No topics found")
-    
-    let saveContent= await ImageContent.create(inputs)
-    if (!saveContent) throw new ApiError(BAD_REQUEST, "Unable to save topics")
-    return postContent;
 
+    let saveContent = await ImageContent.create(inputs)
+    if (!saveContent) throw new ApiError(BAD_REQUEST, "Unable to save Content")
+    return saveContent;
+
+}
+
+
+const saveCarouselContent = async (inputs, user) => {
+    let existingUser = await User.findOne({ _id: user._id })
+    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
+
+    let postContent = await PostContent.findById({ _id: inputs.postContentId })
+    if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
+
+    let topic = postContent.topics.find((topic) => topic === inputs.topic)
+    if (!topic) throw new ApiError(BAD_REQUEST, "No topics found")
+
+    let saveContent = await CarouselContent.create(inputs)
+    if (!saveContent) throw new ApiError(BAD_REQUEST, "Unable to save Content")
+    return saveContent;
+}
+
+const saveDYKContent = async (inputs, user) => {
+    let existingUser = await User.findOne({ _id: user._id })
+    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
+
+    let postContent = await PostContent.findById({ _id: inputs.postContentId })
+    if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
+
+    let topic = postContent.topics.find((topic) => topic === inputs.topic)
+    if (!topic) throw new ApiError(BAD_REQUEST, "No topics found")
+
+    let saveContent = await DYKContent.create(inputs)
+    if (!saveContent) throw new ApiError(BAD_REQUEST, "Unable to save Content")
+    return saveContent;
+}
+
+const savePosts = async (inputs, user) => {
+    let existingUser = await User.findOne({ _id: user._id })
+    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
+
+    let postContent = await PostContent.findById({ _id: inputs.postContentId })
+    if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
+
+    inputs.userId = user._id
+    let post = await SavePosts.create(inputs)
+    if (!post) throw new ApiError(BAD_REQUEST, "Unable to save posts")
+
+    return post;
+}
+
+const getSavePosts = async (postContentId, user) => {
+    let existingUser = await User.findOne({ _id: user._id })
+    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
+
+    console.log("postContentId", postContentId)
+    const posts = await SavePosts.find({ postContentId: postContentId, userId: user._id })
+
+    console.log("posts", posts)
+    return posts
 }
 
 export {
@@ -100,5 +160,9 @@ export {
     login,
     postContent,
     getPostContent,
-    saveImageContent
+    saveImageContent,
+    saveCarouselContent,
+    saveDYKContent,
+    savePosts,
+    getSavePosts
 }

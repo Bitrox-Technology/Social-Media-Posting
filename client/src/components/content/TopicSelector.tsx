@@ -30,23 +30,19 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
     'Education',
   ];
 
-  // Sync local state with Redux on mount
+  // Sync local state with Redux on mount and when selectedTopic changes
   useEffect(() => {
-    if (selectedTopic) {
-      const topicsFromRedux = selectedTopic.split(', ').filter(Boolean);
-      setSelectedTopics(topicsFromRedux);
-    } else {
-      setSelectedTopics([]); // Ensure local state is cleared if Redux state is empty
-    }
+    const topicsFromRedux = selectedTopic ? selectedTopic.split(', ').filter(Boolean) : [];
+    setSelectedTopics(topicsFromRedux);
   }, [selectedTopic]);
 
   const fetchTopics = async (business: string) => {
-    if (fetchingTopics) return; // Prevent multiple calls
+    if (fetchingTopics) return;
     setFetchingTopics(true);
     try {
       const response = await generateTopics({ business }).unwrap();
       const topicsArray = Object.values(response.data).filter((topic): topic is string => typeof topic === 'string');
-      dispatch(setApiTopics(topicsArray)); // Store in Redux
+      dispatch(setApiTopics(topicsArray));
     } catch (err) {
       console.error('Failed to fetch topics:', err);
       dispatch(setApiTopics([]));
@@ -58,26 +54,21 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
   const handleBusinessSelect = (business: string) => {
     if (business !== selectedBusiness) {
       dispatch(setSelectedBusiness(business));
-      setCustomBusiness(''); // Clear custom business input
-      setSelectedTopics([]); // Clear selected topics
-      dispatch(setSelectedTopic('')); // Clear selected topics in Redux
-      fetchTopics(business); // Fetch new topics
+      setCustomBusiness('');
+      setSelectedTopics([]);
+      dispatch(setSelectedTopic(''));
+      fetchTopics(business);
     }
   };
 
   const handleTopicToggle = (topic: string) => {
     setSelectedTopics((prevSelectedTopics) => {
-      let newSelectedTopics: string[];
-      if (prevSelectedTopics.includes(topic)) {
-        // Unselect the topic
-        newSelectedTopics = prevSelectedTopics.filter((t) => t !== topic);
-      } else if (prevSelectedTopics.length < 7) {
-        // Select the topic if under the limit
-        newSelectedTopics = [...prevSelectedTopics, topic];
-      } else {
-        // Do nothing if limit is reached
-        return prevSelectedTopics;
-      }
+      const newSelectedTopics = prevSelectedTopics.includes(topic)
+        ? prevSelectedTopics.filter((t) => t !== topic)
+        : prevSelectedTopics.length < 7
+        ? [...prevSelectedTopics, topic]
+        : prevSelectedTopics;
+
       // Update Redux immediately
       dispatch(setSelectedTopic(newSelectedTopics.join(', ')));
       return newSelectedTopics;
@@ -88,18 +79,17 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
     if (customTopic && selectedTopics.length < 7 && !selectedTopics.includes(customTopic)) {
       const newSelectedTopics = [...selectedTopics, customTopic];
       setSelectedTopics(newSelectedTopics);
-      dispatch(setSelectedTopic(newSelectedTopics.join(', '))); // Update Redux
+      dispatch(setSelectedTopic(newSelectedTopics.join(', ')));
       setCustomTopic('');
     }
   };
 
-  const handleSubmit = async() => {
+  const handleSubmit = async () => {
     if (selectedTopics.length > 0) {
       try {
-        // Save selected topics to backend
         const response = await savePostContent({ topics: selectedTopics }).unwrap();
         dispatch(setSelectedTopic(selectedTopics.join(', ')));
-        navigate('/auto', { state: { postContentId: response.data._id} });
+        navigate('/auto', { state: { postContentId: response.data._id } });
       } catch (err) {
         console.error('Failed to save selected topics:', err);
         const errorMessage = (err as { data?: { message?: string } })?.data?.message || 'Unknown error';
@@ -109,7 +99,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
   };
 
   const handleBack = () => {
-    navigate("/"); // Browser back, Redux state persists
+    navigate("/");
   };
 
   return (
@@ -202,12 +192,14 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
                       isSelected
                         ? 'bg-gray-700 border-yellow-500'
                         : 'bg-gray-800 border-yellow-500/50'
-                    } focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900`}
+                    } focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+                      !isSelected && selectedTopics.length >= 7 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                     whileHover={{
-                      scale: 1.05,
-                      borderColor: '#FBBF24',
+                      scale: !isSelected && selectedTopics.length >= 7 ? 1 : 1.05,
+                      borderColor: !isSelected && selectedTopics.length >= 7 ? '#FBBF24/50' : '#FBBF24',
                     }}
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ scale: !isSelected && selectedTopics.length >= 7 ? 1 : 0.95 }}
                     transition={{ type: 'spring', stiffness: 300 }}
                     aria-label={`${isSelected ? 'Unselect' : 'Select'} topic: ${topic}`}
                     disabled={!isSelected && selectedTopics.length >= 7}

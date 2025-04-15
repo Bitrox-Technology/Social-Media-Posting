@@ -16,7 +16,12 @@ const imageContentSchema = new mongoose.Schema({
     topic: {
         type: String,
         trim: true
-    }
+    },
+    status: {
+        type: String,
+        enum: ["pending", "error", "success"],
+        default: "pending",
+    },
      
 }, {timestamp: true });
 

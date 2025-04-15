@@ -7,7 +7,12 @@ const postContentSchema = new mongoose.Schema({
     },
     topics: { 
         type: [String]
-    }
+    },
+    status: {
+        type: String,
+        enum: ["pending", "error", "success"],
+        default: "pending",
+    },
 }, {timestamp: true });
 
 const PostContent = mongoose.model("PostContent", postContentSchema);

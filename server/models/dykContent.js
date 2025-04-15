@@ -9,14 +9,16 @@ const dykContentSchema = new mongoose.Schema({
     content: {
         title: { type: String, trim: true },
         fact: { type: String, trim: true }, 
-        footer: { type: String, trim: true },
-        websiteUrl: { type: String, trim: true },
-        imageUrl: { type: String, trim: true },
     },
     topic: {
         type: String,
         trim: true
-    }
+    },
+    status: {
+        type: String,
+        enum: ["pending", "error", "success"],
+        default: "pending",
+    },
      
 }, {timestamp: true });
 
