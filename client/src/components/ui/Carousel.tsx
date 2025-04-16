@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Swiper, SwiperSlide, SwiperRef } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import { Swiper as SwiperCore } from 'swiper';
@@ -6,8 +6,8 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import html2canvas from 'html2canvas';
-import { useNavigate } from 'react-router-dom';
-import { useGenerateCarouselMutation, useUploadImageToCloudinaryMutation } from '../../store/api';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useGenerateCarouselMutation, useUploadImageToCloudinaryMutation, useLazyGetCarouselContentQuery } from '../../store/api';
 import { carouselTemplates, Slide, CarouselTemplate } from '../../templetes/templetesDesign';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -17,16 +17,16 @@ interface CarouselProps {
   template: string;
   slides: Slide[];
   onImagesGenerated?: (images: string[]) => void;
-  onSave?: (updatedSlides: Slide[], images: string[]) => void; // Updated to pass images instead of ref
+  onSave?: (updatedSlides: Slide[], images: string[]) => void;
 }
 
 export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slides: initialSlides, onImagesGenerated, onSave }) => {
-  const [topic] = useState<string>(initialTopic);
+  const [topic, setTopic] = useState<string>(initialTopic);
   const [selectedTemplate, setSelectedTemplate] = useState<CarouselTemplate>(
     carouselTemplates.find((t) => t.id === template) || carouselTemplates[0]
   );
   const [slides, setSlides] = useState<Slide[]>(initialSlides);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [editMode, setEditMode] = useState<boolean>(false);
   const [editedSlides, setEditedSlides] = useState<Slide[]>([...initialSlides]);
   const [activeIndex, setActiveIndex] = useState<number>(0);
@@ -36,31 +36,116 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
   const swiperRef = useRef<SwiperRef>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const { contentId, contentType, fromAutoPostCreator } = location.state || {};
 
   const [generateCarousel] = useGenerateCarouselMutation();
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
+  const [getCarouselContent, { isFetching: isFetchingContent }] = useLazyGetCarouselContentQuery();
 
-  const handleTemplateChange = (templateId: string) => {
-    const newTemplate = carouselTemplates.find((t) => t.id === templateId) || carouselTemplates[0];
-    setSelectedTemplate(newTemplate);
+  // Log state changes for debugging
+  useEffect(() => {
+    console.log('State Update:', { slides, selectedTemplate: selectedTemplate.id, loading, isFetchingContent });
+  }, [slides, selectedTemplate, loading, isFetchingContent]);
 
-    const updatedSlides = newTemplate.slides.map((slide, index) => {
-      const existingSlide = slides[index] || {};
+  // Fetch CarouselContent if contentId exists
+  useEffect(() => {
+    const fetchCarouselContent = async () => {
+      if (contentId && contentType === 'CarouselContent') {
+        console.log('Fetching CarouselContent for contentId:', contentId);
+        try {
+          const response = await getCarouselContent({ contentId: contentId }).unwrap();
+          const data = response.data;
+          console.log('Fetched CarouselContent:', data);
+          if (data.templateId && Array.isArray(data.content)) {
+            // Update template based on data.templateId
+            const newTemplate = carouselTemplates.find((t) => t.id === data.templateId) || carouselTemplates[0];
+            console.log('Selected Template:', newTemplate.id);
+            setSelectedTemplate(newTemplate);
+            setTopic(data.topic || initialTopic);
+
+            // Map fetched content to slides
+            const updatedSlides = data.content.map((contentItem: any, index: number) => {
+              const templateSlide = newTemplate.slides[index] || {};
+              return {
+                tagline: contentItem.tagline || templateSlide.tagline || '',
+                title: contentItem.title || templateSlide.title || '',
+                description: contentItem.description || templateSlide.description || '',
+                imageUrl: contentItem.imageUrl || templateSlide.imageUrl || '',
+                headshotUrl: contentItem.headshotUrl || templateSlide.headshotUrl || '',
+                overlayGraphic: contentItem.overlayGraphic || templateSlide.overlayGraphic || '',
+                like: contentItem.like || templateSlide.like || '',
+                comment: contentItem.comment || templateSlide.comment || '',
+                save: contentItem.save || templateSlide.save || '',
+                header: contentItem.header || templateSlide.header || '',
+                footer: contentItem.footer || templateSlide.footer || '',
+                socialHandle: contentItem.socialHandle || templateSlide.socialHandle || '',
+                websiteUrl: contentItem.websiteUrl || templateSlide.websiteUrl || '',
+                slideNumber: contentItem.slideNumber || templateSlide.slideNumber || index + 1,
+              };
+            });
+
+            setSlides(updatedSlides);
+            setEditedSlides([...updatedSlides]);
+            // Preload images asynchronously
+            Promise.all(updatedSlides.map((slide: Slide) => preloadSlideImages(slide))).catch((err) =>
+              console.error('Image preloading failed:', err)
+            );
+            setLoading(false);
+          } else {
+            console.warn('Invalid data: templateId or content missing', data);
+            initializeSlides();
+          }
+        } catch (error) {
+          console.error('Error fetching CarouselContent:', error);
+          initializeSlides();
+        }
+      } else {
+        initializeSlides();
+      }
+    };
+    fetchCarouselContent();
+  }, [contentId, contentType]);
+
+  const initializeSlides = async () => {
+    console.log('Initializing slides with template:', template);
+    const templateToUse = carouselTemplates.find((t) => t.id === template) || carouselTemplates[0];
+    console.log('Template used:', templateToUse.id);
+    setSelectedTemplate(templateToUse);
+
+    const updatedSlides = templateToUse.slides.map((slide, index) => {
+      const existingSlide = initialSlides[index] || {};
       return {
-        ...slide,
-        tagline: existingSlide.tagline || slide.tagline,
-        title: existingSlide.title || slide.title,
-        description: existingSlide.description || slide.description,
+        tagline: existingSlide.tagline || slide.tagline || '',
+        title: existingSlide.title || slide.title || '',
+        description: existingSlide.description || slide.description || '',
         imageUrl: existingSlide.imageUrl || slide.imageUrl || '',
+        headshotUrl: existingSlide.headshotUrl || slide.headshotUrl || '',
+        overlayGraphic: existingSlide.overlayGraphic || slide.overlayGraphic || '',
+        like: existingSlide.like || slide.like || '',
+        comment: existingSlide.comment || slide.comment || '',
+        save: existingSlide.save || slide.save || '',
+        header: existingSlide.header || slide.header || '',
+        footer: existingSlide.footer || slide.footer || '',
+        socialHandle: existingSlide.socialHandle || slide.socialHandle || '',
+        websiteUrl: existingSlide.websiteUrl || slide.websiteUrl || '',
+        slideNumber: existingSlide.slideNumber || slide.slideNumber || index + 1,
       };
     });
+
     setSlides(updatedSlides);
     setEditedSlides([...updatedSlides]);
+    Promise.all(updatedSlides.map((slide: Slide) => preloadSlideImages(slide))).catch((err) =>
+      console.error('Image preloading failed:', err)
+    );
+    setLoading(false);
   };
 
   const generateAndCaptureScreenshots = async () => {
     setLoading(true);
     try {
+      console.log('Generating carousel for topic:', topic);
       const response = await generateCarousel({ topic }).unwrap();
       const generatedContent = response.data;
 
@@ -84,10 +169,11 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
           tagline: content.tagline || slide.tagline,
           title: content.title || slide.title,
           description: formattedDescription,
-          imageUrl: slide.imageUrl,
+          
         };
       });
 
+      await Promise.all(newSlides.map((slide: Slide) => preloadSlideImages(slide)));
       setSlides(newSlides);
       setEditedSlides([...newSlides]);
 
@@ -107,7 +193,10 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
     const images: string[] = [];
     for (let i = 0; i < slidesToCapture.length; i++) {
       const slideElement = slideRefs.current[i];
-      if (!slideElement) continue;
+      if (!slideElement) {
+        console.warn(`Slide element ${i} not found`);
+        continue;
+      }
       await preloadSlideImages(slidesToCapture[i]);
       const canvas = await html2canvas(slideElement, { useCORS: true, scale: 2 });
       const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'));
@@ -142,11 +231,26 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
   };
 
   const handleSaveChanges = async () => {
+    await Promise.all(editedSlides.map((slide: Slide) => preloadSlideImages(slide)));
     setSlides([...editedSlides]);
     const updatedImages = await captureScreenshots(editedSlides);
     if (onSave) {
-      onSave(editedSlides, updatedImages); // Pass the updated slides and images
+      onSave(editedSlides, updatedImages);
     }
+    navigate('/auto', {
+      state: {
+        updatedPost: {
+          topic,
+          type: 'carousel',
+          content: editedSlides,
+          images: updatedImages.map((url, idx) => ({ url, label: `Carousel Slide ${idx + 1}` })),
+          templateId: selectedTemplate.id,
+          status: 'success',
+          contentId,
+          contentType,
+        },
+      },
+    });
     setEditMode(false);
   };
 
@@ -170,6 +274,7 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
           new Promise((resolve) => {
             const img = new Image();
             img.src = url || '';
+            img.crossOrigin = 'Anonymous';
             img.onload = resolve;
             img.onerror = resolve;
           })
@@ -178,7 +283,7 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
   };
 
   const handleBack = () => {
-    navigate('/auto-post-creator');
+    navigate(fromAutoPostCreator ? '/auto-post-creator' : '/topic');
   };
 
   const getSlideDimensions = () => {
@@ -190,6 +295,10 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
       aspectRatio: '1 / 1',
     };
   };
+
+  if (loading) {
+    return <div className="text-white">Loading...</div>;
+  }
 
   return (
     <div className="bg-gray-900 text-white p-6">
@@ -207,23 +316,6 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
 
         {loading && <p className="text-gray-500">Generating...</p>}
 
-        {/* Template Selection */}
-        <div className="mb-4">
-          <label className="block text-gray-300 mb-1">Select Template</label>
-          <select
-            value={selectedTemplate.id}
-            onChange={(e) => handleTemplateChange(e.target.value)}
-            className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg"
-          >
-            {carouselTemplates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Generate Button */}
         <motion.button
           onClick={generateAndCaptureScreenshots}
           disabled={loading}
@@ -234,7 +326,6 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
           {loading ? 'Generating...' : 'Generate Carousel'}
         </motion.button>
 
-        {/* Carousel Part */}
         <div>
           <Swiper
             modules={[Navigation, Pagination]}
@@ -277,7 +368,15 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
           </Swiper>
         </div>
 
-        {/* Editor Part */}
+        {!editMode && (
+          <button
+            onClick={() => setEditMode(true)}
+            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
+          >
+            Edit Slides
+          </button>
+        )}
+
         {editMode && (
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
             <h3 className="text-2xl font-semibold mb-6">Edit Slide {activeIndex + 1}</h3>
@@ -371,15 +470,6 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
               </button>
             </div>
           </div>
-        )}
-
-        {!editMode && onSave && (
-          <button
-            onClick={() => setEditMode(true)}
-            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-          >
-            Edit Slides
-          </button>
         )}
       </div>
     </div>

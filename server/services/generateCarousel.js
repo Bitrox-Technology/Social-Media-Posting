@@ -122,7 +122,9 @@ const generateImageContent = async (topic) => {
 
 const generateTopics = async (topic) => {
   try {
-    const prompt = `Generate 10 topics related to "${topic}" in JSON format. The JSON must have keys "topic1" through "topic10", each with a string value representing a topic. Example: {"topic1": "Example Topic 1", "topic2": "Example Topic 2", ...}`;
+    // Use timestamp to make each prompt unique
+    const timestamp = Date.now();
+    const prompt = `Generate 10 unique and creative topics related to "${topic}" in JSON format. Each topic must be exactly 4 or 5 words long. The JSON must have keys "topic1" through "topic10", each with a string value representing a topic. Ensure the topics are diverse, fresh, and do not repeat any previously suggested topics. Example: {"topic1": "Digital Art Trends", "topic2": "NFT Market Growth", ...}. Request ID: ${timestamp}`;
 
     const response = await ollama.chat({
       model: "gemma3:latest",
@@ -156,7 +158,7 @@ const generateTopics = async (topic) => {
 
     // Step 4: Validate that the cleaned response is a proper JSON string
     if (!cleanedResponse.startsWith('{') || !cleanedResponse.endsWith('}')) {
-      throw new ApiError(400,'Invalid JSON format: Response does not appear to be a valid JSON object');
+      throw new ApiError(400, 'Invalid JSON format: Response does not appear to be a valid JSON object');
     }
 
     // Step 5: Parse the cleaned JSON response
@@ -177,7 +179,6 @@ const generateTopics = async (topic) => {
     throw new ApiError(400, "Failed to generate topics content");
   }
 };
-
 
 const generateBlog = async (topic) => {
   try {

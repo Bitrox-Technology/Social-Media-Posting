@@ -1,6 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setUser, clearUser } from './appSlice'; // Adjust path to your appSlice
-import { AppDispatch } from '../store'; // Adjust path to your store.ts
 
 interface ContentIdea {
   title: string;
@@ -36,6 +35,8 @@ interface SavePostRequest {
   type: 'image' | 'carousel' | 'doyouknow';
   status?: 'pending' | 'error' | 'success';
   images?: { url: string; label: string }[];
+  contentId?: string;
+  contentType?: 'ImageContent' | 'CarouselContent' | 'DYKContent';
 }
 
 export const api = createApi({
@@ -225,6 +226,24 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
+    getImageContent: builder.query<ApiResponse<any>, { contentId: string }>({
+      query: ({ contentId }) => ({
+        url: `/user/get-image-content/${contentId}`,
+        method: 'GET',
+      }),
+    }),
+    getCarouselContent: builder.query<ApiResponse<any>, { contentId: string }>({
+      query: ({ contentId }) => ({
+        url: `/user/get-carousel-content/${contentId}`,
+        method: 'GET',
+      }),
+    }),
+    getDYKContent: builder.query<ApiResponse<any>, { contentId: string }>({
+      query: ({ contentId }) => ({
+        url: `/user/get-dyk-content/${contentId}`,
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
@@ -247,5 +266,8 @@ export const {
   useImageContentMutation,
   useCarouselContentMutation,
   useDykContentMutation,
-  useLazyGetSavePostsQuery
+  useLazyGetSavePostsQuery,
+  useLazyGetImageContentQuery,
+  useLazyGetCarouselContentQuery,
+  useLazyGetDYKContentQuery,
 } = api;

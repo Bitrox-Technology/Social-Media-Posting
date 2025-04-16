@@ -6,6 +6,7 @@ import {
   useUploadImageToCloudinaryMutation,
   useGenerateImageMutation,
   useGenerateImageContentMutation,
+  useLazyGetImageContentQuery,
 } from '../../store/api';
 import { imageTemplates, ImageSlide } from '../../templetes/ImageTemplate';
 import { ArrowLeft } from 'lucide-react';
@@ -32,12 +33,21 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const dispatch = useAppDispatch();
   const defaultLogoUrl = '/images/Logo1.png';
 
-  const { templateId: locationTemplateId, fromAutoPostCreator, generatedImageUrl, generatedContent } = location.state || {};
+  const {
+    templateId: locationTemplateId,
+    fromAutoPostCreator,
+    generatedImageUrl,
+    generatedContent,
+    contentId,
+    contentType,
+  } = location.state || {};
 
-  // Select the template based on templateId
-  const selectedTemplate = imageTemplates.find((t) => t.id === (templateId || locationTemplateId)) || imageTemplates[0];
+  // Initialize selectedTemplate with fallback
+  const [selectedTemplate, setSelectedTemplate] = useState(
+    imageTemplates.find((t) => t.id === (templateId || locationTemplateId)) || imageTemplates[0]
+  );
 
-  // Initialize slide with data from generatedContent or initialSlide
+  // Initialize slide
   const [slide, setSlide] = useState<ImageSlide>(() => {
     const content = generatedContent || initialSlide;
     if (content) {
@@ -63,7 +73,51 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [generateImage, { isLoading: isGeneratingImage }] = useGenerateImageMutation();
   const [generateImageContent, { isLoading: isGeneratingContent }] = useGenerateImageContentMutation();
+  const [getImageContent, { isFetching: isFetchingContent }] = useLazyGetImageContentQuery();
   const slideRef = useRef<HTMLDivElement>(null);
+
+  // Fetch ImageContent if contentId and contentType are provided
+  useEffect(() => {
+    const fetchImageContent = async () => {
+      if (contentId && contentType === 'ImageContent' && !isInitialized) {
+        try {
+          const response = await getImageContent({ contentId: contentId }).unwrap();
+          const data = response.data;
+          console.log('Fetched ImageContent:', data);
+
+          if (data) {
+            // Update selectedTemplate based on data.templateId
+            const newTemplate = imageTemplates.find((t) => t.id === data.templateId) || imageTemplates[0];
+            setSelectedTemplate(newTemplate);
+
+            // Update slide with fetched content and new template
+            const updatedSlide: ImageSlide = {
+              ...newTemplate.slides[0],
+              title: data.content.title || '',
+              description: data.content.description || '',
+              footer: data.content.footer ||  '',
+              websiteUrl: data.content.websiteUrl || '',
+              imageUrl: data.content.imageUrl || '',
+            };
+
+            await preloadSlideImages(updatedSlide);
+            setSlide(updatedSlide);
+            setCustomTitle(updatedSlide.title);
+            setCustomDescription(updatedSlide.description);
+            setCustomFooter(updatedSlide.footer || '');
+            setIsInitialized(true);
+          }
+        } catch (error) {
+          console.error('Error fetching ImageContent:', error);
+          initializeSlide();
+        }
+      } else {
+        initializeSlide();
+      }
+    };
+
+    fetchImageContent();
+  }, [contentId, contentType, isInitialized]);
 
   const preloadSlideImages = async (slide: ImageSlide) => {
     const images = [slide.imageUrl, showLogo ? defaultLogoUrl : ''].filter(Boolean);
@@ -81,39 +135,35 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     );
   };
 
-  useEffect(() => {
-    const initializeSlide = async () => {
-      if (isInitialized) return;
+  const initializeSlide = async () => {
+    if (isInitialized) return;
 
-      const content = generatedContent || initialSlide;
-      let updatedSlide = { ...slide };
-      if (content) {
-        updatedSlide = {
-          ...selectedTemplate.slides[0],
-          title: content.title || updatedSlide.title,
-          description: content.description || updatedSlide.description,
-          footer: content.footer || updatedSlide.footer || '',
-          websiteUrl: content.websiteUrl || updatedSlide.websiteUrl || '',
-          imageUrl: content.imageUrl || updatedSlide.imageUrl || '',
-        };
-      }
+    const content = generatedContent || initialSlide;
+    let updatedSlide = { ...slide };
+    if (content) {
+      updatedSlide = {
+        ...selectedTemplate.slides[0],
+        title: content.title || selectedTemplate.slides[0].title,
+        description: content.description || selectedTemplate.slides[0].description,
+        footer: content.footer || selectedTemplate.slides[0].footer || '',
+        websiteUrl: content.websiteUrl || selectedTemplate.slides[0].websiteUrl || '',
+        imageUrl: content.imageUrl || selectedTemplate.slides[0].imageUrl || '',
+      };
+    }
 
-      await preloadSlideImages(updatedSlide);
-      setSlide(updatedSlide);
-      setCustomTitle(updatedSlide.title);
-      setCustomDescription(updatedSlide.description);
-      setCustomFooter(updatedSlide.footer || '');
+    await preloadSlideImages(updatedSlide);
+    setSlide(updatedSlide);
+    setCustomTitle(updatedSlide.title);
+    setCustomDescription(updatedSlide.description);
+    setCustomFooter(updatedSlide.footer || '');
 
-      if (onImagesGenerated && updatedSlide.imageUrl) {
-        const image = await captureScreenshot();
-        if (image) onImagesGenerated(image);
-      }
+    if (onImagesGenerated && updatedSlide.imageUrl) {
+      const image = await captureScreenshot();
+      if (image) onImagesGenerated(image);
+    }
 
-      setIsInitialized(true);
-    };
-
-    initializeSlide();
-  }, [selectedTemplate, onImagesGenerated, isInitialized, generatedContent, initialSlide]);
+    setIsInitialized(true);
+  };
 
   useEffect(() => {
     const updateSlide = async () => {
@@ -233,6 +283,8 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
               images: [{ url: cloudinaryUrl, label: 'Image Post' }],
               templateId: selectedTemplate.id,
               status: 'success',
+              contentId,
+              contentType,
             },
           },
         });
@@ -257,7 +309,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     }
   };
 
-  if (!slide) {
+  if (!slide || isFetchingContent) {
     return <div className="text-white">Loading...</div>;
   }
 
@@ -366,26 +418,6 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              {/* <motion.button
-                onClick={handleGenerateContent}
-                disabled={isGeneratingContent || !topic}
-                className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {isGeneratingContent ? 'Generating Content...' : 'Generate Content'}
-              </motion.button> */}
-
-              {/* <motion.button
-                onClick={handleGenerateImage}
-                disabled={isGeneratingImage || !topic}
-                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {isGeneratingImage ? 'Generating Image...' : 'Generate Image'}
-              </motion.button> */}
-
               <motion.button
                 onClick={handleSave}
                 disabled={isUploading}

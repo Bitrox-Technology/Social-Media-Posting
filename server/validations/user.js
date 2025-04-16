@@ -1,4 +1,4 @@
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../utils/ApiError.js";
 import { BAD_REQUEST } from "../utils/apiResponseCode.js"
 import joi from "joi"
 
@@ -58,8 +58,8 @@ const validateImageContent = async (inputs) => {
         topic: joi.string().trim().min(1).required(),
         templateId: joi.string().trim().required(),
         content: joi.object({
-            title: joi.string().trim().min(1).required(),
-            description: joi.string().trim().min(1).required(),
+            title: joi.string().trim().required(),
+            description: joi.string().trim().required(),
             footer: joi.string().trim().allow('').optional(),
             websiteUrl: joi.string().trim().uri().allow('').optional(),
             imageUrl: joi.string().trim().uri().required(),
@@ -79,16 +79,16 @@ const validateImageContent = async (inputs) => {
 
 const validateCarouselContent = async (inputs) => {
     const contentSchema = joi.object({
-        tagline: joi.string().trim().min(1).optional(),
-        title: joi.string().trim().min(1).optional(),
-        description: joi.string().trim().min(1).optional(),
+        tagline: joi.string().allow('').empty('').optional(),
+        title: joi.string().allow('').empty('').optional(),
+        description: joi.string().allow('').empty('').optional(),
     });
 
     const schema = joi.object({
         postContentId: joi.string().required(),
         topic: joi.string().trim().min(1).required(),
         templateId: joi.string().trim().min(1).required(),
-        content: joi.array().items(contentSchema).min(1).optional(),
+        content: joi.array().items(contentSchema).optional(),
         status: joi.string().valid("pending", "error", "success").default("pending")
     });
 
@@ -109,8 +109,8 @@ const validateDYKContent = async (inputs) => {
         topic: joi.string().trim().min(1).required(),
         templateId: joi.string().trim().required(),
         content: joi.object({
-            title: joi.string().trim().min(1).optional(),
-            fact: joi.string().trim().min(1).optional(),
+            title: joi.string().trim().optional(),
+            fact: joi.string().trim().optional(),
         }),
         status: joi.string().valid("pending", "error", "success").default("pending")
     });
@@ -129,6 +129,8 @@ const validateSavePost = async (inputs) => {
     let schema = {}
     schema = joi.object({
         postContentId: joi.string().required(),
+        contentId: joi.string().required(),
+        contentType: joi.string().valid('ImageContent', 'CarouselContent', 'DYKContent').required(),
         topic: joi.string().trim().min(1).optional(),
         type: joi.string().valid('image', 'carousel', 'doyouknow').optional(),
         status: joi.string().valid('pending', 'error', 'success').default('success'),

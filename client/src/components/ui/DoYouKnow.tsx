@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setSelectedFile } from '../../store/appSlice';
-import { useUploadImageToCloudinaryMutation, useGenerateDoYouKnowMutation } from '../../store/api';
+import { useUploadImageToCloudinaryMutation, useGenerateDoYouKnowMutation, useLazyGetDYKContentQuery } from '../../store/api';
 import { DoYouKnowSlide, doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
 import { ArrowLeft } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -18,10 +18,17 @@ interface DoYouKnowProps {
 export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave, initialSlide, templateId }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const location = useLocation();
   const selectedIdea = useAppSelector((state) => state.app.selectedIdea);
   const defaultLogoUrl = '/images/Logo1.png';
 
-  const selectedTemplate = doYouKnowTemplates.find((t) => t.id === templateId) || doYouKnowTemplates[0];
+  const { contentId, contentType, fromAutoPostCreator } = location.state || {};
+
+  // Initialize selectedTemplate
+  const [selectedTemplate, setSelectedTemplate] = useState(
+    doYouKnowTemplates.find((t) => t.id === templateId) || doYouKnowTemplates[0]
+  );
+
   const [slide, setSlide] = useState<DoYouKnowSlide>(
     initialSlide
       ? {
@@ -44,7 +51,50 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
 
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [generateDoYouKnow, { isLoading: isGenerating }] = useGenerateDoYouKnowMutation();
+  const [getDYKContent, { isFetching: isFetchingContent }] = useLazyGetDYKContentQuery();
   const slideRef = useRef<HTMLDivElement>(null);
+
+  // Fetch DoYouKnowContent if contentId exists
+  useEffect(() => {
+    const fetchDoYouKnowContent = async () => {
+      if (contentId && contentType === 'DYKContent' && !isInitialized) {
+        try {
+          const response = await getDYKContent({ contentId: contentId }).unwrap();
+          const data = response.data;
+          console.log('Fetched DoYouKnowContent:', data);
+          if (data) {
+            // Update selectedTemplate based on data.templateId
+            const newTemplate = doYouKnowTemplates.find((t) => t.id === data.templateId) || doYouKnowTemplates[0];
+            setSelectedTemplate(newTemplate);
+
+            // Update slide with fetched content and new template
+            const updatedSlide: DoYouKnowSlide = {
+              ...newTemplate.slides[0],
+              title: data.content.title || newTemplate.slides[0].title,
+              fact: data.content.fact || newTemplate.slides[0].fact,
+              footer: data.content.footer || newTemplate.slides[0].footer || '',
+              websiteUrl: data.content.websiteUrl || newTemplate.slides[0].websiteUrl || '',
+              imageUrl: data.content.imageUrl || newTemplate.slides[0].imageUrl || '',
+            };
+
+            await preloadSlideImages(updatedSlide);
+            setSlide(updatedSlide);
+            setCustomTitle(updatedSlide.title);
+            setCustomFact(updatedSlide.fact);
+            setCustomFooter(updatedSlide.footer || '');
+            setCustomWebsiteUrl(updatedSlide.websiteUrl || '');
+            setIsInitialized(true);
+          }
+        } catch (error) {
+          console.error('Error fetching DoYouKnowContent:', error);
+          initializeSlide();
+        }
+      } else {
+        initializeSlide();
+      }
+    };
+    fetchDoYouKnowContent();
+  }, [contentId, contentType, isInitialized]);
 
   const preloadSlideImages = async (slide: DoYouKnowSlide) => {
     const images = [slide.imageUrl, showLogo ? defaultLogoUrl : ''].filter(Boolean);
@@ -62,33 +112,32 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
     );
   };
 
-  // Initialize slide on mount
-  useEffect(() => {
-    const initializeSlide = async () => {
-      if (isInitialized) return;
+  const initializeSlide = async () => {
+    if (isInitialized) return;
 
-      const updatedSlide = {
-        ...selectedTemplate.slides[0],
-        title: customTitle,
-        fact: customFact,
-        footer: customFooter,
-        websiteUrl: customWebsiteUrl,
-        imageUrl: slide.imageUrl,
-      };
-      await preloadSlideImages(updatedSlide);
-      setSlide(updatedSlide);
-
-      if (onImagesGenerated) {
-        const image = await captureScreenshot(updatedSlide);
-        onImagesGenerated(image);
-      }
-
-      setIsInitialized(true);
+    const updatedSlide = {
+      ...selectedTemplate.slides[0],
+      title: initialSlide?.title || selectedTemplate.slides[0].title,
+      fact: initialSlide?.fact || selectedTemplate.slides[0].fact,
+      footer: initialSlide?.footer || selectedTemplate.slides[0].footer || '',
+      websiteUrl: initialSlide?.websiteUrl || selectedTemplate.slides[0].websiteUrl || '',
+      imageUrl: initialSlide?.imageUrl || selectedTemplate.slides[0].imageUrl,
     };
-    initializeSlide();
-  }, [onImagesGenerated, isInitialized]);
+    await preloadSlideImages(updatedSlide);
+    setSlide(updatedSlide);
+    setCustomTitle(updatedSlide.title);
+    setCustomFact(updatedSlide.fact);
+    setCustomFooter(updatedSlide.footer || '');
+    setCustomWebsiteUrl(updatedSlide.websiteUrl || '');
 
-  // Update slide when custom fields change
+    if (onImagesGenerated) {
+      const image = await captureScreenshot(updatedSlide);
+      if (image) onImagesGenerated(image);
+    }
+
+    setIsInitialized(true);
+  };
+
   useEffect(() => {
     const updateSlide = async () => {
       const updatedSlide = {
@@ -101,9 +150,14 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
       };
       await preloadSlideImages(updatedSlide);
       setSlide(updatedSlide);
+
+      if (onImagesGenerated) {
+        const image = await captureScreenshot(updatedSlide);
+        if (image) onImagesGenerated(image);
+      }
     };
     updateSlide();
-  }, [customTitle, customFact, customFooter, customWebsiteUrl, showLogo]);
+  }, [customTitle, customFact, customFooter, customWebsiteUrl, showLogo, onImagesGenerated]);
 
   const captureScreenshot = async (slideToCapture: DoYouKnowSlide) => {
     if (!slideRef.current) return '';
@@ -118,7 +172,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
   };
 
   const handleBack = () => {
-    navigate('/auto-post-creator');
+    navigate(fromAutoPostCreator ? '/auto-post-creator' : '/topic');
   };
 
   const handleGenerateContent = async () => {
@@ -183,9 +237,20 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
       if (onSave && slideRef.current) {
         onSave(slide, slideRef.current);
       } else {
-        setTimeout(() => {
-          navigate('/post', { state: { cloudinaryUrl } });
-        }, 3000);
+        navigate('/auto', {
+          state: {
+            updatedPost: {
+              topic: selectedIdea?.title,
+              type: 'doyouknow',
+              content: slide,
+              images: [{ url: cloudinaryUrl, label: 'Do You Know Post' }],
+              templateId: selectedTemplate.id,
+              status: 'success',
+              contentId,
+              contentType,
+            },
+          },
+        });
       }
     } catch (error) {
       console.error('Error in handleSave:', error);
@@ -195,7 +260,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
     }
   };
 
-  if (!slide) {
+  if (!slide || isFetchingContent) {
     return <div className="text-white">Loading...</div>;
   }
 

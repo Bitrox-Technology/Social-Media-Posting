@@ -25,7 +25,6 @@ import { DoYouKnow } from '../ui/DoYouKnow';
 import { DoYouKnowSlide, doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
 import { imageTemplates, ImageSlide } from '../../templetes/ImageTemplate';
 import html2canvas from 'html2canvas';
-import { title } from 'framer-motion/client';
 
 interface CarouselContent {
   tagline?: string;
@@ -58,6 +57,8 @@ interface Post {
   templateId?: string;
   status: 'pending' | 'success' | 'error';
   errorMessage?: string;
+  contentId?: string;
+  contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent';
 }
 
 export const AutoPostCreator = () => {
@@ -133,6 +134,8 @@ export const AutoPostCreator = () => {
               type: 'image' | 'carousel' | 'doyouknow';
               images?: { url: string; label: string }[];
               status: 'success' | 'error' | 'pending';
+              contentId?: string;
+              contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent';
             }
 
             const completed: Post[] = (savedPosts as SavedPost[])
@@ -140,10 +143,12 @@ export const AutoPostCreator = () => {
               .map((post): Post => ({
                 topic: post.topic,
                 type: post.type,
-                content: '', // No content in SavePosts schema
+                content: '',
                 images: post.images,
-                templateId: undefined, // Not saved in schema
+                templateId: undefined,
                 status: post.status,
+                contentId: post.contentId,
+                contentType: post.contentType,
               }));
 
             // Initialize pending posts for unmatched topics
@@ -245,7 +250,7 @@ export const AutoPostCreator = () => {
             imageUrl: imageUrl,
           };
 
-          await imageContent({
+          const imageResult = await imageContent({
             postContentId,
             topic,
             templateId: randomTemplate.id,
@@ -253,7 +258,15 @@ export const AutoPostCreator = () => {
             status: 'success',
           }).unwrap();
 
-          newPost = { topic, type, content: newImageSlide, templateId: randomTemplate.id, status: 'success' };
+          newPost = {
+            topic,
+            type,
+            content: newImageSlide,
+            templateId: randomTemplate.id,
+            status: 'success',
+            contentId: imageResult.data._id,
+            contentType: 'ImageContent',
+          };
 
           let tempContainer = document.createElement('div');
           tempContainer.style.position = 'absolute';
@@ -265,10 +278,12 @@ export const AutoPostCreator = () => {
           const slide = newPost.content as ImageContent;
           let template = imageTemplates.find((t) => t.id === newPost.templateId) || imageTemplates[0];
           let slideElement = template.renderSlide(slide as ImageSlide, true, '/images/Logo1.png');
-          ReactDOM.render(slideElement, tempContainer);
+          const rootImage = createRoot(tempContainer);
+          rootImage.render(slideElement);
 
           screenshotUrl = await captureAndUploadScreenshot(tempContainer, topic, type);
           document.body.removeChild(tempContainer);
+          rootImage.unmount();
 
           if (screenshotUrl) {
             console.log('Screenshot URL:', screenshotUrl, topic, type, postContentId);
@@ -278,6 +293,8 @@ export const AutoPostCreator = () => {
               type: 'image',
               status: 'success',
               images: [{ url: screenshotUrl, label: 'Image Post' }],
+              contentId: imageResult.data._id,
+              contentType: 'ImageContent',
             }).unwrap();
             newPost.images = [{ url: screenshotUrl, label: 'Image Post' }];
           }
@@ -316,41 +333,47 @@ export const AutoPostCreator = () => {
           });
 
           const extractedContent = generatedCarouselContent.map((content, index) => ({
-            tagline: content.tagline || newSlides[index].tagline || `Slide ${index + 1} Tagline`,
-            title: content.title || newSlides[index].title || `Slide ${index + 1} Title`,
-            description: content.description || newSlides[index].description || 'Default Description',
-
+            tagline: content.tagline || '',
+            title: content.title || '',
+            description: content.description || '',
           }));
 
-          await carouselContent({
+          const carouselResult = await carouselContent({
             postContentId,
             topic,
             templateId: randomCarouselTemplate.id,
             content: extractedContent,
             status: 'success',
-          }).unwrap()
+          }).unwrap();
 
-          newPost = { topic, type, content: newSlides, templateId: randomCarouselTemplate.id, status: 'success' };
-          // Take screenshot for each slide
+          newPost = {
+            topic,
+            type,
+            content: newSlides,
+            templateId: randomCarouselTemplate.id,
+            status: 'success',
+            contentId: carouselResult.data._id,
+            contentType: 'CarouselContent',
+          };
+
           const images: { url: string; label: string }[] = [];
           for (let i = 0; i < newSlides.length; i++) {
             const slide = newSlides[i];
             const tempContainer = document.createElement('div');
             tempContainer.style.position = 'absolute';
             tempContainer.style.top = '-9999px';
-            tempContainer.style.width = '1080px'; // Match Carousel dimensions
+            tempContainer.style.width = '1080px';
             tempContainer.style.height = '1080px';
-            tempContainer.style.backgroundColor = '#1A2526'; // Consistent background
+            tempContainer.style.backgroundColor = '#1A2526';
             document.body.appendChild(tempContainer);
 
             const template = carouselTemplates.find((t) => t.id === randomCarouselTemplate.id) || carouselTemplates[0];
             const slideElement = template.renderSlide
               ? template.renderSlide(slide, true, '/images/Logo1.png')
               : <div>{slide.title}</div>;
-            const root = createRoot(tempContainer); // Use createRoot
+            const root = createRoot(tempContainer);
             root.render(slideElement);
 
-            // Wait for rendering
             await new Promise((resolve) => setTimeout(resolve, 100));
 
             const slideScreenshotUrl = await captureAndUploadScreenshot(tempContainer, `${topic}-slide-${i + 1}`, type);
@@ -370,6 +393,8 @@ export const AutoPostCreator = () => {
               type: 'carousel',
               status: 'success',
               images,
+              contentId: carouselResult.data._id,
+              contentType: 'CarouselContent',
             }).unwrap();
             newPost.images = images;
           }
@@ -387,18 +412,26 @@ export const AutoPostCreator = () => {
             footer: randomDoYouKnowTemplate.slides[0].footer,
             websiteUrl: randomDoYouKnowTemplate.slides[0].websiteUrl || '',
             imageUrl: randomDoYouKnowTemplate.slides[0].imageUrl || '',
-            slideNumber: 1, 
+            slideNumber: 1,
           };
 
-          await dykContent({
+          const dykResult = await dykContent({
             postContentId,
             topic,
             templateId: randomDoYouKnowTemplate.id,
-            content: {title: generatedDoYouKnowContent.title, fact: generatedDoYouKnowContent.description},
+            content: { title: generatedDoYouKnowContent.title, fact: generatedDoYouKnowContent.description },
             status: 'success',
           }).unwrap();
 
-          newPost = { topic, type, content: newDoYouKnowSlide, templateId: randomDoYouKnowTemplate.id, status: 'success' };
+          newPost = {
+            topic,
+            type,
+            content: newDoYouKnowSlide,
+            templateId: randomDoYouKnowTemplate.id,
+            status: 'success',
+            contentId: dykResult.data._id,
+            contentType: 'DoyouknowContent',
+          };
 
           const tempContainerDYK = document.createElement('div');
           tempContainerDYK.style.position = 'absolute';
@@ -412,10 +445,9 @@ export const AutoPostCreator = () => {
           const doYouKnowSlideElement = doYouKnowTemplate.renderSlide
             ? doYouKnowTemplate.renderSlide(newDoYouKnowSlide, true, '/images/Logo1.png')
             : <div>{newDoYouKnowSlide.title}</div>;
-          const root = createRoot(tempContainerDYK); // Use createRoot
+          const root = createRoot(tempContainerDYK);
           root.render(doYouKnowSlideElement);
 
-          // Wait for rendering
           await new Promise((resolve) => setTimeout(resolve, 100));
 
           screenshotUrl = await captureAndUploadScreenshot(tempContainerDYK, topic, type);
@@ -430,6 +462,8 @@ export const AutoPostCreator = () => {
               type: 'doyouknow',
               status: 'success',
               images: [{ url: screenshotUrl, label: 'DoYouKnow Post' }],
+              contentId: dykResult.data._id,
+              contentType: 'DYKContent',
             }).unwrap();
             newPost.images = [{ url: screenshotUrl, label: 'DoYouKnow Post' }];
           }
@@ -450,10 +484,10 @@ export const AutoPostCreator = () => {
         prev.map((p) =>
           p.topic === topic && p.type === type
             ? {
-              ...p,
-              status: 'error',
-              errorMessage: err instanceof Error ? err.message : 'An error occurred',
-            }
+                ...p,
+                status: 'error',
+                errorMessage: err instanceof Error ? err.message : 'An error occurred',
+              }
             : p
         )
       );
@@ -461,6 +495,7 @@ export const AutoPostCreator = () => {
       return false;
     }
   };
+
   const generateAllPosts = async () => {
     if (isGenerating || !postContentId) return;
     setIsGenerating(true);
@@ -475,39 +510,31 @@ export const AutoPostCreator = () => {
   };
 
   const handleEditPost = (post: Post) => {
+    console.log('Editing post:', post);
     const commonState = {
-      topic: post.topic,
-      templateId: post.templateId,
-      postContentId,
-      fromAutoPostCreator: true,
+      contentId: post.contentId,
+      contentType: post.contentType,
     };
 
     switch (post.type) {
       case 'image':
         navigate('/image-generator', {
           state: {
-            ...commonState,
-            initialSlide: post.content,
-            generatedImageUrl: post.images && post.images.length > 0 ? post.images[0].url : '',
-            generatedContent: post.content,
+            ...commonState, 
           },
         });
         break;
       case 'carousel':
-        navigate('/carousel-generator', {
+        navigate('/carousel', {
           state: {
             ...commonState,
-            slides: post.content,
-            generatedImages: post.images || [],
           },
         });
         break;
       case 'doyouknow':
-        navigate('/doyouknow-generator', {
+        navigate('/doyouknow', {
           state: {
             ...commonState,
-            initialSlide: post.content,
-            generatedImageUrl: post.images && post.images.length > 0 ? post.images[0].url : '',
           },
         });
         break;
@@ -515,8 +542,9 @@ export const AutoPostCreator = () => {
   };
 
   const handleContinueToPost = async () => {
+    confirm("Do you want to continue to Post. If you continue with this you can't edit the posts again. Please confirm?")
     try {
-      navigate('/post-preview', { state: { posts: completedPosts, postContentId } });
+      navigate('/select-media', { state: { postContentId } });
     } catch (error) {
       console.error('Error navigating to post preview:', error);
       alert('Failed to proceed. Please try again.');
@@ -615,7 +643,7 @@ export const AutoPostCreator = () => {
                   {completedPosts.map((post) => (
                     <motion.div
                       key={`${post.topic}-${post.type}`}
-                      className="bg-gray-800 p-4 rounded-xl shadow-lg border border-green-400/20"
+                      className="bg-gray-800 p-6 rounded-xl shadow-lg border border-green-400/20 flex flex-col"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5 }}
@@ -627,38 +655,55 @@ export const AutoPostCreator = () => {
                             {post.topic} ({post.type})
                           </h3>
                         </div>
-                        {post.status === 'success' && post.content && (
+                      </div>
+                      <div
+                        ref={(el) => el && postRefs.current.set(`${post.topic}`, el)}
+                        className="bg-gray-700 p-4 rounded-lg mb-4 flex-1"
+                      >
+                        {post.images && post.images.length > 0 ? (
+                          post.type === 'carousel' ? (
+                            <div className="flex overflow-x-auto space-x-4 pb-4">
+                              {post.images.map((img, idx) => (
+                                <div key={idx} className="flex-none w-64 flex flex-col">
+                                  <img
+                                    src={img.url}
+                                    alt={img.label}
+                                    className="w-64 h-64 object-cover rounded-lg"
+                                  />
+                                  <span className="text-gray-400 text-sm mt-2 text-center">{img.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {post.images.map((img, idx) => (
+                                <div key={idx} className="flex flex-col items-start">
+                                  <img
+                                    src={img.url}
+                                    alt={img.label}
+                                    className="w-full max-w-md h-auto object-cover rounded-lg"
+                                  />
+                                  <span className="text-gray-400 text-sm mt-1">{img.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        ) : (
+                          <p className="text-gray-400">No content available</p>
+                        )}
+                      </div>
+                      {post.status === 'success' && (post.images?.length ?? 0) > 0 && (
+                        <div className="flex justify-start">
                           <motion.button
                             onClick={() => handleEditPost(post)}
-                            className="px-3 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 text-sm"
+                            className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 text-sm"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
                             Edit
                           </motion.button>
-                        )}
-                      </div>
-                      <div
-                        ref={(el) => el && postRefs.current.set(`${post.topic}-${post.type}`, el)}
-                        className="bg-gray-700 p-4 rounded-lg mb-4"
-                      >
-                        {post.images && post.images.length > 0 ? (
-                          <div className="space-y-2">
-                            {post.images.map((img, idx) => (
-                              <div key={idx} className="flex flex-col items-start">
-                                <img
-                                  src={img.url}
-                                  alt={img.label}
-                                  className="w-full max-w-md h-auto object-cover rounded-lg"
-                                />
-                                <span className="text-gray-400 text-sm mt-1">{img.label}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-gray-400">No content available</p>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </div>
@@ -683,8 +728,6 @@ export const AutoPostCreator = () => {
     </div>
   );
 };
-
-
 
 function createRoot(tempContainer: HTMLDivElement) {
   return reactCreateRoot(tempContainer);

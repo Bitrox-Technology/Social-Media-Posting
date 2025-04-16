@@ -1,5 +1,5 @@
 import User from "../models/user.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../utils/ApiError.js";
 import { generateAccessAndRefreshTokenForUser } from "../utils/generateToken.js";
 import { BAD_REQUEST } from "../utils/apiResponseCode.js";
 import { comparePasswordUsingBcrypt, Hashed_Password, isEmail } from "../utils/utilities.js";
@@ -66,7 +66,8 @@ const postContent = async (inputs, user) => {
 
     let postContent = await PostContent.findOne({ userId: user._id })
     if (postContent) {
-        postContent = await PostContent.findByIdAndUpdate({ _id: postContent._id }, { topics: inputs.topics }, { new: true })
+        postContent = await PostContent.findByIdAndDelete({ _id: postContent._id }, { new: true })
+        postContent = await PostContent.create({ userId: user._id, topics: inputs.topics })
     } else {
         postContent = await PostContent.create({ userId: user._id, topics: inputs.topics })
     }
@@ -155,6 +156,33 @@ const getSavePosts = async (postContentId, user) => {
     return posts
 }
 
+const getImageContent = async (contentId, user) => {
+    let existingUser = await User.findOne({ _id: user._id })
+    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
+
+    let content = await ImageContent.findOne({ _id: contentId })
+    if (!content) throw new ApiError(BAD_REQUEST, "No content found")
+    return content;
+}
+
+const getCarouselContent = async (contentId, user) => {
+    let existingUser = await User.findOne({ _id: user._id })
+    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
+
+    let content = await CarouselContent.findOne({ _id: contentId })
+    if (!content) throw new ApiError(BAD_REQUEST, "No content found")
+    return content;
+}
+
+const getDYKContent = async (contentId, user) => {
+    let existingUser = await User.findOne({ _id: user._id })
+    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
+
+    let content = await DYKContent.findOne({ _id: contentId })
+    if (!content) throw new ApiError(BAD_REQUEST, "No content found")
+    return content;
+}
+
 export {
     signup,
     login,
@@ -164,5 +192,8 @@ export {
     saveCarouselContent,
     saveDYKContent,
     savePosts,
-    getSavePosts
+    getSavePosts,
+    getImageContent,
+    getCarouselContent,
+    getDYKContent
 }

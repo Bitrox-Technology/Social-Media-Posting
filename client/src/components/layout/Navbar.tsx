@@ -56,20 +56,20 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleDashboard, isDashboardOpen
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
               {user && user.email ? (
-                <div className="py-1">
-                  <div className="px-4 py-2 text-gray-800 border-b">
-                    <span className="block text-sm font-semibold truncate">
-                      {user.email}
-                    </span>
+                  <div className="py-1">
+                    <div className="px-4 py-2 text-gray-800 border-b">
+                      <span className="block text-sm font-semibold truncate">
+                        {user.email}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </button>
                   </div>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </button>
-                </div>
               ) : (
                 <div className="py-1">
                   <Link

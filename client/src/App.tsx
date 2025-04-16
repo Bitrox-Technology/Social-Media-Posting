@@ -17,6 +17,7 @@ import { DoYouKnowTemplateSelector } from './components/ui/DoYouKnowTemplate';
 import { ImageGeneration } from './components/ui/ImageGeneration';
 import { ImageGenerationTemplate } from './components/ui/ImageGenerationTemplate';
 import { Blog } from './components/content/Blog';
+import { SelectSocialMedia } from './components/content/SelectSocialMedia';
 
 function App() {
   // Access state from Redux store
@@ -76,6 +77,7 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/auto" element={<AutoPostCreator />} />
+            <Route path='/select-media' element={<SelectSocialMedia/>} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>

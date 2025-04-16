@@ -1,5 +1,5 @@
 import { Router } from "express"
-import {Signup, Login, SavePosts, PostContent, GetPostContent, SaveImageContent, SaveCarouselContent, SaveDYKContent, GetSavePosts} from "../controllers/user.js"
+import {Signup, Login, SavePosts, PostContent, GetPostContent, SaveImageContent, SaveCarouselContent, SaveDYKContent, GetSavePosts, GetImageContent, GetCarouselContent, GetDYKContent} from "../controllers/user.js"
 import { AuthMiddleware } from "../middlewares/auth.js"
 
 // import AuthMiddleware from "../middlewares/auth.js"
@@ -18,6 +18,9 @@ userRouter.post("/carousel-content", AuthMiddleware, SaveCarouselContent)
 userRouter.post("/dyk-content", AuthMiddleware, SaveDYKContent)
 userRouter.post("/save-posts", AuthMiddleware, SavePosts)
 userRouter.get("/get-posts/:postcontentid", AuthMiddleware, GetSavePosts)
+userRouter.get("/get-image-content/:contentid", AuthMiddleware, GetImageContent)
+userRouter.get("/get-carousel-content/:contentid", AuthMiddleware, GetCarouselContent)
+userRouter.get("/get-dyk-content/:contentid", AuthMiddleware, GetDYKContent)
 // userRouter.post("/update-profile", AuthMiddleware, upload.single("avatar"), UserControllers.UpdateProfile)
 // userRouter.get("/get-profile", AuthMiddleware, UserControllers.GetProfile)
 // userRouter.post("/logout", AuthMiddleware, UserControllers.Logout)

@@ -5,7 +5,14 @@ const savePostsSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     },
-
+    contentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        refPath: 'contentType',
+    },
+    contentType: {
+        type: String,
+        enum: ['ImageContent', 'CarouselContent', 'DYKContent'],
+    },
     postContentId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'PostContent',

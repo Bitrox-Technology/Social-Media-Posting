@@ -8,9 +8,9 @@ const carouselContentSchema = new mongoose.Schema({
     templateId: { type: String, trim: true },
     content: [
         {
-          tagline: { type: String, trim: true },
-          title: { type: String, trim: true},
-          description: { type: String, trim: true},
+          tagline: { type: String, trim: true, default: '' },
+          title: { type: String, trim: true, default: ''},
+          description: { type: String, trim: true, default: ''},
         },
     ],
     topic: {
