@@ -7,6 +7,7 @@ import {
   useGenerateImageMutation,
   useGenerateImageContentMutation,
   useLazyGetImageContentQuery,
+  useUpdatePostMutation
 } from '../../store/api';
 import { imageTemplates, ImageSlide } from '../../templetes/ImageTemplate';
 import { ArrowLeft } from 'lucide-react';
@@ -36,7 +37,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const {
     templateId: locationTemplateId,
     fromAutoPostCreator,
-    generatedImageUrl,
+    postContentId,
     generatedContent,
     contentId,
     contentType,
@@ -74,6 +75,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const [generateImage, { isLoading: isGeneratingImage }] = useGenerateImageMutation();
   const [generateImageContent, { isLoading: isGeneratingContent }] = useGenerateImageContentMutation();
   const [getImageContent, { isFetching: isFetchingContent }] = useLazyGetImageContentQuery();
+  const [updatePost] = useUpdatePostMutation();
   const slideRef = useRef<HTMLDivElement>(null);
 
   // Fetch ImageContent if contentId and contentType are provided
@@ -95,7 +97,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
               ...newTemplate.slides[0],
               title: data.content.title || '',
               description: data.content.description || '',
-              footer: data.content.footer ||  '',
+              footer: data.content.footer || '',
               websiteUrl: data.content.websiteUrl || '',
               imageUrl: data.content.imageUrl || '',
             };
@@ -267,32 +269,21 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
 
       if (!cloudinaryUrl) throw new Error('Failed to get Cloudinary URL');
 
+      const updatePostData = await updatePost({ contentId, contentType, images: [{ url: cloudinaryUrl, label: 'Image Post' }] }).unwrap()
       dispatch(setSelectedFile({ name: 'image-slide.png', url: cloudinaryUrl }));
 
       if (onSave && slideRef.current) {
         onSave(slide, slideRef.current);
       }
-
-      if (fromAutoPostCreator) {
+      
+      setTimeout(() => {
         navigate('/auto', {
           state: {
-            updatedPost: {
-              topic,
-              type: 'image',
-              content: slide,
-              images: [{ url: cloudinaryUrl, label: 'Image Post' }],
-              templateId: selectedTemplate.id,
-              status: 'success',
-              contentId,
-              contentType,
-            },
+            postContentId: updatePostData?.data?.postContentId,
           },
         });
-      } else {
-        setTimeout(() => {
-          navigate('/post', { state: { cloudinaryUrl } });
-        }, 3000);
-      }
+      }, 2000);
+
     } catch (error) {
       console.error('Error in handleSave:', error);
       alert('Failed to process and upload image. Please try again.');
@@ -302,11 +293,9 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   };
 
   const handleBack = () => {
-    if (fromAutoPostCreator) {
-      navigate('/auto-post-creator');
-    } else {
-      navigate('/auto-post-creator');
-    }
+    
+    navigate('/auto', { state: { postContentId: postContentId } });
+   
   };
 
   if (!slide || isFetchingContent) {

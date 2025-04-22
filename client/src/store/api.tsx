@@ -244,6 +244,13 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
+    updatePost: builder.mutation<ApiResponse<any>, { contentId: string; contentType: string; images?: { url: string; label: string }[] }>({
+      query: ({ contentId, ...body }) => ({
+        url: `/user/update-posts/${contentId}`,
+        method: 'PUT',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -270,4 +277,5 @@ export const {
   useLazyGetImageContentQuery,
   useLazyGetCarouselContentQuery,
   useLazyGetDYKContentQuery,
+  useUpdatePostMutation
 } = api;

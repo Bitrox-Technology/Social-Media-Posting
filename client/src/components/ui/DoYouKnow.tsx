@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setSelectedFile } from '../../store/appSlice';
-import { useUploadImageToCloudinaryMutation, useGenerateDoYouKnowMutation, useLazyGetDYKContentQuery } from '../../store/api';
+import { useUploadImageToCloudinaryMutation, useGenerateDoYouKnowMutation, useLazyGetDYKContentQuery, useUpdatePostMutation } from '../../store/api';
 import { DoYouKnowSlide, doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
 import { ArrowLeft } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -22,7 +22,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
   const selectedIdea = useAppSelector((state) => state.app.selectedIdea);
   const defaultLogoUrl = '/images/Logo1.png';
 
-  const { contentId, contentType, fromAutoPostCreator } = location.state || {};
+  const { contentId, contentType, postContentId } = location.state || {};
 
   // Initialize selectedTemplate
   const [selectedTemplate, setSelectedTemplate] = useState(
@@ -52,6 +52,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [generateDoYouKnow, { isLoading: isGenerating }] = useGenerateDoYouKnowMutation();
   const [getDYKContent, { isFetching: isFetchingContent }] = useLazyGetDYKContentQuery();
+  const [updatePost] = useUpdatePostMutation();
   const slideRef = useRef<HTMLDivElement>(null);
 
   // Fetch DoYouKnowContent if contentId exists
@@ -172,7 +173,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
   };
 
   const handleBack = () => {
-    navigate(fromAutoPostCreator ? '/auto-post-creator' : '/topic');
+    navigate("/auto", {state: {postContentId: postContentId}});
   };
 
   const handleGenerateContent = async () => {
@@ -232,6 +233,8 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
 
       if (!cloudinaryUrl) throw new Error('Failed to get Cloudinary URL');
 
+      const updatePostData = await updatePost({contentId: contentId, contentType: 'DYKContent', images: [{url: cloudinaryUrl, label: "DoYouKnow Post"}]}).unwrap();
+
       dispatch(setSelectedFile({ name: 'do-you-know-slide.png', url: cloudinaryUrl }));
 
       if (onSave && slideRef.current) {
@@ -239,16 +242,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
       } else {
         navigate('/auto', {
           state: {
-            updatedPost: {
-              topic: selectedIdea?.title,
-              type: 'doyouknow',
-              content: slide,
-              images: [{ url: cloudinaryUrl, label: 'Do You Know Post' }],
-              templateId: selectedTemplate.id,
-              status: 'success',
-              contentId,
-              contentType,
-            },
+            postContentId: updatePostData.data?.postContentId
           },
         });
       }

@@ -275,9 +275,9 @@ export const SelectSocialMedia: React.FC = () => {
               >
                 <h2 className="text-2xl font-semibold text-white mb-4 text-center">
                   {post.topic}{' '}
-                  <span className="text-gray-400 text-lg">
+                  {/* <span className="text-gray-400 text-lg">
                     ({post.type.charAt(0).toUpperCase() + post.type.slice(1)})
-                  </span>
+                  </span> */}
                 </h2>
                 {renderPost(post) || (
                   <p className="text-gray-400 text-center">

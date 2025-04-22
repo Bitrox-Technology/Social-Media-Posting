@@ -7,7 +7,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import html2canvas from 'html2canvas';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useGenerateCarouselMutation, useUploadImageToCloudinaryMutation, useLazyGetCarouselContentQuery } from '../../store/api';
+import { useGenerateCarouselMutation, useUploadImageToCloudinaryMutation, useLazyGetCarouselContentQuery, useUploadCarouselMutation,useUpdatePostMutation } from '../../store/api';
 import { carouselTemplates, Slide, CarouselTemplate } from '../../templetes/templetesDesign';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -38,11 +38,13 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { contentId, contentType, fromAutoPostCreator } = location.state || {};
+  const { contentId, contentType, postContentId } = location.state || {};
 
   const [generateCarousel] = useGenerateCarouselMutation();
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [getCarouselContent, { isFetching: isFetchingContent }] = useLazyGetCarouselContentQuery();
+  const [uploadCarousel] = useUploadCarouselMutation()
+  const [updatePost] = useUpdatePostMutation();
 
   // Log state changes for debugging
   useEffect(() => {
@@ -231,31 +233,67 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
   };
 
   const handleSaveChanges = async () => {
-    await Promise.all(editedSlides.map((slide: Slide) => preloadSlideImages(slide)));
-    setSlides([...editedSlides]);
-    const updatedImages = await captureScreenshots(editedSlides);
-    if (onSave) {
-      onSave(editedSlides, updatedImages);
-    }
-    navigate('/auto', {
-      state: {
-        updatedPost: {
-          topic,
-          type: 'carousel',
-          content: editedSlides,
-          images: updatedImages.map((url, idx) => ({ url, label: `Carousel Slide ${idx + 1}` })),
-          templateId: selectedTemplate.id,
-          status: 'success',
-          contentId,
-          contentType,
+    try {
+      // Preload slide images
+      await Promise.all(editedSlides.map((slide: Slide) => preloadSlideImages(slide)));
+  
+      // Capture screenshots
+      const screenshots = await captureScreenshots(editedSlides);
+      
+      const uploadedImages = await Promise.all(
+        screenshots.map(async (screenshot, index) => {
+          const formData = new FormData();
+          // Assuming screenshot is a Blob or base64; adjust based on captureScreenshots output
+          if (screenshots instanceof Blob) {
+            formData.append('file', screenshots, `slide-${index}.png`);
+          } else {
+            // Handle base64 or other format if needed
+            const blob = await (await fetch(screenshot)).blob();
+            formData.append('file', blob, `slide-${index}.png`);
+          }
+          
+          const response = await uploadCarousel(formData).unwrap();
+          console.log('Upload response:', response.data);
+          if (!response.success || !response.data?.url) {
+            throw new Error(`Failed to upload slide ${index + 1}`);
+          }
+          
+          return {
+            url: response.data.url,
+            label: `Carousel Slide ${index + 1}`,
+          };
+        })
+      );
+  
+      // Update slides in local state
+      setSlides([...editedSlides]);
+  
+      // Update post with new images
+     
+      const updateResponse = await updatePost({
+        contentId, // Assumed to be in scope (e.g., from props or state)
+        contentType: 'CarouselContent', // Adjust based on context
+        images: [...uploadedImages],
+      }).unwrap();
+  
+      if (!updateResponse.success) {
+        throw new Error('Failed to update post');
+      }
+  
+      // Navigate to /auto
+      navigate('/auto', {
+        state: {
+         postContentId: updateResponse.data?.postContentId,
         },
-      },
-    });
-    setEditMode(false);
-  };
-
-  const handleSlideChange = (swiper: SwiperCore) => {
-    setActiveIndex(swiper.realIndex);
+      });
+  
+      // Disable edit mode
+      setEditMode(false);
+    } catch (error: any) {
+      console.error('Error in handleSaveChanges:', error);
+      // Optionally show error to user (e.g., via toast)
+      alert(error.message || 'Failed to save changes');
+    }
   };
 
   const preloadSlideImages = async (slide: Slide) => {
@@ -283,7 +321,7 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
   };
 
   const handleBack = () => {
-    navigate(fromAutoPostCreator ? '/auto-post-creator' : '/topic');
+    navigate('/auto', {state: { postContentId: postContentId}});
   };
 
   const getSlideDimensions = () => {
@@ -316,7 +354,7 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
 
         {loading && <p className="text-gray-500">Generating...</p>}
 
-        <motion.button
+        {/* <motion.button
           onClick={generateAndCaptureScreenshots}
           disabled={loading}
           className="mb-4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -324,7 +362,7 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
           whileTap={{ scale: 0.95 }}
         >
           {loading ? 'Generating...' : 'Generate Carousel'}
-        </motion.button>
+        </motion.button> */}
 
         <div>
           <Swiper
@@ -333,7 +371,7 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
             pagination={{ clickable: true }}
             spaceBetween={20}
             slidesPerView={1}
-            onSlideChange={handleSlideChange}
+            onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
             ref={swiperRef}
             className="mb-8"
           >
@@ -460,14 +498,14 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
                 onClick={handleSaveChanges}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500"
               >
-                Save Changes
+                Save
               </button>
-              <button
+              {/* <button
                 onClick={() => setEditMode(false)}
                 className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-500"
               >
                 Cancel
-              </button>
+              </button> */}
             </div>
           </div>
         )}
@@ -475,3 +513,4 @@ export const Carousel: React.FC<CarouselProps> = ({ initialTopic, template, slid
     </div>
   );
 };
+

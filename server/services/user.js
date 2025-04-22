@@ -60,9 +60,29 @@ const login = async (inputs) => {
     }
 }
 
+const userDetails = async (inputs, user, files) => {
+    const avatar = req.files['avatar'] 
+    const logo = req.files['logo'] 
+    if (!avatar && !logo) throw new ApiError(BAD_REQUEST, "Avatar and Logo are required")
+    
+    let avatarUrl =  await uploadOnCloudinary(avatar[0].path, "avatar")
+    if (!avatarUrl) throw new ApiError(BAD_REQUEST, "Unable to upload avatar")
+    
+    let logoUrl =  await uploadOnCloudinary(logo[0].path, "logo")
+    if (!logoUrl) throw new ApiError(BAD_REQUEST, "Unable to upload logo")
+
+    inputs.avatar = avatarUrl
+    inputs.logo = logoUrl
+    inputs.isProfileCompleted = true
+
+    let updateUser = await User.findByIdAndUpdate({ _id: user._id }, inputs, { new: true })
+    if (!upload) throw new ApiError(BAD_REQUEST, "Unable to update user details")
+    
+    updateUser = await User.findById({ _id: updateUser._id })
+    return updateUser
+}
+
 const postContent = async (inputs, user) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
 
     let postContent = await PostContent.findOne({ userId: user._id })
     if (postContent) {
@@ -76,8 +96,6 @@ const postContent = async (inputs, user) => {
 }
 
 const getPostContent = async (user, postcontentid) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
 
     let postContent = await PostContent.findById({ _id: postcontentid })
     if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
@@ -85,8 +103,6 @@ const getPostContent = async (user, postcontentid) => {
 }
 
 const saveImageContent = async (inputs, user) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
 
     let postContent = await PostContent.findById({ _id: inputs.postContentId })
     if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
@@ -102,8 +118,6 @@ const saveImageContent = async (inputs, user) => {
 
 
 const saveCarouselContent = async (inputs, user) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
 
     let postContent = await PostContent.findById({ _id: inputs.postContentId })
     if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
@@ -117,8 +131,6 @@ const saveCarouselContent = async (inputs, user) => {
 }
 
 const saveDYKContent = async (inputs, user) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
 
     let postContent = await PostContent.findById({ _id: inputs.postContentId })
     if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
@@ -132,9 +144,6 @@ const saveDYKContent = async (inputs, user) => {
 }
 
 const savePosts = async (inputs, user) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
-
     let postContent = await PostContent.findById({ _id: inputs.postContentId })
     if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
 
@@ -146,8 +155,6 @@ const savePosts = async (inputs, user) => {
 }
 
 const getSavePosts = async (postContentId, user) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
 
     console.log("postContentId", postContentId)
     const posts = await SavePosts.find({ postContentId: postContentId, userId: user._id })
@@ -157,8 +164,6 @@ const getSavePosts = async (postContentId, user) => {
 }
 
 const getImageContent = async (contentId, user) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
 
     let content = await ImageContent.findOne({ _id: contentId })
     if (!content) throw new ApiError(BAD_REQUEST, "No content found")
@@ -166,8 +171,6 @@ const getImageContent = async (contentId, user) => {
 }
 
 const getCarouselContent = async (contentId, user) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
 
     let content = await CarouselContent.findOne({ _id: contentId })
     if (!content) throw new ApiError(BAD_REQUEST, "No content found")
@@ -175,13 +178,21 @@ const getCarouselContent = async (contentId, user) => {
 }
 
 const getDYKContent = async (contentId, user) => {
-    let existingUser = await User.findOne({ _id: user._id })
-    if (!existingUser) throw new ApiError(BAD_REQUEST, "Invalid user")
 
     let content = await DYKContent.findOne({ _id: contentId })
     if (!content) throw new ApiError(BAD_REQUEST, "No content found")
     return content;
 }
+
+const updatePost = async (postId, user, inputs) => {
+    let update;
+    update = await SavePosts.findByIdAndUpdate({ contentId: postId, userId: user._id, contentType: inputs.contentType }, { images: inputs.images }, { new: true })
+    if (!update) throw new ApiError(BAD_REQUEST, "Unable to update posts")
+
+    update = await SavePosts.findById({ _id: update._id })
+    return update;
+}
+
 
 export {
     signup,
@@ -195,5 +206,7 @@ export {
     getSavePosts,
     getImageContent,
     getCarouselContent,
-    getDYKContent
+    getDYKContent,
+    updatePost,
+    userDetails
 }

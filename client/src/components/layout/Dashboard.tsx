@@ -31,7 +31,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isOpen, toggleDashboard }) => {
               onClick={toggleDashboard}
               className="block py-2 px-4 hover:bg-gray-700 rounded"
             >
-              Content Type
+             Home
             </Link>
           </li>
           <li>

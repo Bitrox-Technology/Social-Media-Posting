@@ -2,13 +2,20 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
     {
-        firstName: { type: String, default: "", trim: true },
-        lastName: { type: String, default: "", trim: true },
+        userName: { type: String, default: "", trim: true },
         email: { type: String, trim: true, unique: true, lowercase: true },
         countryCode: { type: String, trim: true, default: "" },
         phone: { type: String, trim: true, default: "" },
         avatar: { type: String, trim: true, default: "" },
         location: { type: String, default: "" },
+        avatar: { type: String, default: "" },
+        logo: { type: String, default: "" },
+        companyName: { type: String, default: "" },
+        productCategories: { type: Array, default: [] },
+        keyProducts: { type: Array, default: [] },
+        targetMarket: { type: String, default: "" },
+        annualRevenue: { type: String, default: "" },
+        websiteUrl: { type: String, default: "" },
         isProfileCompleted: {
             type: Boolean,
             default: false,

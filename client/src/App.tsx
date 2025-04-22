@@ -1,7 +1,7 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout'; // Adjusted path
-import { ContentTypeSelector } from './components/content/ContentTypeSelector'; // Adjusted path
+import { Home } from './components/content/Home'; // Adjusted path
 import { TopicSelector } from './components/content/TopicSelector';
 import { ContentIdeas } from './components/content/ContentIdeas';
 import { ImageGenerator } from './components/content/ImageGenerator';
@@ -18,6 +18,8 @@ import { ImageGeneration } from './components/ui/ImageGeneration';
 import { ImageGenerationTemplate } from './components/ui/ImageGenerationTemplate';
 import { Blog } from './components/content/Blog';
 import { SelectSocialMedia } from './components/content/SelectSocialMedia';
+import UserDetail from './components/content/UserDetails';
+import { ContentTypeSelector } from './components/content/ContentType';
 
 function App() {
   // Access state from Redux store
@@ -34,7 +36,7 @@ function App() {
           </h1>
 
           <Routes>
-            <Route path="/" element={<ContentTypeSelector />} />
+            <Route path="/" element={<Home />} />
             <Route
               path="/topic"
               element={contentType ? <TopicSelector /> : <Navigate to="/" />}
@@ -72,12 +74,14 @@ function App() {
             <Route path='/tmcarousel' element={<TemplateCarousel initialTopic="defaultTopic" />} />
             <Route path='/tmimagegeneration' element={<ImageGenerationTemplate/>} />
             <Route path='/tmdoyouknow' element={<DoYouKnowTemplateSelector />} />
+            <Route path='/content-type' element={<ContentTypeSelector />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/doyouknow" element={<DoYouKnow />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/auto" element={<AutoPostCreator />} />
             <Route path='/select-media' element={<SelectSocialMedia/>} />
+            <Route path='/user-details' element={<UserDetail />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>

@@ -20,7 +20,7 @@ export const SignUp = () => {
       console.log(signUpResponse)
       if (signUpResponse.success) {
         // Redirect to signin without setting token
-        navigate('/signin');
+        navigate('/user-details');
       }
     } catch (err: any) {
       setError(err?.data?.message || 'Signup failed. Please try again.');

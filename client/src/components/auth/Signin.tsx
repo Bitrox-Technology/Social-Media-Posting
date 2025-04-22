@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { useSignInMutation } from '../../store/api';
-import { setUser } from '../../store/appSlice';
+import { setUser, logout } from '../../store/appSlice';
 
 export const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -13,17 +13,18 @@ export const SignIn = () => {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.app.user);
 
-  // Check localStorage on mount to restore user if not in Redux
+  // Check localStorage on mount to restore user or clear expired data
   useEffect(() => {
-    if (!user) {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.expiresAt && Date.now() < parsedUser.expiresAt) {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      if (parsedUser.expiresAt && Date.now() < parsedUser.expiresAt) {
+        if (!user || user.email !== parsedUser.email) {
           dispatch(setUser(parsedUser));
-        } else {
-          localStorage.removeItem('user');
         }
+      } else {
+        localStorage.removeItem('user');
+        dispatch(logout());
       }
     }
   }, [user, dispatch]);
@@ -33,6 +34,10 @@ export const SignIn = () => {
     setError('');
 
     try {
+      // Clear current user session
+      dispatch(logout());
+      localStorage.removeItem('user');
+
       const response = await signIn({ email, password }).unwrap();
       if (response.success) {
         const { accessToken, email: responseEmail } = response.data;
@@ -48,29 +53,15 @@ export const SignIn = () => {
     }
   };
 
-  // If user is signed in, show message
-  if (user && user.email && user.expiresAt && Date.now() < user.expiresAt) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-start justify-center">
-        <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md text-center">
-          <h2 className="text-2xl font-bold text-yellow-500 mb-6">Already Signed In</h2>
-          <p className="text-white mb-4">You are signed in as {user.email}.</p>
-          <Link
-            to="/"
-            className="inline-block bg-yellow-500 text-black font-bold py-2 px-4 rounded hover:bg-yellow-400"
-          >
-            Go to Homepage
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // If not signed in, show form
   return (
     <div className="min-h-screen bg-gray-900 flex items-start justify-center">
       <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold text-yellow-500 mb-6 text-center">Sign In</h2>
+        {user && user.email && (
+          <p className="text-yellow-400 mb-4 text-center">
+            Currently signed in as {user.email}. Signing in will log out the current user.
+          </p>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-white mb-2" htmlFor="email">

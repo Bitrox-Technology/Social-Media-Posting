@@ -1,13 +1,24 @@
-import { getPostContent, login, postContent, signup, saveImageContent, saveCarouselContent, saveDYKContent, savePosts, getSavePosts, getImageContent, getCarouselContent, getDYKContent } from "../services/user.js"
+import { getPostContent, login, postContent, signup, saveImageContent, saveCarouselContent, saveDYKContent, savePosts, userDetails, getSavePosts, getImageContent, getCarouselContent, getDYKContent, updatePost } from "../services/user.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { OK } from "../utils/apiResponseCode.js"
-import { validateSignup, validateLogin, validatePostContent, validateImageContent, validateCarouselContent, validateDYKContent, validateSavePost } from "../validations/user.js"
+import { validateSignup, validateLogin, validatePostContent, validateImageContent, validateCarouselContent, validateDYKContent, validateSavePost, validateUpdatePost, validateUserDetails } from "../validations/user.js"
 
 const Signup = async (req, res, next) => {
     try {
         await validateSignup(req.body)
         let user = await signup(req.body)
         return res.status(OK).json(new ApiResponse(OK, user, "User Created Successfully"))
+    } catch (error) {
+        next(error)
+    }
+
+}
+
+const UserDetails = async (req, res, next) => {
+    try {
+        await validateUserDetails(req.body)
+        let user = await userDetails(req.body, req.user, req.files)
+        return res.status(OK).json(new ApiResponse(OK, user, "User details saved successfully"))
     } catch (error) {
         next(error)
     }
@@ -120,7 +131,17 @@ const GetDYKContent = async (req, res, next) => {
     }
 }
 
+const UpdatePost = async (req, res, next) => {
+    try {
+        await validateUpdatePost(req.body)
+        let user = await updatePost(req.params.postid, req.user, req.body)
+        return res.status(OK).json(new ApiResponse(OK, user, "Content fetched Successfully"))
+    } catch (error) {
+        next(error)
+    }
+}
 
 
 
-export { Signup, Login, SavePosts, PostContent, GetPostContent, SaveImageContent, SaveCarouselContent, SaveDYKContent, GetSavePosts, GetImageContent, GetCarouselContent, GetDYKContent }
+
+export { Signup, UserDetails, Login, SavePosts, PostContent, GetPostContent, SaveImageContent,UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts, GetImageContent, GetCarouselContent, GetDYKContent }

@@ -514,6 +514,7 @@ export const AutoPostCreator = () => {
     const commonState = {
       contentId: post.contentId,
       contentType: post.contentType,
+      postContentId,
     };
 
     switch (post.type) {
@@ -521,6 +522,7 @@ export const AutoPostCreator = () => {
         navigate('/image-generator', {
           state: {
             ...commonState, 
+            postContentId
           },
         });
         break;
@@ -528,6 +530,7 @@ export const AutoPostCreator = () => {
         navigate('/carousel', {
           state: {
             ...commonState,
+            postContentId
           },
         });
         break;
@@ -535,6 +538,7 @@ export const AutoPostCreator = () => {
         navigate('/doyouknow', {
           state: {
             ...commonState,
+            postContentId
           },
         });
         break;
@@ -652,7 +656,7 @@ export const AutoPostCreator = () => {
                         <div className="flex items-center">
                           {getStatusIcon(post.status)}
                           <h3 className="text-lg font-medium ml-2 text-gray-200">
-                            {post.topic} ({post.type})
+                            {post.topic}
                           </h3>
                         </div>
                       </div>
