@@ -30,7 +30,6 @@ const userSchema = new mongoose.Schema(
             select: false,
         },
         isEmailVerify: { type: Boolean, default: false },
-        isPhoneVerify: { type: Boolean, default: false },
         isDeleted: { type: Boolean, default: false },
         isBlocked: { type: Boolean, default: false },
 

@@ -1,96 +1,99 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, IconButton } from '@mui/material';
+import { Close as CloseIcon, Home, Lightbulb, Image, Description, Rocket, Info } from '@mui/icons-material';
+import { useAppSelector } from '../../store/hooks';
 
 interface DashboardProps {
   isOpen: boolean;
-  toggleDashboard: () => void;
+  toggleDrawer: (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ isOpen, toggleDashboard }) => {
-  return (
-    <aside
-      className={`fixed inset-y-0 left-0 z-20 w-64 bg-gray-800 text-white transform transition-transform duration-300 ease-in-out ${
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}
-    >
-      <div className="p-4 h-full flex flex-col">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-yellow-500">Dashboard</h2>
-          <button
-            onClick={toggleDashboard}
-            className="text-white hover:text-yellow-500 focus:outline-none"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        <ul className="space-y-2 flex-1">
-          <li>
-            <Link
-              to="/"
-              onClick={toggleDashboard}
-              className="block py-2 px-4 hover:bg-gray-700 rounded"
-            >
-             Home
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/topic"
-              onClick={toggleDashboard}
-              className="block py-2 px-4 hover:bg-gray-700 rounded"
-            >
-              Topics
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/ideas"
-              onClick={toggleDashboard}
-              className="block py-2 px-4 hover:bg-gray-700 rounded"
-            >
-              Ideas
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/tmcarousel"
-              onClick={toggleDashboard}
-              className="block py-2 px-4 hover:bg-gray-700 rounded"
-            >
-              Carousels
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/tmimagegeneration"
-              onClick={toggleDashboard}
-              className="block py-2 px-4 hover:bg-gray-700 rounded"
-            >
-             Image Generation Templates
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/auto"
-              onClick={toggleDashboard}
-              className="block py-2 px-4 hover:bg-gray-700 rounded"
-            >
-              Auto Post
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="tmdoyouknow"
-              onClick={toggleDashboard}
-              className="block py-2 px-4 hover:bg-gray-700 rounded"
-            >
-              Do You Know
-            </Link>
-          </li>
-        </ul>
+const Dashboard: React.FC<DashboardProps> = ({ isOpen, toggleDrawer }) => {
+  const user = useAppSelector((state) => state.app.user);
+
+  const drawerList = (
+    <div className="h-full flex flex-col" role="presentation">
+      <div className="p-6 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">Dashboard</h2>
+        <IconButton onClick={toggleDrawer(false)} aria-label="Close drawer">
+          <CloseIcon className="text-gray-600 dark:text-gray-300 hover:text-yellow-600 dark:hover:text-yellow-500" />
+        </IconButton>
       </div>
-    </aside>
+      <List className="flex-1 p-0">
+        <ListItem component={Link} to="/" onClick={toggleDrawer(false)}>
+          <ListItemIcon>
+            <Home className="text-gray-600 dark:text-gray-300" />
+          </ListItemIcon>
+          <ListItemText primary="Home" className="text-gray-700 dark:text-gray-200" />
+        </ListItem>
+        <ListItem component={Link} to="/topic" onClick={toggleDrawer(false)}>
+          <ListItemIcon>
+            <Lightbulb className="text-gray-600 dark:text-gray-300" />
+          </ListItemIcon>
+          <ListItemText primary="Topics" className="text-gray-700 dark:text-gray-200" />
+        </ListItem>
+        <ListItem component={Link} to="/ideas" onClick={toggleDrawer(false)}>
+          <ListItemIcon>
+            <Lightbulb className="text-gray-600 dark:text-gray-300" />
+          </ListItemIcon>
+          <ListItemText primary="Ideas" className="text-gray-700 dark:text-gray-200" />
+        </ListItem>
+        <ListItem component={Link} to="/tmcarousel" onClick={toggleDrawer(false)}>
+          <ListItemIcon>
+            <Image className="text-gray-600 dark:text-gray-300" />
+          </ListItemIcon>
+          <ListItemText primary="Carousels" className="text-gray-700 dark:text-gray-200" />
+        </ListItem>
+        <ListItem component={Link} to="/tmimagegeneration" onClick={toggleDrawer(false)}>
+          <ListItemIcon>
+            <Image className="text-gray-600 dark:text-gray-300" />
+          </ListItemIcon>
+          <ListItemText primary="Image Generation" className="text-gray-700 dark:text-gray-200" />
+        </ListItem>
+        <ListItem component={Link} to="/auto" onClick={toggleDrawer(false)}>
+          <ListItemIcon>
+            <Rocket className="text-gray-600 dark:text-gray-300" />
+          </ListItemIcon>
+          <ListItemText primary="Auto Post" className="text-gray-700 dark:text-gray-200" />
+        </ListItem>
+        <ListItem component={Link} to="/tmdoyouknow" onClick={toggleDrawer(false)}>
+          <ListItemIcon>
+            <Info className="text-gray-600 dark:text-gray-300" />
+          </ListItemIcon>
+          <ListItemText primary="Do You Know" className="text-gray-700 dark:text-gray-200" />
+        </ListItem>
+        <ListItem component={Link} to="/blog" onClick={toggleDrawer(false)}>
+          <ListItemIcon>
+            <Description className="text-gray-600 dark:text-gray-300" />
+          </ListItemIcon>
+          <ListItemText primary="Blog" className="text-gray-700 dark:text-gray-200" />
+        </ListItem>
+      </List>
+      <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          <p>Logged in as</p>
+          <p className="font-medium text-gray-900 dark:text-white">{user?.email || 'Guest'}</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <Drawer
+      anchor="left"
+      open={isOpen}
+      onClose={toggleDrawer(false)}
+      ModalProps={{
+        keepMounted: true,
+      }}
+      PaperProps={{
+        className: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white w-64',
+      }}
+      className="z-40"
+    >
+      {drawerList}
+    </Drawer>
   );
 };
 

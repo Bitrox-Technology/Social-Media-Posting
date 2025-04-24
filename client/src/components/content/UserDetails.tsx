@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Formik, Form, Field, FieldArray, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
 import { useNavigate } from 'react-router-dom';
+import { Trash2, Plus } from 'lucide-react';
 
 const UserDetail = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const [initialValues, setInitialValues] = useState({
     username: '',
     email: '',
     companyName: '',
@@ -12,44 +15,41 @@ const UserDetail = () => {
     productCategories: [''],
     keyProducts: [''],
     targetMarket: '',
-    annualRevenue: '',
     websiteUrl: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'avatar' | 'logo') => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({ ...prev, [field]: e.target.files[0] }));
+  useEffect(() => {
+    const savedData = localStorage.getItem('userDetails');
+    if (savedData) {
+      setInitialValues(JSON.parse(savedData));
     }
-  };
+  }, []);
 
-  const handleArrayChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'productCategories' | 'keyProducts', index: number) => {
-    const newArray = [...formData[field]];
-    newArray[index] = e.target.value;
-    setFormData((prev) => ({ ...prev, [field]: newArray }));
-  };
+  const validationSchema = Yup.object({
+    username: Yup.string().required('Username is required'),
+    email: Yup.string().email('Invalid email').required('Email is required'),
+    companyName: Yup.string().required('Company name is required'),
+    targetMarket: Yup.string().required('Target market is required'),
+    websiteUrl: Yup.string().url('Invalid URL').required('Website URL is required'),
+    productCategories: Yup.array()
+      .of(Yup.string().required('Category is required'))
+      .min(1, 'At least one category is required'),
+    keyProducts: Yup.array()
+      .of(Yup.string().required('Product is required'))
+      .min(1, 'At least one product is required'),
+  });
 
-  const addItem = (field: 'productCategories' | 'keyProducts') => {
-    setFormData((prev) => ({ ...prev, [field]: [...prev[field], ''] }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: typeof initialValues, { setSubmitting, setErrors }: any) => {
     const formDataToSend = new FormData();
-    formDataToSend.append('username', formData.username);
-    formDataToSend.append('email', formData.email);
-    formDataToSend.append('companyName', formData.companyName);
-    if (formData.avatar) formDataToSend.append('avatar', formData.avatar);
-    if (formData.logo) formDataToSend.append('logo', formData.logo);
-    formDataToSend.append('productCategories', JSON.stringify(formData.productCategories.filter((item) => item)));
-    formDataToSend.append('keyProducts', JSON.stringify(formData.keyProducts.filter((item) => item)));
-    formDataToSend.append('targetMarket', formData.targetMarket);
-    formDataToSend.append('annualRevenue', formData.annualRevenue);
-    formDataToSend.append('websiteUrl', formData.websiteUrl);
+    formDataToSend.append('username', values.username);
+    formDataToSend.append('email', values.email);
+    formDataToSend.append('companyName', values.companyName);
+    if (values.avatar) formDataToSend.append('avatar', values.avatar);
+    if (values.logo) formDataToSend.append('logo', values.logo);
+    formDataToSend.append('productCategories', JSON.stringify(values.productCategories.filter((item) => item)));
+    formDataToSend.append('keyProducts', JSON.stringify(values.keyProducts.filter((item) => item)));
+    formDataToSend.append('targetMarket', values.targetMarket);
+    formDataToSend.append('websiteUrl', values.websiteUrl);
 
     try {
       const response = await fetch('http://localhost:3000/api/user-details', {
@@ -59,6 +59,7 @@ const UserDetail = () => {
       const data = await response.json();
       if (response.ok) {
         console.log('User details saved:', data);
+        localStorage.setItem('userDetails', JSON.stringify(values));
         navigate('/dashboard');
       } else {
         throw new Error(data.message || 'Failed to save user details');
@@ -66,150 +67,215 @@ const UserDetail = () => {
     } catch (error) {
       console.error('Error:', error);
       if (error instanceof Error) {
-        alert(error.message);
+        setErrors({ submit: error.message });
       } else {
-        alert('An unknown error occurred');
+        setErrors({ submit: 'An unknown error occurred' });
       }
-     }
+    }
+    setSubmitting(false);
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-gray-800 text-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-center">Complete Your Profile</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1">Username</label>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Company Name</label>
-          <input
-            type="text"
-            name="companyName"
-            value={formData.companyName}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Avatar</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileChange(e, 'avatar')}
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Logo</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileChange(e, 'logo')}
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Product Categories</label>
-          {formData.productCategories.map((category, index) => (
-            <div key={index} className="flex space-x-2 mb-2">
-              <input
-                type="text"
-                value={category}
-                onChange={(e) => handleArrayChange(e, 'productCategories', index)}
-                className="flex-1 p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="e.g., Electronics, Apparel"
-              />
+    <div className="max-w-4xl mx-auto p-8 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
+      <h2 className="text-3xl font-semibold mb-8 text-center text-yellow-600 dark:text-yellow-500">Manage Your Profile</h2>
+      <Formik
+        initialValues={initialValues}
+        validationSchema={validationSchema}
+        onSubmit={handleSubmit}
+        enableReinitialize
+      >
+        {({ isSubmitting, setFieldValue, values }) => (
+          <Form className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Username
+                </label>
+                <Field
+                  type="text"
+                  id="username"
+                  name="username"
+                  className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                  placeholder="Enter your username"
+                />
+                <ErrorMessage name="username" component="p" className="text-red-500 dark:text-red-400 text-sm mt-1" />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Email
+                </label>
+                <Field
+                  type="email"
+                  id="email"
+                  name="email"
+                  className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                  placeholder="Enter your email"
+                />
+                <ErrorMessage name="email" component="p" className="text-red-500 dark:text-red-400 text-sm mt-1" />
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="companyName" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Company Name
+                </label>
+                <Field
+                  type="text"
+                  id="companyName"
+                  name="companyName"
+                  className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                  placeholder="Enter your company name"
+                />
+                <ErrorMessage name="companyName" component="p" className="text-red-500 dark:text-red-400 text-sm mt-1" />
+              </div>
+              <div>
+                <label htmlFor="avatar" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Avatar
+                </label>
+                <input
+                  type="file"
+                  id="avatar"
+                  accept="image/*"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setFieldValue('avatar', e.target.files[0]);
+                    }
+                  }}
+                  className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="logo" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Logo
+                </label>
+                <input
+                  type="file"
+                  id="logo"
+                  accept="image/*"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setFieldValue('logo', e.target.files[0]);
+                    }
+                  }}
+                  className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Product Categories</label>
+                <FieldArray name="productCategories">
+                  {({ remove, push }) => (
+                    <div className="space-y-4">
+                      {values.productCategories.map((category, index) => (
+                        <div key={index} className="flex items-center gap-4">
+                          <Field
+                            type="text"
+                            name={`productCategories[${index}]`}
+                            className="flex-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                            placeholder="e.g., Electronics"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => remove(index)}
+                            className="p-2 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-500 transition-colors"
+                            disabled={values.productCategories.length === 1}
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                          <ErrorMessage
+                            name={`productCategories[${index}]`}
+                            component="p"
+                            className="text-red-500 dark:text-red-400 text-sm"
+                          />
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => push('')}
+                        className="flex items-center gap-2 px-4 py-2 bg-yellow-600 dark:bg-yellow-500 text-gray-900 dark:text-gray-900 rounded-lg hover:bg-yellow-700 dark:hover:bg-yellow-600 transition-colors"
+                      >
+                        <Plus size={18} /> Add Category
+                      </button>
+                    </div>
+                  )}
+                </FieldArray>
+                <ErrorMessage name="productCategories" component="p" className="text-red-500 dark:text-red-400 text-sm mt-1" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Key Products</label>
+                <FieldArray name="keyProducts">
+                  {({ remove, push }) => (
+                    <div className="space-y-4">
+                      {values.keyProducts.map((product, index) => (
+                        <div key={index} className="flex items-center gap-4">
+                          <Field
+                            type="text"
+                            name={`keyProducts[${index}]`}
+                            className="flex-1 p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                            placeholder="e.g., Smartphones"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => remove(index)}
+                            className="p-2 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-500 transition-colors"
+                            disabled={values.keyProducts.length === 1}
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                          <ErrorMessage
+                            name={`keyProducts[${index}]`}
+                            component="p"
+                            className="text-red-500 dark:text-red-400 text-sm"
+                          />
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => push('')}
+                        className="flex items-center gap-2 px-4 py-2 bg-yellow-600 dark:bg-yellow-500 text-gray-900 dark:text-gray-900 rounded-lg hover:bg-yellow-700 dark:hover:bg-yellow-600 transition-colors"
+                      >
+                        <Plus size={18} /> Add Product
+                      </button>
+                    </div>
+                  )}
+                </FieldArray>
+                <ErrorMessage name="keyProducts" component="p" className="text-red-500 dark:text-red-400 text-sm mt-1" />
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="targetMarket" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Target Market
+                </label>
+                <Field
+                  type="text"
+                  id="targetMarket"
+                  name="targetMarket"
+                  className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                  placeholder="e.g., Young professionals"
+                />
+                <ErrorMessage name="targetMarket" component="p" className="text-red-500 dark:text-red-400 text-sm mt-1" />
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="websiteUrl" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Website URL
+                </label>
+                <Field
+                  type="url"
+                  id="websiteUrl"
+                  name="websiteUrl"
+                  className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                  placeholder="e.g., https://yourcompany.com"
+                />
+                <ErrorMessage name="websiteUrl" component="p" className="text-red-500 dark:text-red-400 text-sm mt-1" />
+              </div>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => addItem('productCategories')}
-            className="mt-2 px-4 py-2 bg-yellow-500 text-gray-900 rounded hover:bg-yellow-600"
-          >
-            Add Category
-          </button>
-        </div>
-        <div>
-          <label className="block mb-1">Key Products</label>
-          {formData.keyProducts.map((product, index) => (
-            <div key={index} className="flex space-x-2 mb-2">
-              <input
-                type="text"
-                value={product}
-                onChange={(e) => handleArrayChange(e, 'keyProducts', index)}
-                className="flex-1 p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="e.g., Smartphones, T-shirts"
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => addItem('keyProducts')}
-            className="mt-2 px-4 py-2 bg-yellow-500 text-gray-900 rounded hover:bg-yellow-600"
-          >
-            Add Product
-          </button>
-        </div>
-        <div>
-          <label className="block mb-1">Target Market</label>
-          <input
-            type="text"
-            name="targetMarket"
-            value={formData.targetMarket}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            placeholder="e.g., Young professionals, Global retailers"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Annual Revenue</label>
-          <input
-            type="text"
-            name="annualRevenue"
-            value={formData.annualRevenue}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            placeholder="e.g., $500,000"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Website URL</label>
-          <input
-            type="url"
-            name="websiteUrl"
-            value={formData.websiteUrl}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            placeholder="e.g., https://yourcompany.com"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full px-4 py-2 bg-yellow-500 text-gray-900 rounded hover:bg-yellow-600"
-        >
-          Submit Details
-        </button>
-      </form>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full px-6 py-3 bg-yellow-600 dark:bg-yellow-500 text-gray-900 font-semibold rounded-lg hover:bg-yellow-700 dark:hover:bg-yellow-600 transition-colors disabled:bg-yellow-800 dark:disabled:bg-yellow-700 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Saving...' : 'Save Profile'}
+            </button>
+            <ErrorMessage name="submit" component="p" className="text-red-500 dark:text-red-400 text-sm text-center mt-2" />
+          </Form>
+        )}
+      </Formik>
     </div>
   );
 };
