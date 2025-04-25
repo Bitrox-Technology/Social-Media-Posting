@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { ArrowLeft, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle, XCircle, Edit3, ChevronRight, RefreshCw } from 'lucide-react';
 import {
   useGenerateImageMutation,
   useGenerateCarouselMutation,
@@ -18,13 +18,14 @@ import {
   useLazyGetSavePostsQuery,
 } from '../../store/api';
 import { setPosts } from '../../store/appSlice';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { carouselTemplates, Slide } from '../../templetes/templetesDesign';
 import { Carousel } from '../ui/Carousel';
 import { DoYouKnow } from '../ui/DoYouKnow';
 import { DoYouKnowSlide, doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
 import { imageTemplates, ImageSlide } from '../../templetes/ImageTemplate';
 import html2canvas from 'html2canvas';
+import { useTheme } from '../../context/ThemeContext';
 
 interface CarouselContent {
   tagline?: string;
@@ -65,6 +66,7 @@ export const AutoPostCreator = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
+  const { theme } = useTheme();
   const [posts, setLocalPosts] = useState<Post[]>([]);
   const [completedPosts, setCompletedPosts] = useState<Post[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -571,143 +573,352 @@ export const AutoPostCreator = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+    <div
+      className={`min-h-screen ${
+        theme === 'dark'
+          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black'
+          : 'bg-gradient-to-br from-gray-50 to-white'
+      }`}
+    >
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className={`absolute top-0 left-0 w-full h-full bg-[url('https://images.pexels.com/photos/3648850/pexels-photo-3648850.jpeg')] bg-cover bg-center ${
+            theme === 'dark' ? 'opacity-20' : 'opacity-10'
+          }`}
+        />
+        <div
+          className={`absolute inset-0 backdrop-blur-3xl ${
+            theme === 'dark'
+              ? 'bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10'
+              : 'bg-gradient-to-br from-blue-300/10 via-purple-300/10 to-pink-300/10'
+          }`}
+        />
+      </div>
+
+      <div
+        className={`relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 ${
+          theme === 'dark' ? '' : 'bg-white/90 shadow-xl rounded-xl border border-gray-200'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-12">
           <motion.button
             onClick={handleBack}
-            className="flex items-center text-yellow-300 hover:text-yellow-200 transition-colors"
+            className={`flex items-center px-4 py-2 rounded-xl transition-all ${
+              theme === 'dark'
+                ? 'bg-white/10 backdrop-blur-lg text-white hover:bg-white/20'
+                : 'bg-gray-100 border border-gray-200 text-gray-800 hover:bg-gray-200'
+            } focus:ring-offset-2 focus:ring-blue-500 ${
+              theme === 'dark' ? 'focus:ring-offset-gray-800' : 'focus:ring-offset-gray-100'
+            }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <ArrowLeft className="w-6 h-6 mr-2" />
-            Back
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back to Topics
           </motion.button>
-          <h1 className="text-3xl font-bold tracking-tight">Post Creator</h1>
+
+          <h1
+            className={`text-4xl font-bold text-transparent bg-clip-text ${
+              theme === 'dark'
+                ? 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400'
+                : 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600'
+            }`}
+          >
+            AI Content Creator
+          </h1>
+
           <motion.button
             onClick={generateAllPosts}
-            disabled={isGenerating || !postContentId || isLoadingTopics || isFetchingPostContent || isLoadingPosts || isFetchingPosts}
-            className="px-6 py-2 bg-yellow-400 text-gray-900 font-semibold rounded-full shadow-md disabled:opacity-50"
+            disabled={
+              isGenerating ||
+              !postContentId ||
+              isLoadingTopics ||
+              isFetchingPostContent ||
+              isLoadingPosts ||
+              isFetchingPosts
+            }
+            className={`flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:ring-offset-2 focus:ring-blue-500 ${
+              theme === 'dark' ? 'focus:ring-offset-gray-800' : 'focus:ring-offset-gray-100'
+            }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
+            <RefreshCw
+              className={`w-5 h-5 mr-2 ${isGenerating ? 'animate-spin' : ''}`}
+            />
             {isGenerating
               ? 'Generating...'
               : currentIndex < topics.length - 1
-                ? 'Generate Posts'
-                : 'Regenerate Posts'}
+              ? 'Generate Posts'
+              : 'Regenerate Posts'}
           </motion.button>
         </div>
 
         {isLoadingTopics || isFetchingPostContent || isLoadingPosts || isFetchingPosts ? (
-          <p className="text-gray-400 text-center text-lg">Loading topics and posts...</p>
-        ) : topicsError ? (
-          <p className="text-red-400 text-center text-lg">{topicsError}</p>
-        ) : postsError ? (
-          <p className="text-red-400 text-center text-lg">{postsError}</p>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center space-y-4">
+              <Loader2
+                className={`w-12 h-12 animate-spin mx-auto ${
+                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                }`}
+              />
+              <p
+                className={`text-lg ${
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                }`}
+              >
+                Loading your content...
+              </p>
+            </div>
+          </div>
+        ) : topicsError || postsError ? (
+          <div
+            className={`rounded-xl p-6 text-center ${
+              theme === 'dark'
+                ? 'bg-red-500/10 backdrop-blur-lg'
+                : 'bg-red-100 border border-red-200'
+            }`}
+          >
+            <XCircle
+              className={`w-12 h-12 mx-auto mb-4 ${
+                theme === 'dark' ? 'text-red-400' : 'text-red-600'
+              }`}
+            />
+            <p
+              className={`text-lg ${
+                theme === 'dark' ? 'text-red-400' : 'text-red-600'
+              }`}
+            >
+              {topicsError || postsError}
+            </p>
+          </div>
         ) : topics.length === 0 ? (
-          <p className="text-gray-400 text-center text-lg">No topics found. Please go back and select topics.</p>
-        ) : topics.length < 7 ? (
-          <p className="text-red-400 text-center text-lg">Please select exactly 7 topics to proceed.</p>
+          <div
+            className={`rounded-xl p-6 text-center ${
+              theme === 'dark'
+                ? 'bg-yellow-500/10 backdrop-blur-lg'
+                : 'bg-yellow-100 border border-yellow-200'
+            }`}
+          >
+            <p
+              className={`text-lg ${
+                theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'
+              }`}
+            >
+              No topics found. Please go back and select topics.
+            </p>
+          </div>
         ) : (
-          <div className="space-y-8">
-            {posts.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-semibold mb-4 text-gray-200">In Progress</h2>
-                <div className="space-y-4">
-                  {posts.map((post) => (
-                    <motion.div
-                      key={`${post.topic}-${post.type}`}
-                      className="bg-gray-700 p-4 rounded-lg shadow-md border border-yellow-400/20"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div className="flex items-center">
-                        {getStatusIcon(post.status)}
-                        <div className="ml-3 flex-1">
-                          <h3 className="text-lg font-medium text-gray-200">
-                            {post.topic} ({post.type})
-                          </h3>
-                          {post.status === 'error' && (
-                            <p className="text-red-300 text-sm mt-1">{post.errorMessage}</p>
-                          )}
+          <div className="space-y-12">
+            <AnimatePresence>
+              {posts.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <h2
+                    className={`text-2xl font-semibold mb-6 flex items-center ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-800'
+                    }`}
+                  >
+                    <Loader2
+                      className={`w-6 h-6 animate-spin mr-3 ${
+                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                      }`}
+                    />
+                    In Progress
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {posts.map((post) => (
+                      <motion.div
+                        key={`${post.topic}-${post.type}`}
+                        className={`p-6 rounded-xl border ${
+                          theme === 'dark'
+                            ? 'bg-white/10 backdrop-blur-lg border-white/20'
+                            : 'bg-white shadow-md border-gray-200'
+                        }`}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            {getStatusIcon(post.status)}
+                            <div>
+                              <h3
+                                className={`text-lg font-medium ${
+                                  theme === 'dark' ? 'text-white' : 'text-gray-800'
+                                }`}
+                              >
+                                {post.topic}
+                              </h3>
+                              <span
+                                className={`text-sm capitalize ${
+                                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                                }`}
+                              >
+                                {post.type} Post
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
+                        {post.status === 'error' && (
+                          <p
+                            className={`mt-4 text-sm p-3 rounded-lg ${
+                              theme === 'dark'
+                                ? 'text-red-400 bg-red-500/10'
+                                : 'text-red-600 bg-red-100'
+                            }`}
+                          >
+                            {post.errorMessage}
+                          </p>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {completedPosts.length > 0 && (
               <div>
-                <h2 className="text-2xl font-semibold mb-4 text-gray-200">Completed Posts</h2>
-                <div className="space-y-6">
+                <h2
+                  className={`text-2xl font-semibold mb-6 flex items-center ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-800'
+                  }`}
+                >
+                  <CheckCircle
+                    className={`w-6 h-6 mr-3 ${
+                      theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                    }`}
+                  />
+                  Completed Posts
+                </h2>
+                <div className="grid grid-cols-1 gap-8">
                   {completedPosts.map((post) => (
                     <motion.div
                       key={`${post.topic}-${post.type}`}
-                      className="bg-gray-800 p-6 rounded-xl shadow-lg border border-green-400/20 flex flex-col"
+                      className={`p-6 rounded-xl border ${
+                        theme === 'dark'
+                          ? 'bg-white/10 backdrop-blur-lg border-white/20'
+                          : 'bg-white shadow-md border-gray-200'
+                      }`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5 }}
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center space-x-4">
                           {getStatusIcon(post.status)}
-                          <h3 className="text-lg font-medium ml-2 text-gray-200">
-                            {post.topic}
-                          </h3>
+                          <div>
+                            <h3
+                              className={`text-xl font-medium ${
+                                theme === 'dark' ? 'text-white' : 'text-gray-800'
+                              }`}
+                            >
+                              {post.topic}
+                            </h3>
+                            <span
+                              className={`text-sm capitalize ${
+                                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                              }`}
+                            >
+                              {post.type} Post
+                            </span>
+                          </div>
                         </div>
+                        {post.status === 'success' && (post.images?.length ?? 0) > 0 && (
+                          <motion.button
+                            onClick={() => handleEditPost(post)}
+                            className={`flex items-center px-4 py-2 rounded-lg transition-all focus:ring-offset-2 focus:ring-blue-500 ${
+                              theme === 'dark'
+                                ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+                                : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                            } ${
+                              theme === 'dark'
+                                ? 'focus:ring-offset-gray-800'
+                                : 'focus:ring-offset-gray-100'
+                            }`}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Edit3 className="w-4 h-4 mr-2" />
+                            Edit Post
+                          </motion.button>
+                        )}
                       </div>
+
                       <div
                         ref={(el) => el && postRefs.current.set(`${post.topic}`, el)}
-                        className="bg-gray-700 p-4 rounded-lg mb-4 flex-1"
+                        className={`p-6 rounded-xl ${
+                          theme === 'dark'
+                            ? 'bg-black/20 backdrop-blur-lg'
+                            : 'bg-gray-50 border border-gray-200'
+                        }`}
                       >
                         {post.images && post.images.length > 0 ? (
                           post.type === 'carousel' ? (
-                            <div className="flex overflow-x-auto space-x-4 pb-4">
+                            <div className="flex overflow-x-auto space-x-6 pb-6 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
                               {post.images.map((img, idx) => (
-                                <div key={idx} className="flex-none w-64 flex flex-col">
+                                <motion.div
+                                  key={idx}
+                                  className="flex-none w-72 space-y-3"
+                                  initial={{ opacity: 0, x: 20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: idx * 0.1 }}
+                                >
                                   <img
                                     src={img.url}
                                     alt={img.label}
-                                    className="w-64 h-64 object-cover rounded-lg"
+                                    className="w-72 h-72 object-cover rounded-xl shadow-lg"
                                   />
-                                  <span className="text-gray-400 text-sm mt-2 text-center">{img.label}</span>
-                                </div>
+                                  <p
+                                    className={`text-sm text-center ${
+                                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                                    }`}
+                                  >
+                                    {img.label}
+                                  </p>
+                                </motion.div>
                               ))}
                             </div>
                           ) : (
-                            <div className="space-y-2">
+                            <div className="space-y-4">
                               {post.images.map((img, idx) => (
-                                <div key={idx} className="flex flex-col items-start">
+                                <motion.div
+                                  key={idx}
+                                  className="space-y-2"
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: idx * 0.1 }}
+                                >
                                   <img
                                     src={img.url}
                                     alt={img.label}
-                                    className="w-full max-w-md h-auto object-cover rounded-lg"
+                                    className="w-full max-w-2xl mx-auto rounded-xl shadow-lg"
                                   />
-                                  <span className="text-gray-400 text-sm mt-1">{img.label}</span>
-                                </div>
+                                  <p
+                                    className={`text-sm text-center ${
+                                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                                    }`}
+                                  >
+                                    {img.label}
+                                  </p>
+                                </motion.div>
                               ))}
                             </div>
                           )
                         ) : (
-                          <p className="text-gray-400">No content available</p>
+                          <p
+                            className={`text-center py-8 ${
+                              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                            }`}
+                          >
+                            No content available
+                          </p>
                         )}
                       </div>
-                      {post.status === 'success' && (post.images?.length ?? 0) > 0 && (
-                        <div className="flex justify-start">
-                          <motion.button
-                            onClick={() => handleEditPost(post)}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 text-sm"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            Edit
-                          </motion.button>
-                        </div>
-                      )}
                     </motion.div>
                   ))}
                 </div>
@@ -715,16 +926,25 @@ export const AutoPostCreator = () => {
             )}
 
             {completedPosts.length === topics.length && (
-              <div className="mt-10 text-center">
+              <motion.div
+                className="mt-16 text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
                 <motion.button
                   onClick={handleContinueToPost}
-                  className="px-8 py-3 bg-green-500 text-white font-semibold rounded-full shadow-md hover:bg-green-600"
+                  className={`group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all focus:ring-offset-2 focus:ring-blue-500 ${
+                    theme === 'dark'
+                      ? 'focus:ring-offset-gray-800'
+                      : 'focus:ring-offset-gray-100'
+                  }`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   Continue to Post
+                  <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </motion.button>
-              </div>
+              </motion.div>
             )}
           </div>
         )}

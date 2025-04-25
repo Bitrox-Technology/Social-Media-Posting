@@ -1,7 +1,7 @@
 import { postToInsta, schedulePost } from "../services/insta.js";
 import { Ollama } from "ollama";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../utils/ApiError.js";
 import fs from "fs/promises";
 import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
@@ -260,8 +260,8 @@ const Post = async (req, res, next) => {
     }
 
     const finalCaption = `${title}\n\n${content}${parsedHashtags && Array.isArray(parsedHashtags)
-        ? "\n\n" + parsedHashtags.map((tag) => `${tag.trim()}`).join(" ")
-        : ""
+      ? "\n\n" + parsedHashtags.map((tag) => `${tag.trim()}`).join(" ")
+      : ""
       }`;
 
     // Log the final caption to verify title inclusion
@@ -529,4 +529,9 @@ const GenerateBlog = async (req, res, next) => {
 };
 
 
-export { Post, Content, Ideas, GenerateImage, GenerateCarousel,GenerateBlog, UploadCarouselImages, UploadSingleImage, GenerateDoYouKnow, GenerateTopics, GenerateImageContent, BlogPost };
+const PostControllers = {
+  Post, Content, Ideas, GenerateImage, GenerateCarousel, GenerateBlog,
+  UploadCarouselImages, UploadSingleImage, GenerateDoYouKnow, GenerateTopics, GenerateImageContent,
+  BlogPost
+};
+export default PostControllers;

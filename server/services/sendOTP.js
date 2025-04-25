@@ -1,35 +1,55 @@
-import { sendEmail } from "../utils/mail.js"; 
+import { sendEmail } from "../utils/mail.js";
 
 const sendOtp = async (to, code) => {
-    const subject = "Verify Your Account - Hotel Booking Website";
-    const html = `
-    <div style="font-family: Arial, sans-serif; line-height: 1.8; color: #333;">
-        <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">
-            <h1 style="text-align: center; color: #1a73e8; margin-bottom: 20px;">Welcome to Hotel Booking</h1>
-            <p style="font-size: 16px;">Dear Valued Customer,</p>
-            <p style="font-size: 16px;">
-                Thank you for choosing our Hotel Booking service! To verify your account and complete the registration process, please use the One-Time Password (OTP) below:
-            </p>
-            <div style="text-align: center; margin: 20px 0;">
-                <span style="display: inline-block; padding: 15px 30px; font-size: 20px; color: #fff; background-color: #1a73e8; border-radius: 5px; font-weight: bold;">${code}</span>
-            </div>
-            <p style="font-size: 16px;">This OTP is valid for 10 minutes. Please do not share it with anyone.</p>
-            <p style="font-size: 16px;">
-                If you did not request this email, no action is needed. Your account remains secure.
-            </p>
-            <p style="font-size: 16px;">Happy booking!</p>
-            <p style="font-size: 16px;">Best Regards,<br>The Hotel Booking Team</p>
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
-            <p style="font-size: 12px; text-align: center; color: #555;">
-                Need help? Contact us at 
-                <a href="mailto:unofficialashish279@gmail.com" style="color: #1a73e8; text-decoration: none;">unofficialashish279@gmail.com</a>.
-            </p>
+  const subject = "Verify Your Account - Transform Your Social Media with AI";
+  const html = `
+    <div style="font-family: 'Poppins', 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f4f7fa; padding: 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);">
+        
+        <!-- Header with Gradient -->
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #a855f7 100%); padding: 30px 20px; text-align: center;">
+          <img src="https://via.placeholder.com/150x50?text=SocialAI+Logo" alt="SocialAI Logo" style="max-width: 150px; margin-bottom: 10px;" />
+          <h1 style="color: #ffffff; font-size: 28px; margin: 0; font-weight: 600;">Transform Your Social Media</h1>
+          <p style="color: #e0e7ff; font-size: 16px; margin: 5px 0 0;">AI-Powered Content Creation</p>
         </div>
+
+        <!-- Body -->
+        <div style="padding: 30px 20px; text-align: center;">
+          <p style="font-size: 16px; color: #4b5563; margin: 0 0 15px;">Hello Valued User,</p>
+          <p style="font-size: 16px; color: #4b5563; margin: 0 0 20px;">
+            Thank you for joining our platform! Verify your account to unlock the power of AI-driven content creation for your social media. Use the OTP below:
+          </p>
+
+          <!-- OTP Box -->
+          <div style="display: inline-block; padding: 15px 30px; background-color: #eff6ff; border-radius: 10px; border: 1px solid #dbeafe; margin: 20px 0;">
+            <span style="font-size: 24px; font-weight: 700; color: #4f46e5; letter-spacing: 3px;">${code}</span>
+          </div>
+
+          <p style="font-size: 14px; color: #6b7280; margin: 0 0 20px;">
+            This OTP is valid for <strong>10 minutes</strong>. Please do not share it with anyone.
+          </p>
+          <p style="font-size: 14px; color: #6b7280; margin: 0 0 20px;">
+            If you didn’t request this email, you can safely ignore it.
+          </p>
+          <p style="font-size: 16px; color: #4b5563; margin: 0;">
+            Ready to elevate your social media game? Let’s get started!
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 14px; color: #6b7280; margin: 0 0 5px;">
+            Best Regards,<br>The SocialAI Team
+          </p>
+          <p style="font-size: 12px; color: #9ca3af; margin: 10px 0 0;">
+            Need help? Reach out at 
+            <a href="mailto:support@socialai.com" style="color: #4f46e5; text-decoration: none; font-weight: 500;">support@socialai.com</a>
+          </p>
+        </div>
+      </div>
     </div>
-    `;
-    await sendEmail(to, subject, html);
+  `;
+  await sendEmail(to, subject, html);
 };
 
-export {
-    sendOtp
-};
+export { sendOtp };

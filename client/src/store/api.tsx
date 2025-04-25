@@ -44,7 +44,7 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:4000/api/v1',
     prepareHeaders: (headers, { getState }: { getState: () => unknown }) => {
-      const dispatch = (action: any) => {}; // Add a placeholder dispatch function if needed
+      const dispatch = (action: any) => { }; // Add a placeholder dispatch function if needed
       const state = getState() as { app?: { user?: { token?: string; expiresAt?: number; email?: string } } };
       let token = state.app?.user?.token;
 
@@ -134,6 +134,44 @@ export const api = createApi({
         body,
       }),
     }),
+    verifyOTP: builder.mutation<ApiResponse<any>, { email: string; otp: string}>({
+      query: (body) => ({
+        url: '/user/verify-otp',
+        method: 'POST',
+        body,
+      }),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const { accessToken, email } = data.data;
+          const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
+
+          // Store in Redux
+          const userData = { email, token: accessToken, expiresAt };
+          dispatch(setUser(userData));
+
+          // Store in localStorage
+          localStorage.setItem('user', JSON.stringify(userData));
+        } catch (error) {
+          alert(`OTP verify failed:, ${error}`);
+        }
+      },
+      invalidatesTags: ['Auth'],
+    }),
+    resendOTP: builder.mutation<ApiResponse<any>, { email: string; }>({
+      query: (body) => ({
+        url: '/user/resend',
+        method: 'POST',
+        body,
+      }),
+    }),
+    forgetPassword: builder.mutation<ApiResponse<any>, { email: string; newPassword: string }>({
+      query: (body) => ({
+        url: '/user/forget-password',
+        method: 'POST',
+        body,
+      }),
+    }),
     signIn: builder.mutation<ApiResponse<any>, { email: string; password: string }>({
       query: (body) => ({
         url: '/user/signin',
@@ -153,7 +191,7 @@ export const api = createApi({
           // Store in localStorage
           localStorage.setItem('user', JSON.stringify(userData));
         } catch (error) {
-          console.error('Sign-in failed:', error);
+          alert(`Sign-in failed:, ${error}`);
         }
       },
       invalidatesTags: ['Auth'],
@@ -264,6 +302,7 @@ export const {
   useGenerateDoYouKnowMutation,
   useSignUpMutation,
   useSignInMutation,
+  useVerifyOTPMutation,
   useGenerateTopicsMutation,
   useGenerateImageContentMutation,
   useSavePostsMutation,
@@ -277,5 +316,7 @@ export const {
   useLazyGetImageContentQuery,
   useLazyGetCarouselContentQuery,
   useLazyGetDYKContentQuery,
-  useUpdatePostMutation
+  useUpdatePostMutation,
+  useResendOTPMutation,
+  useForgetPasswordMutation
 } = api;

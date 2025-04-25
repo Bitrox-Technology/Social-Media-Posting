@@ -52,7 +52,7 @@ const comparePasswordAndConfirmpassword = (password, confirmPassword) => {
 }
 
 const generateOTP = () => {
-  return otpGenerator.generate(4, { lowerCaseAlphabets: false, upperCaseAlphabets: false, specialChars: false });
+  return otpGenerator.generate(6, { lowerCaseAlphabets: false, upperCaseAlphabets: false, specialChars: false });
 }
 
 
@@ -82,4 +82,4 @@ const jwtVerifyForRefreshToken = async(token) => {
 
 
 
-export { convertToCron, Hashed_Password, isEmail, generateAccessToken, generateRefershToken, jwtVerify, jwtVerifyForRefreshToken, comparePasswordUsingBcrypt  };
+export { convertToCron, Hashed_Password, isEmail, generateAccessToken, generateRefershToken, jwtVerify, jwtVerifyForRefreshToken, comparePasswordUsingBcrypt, generateOTP  };

@@ -1,23 +1,66 @@
-import { getPostContent, login, postContent, signup, saveImageContent, saveCarouselContent, saveDYKContent, savePosts, userDetails, getSavePosts, getImageContent, getCarouselContent, getDYKContent, updatePost } from "../services/user.js"
+import UserServices from "../services/user.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { OK } from "../utils/apiResponseCode.js"
-import { validateSignup, validateLogin, validatePostContent, validateImageContent, validateCarouselContent, validateDYKContent, validateSavePost, validateUpdatePost, validateUserDetails } from "../validations/user.js"
+import UserValidation from "../validations/user.js"
 
 const Signup = async (req, res, next) => {
     try {
-        await validateSignup(req.body)
-        let user = await signup(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "User Created Successfully"))
+        await UserValidation.validateSignup(req.body)
+        let user = await UserServices.signup(req.body)
+        return res.status(OK).json(new ApiResponse(OK, {email: user.email}, "OTP send successfully"))
     } catch (error) {
         next(error)
     }
 
 }
 
+const VerifyOTP = async (req, res, next) => {
+    try {
+        await UserValidation.validateOTP(req.body)
+        let user = await UserServices.verifyOTP(req.body)
+        return res.status(OK).json(new ApiResponse(OK, user, "User verified successfully"))
+    } catch (error) {
+        next(error)
+    }
+
+}
+
+const ResendOTP = async (req, res, next) => {
+    try {
+        await UserValidation.validateResendOTP(req.body);
+        let user = await UserServices.resendOTP(req.body)
+        return res.status(OK).json(new ApiResponse(OK, user, "OTP resent successfully"))
+    } catch (error) {
+        next(error)
+    }
+}
+
+const ForgetPassword = async (req, res, next) => {
+    try {
+        await UserValidation.validateforgetPassword(req.body)
+        let user = await UserServices.forgetPassword(req.body)
+        return res.status(OK).json(new ApiResponse(OK, user, "Password reset successfully"))
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+const Logout = async (req, res, next) => {
+    try {
+        let user = await UserServices.logout(req.user)
+        return res.status(OK).json(new ApiResponse(OK, user, "User Logout Successfully"))
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+
 const UserDetails = async (req, res, next) => {
     try {
-        await validateUserDetails(req.body)
-        let user = await userDetails(req.body, req.user, req.files)
+        await UserValidation.validateUserDetails(req.body)
+        let user = await UserServices.userDetails(req.body, req.user, req.files)
         return res.status(OK).json(new ApiResponse(OK, user, "User details saved successfully"))
     } catch (error) {
         next(error)
@@ -27,8 +70,8 @@ const UserDetails = async (req, res, next) => {
 
 const Login = async (req, res, next) => {
     try {
-        await validateLogin(req.body)
-        let user = await login(req.body)
+        await UserValidation.validateLogin(req.body)
+        let user = await UserServices.login(req.body)
         return res.status(OK).json(new ApiResponse(OK, user, "User Login Successfully"))
     } catch (error) {
         next(error)
@@ -37,8 +80,8 @@ const Login = async (req, res, next) => {
 
 const PostContent = async (req, res, next) => {
     try {
-        await validatePostContent(req.body)
-        let user = await postContent(req.body, req.user)
+        await UserValidation.validatePostContent(req.body)
+        let user = await UserServices.postContent(req.body, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, "Topics saved Successfully"))
     } catch (error) {
         next(error)
@@ -47,7 +90,7 @@ const PostContent = async (req, res, next) => {
 
 const GetPostContent = async (req, res, next) => {
     try {
-        let user = await getPostContent(req.user, req.params.postcontentid)
+        let user = await UserServices.getPostContent(req.user, req.params.postcontentid)
         return res.status(OK).json(new ApiResponse(OK, user, "Topics fetched Successfully"))
     } catch (error) {
         next(error)
@@ -56,8 +99,8 @@ const GetPostContent = async (req, res, next) => {
 
 const SaveImageContent = async (req, res, next) => {
     try {
-        await validateImageContent(req.body)
-        let user = await saveImageContent(req.body, req.user)
+        await UserValidation.validateImageContent(req.body)
+        let user = await UserServices.saveImageContent(req.body, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, "Image content saved Successfully"))
     } catch (error) {
         next(error)
@@ -66,8 +109,8 @@ const SaveImageContent = async (req, res, next) => {
 
 const SaveCarouselContent = async (req, res, next) => {
     try {
-        await validateCarouselContent(req.body)
-        let user = await saveCarouselContent(req.body, req.user)
+        await UserValidation.validateCarouselContent(req.body)
+        let user = await UserServices.saveCarouselContent(req.body, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, "Image content saved Successfully"))
     } catch (error) {
         next(error)
@@ -76,8 +119,8 @@ const SaveCarouselContent = async (req, res, next) => {
 
 const SaveDYKContent = async (req, res, next) => {
     try {
-        await validateDYKContent(req.body)
-        let user = await saveDYKContent(req.body, req.user)
+        await UserValidation.validateDYKContent(req.body)
+        let user = await UserServices.saveDYKContent(req.body, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, "Do you Know content saved Successfully"))
     } catch (error) {
         next(error)
@@ -86,8 +129,8 @@ const SaveDYKContent = async (req, res, next) => {
 
 const SavePosts = async (req, res, next) => {
     try {
-        await validateSavePost(req.body)
-        let user = await savePosts(req.body, req.user)
+        await UserValidation.validateSavePost(req.body)
+        let user = await UserServices.savePosts(req.body, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, "Post saved Successfully"))
     } catch (error) {
         next(error)
@@ -95,9 +138,8 @@ const SavePosts = async (req, res, next) => {
 }
 
 const GetSavePosts = async (req, res, next) => {
-    console.log("GetSavePosts", req.params.postcontentid)
     try {
-        let user = await getSavePosts(req.params.postcontentid, req.user)
+        let user = await UserServices.getSavePosts(req.params.postcontentid, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, "Posts fetched Successfully"))
     } catch (error) {
         next(error)
@@ -106,7 +148,7 @@ const GetSavePosts = async (req, res, next) => {
 
 const GetImageContent = async (req, res, next) => {
     try {
-        let user = await getImageContent(req.params.contentid, req.user)
+        let user = await UserServices.getImageContent(req.params.contentid, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, "Content fetched Successfully"))
     } catch (error) {
         next(error)
@@ -115,7 +157,7 @@ const GetImageContent = async (req, res, next) => {
 
 const GetCarouselContent = async (req, res, next) => {
     try {
-        let user = await getCarouselContent(req.params.contentid, req.user)
+        let user = await UserServices.getCarouselContent(req.params.contentid, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, "Content fetched Successfully"))
     } catch (error) {
         next(error)
@@ -124,7 +166,7 @@ const GetCarouselContent = async (req, res, next) => {
 
 const GetDYKContent = async (req, res, next) => {
     try {
-        let user = await getDYKContent(req.params.contentid, req.user)
+        let user = await UserServices.getDYKContent(req.params.contentid, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, "Content fetched Successfully"))
     } catch (error) {
         next(error)
@@ -133,8 +175,8 @@ const GetDYKContent = async (req, res, next) => {
 
 const UpdatePost = async (req, res, next) => {
     try {
-        await validateUpdatePost(req.body)
-        let user = await updatePost(req.params.postid, req.user, req.body)
+        await UserValidation.validateUpdatePost(req.body)
+        let user = await UserServices.updatePost(req.params.postid, req.user, req.body)
         return res.status(OK).json(new ApiResponse(OK, user, "Content fetched Successfully"))
     } catch (error) {
         next(error)
@@ -142,6 +184,12 @@ const UpdatePost = async (req, res, next) => {
 }
 
 
+const UserControllers = {
+    Signup, VerifyOTP, ResendOTP, UserDetails,
+    ForgetPassword, Logout,
+    Login, SavePosts, PostContent, GetPostContent, SaveImageContent,
+    UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts,
+    GetImageContent, GetCarouselContent, GetDYKContent
+}
 
-
-export { Signup, UserDetails, Login, SavePosts, PostContent, GetPostContent, SaveImageContent,UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts, GetImageContent, GetCarouselContent, GetDYKContent }
+export default UserControllers

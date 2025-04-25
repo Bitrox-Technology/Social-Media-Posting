@@ -22,10 +22,11 @@ import { ImageGeneration } from './components/ui/ImageGeneration';
 import { ImageGenerationTemplate } from './components/ui/ImageGenerationTemplate';
 import { Blog } from './components/content/Blog';
 import { SelectSocialMedia } from './components/content/SelectSocialMedia';
-import UserDetail from './components/content/UserDetails';
+import UserDetail from './components/auth/UserDetails';
 import { ContentTypeSelector } from './components/content/ContentType';
 import ColorSchemeSelector from './components/features/colorSchemaSelector';
 import { OtpVerification } from './components/auth/otp';
+import ForgotPassword from './components/auth/ForgotPassword';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -110,6 +111,7 @@ function App() {
                   <Route path="/signup" element={<SignUp />} />
                   <Route path="/signin" element={<SignIn />} />
                   <Route path="/otp-verification" element={<OtpVerification />} />
+                  <Route path='/forgot-password' element={<ForgotPassword/>} />
                   <Route path="/auto" element={<AutoPostCreator />} />
                   <Route path="/select-media" element={<SelectSocialMedia />} />
                   <Route path="/user-details" element={<UserDetail />} />

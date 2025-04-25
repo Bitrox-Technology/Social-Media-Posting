@@ -8,7 +8,7 @@ import ImageContent from "../models/imageContent.js";
 import CarouselContent from "../models/carouselContent.js";
 import DYKContent from "../models/dykContent.js";
 import SavePosts from "../models/savePosts.js";
-import mongoose from "mongoose";
+import { generateOTPForEmail, verifyEmailOTP } from "../utils/functions.js";
 
 const signup = async (inputs) => {
     let user;
@@ -33,10 +33,86 @@ const signup = async (inputs) => {
             }
 
             user = await User.create(inputs);
+            await generateOTPForEmail(inputs.email)
             return user
         } else {
             throw new ApiError(BAD_REQUEST, "Email already exists")
         }
+    }
+}
+
+const verifyOTP = async (inputs) => {
+    let user;
+    let subObj = {}
+
+    if (isEmail(inputs.email)) {
+        user = await User.findOne({
+            email: inputs.email,
+            isDeleted: false
+        })
+        if (!user) throw new ApiError(BAD_REQUEST, "Invalid email")
+        let otp = await verifyEmailOTP(inputs.email, inputs.otp)
+
+        if (otp === false) throw new ApiError(BAD_REQUEST, "Invalid OTP")
+        subObj.isEmailVerify = true
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokenForUser(user._id)
+    subObj.refreshToken = refreshToken
+    user = await User.findByIdAndUpdate({ _id: user._id }, subObj).lean()
+
+    user = await User.findById({ _id: user._id }).lean()
+
+    user.accessToken = accessToken;
+    user.type = "Bearer";
+    user.refreshToken = refreshToken;
+
+    return user;
+}
+
+const resendOTP = async (inputs) => {
+    let user;
+    if (Utils.isEmail(inputs.email)) {
+        user = await User.findOne({ email: inputs.email, isDeleted: false })
+
+        if (user) {
+            await generateOTPForEmail(inputs.email)
+        } else {
+            throw new ApiError(BAD_REQUEST, i18n.__("INVALID_EMAIL"))
+        }
+
+    } else {
+        user = await User.findOne({
+            phone: inputs.phone,
+            countryCode: inputs.countryCode,
+            isDeleted: false,
+        })
+        if (user) {
+            await generateOTPForPhone(inputs.countryCode, inputs.phone)
+        } else {
+            throw new ApiError(BAD_REQUEST, i18n.__("INVALID_PHONE"))
+        }
+    }
+}
+
+const forgetPassword = async (inputs) => {
+    let user;
+    if (Utils.isEmail(inputs.email)) {
+
+        user = await User.findOne({
+            email: inputs.email,
+            isDeleted: false,
+            isEmailVerify: true
+        });
+        if (!user) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_EMAIL"))
+
+        let compare = Utils.comparePasswordAndConfirmpassword(inputs.newPassword, inputs.confirmPassword)
+        if (compare == false) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_CREDENTIALS"))
+        inputs.newPassword = await Utils.Hashed_Password(inputs.newPassword)
+
+        user = await User.findByIdAndUpdate({ _id: user._id }, { password: inputs.newPassword })
+
+        await generateOTPForEmail(user.email);
     }
 }
 
@@ -60,15 +136,28 @@ const login = async (inputs) => {
     }
 }
 
+
+const logout = async (user) => {
+    return await User.findByIdAndUpdate({
+        _id: user._id,
+        isDeleted: false
+    }, {
+        $set: { refreshToken: "" }
+    }, {
+        new: true
+    }).select("+refreshToken")
+
+}
+
 const userDetails = async (inputs, user, files) => {
-    const avatar = req.files['avatar'] 
-    const logo = req.files['logo'] 
+    const avatar = req.files['avatar']
+    const logo = req.files['logo']
     if (!avatar && !logo) throw new ApiError(BAD_REQUEST, "Avatar and Logo are required")
-    
-    let avatarUrl =  await uploadOnCloudinary(avatar[0].path, "avatar")
+
+    let avatarUrl = await uploadOnCloudinary(avatar[0].path, "avatar")
     if (!avatarUrl) throw new ApiError(BAD_REQUEST, "Unable to upload avatar")
-    
-    let logoUrl =  await uploadOnCloudinary(logo[0].path, "logo")
+
+    let logoUrl = await uploadOnCloudinary(logo[0].path, "logo")
     if (!logoUrl) throw new ApiError(BAD_REQUEST, "Unable to upload logo")
 
     inputs.avatar = avatarUrl
@@ -77,7 +166,7 @@ const userDetails = async (inputs, user, files) => {
 
     let updateUser = await User.findByIdAndUpdate({ _id: user._id }, inputs, { new: true })
     if (!upload) throw new ApiError(BAD_REQUEST, "Unable to update user details")
-    
+
     updateUser = await User.findById({ _id: updateUser._id })
     return updateUser
 }
@@ -194,8 +283,12 @@ const updatePost = async (postId, user, inputs) => {
 }
 
 
-export {
+const UserServices = {
     signup,
+    verifyOTP,
+    resendOTP,
+    forgetPassword,
+    logout,
     login,
     postContent,
     getPostContent,
@@ -210,3 +303,4 @@ export {
     updatePost,
     userDetails
 }
+export default UserServices;

@@ -18,31 +18,71 @@ const validateSignup = async (inputs) => {
         throw new ApiError(BAD_REQUEST, errorMessage);
     }
 }
+const validateOTP = async (inputs) => {
+    let schema = {}
+    schema = joi.object().keys({
+        email: joi.string().email().required(),
+        otp: joi.string().required(),
+    })
+    try {
+        await schema.validateAsync(inputs, { abortEarly: false });
+    } catch (validationError) {
+        const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : i18n.__('INVALID_CREDENTIALS');
+        throw new ApiError(BAD_REQUEST, errorMessage);
+    }
+}
+
+const validateResendOTP = async (inputs) => {
+    let schema = {}
+    schema = joi.object().keys({
+        email: joi.string().email().required(),
+    })
+    try {
+        await schema.validateAsync(inputs, { abortEarly: false });
+    } catch (validationError) {
+        const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : i18n.__('INVALID_CREDENTIALS');
+        throw new ApiError(BAD_REQUEST, errorMessage);
+    }
+}
+
+const validateforgetPassword = async (inputs) => {
+    let schema = {}
+    schema = joi.object().keys({
+        email: joi.string().email().required(),
+        newPassword: joi.string().min(6).pattern(new RegExp('^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])')).required(),
+    })
+    try {
+        await schema.validateAsync(inputs, { abortEarly: false });
+    } catch (validationError) {
+        const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : i18n.__('INVALID_CREDENTIALS');
+        throw new ApiError(BAD_REQUEST, errorMessage);
+    }
+}
 
 const validateUserDetails = async (inputs) => {
     const schema = joi.object().keys({
-      username: joi.string().min(3).max(50).required(),
-      email: joi.string().email({ tlds: { allow: false } }).required(),
-      companyName: joi.string().min(2).max(100).required(),
-      location: joi.string().min(2).max(100).required(),
-      avatar: joi.string().optional().allow(null),
-      logo: joi.string().optional().allow(null),
-      productCategories: joi.array().items(joi.string().min(1).required()).min(1).required(),
-      keyProducts: joi.array().items(Joi.string().min(1).required()).min(1).required(),
-      targetMarket: joi.string().min(2).max(200).required(),
-      annualRevenue: joi.string().pattern(/^\$?[0-9,]+(\.[0-9]{1,2})?$/).required(),
-      websiteUrl: joi.string().uri().required(),
-      countryCode: joi.string().pattern(/^\+[1-9]\d{0,2}$/).optional().allow(''),
-      phone: joi.string().pattern(/^\+?[1-9]\d{1,14}(?:\s|-|\(|\))?[0-9\s-]{0,15}$/).optional().allow(''),
+        username: joi.string().min(3).max(50).required(),
+        email: joi.string().email({ tlds: { allow: false } }).required(),
+        companyName: joi.string().min(2).max(100).required(),
+        location: joi.string().min(2).max(100).required(),
+        avatar: joi.string().optional().allow(null),
+        logo: joi.string().optional().allow(null),
+        productCategories: joi.array().items(joi.string().min(1).required()).min(1).required(),
+        keyProducts: joi.array().items(Joi.string().min(1).required()).min(1).required(),
+        targetMarket: joi.string().min(2).max(200).required(),
+        annualRevenue: joi.string().pattern(/^\$?[0-9,]+(\.[0-9]{1,2})?$/).required(),
+        websiteUrl: joi.string().uri().required(),
+        countryCode: joi.string().pattern(/^\+[1-9]\d{0,2}$/).optional().allow(''),
+        phone: joi.string().pattern(/^\+?[1-9]\d{1,14}(?:\s|-|\(|\))?[0-9\s-]{0,15}$/).optional().allow(''),
     });
-  
+
     try {
-      await schema.validateAsync(inputs, { abortEarly: false });
+        await schema.validateAsync(inputs, { abortEarly: false });
     } catch (validationError) {
-      const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : 'Invalid input';
-      throw new ApiError(BAD_REQUEST, errorMessage);
+        const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : 'Invalid input';
+        throw new ApiError(BAD_REQUEST, errorMessage);
     }
-  };
+};
 
 const validateLogin = async (inputs) => {
     let schema = {}
@@ -203,8 +243,12 @@ const validateUpdatePost = async (inputs) => {
     }
 };
 
-export {
+
+const UserValidation = {
     validateSignup,
+    validateOTP,
+    validateResendOTP,
+    validateforgetPassword,
     validateLogin,
     validatePostContent,
     validateImageContent,
@@ -214,3 +258,5 @@ export {
     validateUpdatePost,
     validateUserDetails
 }
+
+export default UserValidation;

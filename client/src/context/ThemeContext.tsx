@@ -12,36 +12,37 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const colorSchemeClasses = {
+const colorSchemes: Record<ColorScheme, { primary: string; secondary: string; accent: string }> = {
   default: {
-    primary: 'text-indigo-600 dark:text-indigo-400',
-    secondary: 'text-amber-500 dark:text-amber-400',
-    accent: 'text-emerald-500 dark:text-emerald-400',
+    primary: '#4f46e5', // indigo-600
+    secondary: '#f59e0b', // amber-500
+    accent: '#10b981', // emerald-500
   },
   blue: {
-    primary: 'text-blue-600 dark:text-blue-400',
-    secondary: 'text-sky-500 dark:text-sky-400',
-    accent: 'text-cyan-500 dark:text-cyan-400',
+    primary: '#2563eb', // blue-600
+    secondary: '#0ea5e9', // sky-500
+    accent: '#06b6d4', // cyan-500
   },
   green: {
-    primary: 'text-green-600 dark:text-green-400',
-    secondary: 'text-emerald-500 dark:text-emerald-400',
-    accent: 'text-lime-500 dark:text-lime-400',
+    primary: '#16a34a', // green-600
+    secondary: '#10b981', // emerald-500
+    accent: '#84cc16', // lime-500
   },
   purple: {
-    primary: 'text-purple-600 dark:text-purple-400',
-    secondary: 'text-fuchsia-500 dark:text-fuchsia-400',
-    accent: 'text-pink-500 dark:text-pink-400',
+    primary: '#9333ea', // purple-600
+    secondary: '#d946ef', // fuchsia-500
+    accent: '#ec4899', // pink-500
   },
   orange: {
-    primary: 'text-orange-600 dark:text-orange-400',
-    secondary: 'text-amber-500 dark:text-amber-400',
-    accent: 'text-yellow-500 dark:text-yellow-400',
+    primary: '#ea580c', // orange-600
+    secondary: '#f59e0b', // amber-500
+    accent: '#eab308', // yellow-500
   },
 };
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'light';
     const savedTheme = localStorage.getItem('theme');
     return savedTheme === 'dark' || savedTheme === 'light'
       ? savedTheme
@@ -51,6 +52,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [colorScheme, setColorScheme] = useState<ColorScheme>(() => {
+    if (typeof window === 'undefined') return 'default';
     const savedScheme = localStorage.getItem('colorScheme') as ColorScheme;
     return savedScheme || 'default';
   });
@@ -61,28 +63,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
 
-    // Log the current theme to debug
-    console.log('Applied theme:', theme);
-  }, [theme]);
+    // Apply color scheme as CSS variables
+    const colors = colorSchemes[colorScheme];
+    root.style.setProperty('--color-primary', colors.primary);
+    root.style.setProperty('--color-secondary', colors.secondary);
+    root.style.setProperty('--color-accent', colors.accent);
 
-  useEffect(() => {
-    const root = window.document.documentElement;
-    // Remove all previous color scheme classes
-    Object.values(colorSchemeClasses).forEach(scheme => {
-      Object.values(scheme).forEach(className => {
-        root.classList.remove(...className.split(' '));
-      });
-    });
-    // Apply new color scheme classes
-    const currentClasses = colorSchemeClasses[colorScheme];
-    Object.values(currentClasses).forEach(className => {
-      root.classList.add(...className.split(' '));
-    });
-    localStorage.setItem('colorScheme', colorScheme);
-
-    // Log the current color scheme to debug
-    console.log('Applied color scheme:', colorScheme, 'Classes:', currentClasses);
-  }, [colorScheme]);
+    console.log('Applied theme:', theme, 'Color scheme:', colorScheme, 'Colors:', colors);
+  }, [theme, colorScheme]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
