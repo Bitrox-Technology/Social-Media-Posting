@@ -1,152 +1,393 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../store/hooks';
 import { setContentType } from '../store/appSlice';
-import { ChevronRight } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext'; // Import useTheme
-
-import Button from '../components/ui/Button';
-import ContentCard from '../components/ui/ContentCard';
+import { 
+  FileText, Clock, Activity, Settings2,
+  Calendar, Plus, Bell, 
+  Instagram, Twitter, Facebook, Linkedin, Youtube
+} from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import { format } from 'date-fns';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
 
 const DashboardPage: React.FC = () => {
-  const { theme } = useTheme(); // Access the theme
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const handleProceed = () => {
+  const handleSelect = () => {
     navigate('/content-type');
   };
 
-  const handleSelect = (type: 'post' | 'blog') => {
-    dispatch(setContentType(type));
-    navigate(type === 'post' ? '/topic' : '/blog');
-  };
+  const stats = [
+    { label: 'Total Posts', value: '156', icon: FileText, change: '+12%', trend: 'up' },
+    { label: 'Engagement Rate', value: '24.8%', icon: Activity, change: '+3.2%', trend: 'up' },
+    { label: 'Time Saved', value: '127hrs', icon: Clock, change: '+18%', trend: 'up' },
+    { label: 'AI Generations', value: '1,234', icon: Settings2, change: '+25%', trend: 'up' },
+  ];
 
-  const sampleContent = [
+  const engagementData = [
+    { name: 'Mon', Instagram: 4000, Twitter: 2400, Facebook: 2400 },
+    { name: 'Tue', Instagram: 3000, Twitter: 1398, Facebook: 2210 },
+    { name: 'Wed', Instagram: 2000, Twitter: 9800, Facebook: 2290 },
+    { name: 'Thu', Instagram: 2780, Twitter: 3908, Facebook: 2000 },
+    { name: 'Fri', Instagram: 1890, Twitter: 4800, Facebook: 2181 },
+    { name: 'Sat', Instagram: 2390, Twitter: 3800, Facebook: 2500 },
+    { name: 'Sun', Instagram: 3490, Twitter: 4300, Facebook: 2100 },
+  ];
+
+  const scheduledPosts = [
     {
-      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1745302238/fgtcjvyus4uzidwgrz0k.png',
-      title: 'Social Media Post',
-      description: 'AI-optimized posts for maximum engagement across all popular platforms. Perfect for businesses looking to increase their social presence.'
+      title: 'Product Launch Post',
+      date: '2025-04-20',
+      platforms: ['Instagram', 'Facebook', 'Twitter'],
+      status: 'scheduled'
     },
     {
-      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1744892993/vtxpt1dfv49kmpftk8jo.png',
-      title: 'Blog Post',
-      description: 'SEO-friendly articles and blog posts that rank higher in search results and keep your audience engaged with valuable information.'
+      title: 'Weekly Update',
+      date: '2025-04-21',
+      platforms: ['LinkedIn', 'Twitter'],
+      status: 'draft'
     },
     {
-      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1744892459/u1e65kb3934ctxdyvpqy.png',
-      title: 'Visual Post',
-      description: 'Eye-catching designs and graphics that complement your written content and make your brand stand out from the competition.'
+      title: 'Customer Story',
+      date: '2025-04-22',
+      platforms: ['Instagram', 'Facebook'],
+      status: 'scheduled'
     }
   ];
 
+  const platformIcons = {
+    Instagram: <Instagram className="w-5 h-5 text-pink-500" />,
+    Facebook: <Facebook className="w-5 h-5 text-blue-600" />,
+    Twitter: <Twitter className="w-5 h-5 text-blue-400" />,
+    LinkedIn: <Linkedin className="w-5 h-5 text-blue-700" />,
+    YouTube: <Youtube className="w-5 h-5 text-red-600" />
+  };
+
+  // Log events for debugging
+  useEffect(() => {
+    console.log('Scheduled Posts:', scheduledPosts);
+    console.log('Mapped Events:', scheduledPosts.map(post => ({
+      title: post.title,
+      date: post.date,
+      className: post.status === 'scheduled' ? 'scheduled' : 'draft',
+      extendedProps: { status: post.status }
+    })));
+  }, []);
+
+  // Custom styles for FullCalendar
+  const calendarStyles = `
+    .fc {
+      font-family: 'Inter', sans-serif;
+    }
+    .fc-theme-standard .fc-scrollgrid {
+      border: none;
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+      border-radius: 12px;
+    }
+    .fc .fc-daygrid-day {
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+      border: none;
+    }
+    .fc .fc-daygrid-day-frame {
+      padding: 4px;
+    }
+    .fc .fc-daygrid-day-number {
+      color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
+      font-size: 14px;
+    }
+    .fc .fc-daygrid-day.fc-day-today {
+      background: #3B82F6;
+      border-radius: 8px;
+    }
+    .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+      color: #FFFFFF;
+    }
+    .fc .fc-col-header-cell {
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+      border: none;
+      padding: 8px 0;
+    }
+    .fc .fc-col-header-cell-cushion {
+      color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .fc .fc-button {
+      background: ${theme === 'dark' ? '#374151' : '#E5E7EB'};
+      color: ${theme === 'dark' ? '#FFFFFF' : '#1F2937'};
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      text-transform: capitalize;
+      font-weight: 500;
+      min-width: 20px;
+      transition: background 0.3s ease;
+    }
+    .fc .fc-button:hover {
+      background: ${theme === 'dark' ? '#4B5563' : '#D1D5DB'};
+    }
+    .fc .fc-button.fc-button-primary {
+      background: #3B82F6;
+      color: #FFFFFF;
+    }
+    .fc .fc-button.fc-button-primary:hover {
+      background: #2563EB;
+    }
+    .fc .fc-daygrid-event {
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      margin: 2px 0;
+      background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
+      color: #FFFFFF;
+      border: none;
+      display: block;
+      width: 100%;
+      transition: all 0.2s ease-in-out;
+    }
+    .fc .fc-daygrid-event:hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .fc .fc-timegrid-slot {
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+      border: none;
+    }
+    .fc .fc-timegrid-col {
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+    }
+    .fc .fc-timegrid-event {
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
+      color: #FFFFFF;
+      border: none;
+    }
+    .fc .fc-daygrid-day-events {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      width: 100% !important;
+    }
+    @media (max-width: 640px) {
+      .fc .fc-button {
+        padding: 6px 12px;
+        min-width: 60px;
+        font-size: 12px;
+      }
+      .fc .fc-daygrid-day-number {
+        font-size: 12px;
+      }
+      .fc .fc-col-header-cell-cushion {
+        font-size: 12px;
+      }
+    }
+  `;
+
   return (
-    <div
-      className={`min-h-screen animate-gradient-x ${
-        theme === 'dark'
-          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
-          : 'bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100'
-      }`}
-    >
-      <div className="absolute inset-0 overflow-hidden">
-        <div
-          className={`absolute -top-40 -right-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob ${
-            theme === 'dark' ? 'bg-blue-600' : 'bg-blue-400'
-          }`}
-        />
-        <div
-          className={`absolute -bottom-40 -left-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000 ${
-            theme === 'dark' ? 'bg-purple-600' : 'bg-purple-400'
-          }`}
-        />
-        <div
-          className={`absolute top-1/2 left-1/3 w-80 h-80 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000 ${
-            theme === 'dark' ? 'bg-indigo-600' : 'bg-indigo-400'
-          }`}
-        />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-        <div className="text-center space-y-6 mb-16 animate-fadeIn">
-          <div className="relative inline-block">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              <span
-                className={`bg-clip-text text-transparent ${
-                  theme === 'dark'
-                    ? 'bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500'
-                    : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700'
-                }`}
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <style>{calendarStyles}</style>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Stats Row */}
+          <div className="lg:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <div
+                key={index}
+                className={`${
+                  theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+                } p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow`}
               >
-                AI-Powered Post Hub
-              </span>
-            </h1>
-            <div
-              className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1/4 h-1 rounded-full ${
-                theme === 'dark'
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600'
-              }`}
-            />
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                    <stat.icon className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                  </div>
+                  <span className={`text-sm font-medium ${stat.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+                    {stat.change}
+                  </span>
+                </div>
+                <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  {stat.value}
+                </h3>
+                <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {stat.label}
+                </p>
+              </div>
+            ))}
           </div>
 
-          <p
-            className={`text-lg md:text-xl max-w-3xl mx-auto leading-relaxed ${
-              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-            }`}
-          >
-            Transform your ideas into engaging content with our powerful AI technology
-          </p>
+          {/* Main Content Area */}
+          <div className="lg:col-span-3 space-y-8">
+            {/* Engagement Chart */}
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  Social Media Engagement
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <select className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-900'} rounded-lg px-3 py-1`}>
+                    <option>Last 7 days</option>
+                    <option>Last 30 days</option>
+                    <option>Last 90 days</option>
+                  </select>
+                </div>
+              </div>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={engagementData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="Instagram" stackId="1" stroke="#E1306C" fill="#E1306C" />
+                    <Area type="monotone" dataKey="Twitter" stackId="1" stroke="#1DA1F2" fill="#1DA1F2" />
+                    <Area type="monotone" dataKey="Facebook" stackId="1" stroke="#4267B2" fill="#4267B2" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
 
-          <div
-            className={`flex flex-wrap justify-center gap-4 text-sm ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-            }`}
-          >
-            <span className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
-              Fast Generation
-            </span>
-            <span className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-blue-400 mr-2"></span>
-              SEO Optimized
-            </span>
-            <span className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
-              Engagement Focused
-            </span>
+            {/* Scheduled Posts */}
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  Upcoming Posts
+                </h3>
+                <button
+                  onClick={() => handleSelect()}
+                  className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Post
+                </button>
+              </div>
+              <div className="space-y-4">
+                {scheduledPosts.map((post, index) => (
+                  <div
+                    key={index}
+                    className={`${
+                      theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+                    } p-4 rounded-xl flex items-center justify-between`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-600' : 'bg-white'}`}>
+                        <Calendar className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <h4 className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                          {post.title}
+                        </h4>
+                        <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {format(new Date(post.date), 'MMM dd, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {post.platforms.map((platform) => (
+                        <div key={platform} className="tooltip" data-tip={platform}>
+                          {platformIcons[platform as keyof typeof platformIcons]}
+                        </div>
+                      ))}
+                      <span className={`ml-4 px-2 py-1 rounded-full text-xs ${
+                        post.status === 'scheduled'
+                          ? 'bg-green-500/20 text-green-500'
+                          : 'bg-yellow-500/20 text-yellow-500'
+                      }`}>
+                        {post.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
-          {sampleContent.map((content, index) => (
-            <ContentCard
-              key={index}
-              index={index}
-              imageUrl={content.imageUrl}
-              title={content.title}
-              description={content.description}
-            />
-          ))}
-        </div>
+          {/* Sidebar */}
+          <div className="space-y-8">
+            {/* Calendar */}
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
+              <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Calendar
+              </h3>
+              <FullCalendar
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                initialDate="2025-04-01" // Ensure the calendar starts in April 2025
+                headerToolbar={{
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: 'dayGridMonth,timeGridWeek'
+                }}
+                events={scheduledPosts.map(post => ({
+                  title: post.title,
+                  date: post.date,
+                  className: post.status === 'scheduled' ? 'scheduled' : 'draft',
+                  extendedProps: { status: post.status }
+                }))}
+                height="auto"
+                
+                selectable={true}
+                select={(info) => setSelectedDate(info.start)}
+                dayMaxEvents={true}
+                // eventContent={(eventInfo) => (
+                //   <div className="fc-event-main flex flex-col items-start w-full">
+                //     <span className="block text-sm font-medium">{eventInfo.event.title}</span>
+                //     <span className="text-xs text-gray-200">{eventInfo.event.extendedProps.status}</span>
+                //   </div>
+                // )}
+                // eventDidMount={(info) => {
+                //   console.log('Event Rendered:', info.event.title, 'on', info.event.start);
+                // }}
+              />
+              {selectedDate && (
+                <p className={`mt-2 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Selected: {format(selectedDate, 'MMM dd, yyyy')}
+                </p>
+              )}
+            </div>
 
-        <div className="text-center space-y-8">
-          <Button
-            onClick={handleProceed}
-            variant="primary"
-            size="lg"
-            className="group"
-          >
-            <span>Start Creating Posts</span>
-            <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-          </Button>
-
-          <p
-            className={`text-sm ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-            }`}
-          >
-            Click to begin your creative journey with AI
-          </p>
+            {/* Quick Actions */}
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
+              <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Quick Actions
+              </h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleSelect()}
+                  className="w-full px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors flex items-center justify-center"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Schedule New Post
+                </button>
+                <button
+                  className={`w-full px-4 py-3 ${
+                    theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                  } rounded-xl transition-colors flex items-center justify-center`}
+                >
+                  <Bell className="w-4 h-4 mr-2" />
+                  View Notifications
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

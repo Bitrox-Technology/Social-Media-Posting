@@ -5,13 +5,15 @@ import * as Yup from 'yup';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
 import { useResendOTPMutation, useVerifyOTPMutation } from '../../store/api';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const OtpVerification = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [verifyOTP] = useVerifyOTPMutation()
-  const [resendOTP] = useResendOTPMutation()
+  const [verifyOTP] = useVerifyOTPMutation();
+  const [resendOTP] = useResendOTPMutation();
   const email = location.state?.email;
 
   // Redirect to sign-in if email is not provided in location.state
@@ -33,19 +35,58 @@ export const OtpVerification = () => {
   const handleSubmit = async (values: typeof initialValues, { setSubmitting, setErrors }: any) => {
     try {
       const response = await verifyOTP({ email: email, otp: values.otp }).unwrap();
-      if(response.success){
-        navigate('/user-details', {state: {email: response.data.email}});
+      if (response.success) {
+        toast.success('OTP verified successfully!', {
+          position: 'bottom-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        setTimeout(() => {navigate('/user-details', { state: { email: response.data.email } });}, 2000);
+        
       }
-      
     } catch (err: any) {
-      setErrors({ otp: 'Invalid OTP. Please try again.' });
+      const errorMessage = err?.data?.message || 'Invalid OTP. Please try again.';
+      setErrors({ otp: errorMessage });
+      toast.error(errorMessage, {
+        position: 'bottom-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
     setSubmitting(false);
   };
 
   const handleResend = async () => {
-    const response = await resendOTP({ email: email}).unwrap();
-  }
+    try {
+      const response = await resendOTP({ email: email }).unwrap();
+      if (response.success) {
+        toast.success('OTP resent successfully!', {
+          position: 'bottom-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }
+    } catch (err: any) {
+      const errorMessage = err?.data?.message || 'Failed to resend OTP. Please try again.';
+      toast.error(errorMessage, {
+        position: 'bottom-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+  };
 
   return (
     <div
@@ -122,6 +163,7 @@ export const OtpVerification = () => {
               <div className="text-center">
                 <button
                   type="button"
+                  onClick={handleResend}
                   className="text-sm text-primary hover:text-secondary transition-colors"
                 >
                   Didn't receive the code? Resend
@@ -131,6 +173,22 @@ export const OtpVerification = () => {
           )}
         </Formik>
       </motion.div>
+
+      {/* Toast Container */}
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={theme === 'dark' ? 'dark' : 'light'}
+      />
     </div>
   );
 };
+
+export default OtpVerification;

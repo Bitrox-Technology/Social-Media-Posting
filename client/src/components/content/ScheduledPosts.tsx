@@ -1,41 +1,129 @@
 import React from 'react';
+import { Calendar, Clock, Share2, MoreVertical, Instagram, Facebook, Twitter } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Post {
-    title: string;
-    date: string;
-    platforms: string[];
+  title: string;
+  date: string;
+  platforms: string[];
 }
 
 export const ScheduledPosts: React.FC = () => {
-    const posts: Post[] = [
-        { title: "Digital Transformation in Finance", date: "Apr 26, 2024 9:00 AM", platforms: ["linkedin", "facebook", "instagram"] },
-        { title: "ESG Investing", date: "Apr 26, 2024 12:00 PM", platforms: ["linkedin", "facebook", "instagram"] },
-        { title: "Regulatory Tech (FinTech) Innovations", date: "Apr 26, 2024 3:00 PM", platforms: ["linkedin", "facebook", "instagram"] },
-        { title: "Economic Forecasting and Analysis", date: "Apr 26, 2024 6:00 PM", platforms: ["linkedin", "facebook", "instagram"] },
-    ];
+  const posts: Post[] = [
+    { title: "Digital Transformation in Finance", date: "Apr 26, 2024 9:00 AM", platforms: ["linkedin", "facebook", "instagram"] },
+    { title: "ESG Investing", date: "Apr 26, 2024 12:00 PM", platforms: ["linkedin", "facebook", "instagram"] },
+    { title: "Regulatory Tech (FinTech) Innovations", date: "Apr 26, 2024 3:00 PM", platforms: ["linkedin", "facebook", "instagram"] },
+    { title: "Economic Forecasting and Analysis", date: "Apr 26, 2024 6:00 PM", platforms: ["linkedin", "facebook", "instagram"] },
+  ];
 
-    return (
-        <div className="min-h-screen bg-gray-900 text-white p-6">
-            <h1 className="text-3xl font-bold text-yellow-400 mb-6">Scheduled Posts</h1>
-            <div className="bg-gray-800 rounded-lg shadow-lg p-4">
-                {posts.map((post, index) => (
-                    <div key={index} className="flex justify-between items-center border-b border-gray-700 py-3">
-                        <span className="text-lg">{post.title}</span>
-                        <span className="text-md text-gray-400">{post.date}</span>
-                        <div className="flex space-x-2">
-                            {post.platforms.map((platform, idx) => (
-                                <span
-                                    key={idx}
-                                    className={`text-${platform === 'linkedin' ? 'blue-500' : platform === 'facebook' ? 'blue-600' : 'pink-500'
-                                        }`}
-                                >
-                                    {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-            </div>
+  const platformIcons = {
+    instagram: <Instagram className="w-5 h-5" />,
+    facebook: <Facebook className="w-5 h-5" />,
+    twitter: <Twitter className="w-5 h-5" />,
+    linkedin: <Share2 className="w-5 h-5" />
+  };
+
+  const platformColors = {
+    instagram: 'bg-gradient-to-r from-purple-500 to-pink-500',
+    facebook: 'bg-blue-600',
+    twitter: 'bg-blue-400',
+    linkedin: 'bg-blue-700'
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+              Scheduled Posts
+            </h1>
+            <p className="text-gray-400 mt-2">
+              Manage your upcoming social media content
+            </p>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            Schedule New Post
+          </motion.button>
         </div>
-    );
+
+        <div className="grid gap-6">
+          {posts.map((post, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:bg-gray-800/70 transition-all duration-300"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">
+                      {post.title}
+                    </h3>
+                    <div className="flex items-center mt-1 text-gray-400">
+                      <Clock className="w-4 h-4 mr-2" />
+                      <span className="text-sm">{post.date}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-6">
+                  <div className="flex -space-x-2">
+                    {post.platforms.map((platform, idx) => (
+                      <div
+                        key={idx}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${platformColors[platform as keyof typeof platformColors]} text-white shadow-lg transform hover:scale-110 transition-transform duration-200 cursor-pointer`}
+                        title={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      >
+                        {platformIcons[platform as keyof typeof platformIcons]}
+                      </div>
+                    ))}
+                  </div>
+                  <button className="p-2 hover:bg-gray-700 rounded-full transition-colors">
+                    <MoreVertical className="w-5 h-5 text-gray-400" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm">
+                    Scheduled
+                  </span>
+                  <span className="text-sm text-gray-400">
+                    ID: #{(index + 1).toString().padStart(4, '0')}
+                  </span>
+                </div>
+                <div className="flex space-x-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors"
+                  >
+                    Edit
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+                  >
+                    Cancel
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 };

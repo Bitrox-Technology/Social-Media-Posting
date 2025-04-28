@@ -6,6 +6,8 @@ import * as Yup from 'yup';
 import { Eye, EyeOff, LogIn, Apple, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const SignIn = () => {
   const { theme } = useTheme();
@@ -26,12 +28,28 @@ export const SignIn = () => {
   const handleSubmit = async (values: typeof initialValues, { setSubmitting, setErrors }: any) => {
     try {
       const response = await signIn(values).unwrap();
-      console.log('SignIn response:', response.data);
       if (response.success) {
-        navigate('/dashboard');
+        toast.success('Signed in successfully!', {
+          position: 'bottom-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        setTimeout(() => {navigate('/dashboard');}, 2000);
       }
     } catch (err: any) {
-      setErrors({ email: 'Invalid credentials' });
+      const errorMessage = err?.data?.message || 'Invalid credentials';
+      setErrors({ email: errorMessage });
+      toast.error(errorMessage, {
+        position: 'bottom-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
     setSubmitting(false);
   };
@@ -196,6 +214,19 @@ export const SignIn = () => {
           </p>
         </div>
       </motion.div>
+
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={theme === 'dark' ? 'dark' : 'light'}
+      />
     </div>
   );
 };

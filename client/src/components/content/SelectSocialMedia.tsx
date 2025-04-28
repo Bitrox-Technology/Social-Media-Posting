@@ -37,12 +37,6 @@ interface Schedule {
   dateTime: Date | null;
 }
 
-interface ApiResponse {
-  statusCode: number;
-  data: Post[];
-  message: string;
-  success: boolean;
-}
 
 export const SelectSocialMedia: React.FC = () => {
   const location = useLocation();

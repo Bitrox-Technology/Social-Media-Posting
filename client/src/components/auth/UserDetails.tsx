@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Upload, Building2, Globe, Target, Box, Phone, MapPin, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const UserDetail = () => {
   const { theme } = useTheme();
@@ -95,10 +97,26 @@ const UserDetail = () => {
       });
 
       localStorage.setItem('userDetails', JSON.stringify(cleanedValues));
+      toast.success('Profile saved successfully!', {
+        position: 'bottom-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       navigate('/dashboard');
     } catch (error) {
-      console.error('Error:', error);
-      setErrors({ submit: error instanceof Error ? error.message : 'An unknown error occurred' });
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      setErrors({ submit: errorMessage });
+      toast.error(errorMessage, {
+        position: 'bottom-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
     setSubmitting(false);
   };
@@ -111,7 +129,6 @@ const UserDetail = () => {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden"
         >
-          {/* Header Section */}
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-8 sm:px-10">
             <h2 className="text-2xl sm:text-3xl font-bold text-white text-center">
               Complete Your Profile
@@ -130,7 +147,6 @@ const UserDetail = () => {
             >
               {({ isSubmitting, setFieldValue, values }) => (
                 <Form className="space-y-8">
-                  {/* Basic Information Section */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                       Basic Information
@@ -172,7 +188,6 @@ const UserDetail = () => {
                     </div>
                   </div>
 
-                  {/* Company Information Section */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                       Company Information
@@ -229,7 +244,6 @@ const UserDetail = () => {
                     </div>
                   </div>
 
-                  {/* Contact Information */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                       Contact Information
@@ -261,7 +275,6 @@ const UserDetail = () => {
                     </div>
                   </div>
 
-                  {/* Product Categories Section */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                       <Box className="inline-block w-5 h-5 mr-2" />
@@ -309,7 +322,6 @@ const UserDetail = () => {
                     </FieldArray>
                   </div>
 
-                  {/* Services Section */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                       <FileText className="inline-block w-5 h-5 mr-2" />
@@ -352,7 +364,6 @@ const UserDetail = () => {
                     </FieldArray>
                   </div>
 
-                  {/* Key Products Section */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                       <Box className="inline-block w-5 h-5 mr-2" />
@@ -395,7 +406,6 @@ const UserDetail = () => {
                     </FieldArray>
                   </div>
 
-                  {/* Market Information */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                       Market Information
@@ -438,7 +448,6 @@ const UserDetail = () => {
                     </div>
                   </div>
 
-                  {/* Submit Button */}
                   <motion.button
                     type="submit"
                     disabled={isSubmitting}
@@ -454,6 +463,19 @@ const UserDetail = () => {
           </div>
         </motion.div>
       </div>
+
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={theme === 'dark' ? 'dark' : 'light'}
+      />
     </div>
   );
 };

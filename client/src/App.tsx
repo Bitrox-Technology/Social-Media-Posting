@@ -27,6 +27,7 @@ import { ContentTypeSelector } from './components/content/ContentType';
 import ColorSchemeSelector from './components/features/colorSchemaSelector';
 import { OtpVerification } from './components/auth/otp';
 import ForgotPassword from './components/auth/ForgotPassword';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -112,6 +113,8 @@ function App() {
                   <Route path="/signin" element={<SignIn />} />
                   <Route path="/otp-verification" element={<OtpVerification />} />
                   <Route path='/forgot-password' element={<ForgotPassword/>} />
+
+                  <Route path='/profile' element={<ProfilePage />} />
                   <Route path="/auto" element={<AutoPostCreator />} />
                   <Route path="/select-media" element={<SelectSocialMedia />} />
                   <Route path="/user-details" element={<UserDetail />} />

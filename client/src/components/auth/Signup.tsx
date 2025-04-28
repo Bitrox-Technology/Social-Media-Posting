@@ -7,12 +7,13 @@ import * as Yup from 'yup';
 import { Eye, EyeOff, UserPlus, Apple, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const SignUp = () => {
   const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [signUp] = useSignUpMutation();
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const initialValues = {
@@ -39,10 +40,28 @@ export const SignUp = () => {
     try {
       const response = await signUp({ email: values.email, password: values.password }).unwrap();
       if (response.success) {
-        navigate('/otp-verification', {state: {email: response.data.email}});
+        toast.success('Signup successful! Please verify your OTP.', {
+          position: 'bottom-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        setTimeout (() => {navigate('/otp-verification', { state: { email: response.data.email } });}, 2000); 
+        
       }
     } catch (err: any) {
-      setErrors({ email: err?.data?.message || 'Signup failed. Please try again.' });
+      const errorMessage = err?.data?.message || 'Signup failed. Please try again.';
+      setErrors({ email: errorMessage });
+      toast.error(errorMessage, {
+        position: 'bottom-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
     setSubmitting(false);
   };
@@ -209,6 +228,21 @@ export const SignUp = () => {
           </p>
         </div>
       </motion.div>
+
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={theme === 'dark' ? 'dark' : 'light'}
+      />
     </div>
   );
 };
+
+export default SignUp;

@@ -1,97 +1,119 @@
 import React from 'react';
 import { ArrowRight, Bot, TrendingUp, Zap, Shield } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import ContentCard from '../ui/ContentCard';
 
 const HeroSection: React.FC = () => {
+  const { theme } = useTheme();
+
+  const sampleContent = [
+    {
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1745302238/fgtcjvyus4uzidwgrz0k.png',
+      title: 'Social Media Post',
+      description: 'AI-optimized posts for maximum engagement across all popular platforms. Perfect for businesses looking to increase their social presence.'
+    },
+    {
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1744892993/vtxpt1dfv49kmpftk8jo.png',
+      title: 'Blog Post',
+      description: 'SEO-friendly articles and blog posts that rank higher in search results and keep your audience engaged with valuable information.'
+    },
+    {
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1744892459/u1e65kb3934ctxdyvpqy.png',
+      title: 'Visual Post',
+      description: 'Eye-catching designs and graphics that complement your written content and make your brand stand out from the competition.'
+    }
+  ];
+
   return (
-    <div className="bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-950 transition-colors duration-300">
+    <div className={`transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="animate-slideIn">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-              Transform Your <span className="text-primary-600 dark:text-primary-400">Social Media</span> with AI-Powered Content
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24">
+          <div className="space-y-8">
+            <h1 className={`text-5xl md:text-6xl font-bold leading-tight ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              Transform Your <span className="text-blue-500">Social Media</span> with AI-Powered Content
             </h1>
-            <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">
+            <p className={`text-xl leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
               Effortlessly create engaging, personalized content for all your social platforms with our AI assistant. Save time, increase engagement, and grow your audience.
             </p>
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <a href="#features" className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center">
-                Explore Features <ArrowRight className="ml-2 h-5 w-5" />
-              </a>
-              <a href="#pricing" className="px-6 py-3 bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 font-medium rounded-lg shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center justify-center">
-                View Pricing
-              </a>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-lg font-medium">
+                Get Started <ArrowRight className="ml-2 h-5 w-5" />
+              </button>
+              <button className={`px-8 py-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-xl shadow-lg hover:shadow-xl transition-all text-lg font-medium`}>
+                Learn More
+              </button>
             </div>
-            
-            <div className="mt-10 grid grid-cols-2 gap-4">
-              <div className="flex items-center">
-                <TrendingUp className="h-5 w-5 text-secondary-500 mr-2" />
-                <span className="text-gray-700 dark:text-gray-300">Boost Engagement</span>
+            <div className="grid grid-cols-2 gap-6">
+              <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
+                <span>Boost Engagement</span>
               </div>
-              <div className="flex items-center">
-                <Zap className="h-5 w-5 text-secondary-500 mr-2" />
-                <span className="text-gray-700 dark:text-gray-300">Save Time</span>
+              <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                <Zap className="h-5 w-5 text-blue-500 mr-2" />
+                <span>Save Time</span>
               </div>
-              <div className="flex items-center">
-                <Bot className="h-5 w-5 text-secondary-500 mr-2" />
-                <span className="text-gray-700 dark:text-gray-300">AI-Powered</span>
+              <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                <Bot className="h-5 w-5 text-blue-500 mr-2" />
+                <span>AI-Powered</span>
               </div>
-              <div className="flex items-center">
-                <Shield className="h-5 w-5 text-secondary-500 mr-2" />
-                <span className="text-gray-700 dark:text-gray-300">Secure Platform</span>
+              <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                <Shield className="h-5 w-5 text-blue-500 mr-2" />
+                <span>Secure Platform</span>
               </div>
             </div>
           </div>
-          
-          <div className="relative lg:pl-12 animate-fadeIn">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 transform rotate-1 hover:rotate-0 transition-all duration-300">
-              <div className="p-2 bg-primary-500 text-white rounded-lg inline-block mb-4">
-                <Bot className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Content Generator</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Create engaging posts in seconds with our AI assistant.
-              </p>
-              <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
-                <div className="h-4 w-3/4 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
-                <div className="h-4 w-full bg-gray-300 dark:bg-gray-600 rounded mt-2 animate-pulse"></div>
-                <div className="h-4 w-5/6 bg-gray-300 dark:bg-gray-600 rounded mt-2 animate-pulse"></div>
-              </div>
-              <button className="w-full py-2 px-4 bg-secondary-500 hover:bg-secondary-600 text-white rounded-lg transition-colors duration-200">
-                <a href='/signup'> Generate Now</a>
-              </button>
-            </div>
-            
-            <div className="absolute top-12 -right-4 bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 transform -rotate-2 hover:rotate-0 transition-all duration-300 z-10">
-              <div className="p-2 bg-accent-500 text-white rounded-lg inline-block mb-4">
-                <TrendingUp className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Analytics Dashboard</h3>
-              <div className="space-y-3">
-                <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-accent-500 w-3/4 rounded-full"></div>
+
+          <div className="relative">
+            <div className={`absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl transform rotate-6 ${theme === 'dark' ? 'opacity-20' : 'opacity-10'}`} />
+            <div className={`relative ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-8 rounded-3xl shadow-xl`}>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                      <Bot className="h-6 w-6 text-blue-500" />
+                    </div>
+                    <div>
+                      <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                        AI Content Assistant
+                      </h3>
+                      <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Powered by advanced AI
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary-500 w-1/2 rounded-full"></div>
+
+                <div className={`space-y-4 ${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'} p-4 rounded-xl`}>
+                  <div className="h-2 w-3/4 bg-blue-500/20 rounded-full" />
+                  <div className="h-2 w-full bg-blue-500/20 rounded-full" />
+                  <div className="h-2 w-5/6 bg-blue-500/20 rounded-full" />
                 </div>
-                <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-secondary-500 w-2/3 rounded-full"></div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className={`p-4 rounded-xl ${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                    <h4 className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Posts Created</h4>
+                    <p className="text-2xl font-bold text-blue-500">1,234</p>
+                  </div>
+                  <div className={`p-4 rounded-xl ${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                    <h4 className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Time Saved</h4>
+                    <p className="text-2xl font-bold text-blue-500">127h</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      <div className="bg-gray-100 dark:bg-gray-950 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center gap-8 items-center opacity-70">
-            <div className="text-gray-400 dark:text-gray-600 font-medium">Trusted by innovative companies</div>
-            <div className="text-gray-500 dark:text-gray-500 text-xl font-bold">COMPANY</div>
-            <div className="text-gray-500 dark:text-gray-500 text-xl font-bold">ENTERPRISE</div>
-            <div className="text-gray-500 dark:text-gray-500 text-xl font-bold">STARTUP</div>
-            <div className="text-gray-500 dark:text-gray-500 text-xl font-bold">TECH CO</div>
-            <div className="text-gray-500 dark:text-gray-500 text-xl font-bold">BRAND</div>
-          </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {sampleContent.map((content, index) => (
+            <ContentCard
+              key={index}
+              index={index}
+              imageUrl={content.imageUrl}
+              title={content.title}
+              description={content.description}
+            />
+          ))}
         </div>
       </div>
     </div>

@@ -87,7 +87,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isOpen, toggleDrawer }) => {
           <p className="font-medium text-gray-900 dark:text-white">{user?.email || 'Guest'}</p>
         </div>
         <List>
-          <ListItem  component={Link} to="/user-details"onClick={toggleDrawer(false)}>
+          <ListItem  component={Link} to="/profile"onClick={toggleDrawer(false)}>
             <ListItemIcon>
               <Person className="text-gray-600 dark:text-gray-300" />
             </ListItemIcon>
