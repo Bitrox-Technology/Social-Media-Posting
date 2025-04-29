@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Social Media Poster</title>
+</head>
+<body>
+  <h2>🔗 LinkedIn Authentication</h2>
+  <button onclick="linkedinAuth()">Login with LinkedIn</button>
+
+  <h3>Post to LinkedIn</h3>
+  <input id="linkedin_token" placeholder="Access Token" />
+  <input id="linkedin_urn" placeholder="Author URN (urn:li:person:xxxx)" />
+  <input id="linkedin_message" placeholder="Post Message" />
+  <button onclick="postToLinkedIn()">Post to LinkedIn</button>
+
+  <hr>
+
+  <h2>📘 Facebook Authentication</h2>
+  <button onclick="facebookAuth()">Login with Facebook</button>
+
+  <h3>Post to Facebook Page</h3>
+  <input id="fb_token" placeholder="Page Access Token" />
+  <input id="fb_page" placeholder="Page ID" />
+  <input id="fb_message" placeholder="Post Message" />
+  <button onclick="postToFacebook()">Post to Facebook</button>
+
+  <hr>
+
+  <h2>📸 Instagram Post</h2>
+  <input id="ig_user_id" placeholder="Instagram Business ID" />
+  <input id="ig_image_url" placeholder="Image URL" />
+  <input id="ig_caption" placeholder="Caption" />
+  <input id="ig_token" placeholder="Access Token" />
+  <button onclick="createIGMedia()">Step 1: Create Media</button>
+  <input id="creation_id" placeholder="Media Creation ID" />
+  <button onclick="publishIGMedia()">Step 2: Publish Post</button>
+
+  <script>
+    function linkedinAuth() {
+      window.location.href = "http://localhost:4000/api/v1/social/linkedin/auth";
+    }
+
+    function facebookAuth() {
+      window.location.href = "http://localhost:4000/facebook/auth";
+    }
+
+    async function postToLinkedIn() {
+      const token = document.getElementById("linkedin_token").value;
+      const urn = document.getElementById("linkedin_urn").value;
+      const message = document.getElementById("linkedin_message").value;
+
+      const res = await fetch("http://localhost:3000/linkedin/post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: token, authorUrn: urn, message }),
+      });
+
+      const data = await res.json();
+      alert("LinkedIn response: " + JSON.stringify(data));
+    }
+
+    async function postToFacebook() {
+      const pageAccessToken = document.getElementById("fb_token").value;
+      const pageId = document.getElementById("fb_page").value;
+      const message = document.getElementById("fb_message").value;
+
+      const res = await fetch("http://localhost:3000/facebook/post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageAccessToken, pageId, message }),
+      });
+
+      const data = await res.json();
+      alert("Facebook response: " + JSON.stringify(data));
+    }
+
+    async function createIGMedia() {
+      const igUserId = document.getElementById("ig_user_id").value;
+      const imageUrl = document.getElementById("ig_image_url").value;
+      const caption = document.getElementById("ig_caption").value;
+      const accessToken = document.getElementById("ig_token").value;
+
+      const res = await fetch("http://localhost:3000/instagram/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ igUserId, imageUrl, caption, accessToken }),
+      });
+
+      const data = await res.json();
+      document.getElementById("creation_id").value = data.creation_id;
+      alert("Media created: " + JSON.stringify(data));
+    }
+
+    async function publishIGMedia() {
+      const igUserId = document.getElementById("ig_user_id").value;
+      const creation_id = document.getElementById("creation_id").value;
+      const accessToken = document.getElementById("ig_token").value;
+
+      const res = await fetch("http://localhost:3000/instagram/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ igUserId, creation_id, accessToken }),
+      });
+
+      const data = await res.json();
+      alert("Instagram published: " + JSON.stringify(data));
+    }
+  </script>
+</body>
+</html>

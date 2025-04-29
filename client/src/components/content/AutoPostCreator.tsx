@@ -1,9 +1,9 @@
-import { createRoot as reactCreateRoot } from 'react-dom/client';
 import React, { useState, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { ArrowLeft, Loader2, CheckCircle, XCircle, Edit3, ChevronRight, RefreshCw } from 'lucide-react';
+import { useAppDispatch } from '../../store/hooks';
+import { motion, AnimatePresence } from 'framer-motion';
+import html2canvas from 'html2canvas';
+
 import {
   useGenerateImageMutation,
   useGenerateCarouselMutation,
@@ -17,66 +17,40 @@ import {
   useDykContentMutation,
   useLazyGetSavePostsQuery,
 } from '../../store/api';
-import { setPosts } from '../../store/appSlice';
-import { motion, AnimatePresence } from 'framer-motion';
-import { carouselTemplates, Slide } from '../../templetes/templetesDesign';
-import { Carousel } from '../ui/Carousel';
-import { DoYouKnow } from '../ui/DoYouKnow';
-import { DoYouKnowSlide, doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
-import { imageTemplates, ImageSlide } from '../../templetes/ImageTemplate';
-import html2canvas from 'html2canvas';
+
 import { useTheme } from '../../context/ThemeContext';
+import { Header } from './AutoPost/Header';
+import { PendingPostCard } from './AutoPost/PendingPostCard';
+import { PostCard } from './AutoPost/PostCard';
+import { LoadingState } from './AutoPost/LoadingState';
+import { ContinueButton } from './AutoPost/ContinueButton';
+import { Post, ImageContent, CarouselContent } from './AutoPost/Types';
+import { imageTemplates } from '../../templetes/ImageTemplate';
+import { carouselTemplates, Slide } from '../../templetes/templetesDesign';
+import { doYouKnowTemplates, DoYouKnowSlide } from '../../templetes/doYouKnowTemplates';
+import { createRoot } from 'react-dom/client';
+import { Loader2, CheckCircle } from 'lucide-react'; // Assuming CheckCircle is from lucide-react
 
-interface CarouselContent {
-  tagline?: string;
-  title: string;
-  description?: string;
-  imageUrl?: string;
-}
-
-interface DoYouKnowContent {
-  title: string;
-  fact: string;
-  footer?: string;
-  websiteUrl?: string;
-  imageUrl?: string;
-}
-
-interface ImageContent {
-  title: string;
-  description: string;
-  footer?: string;
-  websiteUrl?: string;
-  imageUrl: string;
-}
-
-interface Post {
-  topic: string;
-  type: 'image' | 'carousel' | 'doyouknow';
-  content: ImageContent | DoYouKnowContent | Slide[] | string;
-  images?: { url: string; label: string }[];
-  templateId?: string;
-  status: 'pending' | 'success' | 'error';
-  errorMessage?: string;
-  contentId?: string;
-  contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent';
-}
-
-export const AutoPostCreator = () => {
+export const AutoPostCreator: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
+  
+  // State management
   const [posts, setLocalPosts] = useState<Post[]>([]);
   const [completedPosts, setCompletedPosts] = useState<Post[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [postContentId, setPostContentId] = useState<string | null>(location.state?.postContentId || null);
+  
+  // Loading states
   const [isLoadingTopics, setIsLoadingTopics] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [topicsError, setTopicsError] = useState<string | null>(null);
   const [postsError, setPostsError] = useState<string | null>(null);
 
+  // API hooks
   const [getPostContent, { isFetching: isFetchingPostContent }] = useLazyGetPostContentQuery();
   const [getSavePosts, { isFetching: isFetchingPosts }] = useLazyGetSavePostsQuery();
   const [generateImage] = useGenerateImageMutation();
@@ -89,6 +63,7 @@ export const AutoPostCreator = () => {
   const [carouselContent] = useCarouselContentMutation();
   const [dykContent] = useDykContentMutation();
 
+  // References and data
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [topics, setTopics] = useState<string[]>([]);
   const postTypes: ('image' | 'carousel' | 'doyouknow')[] = [
@@ -100,6 +75,14 @@ export const AutoPostCreator = () => {
     'doyouknow',
     'image',
   ];
+
+  // Calculate if we're in a loading state
+  const isLoading = isLoadingTopics || isFetchingPostContent || isLoadingPosts || isFetchingPosts;
+
+  // Register refs for elements
+  const registerRef = (topic: string, ref: HTMLDivElement) => {
+    postRefs.current.set(topic, ref);
+  };
 
   // Fetch topics and posts on mount
   useEffect(() => {
@@ -118,7 +101,6 @@ export const AutoPostCreator = () => {
       try {
         // Fetch topics
         const topicsResponse = await getPostContent({ postContentId }).unwrap();
-        console.log('Fetched topics:', topicsResponse.data);
         if (topicsResponse.data.topics && topicsResponse.data.topics.length > 0) {
           const fetchedTopics = topicsResponse.data.topics.slice(0, 7);
           setTopics(fetchedTopics);
@@ -126,7 +108,6 @@ export const AutoPostCreator = () => {
           // Fetch saved posts
           try {
             const postsResponse = await getSavePosts({ postContentId }).unwrap();
-            console.log('Fetched saved posts:', postsResponse.data);
             const savedPosts = postsResponse.data || [];
 
             // Filter saved posts that match fetched topics
@@ -279,7 +260,11 @@ export const AutoPostCreator = () => {
 
           const slide = newPost.content as ImageContent;
           let template = imageTemplates.find((t) => t.id === newPost.templateId) || imageTemplates[0];
-          let slideElement = template.renderSlide(slide as ImageSlide, true, '/images/Logo1.png');
+          let slideElement = template.renderSlide(
+            { ...slide, footer: slide.footer || '', websiteUrl: slide.websiteUrl || '' },
+            true,
+            '/images/Logo1.png'
+          );
           const rootImage = createRoot(tempContainer);
           rootImage.render(slideElement);
 
@@ -288,7 +273,6 @@ export const AutoPostCreator = () => {
           rootImage.unmount();
 
           if (screenshotUrl) {
-            console.log('Screenshot URL:', screenshotUrl, topic, type, postContentId);
             await savePosts({
               postContentId,
               topic,
@@ -308,8 +292,6 @@ export const AutoPostCreator = () => {
           const carouselResponse = await generateCarousel({ topic }).unwrap();
 
           const generatedCarouselContent: CarouselContent[] = carouselResponse.data;
-
-          console.log('Generated carousel content:', generatedCarouselContent);
 
           const newSlides: Slide[] = randomCarouselTemplate.slides.map((slide, index) => {
             const content = generatedCarouselContent[index] || {};
@@ -351,7 +333,10 @@ export const AutoPostCreator = () => {
           newPost = {
             topic,
             type,
-            content: newSlides,
+            content: newSlides.map(slide => ({
+              ...slide,
+              description: slide.description || '',
+            })),
             templateId: randomCarouselTemplate.id,
             status: 'success',
             contentId: carouselResult.data._id,
@@ -383,12 +368,11 @@ export const AutoPostCreator = () => {
             root.unmount();
 
             if (slideScreenshotUrl) {
-              images.push({ url: slideScreenshotUrl, label: `Carousel Slide ${i + 1}` });
+              images.push({ url: slideScreenshotUrl, label: `Slide ${i + 1}` });
             }
           }
 
           if (images.length > 0) {
-            console.log('Carousel screenshot URLs:', images, topic, type, postContentId);
             await savePosts({
               postContentId,
               topic,
@@ -457,17 +441,16 @@ export const AutoPostCreator = () => {
           root.unmount();
 
           if (screenshotUrl) {
-            console.log('DoYouKnow screenshot URL:', screenshotUrl, topic, type, postContentId);
             await savePosts({
               postContentId,
               topic,
               type: 'doyouknow',
               status: 'success',
-              images: [{ url: screenshotUrl, label: 'DoYouKnow Post' }],
+              images: [{ url: screenshotUrl, label: 'Did You Know?' }],
               contentId: dykResult.data._id,
               contentType: 'DYKContent',
             }).unwrap();
-            newPost.images = [{ url: screenshotUrl, label: 'DoYouKnow Post' }];
+            newPost.images = [{ url: screenshotUrl, label: 'Did You Know?' }];
           }
           break;
 
@@ -499,7 +482,7 @@ export const AutoPostCreator = () => {
   };
 
   const generateAllPosts = async () => {
-    if (isGenerating || !postContentId) return;
+    if (isGenerating || !postContentId || isLoading) return;
     setIsGenerating(true);
 
     const startIndex = currentIndex + 1;
@@ -512,7 +495,6 @@ export const AutoPostCreator = () => {
   };
 
   const handleEditPost = (post: Post) => {
-    console.log('Editing post:', post);
     const commonState = {
       contentId: post.contentId,
       contentType: post.contentType,
@@ -548,29 +530,17 @@ export const AutoPostCreator = () => {
   };
 
   const handleContinueToPost = async () => {
-    confirm("Do you want to continue to Post. If you continue with this you can't edit the posts again. Please confirm?")
-    try {
-      navigate('/select-media', { state: { postContentId } });
-    } catch (error) {
-      console.error('Error navigating to post preview:', error);
-      alert('Failed to proceed. Please try again.');
+    if (confirm("Do you want to continue to Post? If you continue, you won't be able to edit these posts again. Please confirm.")) {
+      try {
+        navigate('/select-media', { state: { postContentId } });
+      } catch (error) {
+        console.error('Error navigating to post preview:', error);
+        alert('Failed to proceed. Please try again.');
+      }
     }
   };
 
   const handleBack = () => navigate('/topic');
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />;
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
-      case 'error':
-        return <XCircle className="w-5 h-5 text-red-400" />;
-      default:
-        return null;
-    }
-  };
 
   return (
     <div
@@ -578,121 +548,30 @@ export const AutoPostCreator = () => {
         theme === 'dark'
           ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black'
           : 'bg-gradient-to-br from-gray-50 to-white'
-      }`}
+      } px-4 py-6 md:py-12`}
     >
-      <div className="absolute inset-0 overflow-hidden">
-        <div
-          className={`absolute top-0 left-0 w-full h-full bg-[url('https://images.pexels.com/photos/3648850/pexels-photo-3648850.jpeg')] bg-cover bg-center ${
-            theme === 'dark' ? 'opacity-20' : 'opacity-10'
-          }`}
-        />
-        <div
-          className={`absolute inset-0 backdrop-blur-3xl ${
-            theme === 'dark'
-              ? 'bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10'
-              : 'bg-gradient-to-br from-blue-300/10 via-purple-300/10 to-pink-300/10'
-          }`}
-        />
-      </div>
-
       <div
-        className={`relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 ${
+        className={`relative max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-10 ${
           theme === 'dark' ? '' : 'bg-white/90 shadow-xl rounded-xl border border-gray-200'
         }`}
       >
-        <div className="flex items-center justify-between mb-12">
-          <motion.button
-            onClick={handleBack}
-            className={`flex items-center px-4 py-2 rounded-xl transition-all ${
-              theme === 'dark'
-                ? 'bg-white/10 backdrop-blur-lg text-white hover:bg-white/20'
-                : 'bg-gray-100 border border-gray-200 text-gray-800 hover:bg-gray-200'
-            } focus:ring-offset-2 focus:ring-blue-500 ${
-              theme === 'dark' ? 'focus:ring-offset-gray-800' : 'focus:ring-offset-gray-100'
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Topics
-          </motion.button>
+        <Header 
+          theme={theme}
+          handleBack={handleBack}
+          generateAllPosts={generateAllPosts}
+          isGenerating={isGenerating}
+          currentIndex={currentIndex}
+          topicsLength={topics.length}
+          isLoading={isLoading}
+        />
 
-          <h1
-            className={`text-4xl font-bold text-transparent bg-clip-text ${
-              theme === 'dark'
-                ? 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400'
-                : 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600'
-            }`}
-          >
-            AI Content Creator
-          </h1>
+        <LoadingState 
+          isLoading={isLoading} 
+          error={topicsError || postsError}
+          theme={theme}
+        />
 
-          <motion.button
-            onClick={generateAllPosts}
-            disabled={
-              isGenerating ||
-              !postContentId ||
-              isLoadingTopics ||
-              isFetchingPostContent ||
-              isLoadingPosts ||
-              isFetchingPosts
-            }
-            className={`flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:ring-offset-2 focus:ring-blue-500 ${
-              theme === 'dark' ? 'focus:ring-offset-gray-800' : 'focus:ring-offset-gray-100'
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <RefreshCw
-              className={`w-5 h-5 mr-2 ${isGenerating ? 'animate-spin' : ''}`}
-            />
-            {isGenerating
-              ? 'Generating...'
-              : currentIndex < topics.length - 1
-              ? 'Generate Posts'
-              : 'Regenerate Posts'}
-          </motion.button>
-        </div>
-
-        {isLoadingTopics || isFetchingPostContent || isLoadingPosts || isFetchingPosts ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center space-y-4">
-              <Loader2
-                className={`w-12 h-12 animate-spin mx-auto ${
-                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                }`}
-              />
-              <p
-                className={`text-lg ${
-                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                }`}
-              >
-                Loading your content...
-              </p>
-            </div>
-          </div>
-        ) : topicsError || postsError ? (
-          <div
-            className={`rounded-xl p-6 text-center ${
-              theme === 'dark'
-                ? 'bg-red-500/10 backdrop-blur-lg'
-                : 'bg-red-100 border border-red-200'
-            }`}
-          >
-            <XCircle
-              className={`w-12 h-12 mx-auto mb-4 ${
-                theme === 'dark' ? 'text-red-400' : 'text-red-600'
-              }`}
-            />
-            <p
-              className={`text-lg ${
-                theme === 'dark' ? 'text-red-400' : 'text-red-600'
-              }`}
-            >
-              {topicsError || postsError}
-            </p>
-          </div>
-        ) : topics.length === 0 ? (
+        {!isLoading && !topicsError && !postsError && topics.length === 0 && (
           <div
             className={`rounded-xl p-6 text-center ${
               theme === 'dark'
@@ -701,80 +580,48 @@ export const AutoPostCreator = () => {
             }`}
           >
             <p
-              className={`text-lg ${
+              className={`text-base md:text-lg ${
                 theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'
               }`}
             >
               No topics found. Please go back and select topics.
             </p>
           </div>
-        ) : (
-          <div className="space-y-12">
+        )}
+
+        {!isLoading && !topicsError && !postsError && topics.length > 0 && (
+          <div className="space-y-8 md:space-y-12">
             <AnimatePresence>
               {posts.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
+                  className="space-y-4 md:space-y-6"
                 >
                   <h2
-                    className={`text-2xl font-semibold mb-6 flex items-center ${
+                    className={`text-xl md:text-2xl font-semibold flex items-center ${
                       theme === 'dark' ? 'text-white' : 'text-gray-800'
                     }`}
                   >
-                    <Loader2
-                      className={`w-6 h-6 animate-spin mr-3 ${
+                    <motion.div 
+                      animate={{ rotate: isGenerating ? 360 : 0 }}
+                      transition={{ duration: 1, repeat: isGenerating ? Infinity : 0, ease: "linear" }}
+                      className="mr-2 md:mr-3"
+                    >
+                      <Loader2 className={`w-5 h-5 md:w-6 md:h-6 ${
                         theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                      }`}
-                    />
+                      }`} />
+                    </motion.div>
                     In Progress
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                     {posts.map((post) => (
-                      <motion.div
+                      <PendingPostCard 
                         key={`${post.topic}-${post.type}`}
-                        className={`p-6 rounded-xl border ${
-                          theme === 'dark'
-                            ? 'bg-white/10 backdrop-blur-lg border-white/20'
-                            : 'bg-white shadow-md border-gray-200'
-                        }`}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            {getStatusIcon(post.status)}
-                            <div>
-                              <h3
-                                className={`text-lg font-medium ${
-                                  theme === 'dark' ? 'text-white' : 'text-gray-800'
-                                }`}
-                              >
-                                {post.topic}
-                              </h3>
-                              <span
-                                className={`text-sm capitalize ${
-                                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                                }`}
-                              >
-                                {post.type} Post
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        {post.status === 'error' && (
-                          <p
-                            className={`mt-4 text-sm p-3 rounded-lg ${
-                              theme === 'dark'
-                                ? 'text-red-400 bg-red-500/10'
-                                : 'text-red-600 bg-red-100'
-                            }`}
-                          >
-                            {post.errorMessage}
-                          </p>
-                        )}
-                      </motion.div>
+                        post={post}
+                        theme={theme}
+                      />
                     ))}
                   </div>
                 </motion.div>
@@ -782,169 +629,35 @@ export const AutoPostCreator = () => {
             </AnimatePresence>
 
             {completedPosts.length > 0 && (
-              <div>
+              <div className="space-y-4 md:space-y-6">
                 <h2
-                  className={`text-2xl font-semibold mb-6 flex items-center ${
+                  className={`text-xl md:text-2xl font-semibold flex items-center ${
                     theme === 'dark' ? 'text-white' : 'text-gray-800'
                   }`}
                 >
                   <CheckCircle
-                    className={`w-6 h-6 mr-3 ${
+                    className={`w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 ${
                       theme === 'dark' ? 'text-green-400' : 'text-green-600'
                     }`}
                   />
                   Completed Posts
                 </h2>
-                <div className="grid grid-cols-1 gap-8">
+                <div className="grid grid-cols-1 gap-6 md:gap-8">
                   {completedPosts.map((post) => (
-                    <motion.div
+                    <PostCard
                       key={`${post.topic}-${post.type}`}
-                      className={`p-6 rounded-xl border ${
-                        theme === 'dark'
-                          ? 'bg-white/10 backdrop-blur-lg border-white/20'
-                          : 'bg-white shadow-md border-gray-200'
-                      }`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center space-x-4">
-                          {getStatusIcon(post.status)}
-                          <div>
-                            <h3
-                              className={`text-xl font-medium ${
-                                theme === 'dark' ? 'text-white' : 'text-gray-800'
-                              }`}
-                            >
-                              {post.topic}
-                            </h3>
-                            <span
-                              className={`text-sm capitalize ${
-                                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                              }`}
-                            >
-                              {post.type} Post
-                            </span>
-                          </div>
-                        </div>
-                        {post.status === 'success' && (post.images?.length ?? 0) > 0 && (
-                          <motion.button
-                            onClick={() => handleEditPost(post)}
-                            className={`flex items-center px-4 py-2 rounded-lg transition-all focus:ring-offset-2 focus:ring-blue-500 ${
-                              theme === 'dark'
-                                ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
-                                : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                            } ${
-                              theme === 'dark'
-                                ? 'focus:ring-offset-gray-800'
-                                : 'focus:ring-offset-gray-100'
-                            }`}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <Edit3 className="w-4 h-4 mr-2" />
-                            Edit Post
-                          </motion.button>
-                        )}
-                      </div>
-
-                      <div
-                        ref={(el) => el && postRefs.current.set(`${post.topic}`, el)}
-                        className={`p-6 rounded-xl ${
-                          theme === 'dark'
-                            ? 'bg-black/20 backdrop-blur-lg'
-                            : 'bg-gray-50 border border-gray-200'
-                        }`}
-                      >
-                        {post.images && post.images.length > 0 ? (
-                          post.type === 'carousel' ? (
-                            <div className="flex overflow-x-auto space-x-6 pb-6 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
-                              {post.images.map((img, idx) => (
-                                <motion.div
-                                  key={idx}
-                                  className="flex-none w-72 space-y-3"
-                                  initial={{ opacity: 0, x: 20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: idx * 0.1 }}
-                                >
-                                  <img
-                                    src={img.url}
-                                    alt={img.label}
-                                    className="w-72 h-72 object-cover rounded-xl shadow-lg"
-                                  />
-                                  <p
-                                    className={`text-sm text-center ${
-                                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                                    }`}
-                                  >
-                                    {img.label}
-                                  </p>
-                                </motion.div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="space-y-4">
-                              {post.images.map((img, idx) => (
-                                <motion.div
-                                  key={idx}
-                                  className="space-y-2"
-                                  initial={{ opacity: 0, y: 20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: idx * 0.1 }}
-                                >
-                                  <img
-                                    src={img.url}
-                                    alt={img.label}
-                                    className="w-full max-w-2xl mx-auto rounded-xl shadow-lg"
-                                  />
-                                  <p
-                                    className={`text-sm text-center ${
-                                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                                    }`}
-                                  >
-                                    {img.label}
-                                  </p>
-                                </motion.div>
-                              ))}
-                            </div>
-                          )
-                        ) : (
-                          <p
-                            className={`text-center py-8 ${
-                              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                            }`}
-                          >
-                            No content available
-                          </p>
-                        )}
-                      </div>
-                    </motion.div>
+                      post={post}
+                      theme={theme}
+                      onEditPost={handleEditPost}
+                      registerRef={(topic, ref) => postRefs.current.set(topic, ref)}
+                    />
                   ))}
                 </div>
               </div>
             )}
 
             {completedPosts.length === topics.length && (
-              <motion.div
-                className="mt-16 text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <motion.button
-                  onClick={handleContinueToPost}
-                  className={`group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all focus:ring-offset-2 focus:ring-blue-500 ${
-                    theme === 'dark'
-                      ? 'focus:ring-offset-gray-800'
-                      : 'focus:ring-offset-gray-100'
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Continue to Post
-                  <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </motion.button>
-              </motion.div>
+              <ContinueButton onClick={handleContinueToPost} theme={theme} />
             )}
           </div>
         )}
@@ -952,7 +665,3 @@ export const AutoPostCreator = () => {
     </div>
   );
 };
-
-function createRoot(tempContainer: HTMLDivElement) {
-  return reactCreateRoot(tempContainer);
-}

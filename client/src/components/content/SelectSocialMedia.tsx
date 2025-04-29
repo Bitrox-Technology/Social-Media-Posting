@@ -2,16 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
-import SwiperCore from 'swiper';
+import { motion, AnimatePresence } from 'framer-motion';
+import DatePicker from 'react-datepicker';
+import { Calendar, Linkedin, Instagram, Facebook, Clock, Share2, CheckCircle } from 'lucide-react';
+import { useLazyGetSavePostsQuery } from '../../store/api';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { useLazyGetSavePostsQuery } from '../../store/api';
-
-// Register Swiper modules
-SwiperCore.use([Navigation, Pagination]);
 
 interface Image {
   url: string;
@@ -37,6 +35,11 @@ interface Schedule {
   dateTime: Date | null;
 }
 
+const platformIcons = {
+  linkedin: <Linkedin className="w-4 h-4" />,
+  instagram: <Instagram className="w-4 h-4" />,
+  facebook: <Facebook className="w-4 h-4" />,
+};
 
 export const SelectSocialMedia: React.FC = () => {
   const location = useLocation();
@@ -44,11 +47,8 @@ export const SelectSocialMedia: React.FC = () => {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [schedules, setSchedules] = useState<{ [postId: string]: Schedule }>({});
   const { postContentId } = location.state || {};
-
-  // Fetch posts
   const [getSavePosts, { data: rawPosts, isLoading, isError, error }] = useLazyGetSavePostsQuery();
 
-  // Normalize posts
   const posts = Array.isArray(rawPosts?.data)
     ? rawPosts.data.map((post) => ({
         ...post,
@@ -56,7 +56,6 @@ export const SelectSocialMedia: React.FC = () => {
       }))
     : [];
 
-  // Chunk posts into pairs
   const postPairs = [];
   for (let i = 0; i < posts.length; i += 2) {
     postPairs.push(posts.slice(i, i + 2));
@@ -64,17 +63,9 @@ export const SelectSocialMedia: React.FC = () => {
 
   useEffect(() => {
     if (postContentId) {
-      getSavePosts({ postContentId }).catch((err) =>
-        console.error('Failed to fetch posts:', err)
-      );
+      getSavePosts({ postContentId });
     }
   }, [postContentId, getSavePosts]);
-
-  useEffect(() => {
-    console.log('Location state:', location.state);
-    console.log('Raw response:', rawPosts);
-    console.log('Normalized posts:', posts);
-  }, [location.state, rawPosts, posts]);
 
   const handlePlatformSelect = (platform: string) => {
     setSelectedPlatforms((prev) =>
@@ -89,7 +80,6 @@ export const SelectSocialMedia: React.FC = () => {
       alert('Please select at least one platform');
       return;
     }
-    console.log('Scheduled all posts for platforms:', selectedPlatforms);
     const scheduledData = posts.map((post) => ({
       postId: post._id,
       topic: post.topic,
@@ -97,7 +87,6 @@ export const SelectSocialMedia: React.FC = () => {
       platforms: selectedPlatforms,
       dateTime: new Date().toISOString(),
     }));
-    console.log('Collective schedule:', scheduledData);
     navigate('/dashboard');
   };
 
@@ -107,11 +96,6 @@ export const SelectSocialMedia: React.FC = () => {
       alert('Please select platforms and a date/time');
       return;
     }
-    console.log('Scheduled single post:', {
-      postId,
-      platforms: schedule.platforms,
-      dateTime: schedule.dateTime.toISOString(),
-    });
     setSchedules((prev) => ({
       ...prev,
       [postId]: { platforms: [], dateTime: null },
@@ -136,197 +120,189 @@ export const SelectSocialMedia: React.FC = () => {
     });
   };
 
-  const renderImage = (image: Image, index: number) => (
-    <div className="relative w-full max-w-sm mx-auto rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105 border border-gray-700">
+  const renderImage = (image: Image) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative w-full aspect-square max-w-sm mx-auto rounded-xl overflow-hidden shadow-lg bg-gray-800"
+    >
       <img
         src={image.url}
         alt={image.label}
-        className="w-full max-h-56 object-contain rounded-t-lg"
+        className="w-full h-full object-cover"
         loading="lazy"
       />
-      <div className="p-2 bg-gray-800 rounded-b-lg">
-        <p className="text-gray-300 text-center text-xs">{image.label}</p>
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+        <p className="text-white text-sm font-medium text-center">{image.label}</p>
       </div>
-    </div>
+    </motion.div>
   );
 
   const renderPost = (post: Post) => {
-    if (post.type === 'image') {
-      const image = post.images[0];
-      if (!image) return null;
+    if (!post.images.length) return null;
+
+    if (post.type === 'carousel') {
       return (
-        <div className="flex flex-col items-center">
-          {renderImage(image, 0)}
-          <p className="text-gray-200 mt-3 text-center text-lg font-medium">{post.topic}</p>
-        </div>
-      );
-    } else if (post.type === 'carousel') {
-      if (!post.images.length) return null;
-      return (
-        <div className="relative w-full max-w-full">
+        <div className="w-full">
           <Swiper
             modules={[Navigation, Pagination]}
-            navigation={{
-              nextEl: '.swiper-button-next',
-              prevEl: '.swiper-button-prev',
-            }}
-            pagination={{ clickable: true, el: '.swiper-pagination' }}
+            navigation
+            pagination={{ clickable: true }}
             spaceBetween={20}
             slidesPerView={1}
-            className="mb-4"
+            className="rounded-xl overflow-hidden"
           >
-            {post.images.map((image, index) => (
-              <SwiperSlide key={image._id}>
-                <div className="flex justify-center">{renderImage(image, index)}</div>
-              </SwiperSlide>
+            {post.images.map((image) => (
+              <SwiperSlide key={image._id}>{renderImage(image)}</SwiperSlide>
             ))}
           </Swiper>
-          <div className="swiper-button-prev text-gray-200 opacity-75 hover:opacity-100 scale-75"></div>
-          <div className="swiper-button-next text-gray-200 opacity-75 hover:opacity-100 scale-75"></div>
-          <div className="swiper-pagination mt-2"></div>
-        </div>
-      );
-    } else if (post.type === 'dyk') {
-      const image = post.images[0];
-      if (!image) return null;
-      return (
-        <div className="flex flex-col items-center">
-          {renderImage(image, 0)}
-          <p className="text-gray-200 mt-3 text-center text-lg font-medium">{post.topic}</p>
         </div>
       );
     }
-    return null;
+
+    return renderImage(post.images[0]);
   };
 
   if (isLoading) {
-    return <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6">Loading...</div>;
-  }
-
-  if (isError) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6">
-        <h1 className="text-3xl font-bold text-yellow-400 mb-6 text-center">Select Social Media</h1>
-        <p className="text-red-400 text-center">Error: {JSON.stringify(error)}</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  if (!posts.length) {
+  if (isError) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6">
-        <h1 className="text-3xl font-bold text-yellow-400 mb-6 text-center">Select Social Media</h1>
-        <p className="text-gray-400 text-center">No posts found.</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-6">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-3xl font-bold text-red-400 mb-4">Error Loading Posts</h1>
+          <p className="text-gray-400">{JSON.stringify(error)}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6">
-      <h1 className="text-3xl sm:text-4xl font-bold text-yellow-400 mb-8 text-center">
-        Select Social Media
-      </h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        <motion.h1 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-12 text-center"
+        >
+          Schedule Your Posts
+        </motion.h1>
 
-      {/* Collective Platform Selection */}
-      <div className="flex flex-wrap justify-center gap-2 mb-8 max-w-md mx-auto">
-        {['linkedin', 'instagram', 'facebook'].map((platform) => (
-          <button
-            key={platform}
-            onClick={() => handlePlatformSelect(platform)}
-            className={`px-3 py-1 rounded-md shadow-sm ${
-              selectedPlatforms.includes(platform)
-                ? 'bg-blue-500 hover:bg-blue-600'
-                : 'bg-gray-600 hover:bg-gray-500'
-            } transition-all duration-200 text-sm`}
-          >
-            {platform.charAt(0).toUpperCase() + platform.slice(1)}
-          </button>
-        ))}
-      </div>
-      <button
-        onClick={handleScheduleAll}
-        disabled={!selectedPlatforms.length}
-        className={`px-4 py-1.5 rounded-lg shadow-sm mx-auto block ${
-          selectedPlatforms.length
-            ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-500'
-            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-        } transition-all duration-200 mb-10 text-sm`}
-      >
-        Schedule All Posts
-      </button>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 mb-12"
+        >
+          <div className="flex flex-col items-center space-y-4">
+            <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2">
+              <Share2 className="w-5 h-5" />
+              Select Platforms for All Posts
+            </h2>
+            <div className="flex flex-wrap justify-center gap-3">
+              {Object.entries(platformIcons).map(([platform, icon]) => (
+                <button
+                  key={platform}
+                  onClick={() => handlePlatformSelect(platform)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+                    selectedPlatforms.includes(platform)
+                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  {icon}
+                  <span className="capitalize">{platform}</span>
+                  {selectedPlatforms.includes(platform) && (
+                    <CheckCircle className="w-4 h-4 ml-1" />
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleScheduleAll}
+              disabled={!selectedPlatforms.length}
+              className={`mt-6 px-6 py-2 rounded-lg font-medium transition-all duration-300 ${
+                selectedPlatforms.length
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:shadow-blue-500/20'
+                  : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Schedule All Posts
+            </button>
+          </div>
+        </motion.div>
 
-      {/* Posts in Pairs */}
-      <div className="space-y-12">
-        {postPairs.map((pair, pairIndex) => (
-          <div
-            key={pairIndex}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-fade-in"
-          >
-            {pair.map((post) => (
-              <div
-                key={post._id}
-                className="bg-gray-800 rounded-xl shadow-lg p-5 flex flex-col"
+        <AnimatePresence>
+          <div className="space-y-8">
+            {postPairs.map((pair, pairIndex) => (
+              <motion.div
+                key={pairIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: pairIndex * 0.1 }}
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
               >
-                <h2 className="text-2xl font-semibold text-white mb-4 text-center">
-                  {post.topic}{' '}
-                  {/* <span className="text-gray-400 text-lg">
-                    ({post.type.charAt(0).toUpperCase() + post.type.slice(1)})
-                  </span> */}
-                </h2>
-                {renderPost(post) || (
-                  <p className="text-gray-400 text-center">
-                    No content available for this post.
-                  </p>
-                )}
-                {/* Individual Scheduling */}
-                <div className="mt-6 max-w-md mx-auto bg-gray-700 p-4 rounded-md border border-gray-600">
-                  <h3 className="text-base font-medium text-yellow-400 mb-3 text-center">
-                    Schedule Post
-                  </h3>
-                  <div className="flex flex-wrap justify-center gap-2 mb-3">
-                    {['linkedin', 'instagram', 'facebook'].map((platform) => (
-                      <button
-                        key={platform}
-                        onClick={() => updateSchedule(post._id, platform)}
-                        className={`px-3 py-1 rounded-md shadow-sm ${
-                          schedules[post._id]?.platforms.includes(platform)
-                            ? 'bg-blue-500 hover:bg-blue-600'
-                            : 'bg-gray-600 hover:bg-gray-500'
-                        } transition-all duration-200 text-sm`}
-                      >
-                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mb-3">
-                    <label className="block text-gray-300 mb-1 text-sm text-center">
-                      Date & Time
-                    </label>
-                    <DatePicker
-                      selected={schedules[post._id]?.dateTime}
-                      onChange={(date: Date | null) => {
-                        if (date) {
-                          updateSchedule(post._id, '', date);
-                        }
-                      }}
-                      showTimeSelect
-                      dateFormat="Pp"
-                      className="w-full px-3 py-1 bg-gray-600 text-white rounded-md text-sm"
-                      placeholderText="Select date and time"
-                      minDate={new Date()}
-                    />
-                  </div>
-                  <button
-                    onClick={() => handleScheduleSingle(post._id)}
-                    className="w-full px-4 py-1.5 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 transition-all duration-200 text-sm"
+                {pair.map((post) => (
+                  <motion.div
+                    key={post._id}
+                    className="bg-gray-800/50 backdrop-blur-sm rounded-xl overflow-hidden"
                   >
-                    Schedule
-                  </button>
-                </div>
-              </div>
+                    <div className="p-6">
+                      <h2 className="text-2xl font-semibold text-white mb-6 text-center">
+                        {post.topic}
+                      </h2>
+                      {renderPost(post)}
+                    </div>
+
+                    <div className="bg-gray-900/50 p-6 space-y-4">
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {Object.entries(platformIcons).map(([platform, icon]) => (
+                          <button
+                            key={platform}
+                            onClick={() => updateSchedule(post._id, platform)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
+                              schedules[post._id]?.platforms.includes(platform)
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                          >
+                            {icon}
+                            <span className="capitalize text-sm">{platform}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-center gap-4">
+                        <Calendar className="w-5 h-5 text-gray-400" />
+                        <DatePicker
+                          selected={schedules[post._id]?.dateTime}
+                          onChange={(date: Date | null) => updateSchedule(post._id, '', date)}
+                          showTimeSelect
+                          dateFormat="Pp"
+                          className="bg-gray-700 text-white rounded-lg px-4 py-2 w-full text-center"
+                          placeholderText="Select date and time"
+                          minDate={new Date()}
+                        />
+                        <Clock className="w-5 h-5 text-gray-400" />
+                      </div>
+
+                      <button
+                        onClick={() => handleScheduleSingle(post._id)}
+                        className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300"
+                      >
+                        Schedule Post
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
             ))}
           </div>
-        ))}
+        </AnimatePresence>
       </div>
     </div>
   );

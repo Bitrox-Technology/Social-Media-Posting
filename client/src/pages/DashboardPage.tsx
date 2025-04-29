@@ -92,115 +92,141 @@ const DashboardPage: React.FC = () => {
 
   // Custom styles for FullCalendar
   const calendarStyles = `
-    .fc {
-      font-family: 'Inter', sans-serif;
-    }
-    .fc-theme-standard .fc-scrollgrid {
-      border: none;
-      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-      border-radius: 12px;
-    }
-    .fc .fc-daygrid-day {
-      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-      border: none;
-    }
-    .fc .fc-daygrid-day-frame {
-      padding: 4px;
-    }
-    .fc .fc-daygrid-day-number {
-      color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
-      font-size: 14px;
-    }
-    .fc .fc-daygrid-day.fc-day-today {
-      background: #3B82F6;
-      border-radius: 8px;
-    }
-    .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-      color: #FFFFFF;
-    }
-    .fc .fc-col-header-cell {
-      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-      border: none;
-      padding: 8px 0;
-    }
-    .fc .fc-col-header-cell-cushion {
-      color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
-      font-weight: 600;
-      font-size: 14px;
+  .fc {
+    font-family: 'Inter', sans-serif;
+    max-width: 100%; /* Ensure calendar doesn't exceed container */
+    overflow: hidden; /* Prevent overflow */
+  }
+  .fc-theme-standard .fc-scrollgrid {
+    border: none;
+    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+    border-radius: 12px;
+    padding: 8px; /* Add padding for better spacing */
+  }
+  .fc .fc-daygrid-day {
+    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+    border: none;
+  }
+  .fc .fc-daygrid-day-frame {
+    padding: 4px;
+  }
+  .fc .fc-daygrid-day-number {
+    color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
+    font-size: 14px;
+  }
+  .fc .fc-daygrid-day.fc-day-today {
+    background: #3B82F6;
+    border-radius: 8px;
+  }
+  .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    color: #FFFFFF;
+  }
+  .fc .fc-col-header-cell {
+    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+    border: none;
+    padding: 8px 0;
+  }
+  .fc .fc-col-header-cell-cushion {
+    color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .fc .fc-toolbar {
+    flex-wrap: wrap; /* Allow toolbar buttons to wrap on smaller screens */
+    gap: 8px; /* Add spacing between toolbar elements */
+    padding: 8px; /* Add padding to toolbar */
+    margin-bottom: 12px; /* Space below toolbar */
+  }
+  .fc .fc-button {
+    background: ${theme === 'dark' ? '#374151' : '#E5E7EB'};
+    color: ${theme === 'dark' ? '#FFFFFF' : '#1F2937'};
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px; /* Smaller padding for buttons */
+    text-transform: capitalize;
+    font-weight: 500;
+    font-size: 12px; /* Smaller font size for buttons */
+    line-height: 1.5; /* Improve button text alignment */
+    min-width: auto; /* Allow buttons to shrink */
+    transition: background 0.3s ease;
+  }
+  .fc .fc-button:hover {
+    background: ${theme === 'dark' ? '#4B5563' : '#D1D5DB'};
+  }
+  .fc .fc-button.fc-button-primary {
+    background: #3B82F6;
+    color: #FFFFFF;
+  }
+  .fc .fc-button.fc-button-primary:hover {
+    background: #2563EB;
+  }
+  .fc .fc-daygrid-event {
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 2px 0;
+    background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
+    color: #FFFFFF;
+    border: none;
+    width: 100%;
+    box-sizing: border-box; /* Ensure padding doesn't cause overflow */
+    transition: all 0.2s ease-in-out;
+  }
+  .fc .fc-daygrid-event:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  .fc .fc-timegrid-slot {
+    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+    border: none;
+  }
+  .fc .fc-timegrid-col {
+    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+  }
+  .fc .fc-timegrid-event {
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
+    color: #FFFFFF;
+    border: none;
+  }
+  .fc .fc-daygrid-day-events {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    padding: 2px; /* Add padding for events */
+  }
+  @media (max-width: 640px) {
+    .fc .fc-toolbar {
+      flex-direction: column; /* Stack toolbar elements vertically on small screens */
+      align-items: stretch; /* Stretch buttons to full width */
     }
     .fc .fc-button {
-      background: ${theme === 'dark' ? '#374151' : '#E5E7EB'};
-      color: ${theme === 'dark' ? '#FFFFFF' : '#1F2937'};
-      border: none;
-      border-radius: 8px;
-      padding: 8px 16px;
-      text-transform: capitalize;
-      font-weight: 500;
-      min-width: 20px;
-      transition: background 0.3s ease;
+      padding: 6px 8px;
+      font-size: 11px; /* Smaller font size for mobile */
+      width: 100%; /* Full-width buttons on mobile */
+      margin: 2px 0; /* Vertical spacing */
     }
-    .fc .fc-button:hover {
-      background: ${theme === 'dark' ? '#4B5563' : '#D1D5DB'};
+    .fc .fc-daygrid-day-number {
+      font-size: 12px;
     }
-    .fc .fc-button.fc-button-primary {
-      background: #3B82F6;
-      color: #FFFFFF;
-    }
-    .fc .fc-button.fc-button-primary:hover {
-      background: #2563EB;
+    .fc .fc-col-header-cell-cushion {
+      font-size: 12px;
     }
     .fc .fc-daygrid-event {
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 12px;
-      font-weight: 500;
-      margin: 2px 0;
-      background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
-      color: #FFFFFF;
-      border: none;
-      display: block;
-      width: 100%;
-      transition: all 0.2s ease-in-out;
+      font-size: 10px; /* Smaller event text on mobile */
+      padding: 3px 6px; /* Smaller padding for events */
     }
-    .fc .fc-daygrid-event:hover {
-      transform: scale(1.05);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  @media (max-width: 400px) {
+    .fc .fc-toolbar-title {
+      font-size: 14px; /* Smaller title font on very small screens */
     }
-    .fc .fc-timegrid-slot {
-      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-      border: none;
-    }
-    .fc .fc-timegrid-col {
-      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-    }
-    .fc .fc-timegrid-event {
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
-      color: #FFFFFF;
-      border: none;
-    }
-    .fc .fc-daygrid-day-events {
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      width: 100% !important;
-    }
-    @media (max-width: 640px) {
-      .fc .fc-button {
-        padding: 6px 12px;
-        min-width: 60px;
-        font-size: 12px;
-      }
-      .fc .fc-daygrid-day-number {
-        font-size: 12px;
-      }
-      .fc .fc-col-header-cell-cushion {
-        font-size: 12px;
-      }
-    }
-  `;
+  }
+`;
 
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -327,43 +353,45 @@ const DashboardPage: React.FC = () => {
               <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 Calendar
               </h3>
-              <FullCalendar
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
-                initialDate="2025-04-01" // Ensure the calendar starts in April 2025
-                headerToolbar={{
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: 'dayGridMonth,timeGridWeek'
-                }}
-                events={scheduledPosts.map(post => ({
-                  title: post.title,
-                  date: post.date,
-                  className: post.status === 'scheduled' ? 'scheduled' : 'draft',
-                  extendedProps: { status: post.status }
-                }))}
-                height="auto"
-                
-                selectable={true}
-                select={(info) => setSelectedDate(info.start)}
-                dayMaxEvents={true}
-                // eventContent={(eventInfo) => (
-                //   <div className="fc-event-main flex flex-col items-start w-full">
-                //     <span className="block text-sm font-medium">{eventInfo.event.title}</span>
-                //     <span className="text-xs text-gray-200">{eventInfo.event.extendedProps.status}</span>
-                //   </div>
-                // )}
-                // eventDidMount={(info) => {
-                //   console.log('Event Rendered:', info.event.title, 'on', info.event.start);
-                // }}
-              />
+              <div className="calendar-container" style={{ position: 'relative', overflow: 'hidden' }}>
+                <FullCalendar
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  initialDate="2025-04-01"
+                  headerToolbar={{
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek'
+                  }}
+                  events={scheduledPosts.map(post => ({
+                    title: post.title,
+                    date: post.date,
+                    className: post.status === 'scheduled' ? 'scheduled' : 'draft',
+                    extendedProps: { status: post.status }
+                  }))}
+                  height="auto"
+                  contentHeight="auto" // Adjust height dynamically
+                  selectable={true}
+                  select={(info) => setSelectedDate(info.start)}
+                  dayMaxEvents={2} // Limit number of events shown per day
+                  moreLinkClick="popover" // Show a popover for additional events
+                  eventContent={(eventInfo) => (
+                    <div className="fc-event-main flex flex-col items-start w-full">
+                      <span className="block text-xs font-medium truncate">{eventInfo.event.title}</span>
+                      <span className="text-xs text-gray-200">{eventInfo.event.extendedProps.status}</span>
+                    </div>
+                  )}
+                  eventDidMount={(info) => {
+                    console.log('Event Rendered:', info.event.title, 'on', info.event.start);
+                  }}
+                />
+              </div>
               {selectedDate && (
                 <p className={`mt-2 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                   Selected: {format(selectedDate, 'MMM dd, yyyy')}
                 </p>
               )}
             </div>
-
             {/* Quick Actions */}
             <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
               <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>

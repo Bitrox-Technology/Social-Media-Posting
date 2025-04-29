@@ -10,9 +10,9 @@ import {
   useUpdatePostMutation
 } from '../../store/api';
 import { imageTemplates, ImageSlide } from '../../templetes/ImageTemplate';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Wand2, Save, Layout, Settings2, RefreshCw } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ImageGenerationProps {
   onImagesGenerated?: (image: string) => void;
@@ -33,6 +33,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const location = useLocation();
   const dispatch = useAppDispatch();
   const defaultLogoUrl = '/images/Logo1.png';
+  const slideRef = useRef<HTMLDivElement>(null);
 
   const {
     templateId: locationTemplateId,
@@ -43,12 +44,10 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     contentType,
   } = location.state || {};
 
-  // Initialize selectedTemplate with fallback
   const [selectedTemplate, setSelectedTemplate] = useState(
     imageTemplates.find((t) => t.id === (templateId || locationTemplateId)) || imageTemplates[0]
   );
 
-  // Initialize slide
   const [slide, setSlide] = useState<ImageSlide>(() => {
     const content = generatedContent || initialSlide;
     if (content) {
@@ -70,29 +69,26 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const [customDescription, setCustomDescription] = useState<string>(slide.description);
   const [customFooter, setCustomFooter] = useState<string>(slide.footer || '');
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'content' | 'design' | 'settings'>('content');
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [generateImage, { isLoading: isGeneratingImage }] = useGenerateImageMutation();
   const [generateImageContent, { isLoading: isGeneratingContent }] = useGenerateImageContentMutation();
   const [getImageContent, { isFetching: isFetchingContent }] = useLazyGetImageContentQuery();
   const [updatePost] = useUpdatePostMutation();
-  const slideRef = useRef<HTMLDivElement>(null);
 
-  // Fetch ImageContent if contentId and contentType are provided
   useEffect(() => {
     const fetchImageContent = async () => {
       if (contentId && contentType === 'ImageContent' && !isInitialized) {
         try {
           const response = await getImageContent({ contentId: contentId }).unwrap();
           const data = response.data;
-          console.log('Fetched ImageContent:', data);
 
           if (data) {
-            // Update selectedTemplate based on data.templateId
             const newTemplate = imageTemplates.find((t) => t.id === data.templateId) || imageTemplates[0];
             setSelectedTemplate(newTemplate);
 
-            // Update slide with fetched content and new template
             const updatedSlide: ImageSlide = {
               ...newTemplate.slides[0],
               title: data.content.title || '',
@@ -167,26 +163,42 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     setIsInitialized(true);
   };
 
-  useEffect(() => {
-    const updateSlide = async () => {
-      const updatedSlide = {
-        ...slide,
-        title: customTitle,
-        description: customDescription,
-        footer: customFooter,
-        websiteUrl: slide.websiteUrl || '',
-        imageUrl: slide.imageUrl || '',
-      };
+  const handleGenerateImage = async () => {
+    if (!topic) return;
+    setIsGenerating(true);
+    try {
+      const response = await generateImage({ prompt: topic }).unwrap();
+      const generatedImageUrl = response.data;
+      const updatedSlide = { ...slide, imageUrl: generatedImageUrl || '' };
       await preloadSlideImages(updatedSlide);
       setSlide(updatedSlide);
 
-      if (onImagesGenerated && updatedSlide.imageUrl) {
+      if (onImagesGenerated) {
         const image = await captureScreenshot();
         if (image) onImagesGenerated(image);
       }
-    };
-    updateSlide();
-  }, [customTitle, customDescription, customFooter, showLogo, onImagesGenerated]);
+    } catch (error) {
+      console.error('Error generating image:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateContent = async () => {
+    if (!topic) return;
+    setIsGenerating(true);
+    try {
+      const contentResponse = await generateImageContent({ topic }).unwrap();
+      const { title, description } = contentResponse.data;
+      setCustomTitle(title);
+      setCustomDescription(description);
+      setSlide({ ...slide, title, description });
+    } catch (error) {
+      console.error('Error generating content:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const captureScreenshot = async () => {
     if (!slideRef.current) return '';
@@ -203,44 +215,9 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     return canvas.toDataURL('image/png');
   };
 
-  const handleGenerateImage = async () => {
-    try {
-      if (!topic) {
-        throw new Error('Topic is required to generate an image.');
-      }
-      const response = await generateImage({ prompt: topic }).unwrap();
-      const generatedImageUrl = response.data;
-      const updatedSlide = { ...slide, imageUrl: generatedImageUrl || '' };
-      setSlide(updatedSlide);
-
-      await preloadSlideImages(updatedSlide);
-      if (onImagesGenerated) {
-        const image = await captureScreenshot();
-        if (image) onImagesGenerated(image);
-      }
-    } catch (error) {
-      console.error('Error generating image:', error);
-      alert('Failed to generate image. Please try again.');
-    }
-  };
-
-  const handleGenerateContent = async () => {
-    if (!topic) return;
-    try {
-      const contentResponse = await generateImageContent({ topic }).unwrap();
-      const { title, description } = contentResponse.data;
-      setCustomTitle(title);
-      setCustomDescription(description);
-      setSlide({ ...slide, title, description });
-    } catch (error) {
-      console.error('Error generating content:', error);
-      alert('Failed to generate content. Please try again.');
-    }
-  };
-
   const handleSave = async () => {
     if (!slideRef.current || !slide) {
-      alert('Slide not rendered yet. Please try again.');
+      alert('Please wait for the slide to render');
       return;
     }
 
@@ -267,158 +244,242 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
       const result = await uploadImageToCloudinary(formData).unwrap();
       const cloudinaryUrl = result?.data?.secure_url;
 
-      if (!cloudinaryUrl) throw new Error('Failed to get Cloudinary URL');
+      if (!cloudinaryUrl) throw new Error('Failed to upload image');
 
-      const updatePostData = await updatePost({ contentId, contentType, images: [{ url: cloudinaryUrl, label: 'Image Post' }] }).unwrap()
+      const updatePostData = await updatePost({
+        contentId,
+        contentType,
+        images: [{ url: cloudinaryUrl, label: 'Image Post' }]
+      }).unwrap();
+
       dispatch(setSelectedFile({ name: 'image-slide.png', url: cloudinaryUrl }));
 
       if (onSave && slideRef.current) {
         onSave(slide, slideRef.current);
       }
-      
-      setTimeout(() => {
-        navigate('/auto', {
-          state: {
-            postContentId: updatePostData?.data?.postContentId,
-          },
-        });
-      }, 2000);
 
+      navigate('/auto', {
+        state: {
+          postContentId: updatePostData?.data?.postContentId,
+        },
+      });
     } catch (error) {
-      console.error('Error in handleSave:', error);
-      alert('Failed to process and upload image. Please try again.');
+      console.error('Error saving:', error);
+      alert('Failed to save. Please try again.');
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleBack = () => {
-    
-    navigate('/auto', { state: { postContentId: postContentId } });
-   
-  };
-
-  if (!slide || isFetchingContent) {
-    return <div className="text-white">Loading...</div>;
+  if (!isInitialized || isFetchingContent) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-400"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-6 md:p-10">
-      <div className="max-w-6xl mx-auto flex flex-col space-y-8">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-all duration-300"
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <motion.button
+            onClick={() => navigate('/auto', { state: { postContentId } })}
+            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-all"
+            whileHover={{ x: -4 }}
           >
             <ArrowLeft className="w-6 h-6" />
-            <span className="text-lg font-medium">Back</span>
-          </button>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">
-            Create Your Image Post
+            <span className="text-lg font-medium">Back to Posts</span>
+          </motion.button>
+          
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+            Image Post Editor
           </h1>
         </div>
 
-        <motion.div
-          className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="text-2xl font-semibold text-gray-100 mb-4">Image Preview</h2>
-          <div
-            ref={slideRef}
-            className="relative rounded-xl overflow-hidden max-w-2xl max-h-[600px] mx-auto shadow-none"
-            style={{
-              width: '500px',
-              height: '700px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              boxSizing: 'border-box',
-            }}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
           >
-            {selectedTemplate.renderSlide(slide, showLogo, defaultLogoUrl)}
-          </div>
-          <div className="flex items-center space-x-2 mt-4">
-            <input
-              type="checkbox"
-              checked={showLogo}
-              onChange={(e) => setShowLogo(e.target.checked)}
-              className="w-5 h-5 text-yellow-400 border-gray-600 rounded focus:ring-2 focus:ring-yellow-400"
-            />
-            <label className="text-gray-300">Add Logo</label>
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="text-2xl font-semibold text-gray-100 mb-4">Edit Content</h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Title</label>
-              <input
-                type="text"
-                value={customTitle}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setCustomTitle(newValue);
-                  setSlide((prev) => ({ ...prev, title: newValue }));
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
+              <div
+                ref={slideRef}
+                className="relative rounded-xl overflow-hidden shadow-xl mx-auto"
+                style={{
+                  width: '500px',
+                  height: '700px',
+                  maxWidth: '100%',
+                  aspectRatio: '5/7',
                 }}
-                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                placeholder="Enter the title (e.g., MENTAL HEALTH INTEGRATION)"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Description</label>
-              <textarea
-                value={customDescription}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setCustomDescription(newValue);
-                  setSlide((prev) => ({ ...prev, description: newValue }));
-                }}
-                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600 h-24 resize-none"
-                placeholder="Enter the description (e.g., The integration of mental health services into healthcare is crucial for holistic well-being...)"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Footer (e.g., @bitrox.tech)</label>
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-300">@</span>
-                <input
-                  type="text"
-                  value={customFooter}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setCustomFooter(newValue);
-                    setSlide((prev) => ({ ...prev, footer: newValue }));
-                  }}
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                  placeholder="Enter the footer (e.g., bitrox.tech)"
-                />
+              >
+                {selectedTemplate.renderSlide(slide, showLogo, defaultLogoUrl)}
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex justify-center gap-4">
               <motion.button
-                onClick={handleSave}
-                disabled={isUploading}
-                className="w-full sm:w-auto px-6 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg hover:from-green-400 hover:to-teal-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                onClick={handleGenerateImage}
+                disabled={isGenerating}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: isGenerating ? 1 : 1.05 }}
               >
-                {isUploading ? 'Uploading...' : 'Save'}
+                <ImageIcon className="w-5 h-5" />
+                Generate Image
+              </motion.button>
+
+              <motion.button
+                onClick={handleGenerateContent}
+                disabled={isGenerating}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg font-medium hover:shadow-lg hover:shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: isGenerating ? 1 : 1.05 }}
+              >
+                <Wand2 className="w-5 h-5" />
+                Generate Content
               </motion.button>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50"
+          >
+            <div className="flex gap-4 mb-6">
+              {[
+                { id: 'content', icon: <Layout className="w-5 h-5" />, label: 'Content' },
+                { id: 'design', icon: <ImageIcon className="w-5 h-5" />, label: 'Design' },
+                { id: 'settings', icon: <Settings2 className="w-5 h-5" />, label: 'Settings' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                {activeTab === 'content' && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="block text-gray-300">Title</label>
+                      <input
+                        type="text"
+                        value={customTitle}
+                        onChange={(e) => {
+                          setCustomTitle(e.target.value);
+                          setSlide((prev) => ({ ...prev, title: e.target.value }));
+                        }}
+                        className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter title..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-gray-300">Description</label>
+                      <textarea
+                        value={customDescription}
+                        onChange={(e) => {
+                          setCustomDescription(e.target.value);
+                          setSlide((prev) => ({ ...prev, description: e.target.value }));
+                        }}
+                        className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 h-32"
+                        placeholder="Enter description..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-gray-300">Footer</label>
+                      <div className="flex items-center">
+                        <span className="text-gray-400 px-3">@</span>
+                        <input
+                          type="text"
+                          value={customFooter}
+                          onChange={(e) => {
+                            setCustomFooter(e.target.value);
+                            setSlide((prev) => ({ ...prev, footer: e.target.value }));
+                          }}
+                          className="flex-1 px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter footer..."
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'design' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2">Template Style</label>
+                      <select
+                        value={selectedTemplate.id}
+                        onChange={(e) => {
+                          const template = imageTemplates.find((t) => t.id === e.target.value);
+                          if (template) setSelectedTemplate(template);
+                        }}
+                        className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500"
+                      >
+                        {imageTemplates.map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'settings' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-gray-300">Show Logo</label>
+                      <input
+                        type="checkbox"
+                        checked={showLogo}
+                        onChange={(e) => setShowLogo(e.target.checked)}
+                        className="w-5 h-5 text-blue-500 rounded focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            <motion.button
+              onClick={handleSave}
+              disabled={isUploading}
+              className={`mt-8 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                isUploading
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:shadow-lg hover:shadow-green-500/20 text-white'
+              }`}
+              whileHover={{ scale: isUploading ? 1 : 1.02 }}
+            >
+              {isUploading ? (
+                <RefreshCw className="w-5 h-5 animate-spin" />
+              ) : (
+                <Save className="w-5 h-5" />
+              )}
+              {isUploading ? 'Saving...' : 'Save Changes'}
+            </motion.button>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

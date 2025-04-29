@@ -4,9 +4,9 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setSelectedFile } from '../../store/appSlice';
 import { useUploadImageToCloudinaryMutation, useGenerateDoYouKnowMutation, useLazyGetDYKContentQuery, useUpdatePostMutation } from '../../store/api';
 import { DoYouKnowSlide, doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Type, Settings2, Save, RefreshCw } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface DoYouKnowProps {
   onImagesGenerated?: (image: string) => void;
@@ -24,7 +24,6 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
 
   const { contentId, contentType, postContentId } = location.state || {};
 
-  // Initialize selectedTemplate
   const [selectedTemplate, setSelectedTemplate] = useState(
     doYouKnowTemplates.find((t) => t.id === templateId) || doYouKnowTemplates[0]
   );
@@ -41,6 +40,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
         }
       : selectedTemplate.slides[0]
   );
+
   const [showLogo, setShowLogo] = useState<boolean>(true);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [customTitle, setCustomTitle] = useState<string>(slide.title);
@@ -48,6 +48,7 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
   const [customFooter, setCustomFooter] = useState<string>(slide.footer || '');
   const [customWebsiteUrl, setCustomWebsiteUrl] = useState<string>(slide.websiteUrl || '');
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'content' | 'design' | 'settings'>('content');
 
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [generateDoYouKnow, { isLoading: isGenerating }] = useGenerateDoYouKnowMutation();
@@ -55,20 +56,16 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
   const [updatePost] = useUpdatePostMutation();
   const slideRef = useRef<HTMLDivElement>(null);
 
-  // Fetch DoYouKnowContent if contentId exists
   useEffect(() => {
     const fetchDoYouKnowContent = async () => {
       if (contentId && contentType === 'DYKContent' && !isInitialized) {
         try {
           const response = await getDYKContent({ contentId: contentId }).unwrap();
           const data = response.data;
-          console.log('Fetched DoYouKnowContent:', data);
           if (data) {
-            // Update selectedTemplate based on data.templateId
             const newTemplate = doYouKnowTemplates.find((t) => t.id === data.templateId) || doYouKnowTemplates[0];
             setSelectedTemplate(newTemplate);
 
-            // Update slide with fetched content and new template
             const updatedSlide: DoYouKnowSlide = {
               ...newTemplate.slides[0],
               title: data.content.title || newTemplate.slides[0].title,
@@ -233,7 +230,11 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
 
       if (!cloudinaryUrl) throw new Error('Failed to get Cloudinary URL');
 
-      const updatePostData = await updatePost({contentId: contentId, contentType: 'DYKContent', images: [{url: cloudinaryUrl, label: "DoYouKnow Post"}]}).unwrap();
+      const updatePostData = await updatePost({
+        contentId: contentId,
+        contentType: 'DYKContent',
+        images: [{url: cloudinaryUrl, label: "DoYouKnow Post"}]
+      }).unwrap();
 
       dispatch(setSelectedFile({ name: 'do-you-know-slide.png', url: cloudinaryUrl }));
 
@@ -255,155 +256,208 @@ export const DoYouKnow: React.FC<DoYouKnowProps> = ({ onImagesGenerated, onSave,
   };
 
   if (!slide || isFetchingContent) {
-    return <div className="text-white">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-400"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-6 md:p-10">
-      <div className="max-w-6xl mx-auto flex flex-col space-y-8">
-        <div className="flex items-center justify-between">
-          <button
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <motion.button
             onClick={handleBack}
-            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-all duration-300"
+            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-all"
+            whileHover={{ x: -4 }}
           >
             <ArrowLeft className="w-6 h-6" />
-            <span className="text-lg font-medium">Back</span>
-          </button>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">
-            Create Your "Do You Know" Post
+            <span className="text-lg font-medium">Back to Posts</span>
+          </motion.button>
+          
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+            Did You Know Editor
           </h1>
         </div>
 
-        <motion.div
-          className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="text-2xl font-semibold text-gray-100 mb-4">Template Preview</h2>
-          <div
-            ref={slideRef}
-            className="relative rounded-xl overflow-hidden max-w-2xl max-h-[600px] mx-auto"
-            style={{
-              background: 'linear-gradient(180deg, #1A2526 0%, #0F1516 100%)',
-              width: '500px',
-              height: '700px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '20px',
-              boxSizing: 'border-box',
-            }}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
           >
-            {selectedTemplate.renderSlide(slide, showLogo, defaultLogoUrl)}
-          </div>
-          <div className="flex items-center space-x-2 mt-4">
-            <input
-              type="checkbox"
-              checked={showLogo}
-              onChange={(e) => setShowLogo(e.target.checked)}
-              className="w-5 h-5 text-yellow-400 border-gray-600 rounded focus:ring-2 focus:ring-yellow-400"
-            />
-            <label className="text-gray-300">Add Logo</label>
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="text-2xl font-semibold text-gray-100 mb-4">Edit Content</h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Title</label>
-              <input
-                type="text"
-                value={customTitle || ''}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setCustomTitle(newValue);
-                  setSlide({ ...slide, title: newValue });
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
+              <div
+                ref={slideRef}
+                className="relative rounded-xl overflow-hidden shadow-xl mx-auto"
+                style={{
+                  width: '500px',
+                  height: '700px',
+                  maxWidth: '100%',
+                  aspectRatio: '5/7',
                 }}
-                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                placeholder="Enter the title (e.g., DID YOU KNOW?)"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Fact</label>
-              <textarea
-                value={customFact || ''}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setCustomFact(newValue);
-                  setSlide({ ...slide, fact: newValue });
-                }}
-                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600 h-24 resize-none"
-                placeholder="Enter the 'Do You Know' fact here..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Username (e.g., @bitrox.tech)</label>
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-300">@</span>
-                <input
-                  type="text"
-                  value={customFooter || ''}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setCustomFooter(newValue);
-                    setSlide({ ...slide, footer: newValue });
-                  }}
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                  placeholder="Enter the username (e.g., bitrox.tech)"
-                />
+              >
+                {selectedTemplate.renderSlide(slide, showLogo, defaultLogoUrl)}
               </div>
             </div>
+          </motion.div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Website URL (Optional)</label>
-              <input
-                type="text"
-                value={customWebsiteUrl || ''}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setCustomWebsiteUrl(newValue);
-                  setSlide({ ...slide, websiteUrl: newValue });
-                }}
-                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-yellow-400 border border-gray-600"
-                placeholder="Enter the website URL (e.g., https://bitrox.tech)"
-              />
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <motion.button
-                onClick={handleGenerateContent}
-                disabled={isGenerating}
-                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {isGenerating ? 'Generating...' : 'Generate Content'}
-              </motion.button>
-
-              {(!onImagesGenerated || onSave) && (
-                <motion.button
-                  onClick={handleSave}
-                  disabled={isUploading}
-                  className="w-full sm:w-auto px-6 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg hover:from-green-400 hover:to-teal-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50"
+          >
+            <div className="flex gap-4 mb-6">
+              {[
+                { id: 'content', icon: <Type className="w-5 h-5" />, label: 'Content' },
+                { id: 'design', icon: <ImageIcon className="w-5 h-5" />, label: 'Design' },
+                { id: 'settings', icon: <Settings2 className="w-5 h-5" />, label: 'Settings' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                  }`}
                 >
-                  {isUploading ? 'Uploading...' : 'Save'}
-                </motion.button>
-              )}
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              ))}
             </div>
-          </div>
-        </motion.div>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                {activeTab === 'content' && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="block text-gray-300">Title</label>
+                      <input
+                        type="text"
+                        value={customTitle}
+                        onChange={(e) => {
+                          setCustomTitle(e.target.value);
+                          setSlide((prev) => ({ ...prev, title: e.target.value }));
+                        }}
+                        className="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-gray-300">Fact</label>
+                      <textarea
+                        value={customFact}
+                        onChange={(e) => {
+                          setCustomFact(e.target.value);
+                          setSlide((prev) => ({ ...prev, fact: e.target.value }));
+                        }}
+                        className="w-full px-4 py-2 bg-gray-700 rounded-lg h-32 focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <motion.button
+                      onClick={handleGenerateContent}
+                      disabled={isGenerating}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                      whileHover={{ scale: isGenerating ? 1 : 1.02 }}
+                    >
+                      <RefreshCw className={`w-5 h-5 ${isGenerating ? 'animate-spin' : ''}`} />
+                      {isGenerating ? 'Generating...' : 'Generate Content'}
+                    </motion.button>
+                  </>
+                )}
+
+                {activeTab === 'design' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2">Template Style</label>
+                      <select
+                        value={selectedTemplate.id}
+                        onChange={(e) => {
+                          const template = doYouKnowTemplates.find((t) => t.id === e.target.value);
+                          if (template) setSelectedTemplate(template);
+                        }}
+                        className="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        {doYouKnowTemplates.map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'settings' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-gray-300">Show Logo</label>
+                      <input
+                        type="checkbox"
+                        checked={showLogo}
+                        onChange={(e) => setShowLogo(e.target.checked)}
+                        className="w-5 h-5 text-blue-500 rounded focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-gray-300">Footer</label>
+                      <div className="flex items-center">
+                        <span className="text-gray-400 px-3">@</span>
+                        <input
+                          type="text"
+                          value={customFooter}
+                          onChange={(e) => {
+                            setCustomFooter(e.target.value);
+                            setSlide((prev) => ({ ...prev, footer: e.target.value }));
+                          }}
+                          className="flex-1 px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-gray-300">Website URL</label>
+                      <input
+                        type="text"
+                        value={customWebsiteUrl}
+                        onChange={(e) => {
+                          setCustomWebsiteUrl(e.target.value);
+                          setSlide((prev) => ({ ...prev, websiteUrl: e.target.value }));
+                        }}
+                        className="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            <motion.button
+              onClick={handleSave}
+              disabled={isUploading}
+              className={`mt-8 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                isUploading
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:shadow-lg hover:shadow-green-500/20 text-white'
+              }`}
+              whileHover={{ scale: isUploading ? 1 : 1.02 }}
+            >
+              <Save className="w-5 h-5" />
+              {isUploading ? 'Saving...' : 'Save Changes'}
+            </motion.button>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

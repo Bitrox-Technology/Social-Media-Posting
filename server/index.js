@@ -1,10 +1,10 @@
 import { configDotenv } from "dotenv";
-import express, { Router } from "express";
+import express from "express";
 import cors from "cors";
 import router from "./routes/router.js";
 import morgan from "morgan";
 import helmet from "helmet";
-import { ApiError } from "./utils/apiError.js";
+import { ApiError } from "./utils/ApiError.js";
 import session from "express-session";
 import path from "path";
 import { fileURLToPath } from 'url';
@@ -49,6 +49,7 @@ app.use(
 );
 
 app.use("/api/v1/user", Routers.userRouter);
+app.use("/api/v1/social", Routers.socialRouter);
 app.use("/api/v1", router);
 
 app.use(function (err, req, res, next) {
