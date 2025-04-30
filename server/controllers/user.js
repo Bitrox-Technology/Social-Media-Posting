@@ -55,13 +55,21 @@ const Logout = async (req, res, next) => {
     }
 }
 
-
-
 const UserDetails = async (req, res, next) => {
     try {
-        await UserValidation.validateUserDetails(req.body)
-        let user = await UserServices.userDetails(req.body, req.user, req.files)
+        await UserValidation.validateUserProfile(req.body)
+        let user = await UserServices.userDetails(req.body, req.user, req.file)
         return res.status(OK).json(new ApiResponse(OK, user, "User details saved successfully"))
+    } catch (error) {
+        next(error)
+    }
+
+}
+
+const GetUserProfile = async (req, res, next) => {
+    try {
+        let user = await UserServices.getUserProfile(req.user)
+        return res.status(OK).json(new ApiResponse(OK, user, "User profile fetched successfully"))
     } catch (error) {
         next(error)
     }
@@ -189,7 +197,7 @@ const UserControllers = {
     ForgetPassword, Logout,
     Login, SavePosts, PostContent, GetPostContent, SaveImageContent,
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts,
-    GetImageContent, GetCarouselContent, GetDYKContent
+    GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile
 }
 
 export default UserControllers

@@ -196,6 +196,19 @@ export const api = createApi({
       },
       invalidatesTags: ['Auth'],
     }),
+    userDetails: builder.mutation<ApiResponse<any>, FormData>({
+      query: (formData) => ({
+        url: '/user/user-details',
+        method: 'POST',
+        body: formData,
+      }),
+    }),
+    getUserProfile: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/user/get-user-profile',
+        method: 'GET',
+      }),
+    }),
     generateTopics: builder.mutation<ApiResponse<GenerateTopicsResponse>, { business: string }>({
       query: (body) => ({
         url: '/topics',
@@ -318,5 +331,7 @@ export const {
   useLazyGetDYKContentQuery,
   useUpdatePostMutation,
   useResendOTPMutation,
-  useForgetPasswordMutation
+  useForgetPasswordMutation,
+  useUserDetailsMutation,
+  useLazyGetUserProfileQuery
 } = api;

@@ -2,47 +2,89 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
-import { 
-  Mail, Phone, MapPin, Building2, Globe, 
-  Box, Target, Edit2, Camera 
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Building2,
+  Globe,
+  Box,
+  Target,
+  Edit2,
+  Camera,
 } from 'lucide-react';
+import { useLazyGetUserProfileQuery } from '../store/api';
+import { toast } from 'react-toastify';
 
 const ProfilePage = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const [getUserProfile, { isFetching }] = useLazyGetUserProfileQuery();
   const [userDetails, setUserDetails] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
-    const savedData = localStorage.getItem('userDetails');
-    if (savedData) {
-      setUserDetails(JSON.parse(savedData));
-    } else {
-      // Set default values if no data is found
-      setUserDetails({
-        userName: 'User Not Set',
-        email: 'email@example.com',
-        countryCode: '+1',
-        phone: '123-456-7890',
-        location: 'Location Not Set',
-        logo: null,
-        companyName: 'Company Not Set',
-        productCategories: [{ category: 'Category Not Set', productName: 'Product Not Set' }],
-        services: ['Service Not Set'],
-        keyProducts: ['Product Not Set'],
-        targetMarket: 'Market Not Set',
-        websiteUrl: 'https://example.com',
-      });
-    }
-    setIsLoading(false);
-  }, []);
+    const fetchUserProfile = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch user profile from API
+        const response = await getUserProfile().unwrap();
+        if (response.success && response.data) {
+          // Set user details from API response
+          setUserDetails(response.data);
+          // Optionally, cache in localStorage
+          localStorage.setItem('userDetails', JSON.stringify(response.data));
+        } else {
+          throw new Error(response.message || 'Failed to fetch user profile');
+        }
+      } catch (error) {
+        // Fallback to localStorage or default values on error
+        const savedData = localStorage.getItem('userDetails');
+        if (savedData) {
+          setUserDetails(JSON.parse(savedData));
+        } else {
+          // Default values
+          setUserDetails({
+            userName: 'User Not Set',
+            email: 'email@example.com',
+            countryCode: '+1',
+            phone: '123-456-7890',
+            location: 'Location Not Set',
+            logo: null,
+            companyName: 'Company Not Set',
+            productCategories: [
+              { category: 'Category Not Set', productName: 'Product Not Set' },
+            ],
+            services: ['Service Not Set'],
+            keyProducts: ['Product Not Set'],
+            targetMarket: 'Market Not Set',
+            websiteUrl: 'https://example.com',
+          });
+        }
+        toast.error(
+          (error instanceof Error ? error.message : String(error)) || 'Failed to load user profile',
+          {
+            position: 'bottom-right',
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          }
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [getUserProfile]);
 
   const handleEdit = () => {
-    navigate('/user-details');
+    navigate('/user-details', { state: { email: userDetails.email } });
   };
 
-  if (isLoading) {
+  if (isLoading || isFetching) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div
@@ -61,26 +103,36 @@ const ProfilePage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Card */}
-          <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 lg:col-span-1`}>
+          <div
+            className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 lg:col-span-1`}
+          >
             <div className="relative">
-              <div className="w-32 h-32 mx-auto relative">
+            <div className="w-32 h-32 mx-auto relative flex items-center justify-center">
                 <img
-                  src={userDetails.logo || 'https://via.placeholder.com/128'}
-                  alt="Profile"
-                  className="w-full h-full rounded-full object-cover border-4 border-blue-500"
+                  src={
+                    userDetails.logo
+                      ? `${userDetails.logo}` // Prepend server base URL
+                      : 'https://via.placeholder.com/128'
+                  }
+                  alt="Profile Logo"
+                  className="max-w-full max-h-full rounded-full object-cover shadow-lg transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl "
+                  style={{ filter: theme === 'dark' ? 'brightness(0.8)' : 'none' }}
                   onError={(e) => {
+                    console.error('Failed to load logo:', userDetails.logo);
                     e.currentTarget.src = 'https://via.placeholder.com/128';
                   }}
                 />
-                <button
+                {/* <button
                   onClick={handleEdit}
                   className="absolute bottom-0 right-0 p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 transition-colors"
                 >
                   <Camera className="w-4 h-4" />
-                </button>
+                </button> */}
               </div>
               <div className="mt-4 text-center">
-                <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                <h2
+                  className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                >
                   {userDetails.userName}
                 </h2>
                 <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -100,14 +152,18 @@ const ProfilePage = () => {
 
             <div className="mt-8 space-y-4">
               <div className="flex items-center">
-                <Mail className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-3`} />
+                <Mail
+                  className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-3`}
+                />
                 <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
                   {userDetails.email}
                 </span>
               </div>
               {userDetails.phone && (
                 <div className="flex items-center">
-                  <Phone className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-3`} />
+                  <Phone
+                    className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-3`}
+                  />
                   <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
                     {userDetails.countryCode} {userDetails.phone}
                   </span>
@@ -115,14 +171,18 @@ const ProfilePage = () => {
               )}
               {userDetails.location && (
                 <div className="flex items-center">
-                  <MapPin className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-3`} />
+                  <MapPin
+                    className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-3`}
+                  />
                   <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
                     {userDetails.location}
                   </span>
                 </div>
               )}
               <div className="flex items-center">
-                <Globe className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-3`} />
+                <Globe
+                  className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-3`}
+                />
                 <a
                   href={userDetails.websiteUrl}
                   target="_blank"
@@ -138,16 +198,22 @@ const ProfilePage = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Company Information */}
-            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6`}>
+            <div
+              className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6`}
+            >
               <div className="flex items-center mb-6">
                 <Building2 className="w-6 h-6 text-blue-500 mr-3" />
-                <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                <h3
+                  className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                >
                   Company Information
                 </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <h4
+                    className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}
+                  >
                     Company Name
                   </h4>
                   <p className={`mt-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
@@ -155,7 +221,9 @@ const ProfilePage = () => {
                   </p>
                 </div>
                 <div>
-                  <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <h4
+                    className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}
+                  >
                     Target Market
                   </h4>
                   <p className={`mt-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
@@ -166,17 +234,23 @@ const ProfilePage = () => {
             </div>
 
             {/* Products & Services */}
-            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6`}>
+            <div
+              className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6`}
+            >
               <div className="flex items-center mb-6">
                 <Box className="w-6 h-6 text-blue-500 mr-3" />
-                <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                <h3
+                  className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                >
                   Products & Services
                 </h3>
               </div>
               <div className="space-y-6">
                 {/* Product Categories */}
                 <div>
-                  <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-3`}>
+                  <h4
+                    className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-3`}
+                  >
                     Product Categories
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -187,10 +261,14 @@ const ProfilePage = () => {
                           theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
                         }`}
                       >
-                        <h5 className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                        <h5
+                          className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                        >
                           {item.category || 'Category Not Set'}
                         </h5>
-                        <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <p
+                          className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
+                        >
                           {item.productName || 'Product Not Set'}
                         </p>
                       </div>
@@ -200,7 +278,9 @@ const ProfilePage = () => {
 
                 {/* Services */}
                 <div>
-                  <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-3`}>
+                  <h4
+                    className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-3`}
+                  >
                     Services
                   </h4>
                   <div className="flex flex-wrap gap-2">
@@ -221,7 +301,9 @@ const ProfilePage = () => {
 
                 {/* Key Products */}
                 <div>
-                  <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-3`}>
+                  <h4
+                    className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mb-3`}
+                  >
                     Key Products
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

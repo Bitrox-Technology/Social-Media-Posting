@@ -9,6 +9,7 @@ import CarouselContent from "../models/carouselContent.js";
 import DYKContent from "../models/dykContent.js";
 import SavePosts from "../models/savePosts.js";
 import { generateOTPForEmail, verifyEmailOTP } from "../utils/functions.js";
+import { uploadOnClodinary } from "../utils/cloudinary.js";
 
 const signup = async (inputs) => {
     let user;
@@ -149,26 +150,33 @@ const logout = async (user) => {
 
 }
 
-const userDetails = async (inputs, user, files) => {
-    const avatar = req.files['avatar']
-    const logo = req.files['logo']
-    if (!avatar && !logo) throw new ApiError(BAD_REQUEST, "Avatar and Logo are required")
+const userDetails = async (inputs, user, file) => {
 
-    let avatarUrl = await uploadOnCloudinary(avatar[0].path, "avatar")
-    if (!avatarUrl) throw new ApiError(BAD_REQUEST, "Unable to upload avatar")
+    if ( !file) throw new ApiError(BAD_REQUEST, "Logo is required");
 
-    let logoUrl = await uploadOnCloudinary(logo[0].path, "logo")
+    let logoUrl = await uploadOnClodinary(file.path, "logo")
     if (!logoUrl) throw new ApiError(BAD_REQUEST, "Unable to upload logo")
 
-    inputs.avatar = avatarUrl
-    inputs.logo = logoUrl
+    inputs.logo = logoUrl.secure_url
     inputs.isProfileCompleted = true
+    
+    let updateUser = await User.findOne({ _id: user._id , email: inputs.email, isEmailVerify: true, isDeleted: false })
+    if (!updateUser) throw new ApiError(BAD_REQUEST, "User not found")    
 
-    let updateUser = await User.findByIdAndUpdate({ _id: user._id }, inputs, { new: true })
-    if (!upload) throw new ApiError(BAD_REQUEST, "Unable to update user details")
+    updateUser = await User.findByIdAndUpdate({ _id: updateUser._id }, inputs, { new: true })
+    if (!updateUser) throw new ApiError(BAD_REQUEST, "Unable to update user details")
 
     updateUser = await User.findById({ _id: updateUser._id })
     return updateUser
+}
+
+const getUserProfile = async (user) => {
+    const userProfile = await User.findById(user._id).lean(); 
+
+    if (!userProfile) {
+      throw new ApiError(BAD_REQUEST, 'User not found');
+    }
+    return userProfile;
 }
 
 const postContent = async (inputs, user) => {
@@ -301,6 +309,7 @@ const UserServices = {
     getCarouselContent,
     getDYKContent,
     updatePost,
-    userDetails
+    userDetails,
+    getUserProfile
 }
 export default UserServices;
