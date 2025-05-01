@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Swiper, SwiperSlide, SwiperRef } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
+import { Navigation, Pagination, EffectFade, Autoplay } from 'swiper/modules';
 import { Swiper as SwiperCore } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
 import html2canvas from 'html2canvas';
 import { useNavigate } from 'react-router-dom';
 import { carouselTemplates, Slide, CarouselTemplate } from '../../templetes/templetesDesign';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useTheme } from '../../context/ThemeContext'; // Adjust path as needed
+import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, Image as ImageIcon, Upload, Settings } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ExtendedCarouselTemplate extends CarouselTemplate {
   coverImage: string;
@@ -51,10 +52,19 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
     }
   }, [onImagesGenerated]);
 
-  const handleTemplateSelect = (template: ExtendedCarouselTemplate) => {
-    setSelectedTemplate(template);
-    setSlides(template.slides);
-    setEditedSlides([...template.slides]);
+  const handleTemplateSelect = async (template: ExtendedCarouselTemplate) => {
+    setLoading(true);
+    try {
+      setSelectedTemplate(template);
+      const newSlides = template.slides;
+      await Promise.all(newSlides.map(preloadSlideImages));
+      setSlides(newSlides);
+      setEditedSlides([...newSlides]);
+    } catch (error) {
+      console.error('Error loading template:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const captureScreenshots = async (slidesToCapture: Slide[]) => {
@@ -63,7 +73,11 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
       const slideElement = slideRefs.current[i];
       if (!slideElement) continue;
       await preloadSlideImages(slidesToCapture[i]);
-      const canvas = await html2canvas(slideElement, { useCORS: true, scale: 2 });
+      const canvas = await html2canvas(slideElement, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+      });
       const image = canvas.toDataURL('image/png');
       images.push(image);
     }
@@ -90,16 +104,19 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
   };
 
   const handleSaveChanges = async () => {
-    setSlides([...editedSlides]);
-    const updatedImages = await captureScreenshots(editedSlides);
-    if (onSave) {
-      onSave(editedSlides, updatedImages);
+    setLoading(true);
+    try {
+      setSlides([...editedSlides]);
+      const updatedImages = await captureScreenshots(editedSlides);
+      if (onSave) {
+        onSave(editedSlides, updatedImages);
+      }
+      setEditMode(false);
+    } catch (error) {
+      console.error('Error saving changes:', error);
+    } finally {
+      setLoading(false);
     }
-    setEditMode(false);
-  };
-
-  const handleSlideChange = (swiper: SwiperCore) => {
-    setActiveIndex(swiper.realIndex);
   };
 
   const preloadSlideImages = async (slide: Slide) => {
@@ -112,19 +129,20 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
       slide.save,
       addLogo ? defaultLogoUrl : '',
     ].filter(Boolean);
+    
     await Promise.all(
       images.map(
         (url) =>
           new Promise((resolve) => {
             const img = new Image();
             img.src = url || '';
+            img.crossOrigin = 'anonymous';
             img.onload = resolve;
             img.onerror = resolve;
           })
       )
     );
   };
-
 
   const getSlideDimensions = () => {
     const baseDimensions = platform === 'instagram' ? { width: 1080, height: 1080 } : { width: 1200, height: 1200 };
@@ -137,363 +155,289 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
   };
 
   return (
-    <div
-      className={`min-h-screen ${
-        theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
-      } text-gray-800`}
-    >
-      <div className="max-w-7xl mx-auto p-8">
-        <header className="mb-8 flex justify-between items-center">
-          <h1
-            className={`text-4xl font-bold ${
-              theme === 'dark'
-                ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600'
-                : 'text-gray-900'
-            }`}
-          >
-            Template Carousel
-          </h1>
-        </header>
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Sidebar */}
+          <div className={`lg:w-1/4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-xl p-6`}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Templates
+              </h2>
+              <motion.button
+                onClick={() => navigate(-1)}
+                className={`p-2 rounded-lg ${
+                  theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ArrowLeft className={theme === 'dark' ? 'text-white' : 'text-gray-900'} />
+              </motion.button>
+            </div>
 
-        <div className="flex gap-8">
-          {/* Left Sidebar: Template List */}
-          <aside
-            className={`w-1/4 ${
-              theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-            } p-6 rounded-xl shadow-lg overflow-y-auto`}
-            style={{ maxHeight: '80vh' }}
-          >
-            <h2
-              className={`text-2xl font-semibold mb-6 ${
-                theme === 'dark' ? 'text-yellow-400' : 'text-amber-600'
-              }`}
-            >
-              Templates
-            </h2>
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {extendedTemplates.map((template) => (
                 <motion.div
                   key={template.id}
-                  className={`cursor-pointer p-3 rounded-xl border transition-all ${
+                  onClick={() => handleTemplateSelect(template)}
+                  className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all ${
                     selectedTemplate.id === template.id
-                      ? `${theme === 'dark' ? 'border-yellow-500 bg-gray-700' : 'border-amber-500 bg-gray-100'}`
-                      : `${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'}`
+                      ? theme === 'dark'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-blue-500 bg-blue-50'
+                      : theme === 'dark'
+                      ? 'border-gray-700 hover:border-gray-600'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                   whileHover={{ scale: 1.02 }}
-                  onClick={() => handleTemplateSelect(template)}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <img
-                    src={template.coverImage}
-                    alt={`${template.name} preview`}
-                    className="w-full h-40 object-cover rounded-lg mb-2"
-                  />
-                  <p
-                    className={`text-center ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                    } text-base font-medium`}
+                  <div className="aspect-square">
+                    <img
+                      src={template.coverImage}
+                      alt={template.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div
+                    className={`absolute bottom-0 left-0 right-0 p-3 ${
+                      theme === 'dark' ? 'bg-black/60' : 'bg-white/60'
+                    } backdrop-blur-sm`}
                   >
-                    {template.name}
-                  </p>
+                    <p
+                      className={`text-center font-medium ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}
+                    >
+                      {template.name}
+                    </p>
+                  </div>
                 </motion.div>
               ))}
             </div>
-          </aside>
+          </div>
 
-          {/* Right Side: Selected Template Preview */}
-          <main className="w-3/4">
-            <div className="mb-6 flex justify-between items-center">
-              <h2
-                className={`text-2xl font-semibold ${
-                  theme === 'dark'
-                    ? 'text-white'
-                    : 'text-gray-800'
-                }`}
-              >
-                Preview: {selectedTemplate.name}
-              </h2>
-              {!editMode && onSave && (
-                <motion.button
-                  onClick={() => setEditMode(true)}
-                  className={`px-6 py-3 rounded-lg transition-all ${
-                    theme === 'dark'
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Edit Slides
-                </motion.button>
-              )}
-            </div>
-
-            {loading && (
-              <div className="flex items-center justify-center">
-                <Loader2
-                  className={`w-12 h-12 animate-spin ${
-                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                  }`}
-                />
-              </div>
-            )}
-
-            <Swiper
-              modules={[Navigation, Pagination]}
-              navigation={{
-                nextEl: '.swiper-button-next-custom',
-                prevEl: '.swiper-button-prev-custom',
-              }}
-              pagination={{ clickable: true }}
-              spaceBetween={20}
-              slidesPerView={1}
-              onSlideChange={handleSlideChange}
-              ref={swiperRef}
-              className="mb-8"
-            >
-              {slides.map((slide, index) => (
-                <SwiperSlide key={index}>
-                  <div
-                    ref={(el) => (slideRefs.current[index] = el)}
-                    style={{
-                      ...getSlideDimensions(),
-                      margin: '0 auto',
-                      overflow: 'hidden',
-                    }}
-                    className={`rounded-xl shadow-lg ${
-                      theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                    }`}
-                  >
-                    {selectedTemplate.renderSlide(slide, addLogo, defaultLogoUrl)}
+          {/* Main Content */}
+          <div className="lg:w-3/4 space-y-6">
+            <div className={`rounded-2xl shadow-xl overflow-hidden ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                    {selectedTemplate.name}
+                  </h2>
+                  <div className="flex gap-3">
+                    <motion.button
+                      onClick={() => setEditMode(!editMode)}
+                      className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                        theme === 'dark'
+                          ? 'bg-blue-500 hover:bg-blue-600'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      } text-white`}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Settings size={18} />
+                      {editMode ? 'Preview' : 'Edit'}
+                    </motion.button>
                   </div>
-                </SwiperSlide>
-              ))}
-              <div className="swiper-button-prev-custom absolute top-1/2 left-4 -translate-y-1/2 z-10">
-                <motion.button
-                  className={`w-10 h-10 rounded-full bg-white/20 text-white hover:bg-white/30 transition-all ${
-                    theme === 'dark' ? '' : 'text-gray-800'
-                  }`}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <svg viewBox="0 0 24 24" className="w-6 h-6">
-                    <path d="M14 18l-6-6 6-6v12z" fill="currentColor" />
-                  </svg>
-                </motion.button>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {loading ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center justify-center h-[600px]"
+                    >
+                      <Loader2 className={`w-12 h-12 animate-spin ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="relative"
+                    >
+                      <Swiper
+                        modules={[Navigation, Pagination, EffectFade, Autoplay]}
+                        effect="fade"
+                        navigation={{
+                          prevEl: '.swiper-button-prev',
+                          nextEl: '.swiper-button-next',
+                        }}
+                        pagination={{
+                          clickable: true,
+                          el: '.swiper-pagination',
+                        }}
+                        autoplay={{
+                          delay: 5000,
+                          disableOnInteraction: false,
+                        }}
+                        loop={true}
+                        className="rounded-xl overflow-hidden"
+                      >
+                        {slides.map((slide, index) => (
+                          <SwiperSlide key={index}>
+                            <div
+                              ref={(el) => (slideRefs.current[index] = el)}
+                              style={getSlideDimensions()}
+                              className="mx-auto"
+                            >
+                              {selectedTemplate.renderSlide(
+                                editMode ? editedSlides[index] : slide,
+                                addLogo,
+                                defaultLogoUrl
+                              )}
+                            </div>
+                          </SwiperSlide>
+                        ))}
+                      </Swiper>
+
+                      <div className="swiper-button-prev !hidden lg:!flex">
+                        <ChevronLeft className="w-6 h-6" />
+                      </div>
+                      <div className="swiper-button-next !hidden lg:!flex">
+                        <ChevronRight className="w-6 h-6" />
+                      </div>
+                      <div className="swiper-pagination"></div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-              <div className="swiper-button-next-custom absolute top-1/2 right-4 -translate-y-1/2 z-10">
-                <motion.button
-                  className={`w-10 h-10 rounded-full bg-white/20 text-white hover:bg-white/30 transition-all ${
-                    theme === 'dark' ? '' : 'text-gray-800'
-                  }`}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <svg viewBox="0 0 24 24" className="w-6 h-6">
-                    <path d="M10 6l6 6-6 6V6z" fill="currentColor" />
-                  </svg>
-                </motion.button>
-              </div>
-            </Swiper>
+            </div>
 
             {editMode && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`mt-8 p-6 rounded-xl shadow-lg ${
-                  theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
-                }`}
+                exit={{ opacity: 0, y: -20 }}
+                className={`rounded-2xl shadow-xl p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
               >
-                <h3
-                  className={`text-2xl font-semibold mb-6 ${
-                    theme === 'dark' ? 'text-white' : 'text-gray-800'
-                  }`}
-                >
+                <h3 className={`text-xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                   Edit Slide {activeIndex + 1}
                 </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      className={`block mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}
-                    >
-                      Tagline
-                    </label>
-                    <input
-                      type="text"
-                      value={editedSlides[activeIndex].tagline || ''}
-                      onChange={(e) => handleEditChange(activeIndex, 'tagline', e.target.value)}
-                      className={`w-full px-4 py-2 rounded-lg ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 text-white border border-gray-600'
-                          : 'bg-gray-100 text-gray-800 border border-gray-300'
-                      } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    />
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                        Title
+                      </label>
+                      <input
+                        type="text"
+                        value={editedSlides[activeIndex].title || ''}
+                        onChange={(e) => handleEditChange(activeIndex, 'title', e.target.value)}
+                        className={`w-full px-4 py-2 rounded-lg ${
+                          theme === 'dark'
+                            ? 'bg-gray-700 text-white border-gray-600'
+                            : 'bg-white text-gray-900 border-gray-300'
+                        } border focus:ring-2 focus:ring-blue-500`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                        Description
+                      </label>
+                      <textarea
+                        value={editedSlides[activeIndex].description || ''}
+                        onChange={(e) => handleEditChange(activeIndex, 'description', e.target.value)}
+                        rows={4}
+                        className={`w-full px-4 py-2 rounded-lg ${
+                          theme === 'dark'
+                            ? 'bg-gray-700 text-white border-gray-600'
+                            : 'bg-white text-gray-900 border-gray-300'
+                        } border focus:ring-2 focus:ring-blue-500`}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label
-                      className={`block mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}
-                    >
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      value={editedSlides[activeIndex].title || ''}
-                      onChange={(e) => handleEditChange(activeIndex, 'title', e.target.value)}
-                      className={`w-full px-4 py-2 rounded-lg ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 text-white border border-gray-600'
-                          : 'bg-gray-100 text-gray-800 border border-gray-300'
-                      } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label
-                      className={`block mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}
-                    >
-                      Description
-                    </label>
-                    <textarea
-                      value={editedSlides[activeIndex].description || ''}
-                      onChange={(e) => handleEditChange(activeIndex, 'description', e.target.value)}
-                      className={`w-full px-4 py-2 rounded-lg ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 text-white border border-gray-600'
-                          : 'bg-gray-100 text-gray-800 border border-gray-300'
-                      } focus:outline-none focus:ring-2 focus:ring-blue-500 h-32`}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className={`block mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}
-                    >
-                      Background Image
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(activeIndex, 'imageUrl', e)}
-                      className={`w-full px-4 py-2 rounded-lg ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 text-white border border-gray-600'
-                          : 'bg-gray-100 text-gray-800 border border-gray-300'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className={`block mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}
-                    >
-                      Headshot Image
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(activeIndex, 'headshotUrl', e)}
-                      className={`w-full px-4 py-2 rounded-lg ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 text-white border border-gray-600'
-                          : 'bg-gray-100 text-gray-800 border border-gray-300'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className={`block mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}
-                    >
-                      Overlay Graphic
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(activeIndex, 'overlayGraphic', e)}
-                      className={`w-full px-4 py-2 rounded-lg ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 text-white border border-gray-600'
-                          : 'bg-gray-100 text-gray-800 border border-gray-300'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className={`block mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}
-                    >
-                      Add Logo
-                    </label>
-                    <input
-                      type="checkbox"
-                      checked={addLogo}
-                      onChange={(e) => setAddLogo(e.target.checked)}
-                      className={`w-5 h-5 ${
-                        theme === 'dark'
-                          ? 'text-yellow-400 border-gray-600'
-                          : 'text-amber-600 border-gray-300'
-                      }`}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label
-                      className={`block mb-1 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}
-                    >
-                      Platform
-                    </label>
-                    <select
-                      value={platform}
-                      onChange={(e) => setPlatform(e.target.value as 'instagram' | 'facebook')}
-                      className={`w-full px-4 py-2 rounded-lg ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 text-white border border-gray-600'
-                          : 'bg-gray-100 text-gray-800 border border-gray-300'
-                      } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    >
-                      <option value="instagram">Instagram (1080x1080)</option>
-                      <option value="facebook">Facebook (1200x1200)</option>
-                    </select>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                        Background Image
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(activeIndex, 'imageUrl', e)}
+                          className="hidden"
+                          id="background-image"
+                        />
+                        <label
+                          htmlFor="background-image"
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer ${
+                            theme === 'dark'
+                              ? 'bg-gray-700 text-white hover:bg-gray-600'
+                              : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                          }`}
+                        >
+                          <Upload size={18} />
+                          Upload Image
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <label className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                        Show Logo
+                      </label>
+                      <input
+                        type="checkbox"
+                        checked={addLogo}
+                        onChange={(e) => setAddLogo(e.target.checked)}
+                        className="w-5 h-5 rounded text-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                        Platform
+                      </label>
+                      <select
+                        value={platform}
+                        onChange={(e) => setPlatform(e.target.value as 'instagram' | 'facebook')}
+                        className={`w-full px-4 py-2 rounded-lg ${
+                          theme === 'dark'
+                            ? 'bg-gray-700 text-white border-gray-600'
+                            : 'bg-white text-gray-900 border-gray-300'
+                        } border focus:ring-2 focus:ring-blue-500`}
+                      >
+                        <option value="instagram">Instagram (1080x1080)</option>
+                        <option value="facebook">Facebook (1200x1200)</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-6 flex space-x-4">
-                  <motion.button
-                    onClick={handleSaveChanges}
-                    className={`px-6 py-3 rounded-lg transition-all ${
-                      theme === 'dark'
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-green-500 text-white hover:bg-green-600'
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Save Changes
-                  </motion.button>
+
+                <div className="flex justify-end gap-4 mt-6">
                   <motion.button
                     onClick={() => setEditMode(false)}
-                    className={`px-6 py-3 rounded-lg transition-all ${
+                    className={`px-4 py-2 rounded-lg ${
                       theme === 'dark'
-                        ? 'bg-red-600 text-white hover:bg-red-700'
-                        : 'bg-red-500 text-white hover:bg-red-600'
+                        ? 'bg-gray-700 text-white hover:bg-gray-600'
+                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
                     Cancel
                   </motion.button>
+                  <motion.button
+                    onClick={handleSaveChanges}
+                    className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Save Changes
+                  </motion.button>
                 </div>
               </motion.div>
             )}
-          </main>
+          </div>
         </div>
       </div>
     </div>

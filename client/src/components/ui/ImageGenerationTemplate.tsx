@@ -1,12 +1,13 @@
-// ImageGenerationTemplate.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { imageTemplates, ImageTemplate } from '../../templetes/ImageTemplate';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTheme } from '../../context/ThemeContext';
 
 export const ImageGenerationTemplate: React.FC = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const defaultLogoUrl = '/images/Logo1.png';
   const [selectedTemplate, setSelectedTemplate] = useState<ImageTemplate | null>(null);
 
@@ -32,95 +33,120 @@ export const ImageGenerationTemplate: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-6 md:p-10">
-      <div className="max-w-6xl mx-auto flex flex-col space-y-8">
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <button
+        <div className="flex items-center justify-between mb-8">
+          <motion.button
             onClick={handleBack}
-            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-all duration-300"
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl ${
+              theme === 'dark'
+                ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            } shadow-lg transition-all`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <ArrowLeft className="w-6 h-6" />
-            <span className="text-lg font-medium">Back</span>
-          </button>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">
-            Select an Image Template
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
+          </motion.button>
+          <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Select Image Template
           </h1>
         </div>
 
-        {/* Horizontal Scrollable Template List */}
-        <div className="overflow-x-auto">
-          <div className="flex space-x-4 pb-4">
-            {imageTemplates.map((template) => (
-              <motion.div
-                key={template.id}
-                className={`flex-shrink-0 w-48 bg-gray-800/50 backdrop-blur-md rounded-xl p-4 border ${
-                  selectedTemplate?.id === template.id ? 'border-yellow-500' : 'border-gray-700'
-                } cursor-pointer hover:border-yellow-500 transition-all duration-300`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleSelectTemplate(template)}
-              >
-                <div className="relative rounded-lg overflow-hidden h-32">
-                  {template.coverImageUrl ? (
-                    <img
-                      src={template.coverImageUrl}
-                      alt={template.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-700">
-                      <span className="text-gray-400">No Preview</span>
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-sm font-semibold text-gray-100 mt-2 text-center">{template.name}</h3>
-              </motion.div>
-            ))}
-          </div>
+        {/* Templates Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+          {imageTemplates.map((template) => (
+            <motion.div
+              key={template.id}
+              onClick={() => handleSelectTemplate(template)}
+              className={`group cursor-pointer rounded-2xl overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              } shadow-xl transition-all ${
+                selectedTemplate?.id === template.id
+                  ? 'ring-2 ring-blue-500'
+                  : 'hover:shadow-2xl'
+              }`}
+              whileHover={{ y: -5 }}
+            >
+              <div className="aspect-[3/4] relative overflow-hidden">
+                {template.coverImageUrl ? (
+                  <img
+                    src={template.coverImageUrl}
+                    alt={template.name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className={`w-full h-full flex items-center justify-center ${
+                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                  }`}>
+                    <ImageIcon className={`w-12 h-12 ${
+                      theme === 'dark' ? 'text-gray-600' : 'text-gray-400'
+                    }`} />
+                  </div>
+                )}
+                <div className={`absolute inset-0 bg-gradient-to-t ${
+                  theme === 'dark'
+                    ? 'from-gray-900/80 to-transparent'
+                    : 'from-black/60 to-transparent'
+                }`} />
+              </div>
+              <div className="p-4">
+                <h3 className={`text-lg font-semibold ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {template.name}
+                </h3>
+                <p className={`text-sm mt-1 ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  Click to preview and customize
+                </p>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Selected Template Preview */}
-        {selectedTemplate ? (
+        {/* Preview Section */}
+        {selectedTemplate && (
           <motion.div
-            className="bg-gray-800/50 backdrop-blur-md rounded-xl p-6 border border-gray-700"
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            className={`rounded-2xl ${
+              theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+            } shadow-xl p-6`}
           >
-            <h2 className="text-2xl font-semibold text-gray-100 mb-4">Template Preview</h2>
-            <div
-              className="relative rounded-xl overflow-hidden max-w-2xl max-h-[600px] mx-auto"
-              style={{
-                width: '500px',
-                height: '700px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxSizing: 'border-box',
-              }}
-            >
-              {selectedTemplate.renderSlide(selectedTemplate.slides[0], true, defaultLogoUrl)}
-            </div>
-            <div className="flex justify-center mt-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className={`text-2xl font-bold ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>
+                Template Preview
+              </h2>
               <motion.button
                 onClick={handleProceedToEdit}
-                className="px-6 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg hover:from-green-400 hover:to-teal-400 transition-all duration-300"
+                className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Select and Edit
+                Customize Template
+                <ChevronRight className="w-5 h-5" />
               </motion.button>
             </div>
+            <div className="flex justify-center">
+              <div
+                className="relative rounded-xl overflow-hidden"
+                style={{
+                  width: '500px',
+                  height: '700px',
+                }}
+              >
+                {selectedTemplate.renderSlide(selectedTemplate.slides[0], true, defaultLogoUrl)}
+              </div>
+            </div>
           </motion.div>
-        ) : (
-          <div className="text-center text-gray-400">
-            <p>Please select a template to preview.</p>
-          </div>
         )}
       </div>
     </div>
   );
 };
-

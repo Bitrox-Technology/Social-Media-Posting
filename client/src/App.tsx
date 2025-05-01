@@ -75,16 +75,9 @@ function App() {
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route
-                    path="/topic"
-                    element={contentType ? <TopicSelector /> : <Navigate to="/" />}
-                  />
-                  <Route
-                    path="/ideas"
-                    element={selectedTopic ? <ContentIdeas /> : <Navigate to="/topic" />}
-                  />
-                  <Route
-                    path="/images"
+                  <Route path="/topic" element={contentType ? <TopicSelector /> : <Navigate to="/" />} />
+                  <Route path="/ideas" element={selectedTopic ? <ContentIdeas /> : <Navigate to="/topic" />} />
+                  <Route path="/images"
                     element={
                       selectedIdea && contentType ? (
                         <ImageGenerator contentType={contentType} />

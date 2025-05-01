@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { setUser, clearUser } from './appSlice'; // Adjust path to your appSlice
+import { setUser, clearUser } from './appSlice'; 
+import { backendURL } from '../constants/urls';
 
 interface ContentIdea {
   title: string;
@@ -42,13 +43,12 @@ interface SavePostRequest {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:4000/api/v1',
+    baseUrl: backendURL ,
     prepareHeaders: (headers, { getState }: { getState: () => unknown }) => {
-      const dispatch = (action: any) => { }; // Add a placeholder dispatch function if needed
+      const dispatch = (action: any) => { }; 
       const state = getState() as { app?: { user?: { token?: string; expiresAt?: number; email?: string } } };
       let token = state.app?.user?.token;
 
-      // Fallback to localStorage if token is not in state
       if (!token) {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -56,7 +56,6 @@ export const api = createApi({
           token = user.token;
           const expiresAt = user.expiresAt;
 
-          // Check if token is expired
           if (expiresAt && Date.now() > expiresAt) {
             dispatch(clearUser());
             localStorage.removeItem('user');
@@ -64,7 +63,6 @@ export const api = createApi({
             return headers;
           }
 
-          // Restore user to Redux
           dispatch(setUser(user));
         }
       }
