@@ -5,7 +5,7 @@ import { Navigation, Pagination } from 'swiper/modules';
 import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import { Calendar, Linkedin, Instagram, Facebook, Clock, Share2, CheckCircle } from 'lucide-react';
-import { useLazyGetSavePostsQuery } from '../../store/api';
+import { useLazyAuthLinkedInQuery, useLazyGetSavePostsQuery } from '../../store/api';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -48,6 +48,7 @@ export const SelectSocialMedia: React.FC = () => {
   const [schedules, setSchedules] = useState<{ [postId: string]: Schedule }>({});
   const { postContentId } = location.state || {};
   const [getSavePosts, { data: rawPosts, isLoading, isError, error }] = useLazyGetSavePostsQuery();
+  const [authLinkedIn] = useLazyAuthLinkedInQuery()
 
   const posts = Array.isArray(rawPosts?.data)
     ? rawPosts.data.map((post) => ({
@@ -163,6 +164,16 @@ export const SelectSocialMedia: React.FC = () => {
     return renderImage(post.images[0]);
   };
 
+  const handleAuthLinkedIn = async () => {
+    try {
+      const response = await authLinkedIn().unwrap();
+      window.location.href = response.data; 
+      
+    } catch (error) {
+      console.error('Error during LinkedIn authentication:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
@@ -184,6 +195,7 @@ export const SelectSocialMedia: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4 sm:p-6">
+      <button onClick={handleAuthLinkedIn} className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition-all duration-300"> Auth LinkedIn </button>
       <div className="max-w-7xl mx-auto">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}

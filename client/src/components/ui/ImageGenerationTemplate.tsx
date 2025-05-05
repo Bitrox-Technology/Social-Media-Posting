@@ -29,7 +29,7 @@ export const ImageGenerationTemplate: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate('/auto-post-creator');
+    navigate('/');
   };
 
   return (

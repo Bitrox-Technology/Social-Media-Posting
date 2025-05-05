@@ -1,22 +1,25 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import { ApiError } from "./ApiError.js";
-// 'fs' is file system that help to read write on the file. mainly we need a file path.
+import { INTERNAL_SERVER_ERROR } from "./apiResponseCode.js";
 
-// In our file system our file are linked or unlinked
-// Linked means attached and Unlinked means delete the files
 
-const uploadOnClodinary = async (localFilePath) => {
-  cloudinary.config({
+const configCloudinary = () => {
+  return cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
+}
+const uploadOnClodinary = async (localFilePath, folder) => {
+
+  let cloudinary = configCloudinary();
   try {
     if (!localFilePath) return null;
     // Upload the file on cloudinary
     const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: "auto",
+      resource_type: "image",
+      folder: folder
     });
     fs.unlinkSync(localFilePath);
     return response;
@@ -27,12 +30,7 @@ const uploadOnClodinary = async (localFilePath) => {
 };
 
 const carouselUploadOnCloudinary = async (files) => {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-
+  let cloudinary = configCloudinary();
   const urls = [];
 
   try {
@@ -58,29 +56,35 @@ const carouselUploadOnCloudinary = async (files) => {
   }
 };
 
-const singleUploadOnCloudinary = async (buffer) => {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
 
+const deleteImageFromCloudinary = async (url) => {
+  let cloudinary = configCloudinary();
+  const publicId = url.split("/").pop().split(".")[0];
   try {
-    const result = await cloudinary.uploader
-      .upload_stream({ resource_type: "image" })
-      .end(buffer);
-
-    console.log(result);
-    return result.secure_url;
+    const response = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+    });
+    return response;
   } catch (error) {
-    throw new ApiError(
-      500,
-      `Error uploading image to Cloudinary: ${error.message}`
-    );
+    throw new ApiError(INTERNAL_SERVER_ERROR,  `Error deleting image from Cloudinary, ${error}`);
   }
-};
+}
+
+const deleteMultipleImagesFromCloudinary = async (urls) => {
+  let cloudinary = configCloudinary();
+  const publicIds = urls.map(url => url.split("/").pop().split(".")[0]);
+  try {
+    const response = await cloudinary.api.delete_resources(publicIds, {
+      resource_type: "image",
+    });
+    return response;
+  } catch (error) {
+    throw new ApiError(INTERNAL_SERVER_ERROR, `Error deleting images from Cloudinary, ${error}`);
+  }
+}
 export {
   uploadOnClodinary,
   carouselUploadOnCloudinary,
-  singleUploadOnCloudinary,
+  deleteImageFromCloudinary,
+  deleteMultipleImagesFromCloudinary,  
 };

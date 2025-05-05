@@ -187,7 +187,8 @@ const UserDetail = () => {
         pauseOnHover: true,
         draggable: true,
       });
-      navigate('/dashboard');
+      setTimeout(() => {navigate('/profile');}, 2000)
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       setErrors({ submit: errorMessage });

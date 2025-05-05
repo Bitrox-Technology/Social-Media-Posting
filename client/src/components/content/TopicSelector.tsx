@@ -1,40 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowLeft, Sparkles, Building2, Hash } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setSelectedTopic, setSelectedBusiness, setApiTopics } from '../../store/appSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGenerateTopicsMutation, useSavePostContentMutation } from '../../store/api';
 
-interface TopicSelectorProps {
-  // No props needed since we're using Redux
-}
-
-export const TopicSelector: React.FC<TopicSelectorProps> = () => {
+export const TopicSelector: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const { selectedTopic, selectedBusiness, apiTopics: reduxApiTopics } = useAppSelector((state) => state.app);
   const [isDark, setIsDark] = useState(true);
-
   const [customBusiness, setCustomBusiness] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [customTopic, setCustomTopic] = useState('');
+  const [customTopics, setCustomTopics] = useState<string[]>([]);
   const [fetchingTopics, setFetchingTopics] = useState(false);
   const [generateTopics, { isLoading, error }] = useGenerateTopicsMutation();
   const [savePostContent] = useSavePostContentMutation();
 
-  const businesses = [
-    'E-commerce',
-    'Healthcare',
-    'Technology',
-    'Finance',
-    'Education',
-  ];
+  const businesses = ['E-commerce', 'Healthcare', 'Technology', 'Finance', 'Education'];
 
+  // Restore state on mount
   useEffect(() => {
-    const topicsFromRedux = selectedTopic ? selectedTopic.split(', ').filter(Boolean) : [];
-    setSelectedTopics(topicsFromRedux);
-  }, [selectedTopic]);
+    const savedBusiness = localStorage.getItem('selectedBusiness');
+    const savedTopics = localStorage.getItem('selectedTopic');
+    const savedCustomTopics = localStorage.getItem('customTopics');
+
+    if (savedBusiness) {
+      dispatch(setSelectedBusiness(savedBusiness));
+      // Only fetch topics if reduxApiTopics is empty
+      if (!reduxApiTopics.length) {
+        fetchTopics(savedBusiness);
+      }
+    }
+    if (savedTopics) {
+      const topicsArray = savedTopics.split(', ').filter(Boolean);
+      dispatch(setSelectedTopic(savedTopics));
+      setSelectedTopics(topicsArray);
+    }
+    if (savedCustomTopics) {
+      setCustomTopics(JSON.parse(savedCustomTopics));
+    }
+  }, [dispatch, reduxApiTopics.length]);
+
+  // Save state to localStorage
+  useEffect(() => {
+    localStorage.setItem('selectedBusiness', selectedBusiness || '');
+    localStorage.setItem('selectedTopic', selectedTopics.join(', '));
+    localStorage.setItem('customTopics', JSON.stringify(customTopics));
+  }, [selectedBusiness, selectedTopics, customTopics]);
+
+  // Handle navigation state from AutoPostCreator
+  useEffect(() => {
+    if (location.state?.fromAutoPostCreator && selectedBusiness && reduxApiTopics.length) {
+      // Skip fetching topics if coming back from AutoPostCreator and topics exist
+      setFetchingTopics(false);
+    }
+  }, [location.state, selectedBusiness, reduxApiTopics.length]);
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -42,7 +66,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
   };
 
   const fetchTopics = async (business: string) => {
-    if (fetchingTopics) return;
+    if (fetchingTopics || reduxApiTopics.length > 0) return;
     setFetchingTopics(true);
     try {
       const response = await generateTopics({ business }).unwrap();
@@ -61,7 +85,11 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
       dispatch(setSelectedBusiness(business));
       setCustomBusiness('');
       setSelectedTopics([]);
+      setCustomTopics([]);
       dispatch(setSelectedTopic(''));
+      dispatch(setApiTopics([]));
+      localStorage.removeItem('selectedTopic');
+      localStorage.removeItem('customTopics');
       fetchTopics(business);
     }
   };
@@ -80,10 +108,14 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
   };
 
   const handleCustomTopic = () => {
-    if (customTopic && selectedTopics.length < 7 && !selectedTopics.includes(customTopic)) {
-      const newSelectedTopics = [...selectedTopics, customTopic];
-      setSelectedTopics(newSelectedTopics);
-      dispatch(setSelectedTopic(newSelectedTopics.join(', ')));
+    if (
+      customTopic &&
+      selectedTopics.length < 7 &&
+      !selectedTopics.includes(customTopic) &&
+      !customTopics.includes(customTopic)
+    ) {
+      const newCustomTopics = [...customTopics, customTopic];
+      setCustomTopics(newCustomTopics);
       setCustomTopic('');
     }
   };
@@ -103,19 +135,13 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
   };
 
   const handleBack = () => {
-    navigate("/content-type");
+    navigate('/content-type');
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 `}>
-      
-      
+    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'dark' : ''}`}>
       <div className="container mx-auto px-4 py-12 max-w-6xl">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <motion.button
@@ -194,7 +220,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
                   <div className="flex items-center space-x-2">
                     <Hash className="w-5 h-5 text-purple-500" />
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      Select Topics for {selectedBusiness}
+                      Select Topics for {selectedBusiness} ({selectedTopics.length}/7)
                     </h3>
                   </div>
 
@@ -210,7 +236,7 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
                     </div>
                   )}
 
-                  {!reduxApiTopics.length && !isLoading && !fetchingTopics && (
+                  {!reduxApiTopics.length && !customTopics.length && !isLoading && !fetchingTopics && (
                     <motion.button
                       onClick={() => fetchTopics(selectedBusiness)}
                       className="w-full px-6 py-4 bg-purple-500 text-white font-semibold rounded-xl"
@@ -221,10 +247,10 @@ export const TopicSelector: React.FC<TopicSelectorProps> = () => {
                     </motion.button>
                   )}
 
-                  {reduxApiTopics.length > 0 && (
+                  {(reduxApiTopics.length > 0 || customTopics.length > 0) && (
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {reduxApiTopics.map((topic) => {
+                        {[...reduxApiTopics, ...customTopics].map((topic) => {
                           const isSelected = selectedTopics.includes(topic);
                           return (
                             <motion.button

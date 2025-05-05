@@ -34,7 +34,7 @@ export interface ImageContent {
     content: ImageContent | DoYouKnowContent | Slide[] | string;
     images?: { url: string; label: string }[];
     templateId?: string;
-    status: 'pending' | 'success' | 'error';
+    status: 'pending' | 'success' | 'error' | 'generating';
     errorMessage?: string;
     contentId?: string;
     contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent';

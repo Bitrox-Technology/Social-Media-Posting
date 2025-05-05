@@ -5,7 +5,7 @@ import SocialServices from "../services/social.js"
 const LinkedInAuthentication = async (req, res, next) => {
     try {
         let result = SocialServices.linkedInAuthentication()
-        return res.redirect(result)
+        return res.status(200).json(new ApiResponse(OK, result, "LinkedIn Authentication URL generated successfully"))
     } catch (error) {
         next(error)
     }
@@ -13,6 +13,7 @@ const LinkedInAuthentication = async (req, res, next) => {
 }
 
 const LinkedInCallback = async (req, res, next) => {
+    console.log("LinkedIn Callback URL", req.query)
     try {
         let result = SocialServices.linkedInCallback(req.query)
         return res.status(OK).json(new ApiResponse(OK, result, "LinkedIn Callback URL generated successfully"))

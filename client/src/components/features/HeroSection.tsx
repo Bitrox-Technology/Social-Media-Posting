@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, Bot, TrendingUp, Zap, Shield } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import ContentCard from '../ui/ContentCard';
+import { Link } from 'react-router-dom';
 
 const HeroSection: React.FC = () => {
   const { theme } = useTheme();
@@ -36,12 +37,12 @@ const HeroSection: React.FC = () => {
               Effortlessly create engaging, personalized content for all your social platforms with our AI assistant. Save time, increase engagement, and grow your audience.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-lg font-medium">
+              <Link to="/signup" className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-lg font-medium">
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
-              </button>
-              <button className={`px-8 py-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-xl shadow-lg hover:shadow-xl transition-all text-lg font-medium`}>
+              </Link>
+              <Link to="/features" className={`px-8 py-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-xl shadow-lg hover:shadow-xl transition-all text-lg font-medium`}>
                 Learn More
-              </button>
+              </Link>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>

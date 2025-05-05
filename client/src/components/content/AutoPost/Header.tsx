@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
         whileTap={{ scale: 0.97 }}
       >
         <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
-        <span className="text-sm md:text-base">Back</span>
+
       </motion.button>
 
       <h1

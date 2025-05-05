@@ -7,10 +7,11 @@ import {
   useGenerateImageMutation,
   useGenerateImageContentMutation,
   useLazyGetImageContentQuery,
-  useUpdatePostMutation
+  useUpdatePostMutation,
 } from '../../store/api';
 import { imageTemplates, ImageSlide } from '../../templetes/ImageTemplate';
-import { ArrowLeft, Image as ImageIcon, Wand2, Save, Layout, Settings2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Image as Sparkles, Wand2, Save, Layout, Settings2, RefreshCw } from 'lucide-react';
+
 import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -42,7 +43,11 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
     generatedContent,
     contentId,
     contentType,
+    logoUrl: stateLogoUrl, // Extract logoUrl from location.state
   } = location.state || {};
+
+  // Use stateLogoUrl if available, otherwise defaultLogoUrl
+  const logoUrl = stateLogoUrl || defaultLogoUrl;
 
   const [selectedTemplate, setSelectedTemplate] = useState(
     imageTemplates.find((t) => t.id === (templateId || locationTemplateId)) || imageTemplates[0]
@@ -118,7 +123,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   }, [contentId, contentType, isInitialized]);
 
   const preloadSlideImages = async (slide: ImageSlide) => {
-    const images = [slide.imageUrl, showLogo ? defaultLogoUrl : ''].filter(Boolean);
+    const images = [slide.imageUrl, showLogo ? logoUrl : ''].filter(Boolean);
     await Promise.all(
       images.map(
         (url) =>
@@ -127,7 +132,10 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
             img.src = url || '';
             img.crossOrigin = 'Anonymous';
             img.onload = () => resolve(undefined);
-            img.onerror = () => resolve(undefined);
+            img.onerror = () => {
+              console.error(`Failed to preload image: ${url}`);
+              resolve(undefined);
+            };
           })
       )
     );
@@ -249,7 +257,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
       const updatePostData = await updatePost({
         contentId,
         contentType,
-        images: [{ url: cloudinaryUrl, label: 'Image Post' }]
+        images: [{ url: cloudinaryUrl, label: 'Image Post' }],
       }).unwrap();
 
       dispatch(setSelectedFile({ name: 'image-slide.png', url: cloudinaryUrl }));
@@ -285,16 +293,17 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
         <div className="flex items-center justify-between mb-8">
           <motion.button
             onClick={() => navigate('/auto', { state: { postContentId } })}
-            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-all"
-            whileHover={{ x: -4 }}
+            className="p-2 rounded-full bg-gray-800 dark:bg-gray-700 text-gray-200 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <ArrowLeft className="w-6 h-6" />
-            <span className="text-lg font-medium">Back to Posts</span>
+            <ArrowLeft className="w-5 h-5" />
           </motion.button>
-          
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-            Image Post Editor
-          </h1>
+          <div className="flex items-center space-x-2">
+            <Sparkles className="w-6 h-6 text-blue-500" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Image Post Editor</h2>
+          </div>
+
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -314,12 +323,13 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                   aspectRatio: '5/7',
                 }}
               >
-                {selectedTemplate.renderSlide(slide, showLogo, defaultLogoUrl)}
+                {selectedTemplate.renderSlide(slide, showLogo, logoUrl)}
               </div>
             </div>
 
             <div className="flex justify-center gap-4">
-              <motion.button
+              {/* Commented buttons preserved for reference */}
+              {/* <motion.button
                 onClick={handleGenerateImage}
                 disabled={isGenerating}
                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -327,9 +337,9 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
               >
                 <ImageIcon className="w-5 h-5" />
                 Generate Image
-              </motion.button>
+              </motion.button> */}
 
-              <motion.button
+              {/* <motion.button
                 onClick={handleGenerateContent}
                 disabled={isGenerating}
                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg font-medium hover:shadow-lg hover:shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -337,7 +347,7 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
               >
                 <Wand2 className="w-5 h-5" />
                 Generate Content
-              </motion.button>
+              </motion.button> */}
             </div>
           </motion.div>
 
@@ -349,17 +359,16 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
             <div className="flex gap-4 mb-6">
               {[
                 { id: 'content', icon: <Layout className="w-5 h-5" />, label: 'Content' },
-                { id: 'design', icon: <ImageIcon className="w-5 h-5" />, label: 'Design' },
+                // { id: 'design', icon: <ImageIcon className="w-5 h-5" />, label: 'Design' },
                 { id: 'settings', icon: <Settings2 className="w-5 h-5" />, label: 'Settings' },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                    activeTab === tab.id
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${activeTab === tab.id
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-                  }`}
+                    }`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
@@ -423,28 +432,6 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                   </>
                 )}
 
-                {activeTab === 'design' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-gray-300 mb-2">Template Style</label>
-                      <select
-                        value={selectedTemplate.id}
-                        onChange={(e) => {
-                          const template = imageTemplates.find((t) => t.id === e.target.value);
-                          if (template) setSelectedTemplate(template);
-                        }}
-                        className="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500"
-                      >
-                        {imageTemplates.map((template) => (
-                          <option key={template.id} value={template.id}>
-                            {template.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-
                 {activeTab === 'settings' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -456,6 +443,17 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
                         className="w-5 h-5 text-blue-500 rounded focus:ring-blue-500"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <label className="block text-gray-300">Logo Preview</label>
+                      {showLogo && (
+                        <img
+                          src={logoUrl}
+                          alt="Logo"
+                          className="w-24 h-24 object-contain rounded-lg"
+                          onError={() => console.error(`Failed to load logo: ${logoUrl}`)}
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
               </motion.div>
@@ -464,11 +462,10 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
             <motion.button
               onClick={handleSave}
               disabled={isUploading}
-              className={`mt-8 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-                isUploading
+              className={`mt-8 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${isUploading
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:shadow-lg hover:shadow-green-500/20 text-white'
-              }`}
+                }`}
               whileHover={{ scale: isUploading ? 1 : 1.02 }}
             >
               {isUploading ? (

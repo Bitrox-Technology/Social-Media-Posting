@@ -300,6 +300,12 @@ export const api = createApi({
         body,
       }),
     }),
+    authLinkedIn: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/social/linkedin/auth',
+        method: 'GET',
+      }),
+    })
   }),
 });
 
@@ -331,5 +337,6 @@ export const {
   useResendOTPMutation,
   useForgetPasswordMutation,
   useUserDetailsMutation,
-  useLazyGetUserProfileQuery
+  useLazyGetUserProfileQuery,
+  useLazyAuthLinkedInQuery,
 } = api;

@@ -152,9 +152,6 @@ const ImageTemplate3: ImageTemplate = {
                     src={defaultLogoUrl}
                     alt="Logo"
                     className="absolute top-4 right-4 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
-                    style={{
-                        filter: "invert(100%)"
-                    }}
                 />
             )}
 

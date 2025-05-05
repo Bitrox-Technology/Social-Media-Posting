@@ -48,8 +48,9 @@ export const SignUp = () => {
           pauseOnHover: true,
           draggable: true,
         });
+
         setTimeout (() => {navigate('/otp-verification', { state: { email: response.data.email } });}, 2000); 
-        
+  
       }
     } catch (err: any) {
       const errorMessage = err?.data?.message || 'Signup failed. Please try again.';

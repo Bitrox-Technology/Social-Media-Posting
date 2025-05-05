@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch } from '../../store/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
+import { createRoot } from 'react-dom/client';
+import { Loader2, CheckCircle } from 'lucide-react';
 
 import {
   useGenerateImageMutation,
@@ -28,23 +30,21 @@ import { Post, ImageContent, CarouselContent } from './AutoPost/Types';
 import { imageTemplates } from '../../templetes/ImageTemplate';
 import { carouselTemplates, Slide } from '../../templetes/templetesDesign';
 import { doYouKnowTemplates, DoYouKnowSlide } from '../../templetes/doYouKnowTemplates';
-import { createRoot } from 'react-dom/client';
-import { Loader2, CheckCircle } from 'lucide-react'; // Assuming CheckCircle is from lucide-react
+
 
 export const AutoPostCreator: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
-  
+
   // State management
   const [posts, setLocalPosts] = useState<Post[]>([]);
   const [completedPosts, setCompletedPosts] = useState<Post[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingTopic, setGeneratingTopic] = useState<string | null>(null); // Track active post
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [postContentId, setPostContentId] = useState<string | null>(location.state?.postContentId || null);
-  
-  // Loading states
   const [isLoadingTopics, setIsLoadingTopics] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [topicsError, setTopicsError] = useState<string | null>(null);
@@ -76,10 +76,8 @@ export const AutoPostCreator: React.FC = () => {
     'image',
   ];
 
-  // Calculate if we're in a loading state
   const isLoading = isLoadingTopics || isFetchingPostContent || isLoadingPosts || isFetchingPosts;
 
-  // Register refs for elements
   const registerRef = (topic: string, ref: HTMLDivElement) => {
     postRefs.current.set(topic, ref);
   };
@@ -151,7 +149,6 @@ export const AutoPostCreator: React.FC = () => {
           } catch (postError) {
             console.error('Error fetching posts:', postError);
             setPostsError('Failed to load saved posts. You can still generate new posts.');
-            // Initialize all as pending if posts fetch fails
             const initialPosts: Post[] = fetchedTopics.map((topic: string, index: number): Post => ({
               topic,
               type: postTypes[index % postTypes.length],
@@ -175,6 +172,10 @@ export const AutoPostCreator: React.FC = () => {
     };
 
     fetchData();
+
+    // Reset generation state on mount
+    setIsGenerating(false);
+    setGeneratingTopic(null);
   }, [getPostContent, getSavePosts, navigate, postContentId]);
 
   // Handle updated post from location state
@@ -208,8 +209,11 @@ export const AutoPostCreator: React.FC = () => {
     }
 
     const type = postTypes[index % postTypes.length];
+    setGeneratingTopic(`${topic}-${type}`);
     setLocalPosts((prev) =>
-      prev.map((p) => (p.topic === topic && p.type === type ? { ...p, status: 'pending' } : p))
+      prev.map((p) =>
+        p.topic === topic && p.type === type ? { ...p, status: 'generating' } : p
+      )
     );
 
     try {
@@ -333,7 +337,7 @@ export const AutoPostCreator: React.FC = () => {
           newPost = {
             topic,
             type,
-            content: newSlides.map(slide => ({
+            content: newSlides.map((slide) => ({
               ...slide,
               description: slide.description || '',
             })),
@@ -461,6 +465,7 @@ export const AutoPostCreator: React.FC = () => {
       setLocalPosts((prev) => prev.filter((p) => p.topic !== topic || p.type !== type));
       setCompletedPosts((prev) => [...prev, newPost]);
       setCurrentIndex(index);
+      setGeneratingTopic(null);
 
       return true;
     } catch (err) {
@@ -477,6 +482,7 @@ export const AutoPostCreator: React.FC = () => {
         )
       );
       setCurrentIndex(index - 1);
+      setGeneratingTopic(null);
       return false;
     }
   };
@@ -494,6 +500,13 @@ export const AutoPostCreator: React.FC = () => {
     setIsGenerating(false);
   };
 
+  // const handleGenerateSinglePost = async (topic: string, index: number) => {
+  //   if (isGenerating || !postContentId || isLoading) return;
+  //   setIsGenerating(true);
+  //   await generatePost(topic, index);
+  //   setIsGenerating(false);
+  // };
+
   const handleEditPost = (post: Post) => {
     const commonState = {
       contentId: post.contentId,
@@ -504,26 +517,17 @@ export const AutoPostCreator: React.FC = () => {
     switch (post.type) {
       case 'image':
         navigate('/image-generator', {
-          state: {
-            ...commonState, 
-            postContentId
-          },
+          state: { ...commonState, postContentId },
         });
         break;
       case 'carousel':
         navigate('/carousel', {
-          state: {
-            ...commonState,
-            postContentId
-          },
+          state: { ...commonState, postContentId },
         });
         break;
       case 'doyouknow':
         navigate('/doyouknow', {
-          state: {
-            ...commonState,
-            postContentId
-          },
+          state: { ...commonState, postContentId },
         });
         break;
     }
@@ -540,7 +544,10 @@ export const AutoPostCreator: React.FC = () => {
     }
   };
 
-  const handleBack = () => navigate('/topic');
+  const handleBack = () => navigate('/topic', { state: { fromAutoPostCreator: true }});
+
+  // Calculate progress for the progress bar
+  const progressPercentage = topics.length > 0 ? (completedPosts.length / topics.length) * 100 : 0;
 
   return (
     <div
@@ -554,8 +561,9 @@ export const AutoPostCreator: React.FC = () => {
         className={`relative max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-10 ${
           theme === 'dark' ? '' : 'bg-white/90 shadow-xl rounded-xl border border-gray-200'
         }`}
-      >
-        <Header 
+      >  
+      
+        <Header
           theme={theme}
           handleBack={handleBack}
           generateAllPosts={generateAllPosts}
@@ -565,8 +573,38 @@ export const AutoPostCreator: React.FC = () => {
           isLoading={isLoading}
         />
 
-        <LoadingState 
-          isLoading={isLoading} 
+        {/* Progress Bar */}
+        {topics.length > 0 && (
+          <div className="mb-6">
+            <div className="flex justify-between mb-2">
+              <span
+                className={`text-sm font-medium ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                }`}
+              >
+                Generation Progress
+              </span>
+              <span
+                className={`text-sm font-medium ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                }`}
+              >
+                {completedPosts.length}/{topics.length} Posts
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+              <motion.div
+                className="bg-blue-600 h-2.5 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercentage}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+          </div>
+        )}
+
+        <LoadingState
+          isLoading={isLoading}
           error={topicsError || postsError}
           theme={theme}
         />
@@ -604,23 +642,20 @@ export const AutoPostCreator: React.FC = () => {
                       theme === 'dark' ? 'text-white' : 'text-gray-800'
                     }`}
                   >
-                    <motion.div 
-                      animate={{ rotate: isGenerating ? 360 : 0 }}
-                      transition={{ duration: 1, repeat: isGenerating ? Infinity : 0, ease: "linear" }}
-                      className="mr-2 md:mr-3"
-                    >
-                      <Loader2 className={`w-5 h-5 md:w-6 md:h-6 ${
+                    <Loader2
+                      className={`w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 ${
                         theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                      }`} />
-                    </motion.div>
+                      } ${isGenerating ? 'animate-spin' : ''}`}
+                    />
                     In Progress
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                     {posts.map((post) => (
-                      <PendingPostCard 
+                      <PendingPostCard
                         key={`${post.topic}-${post.type}`}
                         post={post}
                         theme={theme}
+                        isGenerating={post.status === 'generating' && generatingTopic === `${post.topic}-${post.type}`}
                       />
                     ))}
                   </div>
