@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../store/hooks';
 import { setContentType } from '../store/appSlice';
-import { 
+import {
   FileText, Clock, Activity, Settings2,
-  Calendar, Plus, Bell, 
+  Calendar, Plus, Bell,
   Instagram, Twitter, Facebook, Linkedin, Youtube
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
@@ -71,6 +71,14 @@ const DashboardPage: React.FC = () => {
     }
   ];
 
+  const chartColors = {
+    grid: theme === 'dark' ? '#4B5563' : '#E5E7EB',
+    text: theme === 'dark' ? '#D1D5DB' : '#4B5563',
+    instagram: '#E1306C',
+    twitter: '#1DA1F2',
+    facebook: '#4267B2',
+  };
+
   const platformIcons = {
     Instagram: <Instagram className="w-5 h-5 text-pink-500" />,
     Facebook: <Facebook className="w-5 h-5 text-blue-600" />,
@@ -92,141 +100,141 @@ const DashboardPage: React.FC = () => {
 
   // Custom styles for FullCalendar
   const calendarStyles = `
-  .fc {
-    font-family: 'Inter', sans-serif;
-    max-width: 100%; /* Ensure calendar doesn't exceed container */
-    overflow: hidden; /* Prevent overflow */
-  }
-  .fc-theme-standard .fc-scrollgrid {
-    border: none;
-    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-    border-radius: 12px;
-    padding: 8px; /* Add padding for better spacing */
-  }
-  .fc .fc-daygrid-day {
-    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-    border: none;
-  }
-  .fc .fc-daygrid-day-frame {
-    padding: 4px;
-  }
-  .fc .fc-daygrid-day-number {
-    color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
-    font-size: 14px;
-  }
-  .fc .fc-daygrid-day.fc-day-today {
-    background: #3B82F6;
-    border-radius: 8px;
-  }
-  .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-    color: #FFFFFF;
-  }
-  .fc .fc-col-header-cell {
-    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-    border: none;
-    padding: 8px 0;
-  }
-  .fc .fc-col-header-cell-cushion {
-    color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
-    font-weight: 600;
-    font-size: 14px;
-  }
-  .fc .fc-toolbar {
-    flex-wrap: wrap; /* Allow toolbar buttons to wrap on smaller screens */
-    gap: 8px; /* Add spacing between toolbar elements */
-    padding: 8px; /* Add padding to toolbar */
-    margin-bottom: 12px; /* Space below toolbar */
-  }
-  .fc .fc-button {
-    background: ${theme === 'dark' ? '#374151' : '#E5E7EB'};
-    color: ${theme === 'dark' ? '#FFFFFF' : '#1F2937'};
-    border: none;
-    border-radius: 8px;
-    padding: 6px 12px; /* Smaller padding for buttons */
-    text-transform: capitalize;
-    font-weight: 500;
-    font-size: 12px; /* Smaller font size for buttons */
-    line-height: 1.5; /* Improve button text alignment */
-    min-width: auto; /* Allow buttons to shrink */
-    transition: background 0.3s ease;
-  }
-  .fc .fc-button:hover {
-    background: ${theme === 'dark' ? '#4B5563' : '#D1D5DB'};
-  }
-  .fc .fc-button.fc-button-primary {
-    background: #3B82F6;
-    color: #FFFFFF;
-  }
-  .fc .fc-button.fc-button-primary:hover {
-    background: #2563EB;
-  }
-  .fc .fc-daygrid-event {
-    border-radius: 6px;
-    padding: 4px 8px;
-    font-size: 12px;
-    font-weight: 500;
-    margin: 2px 0;
-    background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
-    color: #FFFFFF;
-    border: none;
-    width: 100%;
-    box-sizing: border-box; /* Ensure padding doesn't cause overflow */
-    transition: all 0.2s ease-in-out;
-  }
-  .fc .fc-daygrid-event:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-  .fc .fc-timegrid-slot {
-    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-    border: none;
-  }
-  .fc .fc-timegrid-col {
-    background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
-  }
-  .fc .fc-timegrid-event {
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
-    color: #FFFFFF;
-    border: none;
-  }
-  .fc .fc-daygrid-day-events {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
-    padding: 2px; /* Add padding for events */
-  }
-  @media (max-width: 640px) {
-    .fc .fc-toolbar {
-      flex-direction: column; /* Stack toolbar elements vertically on small screens */
-      align-items: stretch; /* Stretch buttons to full width */
+    .fc {
+      font-family: 'Inter', sans-serif;
+      max-width: 100%;
+      overflow: hidden;
     }
-    .fc .fc-button {
-      padding: 6px 8px;
-      font-size: 11px; /* Smaller font size for mobile */
-      width: 100%; /* Full-width buttons on mobile */
-      margin: 2px 0; /* Vertical spacing */
+    .fc-theme-standard .fc-scrollgrid {
+      border: none;
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+      border-radius: 12px;
+      padding: 8px;
+    }
+    .fc .fc-daygrid-day {
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+      border: none;
+    }
+    .fc .fc-daygrid-day-frame {
+      padding: 4px;
     }
     .fc .fc-daygrid-day-number {
-      font-size: 12px;
+      color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
+      font-size: 14px;
+    }
+    .fc .fc-daygrid-day.fc-day-today {
+      background: #3B82F6;
+      border-radius: 8px;
+    }
+    .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+      color: #FFFFFF;
+    }
+    .fc .fc-col-header-cell {
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+      border: none;
+      padding: 8px 0;
     }
     .fc .fc-col-header-cell-cushion {
+      color: ${theme === 'dark' ? '#D1D5DB' : '#4B5563'};
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .fc .fc-toolbar {
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px;
+      margin-bottom: 12px;
+    }
+    .fc .fc-button {
+      background: ${theme === 'dark' ? '#374151' : '#E5E7EB'};
+      color: ${theme === 'dark' ? '#FFFFFF' : '#1F2937'};
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      text-transform: capitalize;
+      font-weight: 500;
       font-size: 12px;
+      line-height: 1.5;
+      min-width: auto;
+      transition: background 0.3s ease;
+    }
+    .fc .fc-button:hover {
+      background: ${theme === 'dark' ? '#4B5563' : '#D1D5DB'};
+    }
+    .fc .fc-button.fc-button-primary {
+      background: #3B82F6;
+      color: #FFFFFF;
+    }
+    .fc .fc-button.fc-button-primary:hover {
+      background: #2563EB;
     }
     .fc .fc-daygrid-event {
-      font-size: 10px; /* Smaller event text on mobile */
-      padding: 3px 6px; /* Smaller padding for events */
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      margin: 2px 0;
+      background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
+      color: #FFFFFF;
+      border: none;
+      width: 100%;
+      box-sizing: border-box;
+      transition: all 0.2s ease-in-out;
     }
-  }
-  @media (max-width: 400px) {
-    .fc .fc-toolbar-title {
-      font-size: 14px; /* Smaller title font on very small screens */
+    .fc .fc-daygrid-event:hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
-  }
-`;
+    .fc .fc-timegrid-slot {
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+      border: none;
+    }
+    .fc .fc-timegrid-col {
+      background: ${theme === 'dark' ? '#1F2937' : '#FFFFFF'};
+    }
+    .fc .fc-timegrid-event {
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      background: ${theme === 'dark' ? '#3B82F6' : '#60A5FA'};
+      color: #FFFFFF;
+      border: none;
+    }
+    .fc .fc-daygrid-day-events {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+      padding: 2px;
+    }
+    @media (max-width: 640px) {
+      .fc .fc-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .fc .fc-button {
+        padding: 6px 8px;
+        font-size: 11px;
+        width: 100%;
+        margin: 2px 0;
+      }
+      .fc .fc-daygrid-day-number {
+        font-size: 12px;
+      }
+      .fc .fc-col-header-cell-cushion {
+        font-size: 12px;
+      }
+      .fc .fc-daygrid-event {
+        font-size: 10px;
+        padding: 3px 6px;
+      }
+    }
+    @media (max-width: 400px) {
+      .fc .fc-toolbar-title {
+        font-size: 14px;
+      }
+    }
+  `;
 
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -238,9 +246,7 @@ const DashboardPage: React.FC = () => {
             {stats.map((stat, index) => (
               <div
                 key={index}
-                className={`${
-                  theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                } p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow`}
+                className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow`}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
@@ -260,139 +266,8 @@ const DashboardPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Main Content Area */}
-          <div className="lg:col-span-3 space-y-8">
-            {/* Engagement Chart */}
-            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  Social Media Engagement
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <select className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-900'} rounded-lg px-3 py-1`}>
-                    <option>Last 7 days</option>
-                    <option>Last 30 days</option>
-                    <option>Last 90 days</option>
-                  </select>
-                </div>
-              </div>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={engagementData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="Instagram" stackId="1" stroke="#E1306C" fill="#E1306C" />
-                    <Area type="monotone" dataKey="Twitter" stackId="1" stroke="#1DA1F2" fill="#1DA1F2" />
-                    <Area type="monotone" dataKey="Facebook" stackId="1" stroke="#4267B2" fill="#4267B2" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Scheduled Posts */}
-            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  Upcoming Posts
-                </h3>
-                <button
-                  onClick={() => handleSelect()}
-                  className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Post
-                </button>
-              </div>
-              <div className="space-y-4">
-                {scheduledPosts.map((post, index) => (
-                  <div
-                    key={index}
-                    className={`${
-                      theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
-                    } p-4 rounded-xl flex items-center justify-between`}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-600' : 'bg-white'}`}>
-                        <Calendar className="w-5 h-5 text-blue-500" />
-                      </div>
-                      <div>
-                        <h4 className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                          {post.title}
-                        </h4>
-                        <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {format(new Date(post.date), 'MMM dd, yyyy')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {post.platforms.map((platform) => (
-                        <div key={platform} className="tooltip" data-tip={platform}>
-                          {platformIcons[platform as keyof typeof platformIcons]}
-                        </div>
-                      ))}
-                      <span className={`ml-4 px-2 py-1 rounded-full text-xs ${
-                        post.status === 'scheduled'
-                          ? 'bg-green-500/20 text-green-500'
-                          : 'bg-yellow-500/20 text-yellow-500'
-                      }`}>
-                        {post.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-8">
-            {/* Calendar */}
-            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
-              <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                Calendar
-              </h3>
-              <div className="calendar-container" style={{ position: 'relative', overflow: 'hidden' }}>
-                <FullCalendar
-                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                  initialView="dayGridMonth"
-                  initialDate="2025-04-01"
-                  headerToolbar={{
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek'
-                  }}
-                  events={scheduledPosts.map(post => ({
-                    title: post.title,
-                    date: post.date,
-                    className: post.status === 'scheduled' ? 'scheduled' : 'draft',
-                    extendedProps: { status: post.status }
-                  }))}
-                  height="auto"
-                  contentHeight="auto" // Adjust height dynamically
-                  selectable={true}
-                  select={(info) => setSelectedDate(info.start)}
-                  dayMaxEvents={2} // Limit number of events shown per day
-                  moreLinkClick="popover" // Show a popover for additional events
-                  eventContent={(eventInfo) => (
-                    <div className="fc-event-main flex flex-col items-start w-full">
-                      <span className="block text-xs font-medium truncate">{eventInfo.event.title}</span>
-                      <span className="text-xs text-gray-200">{eventInfo.event.extendedProps.status}</span>
-                    </div>
-                  )}
-                  eventDidMount={(info) => {
-                    console.log('Event Rendered:', info.event.title, 'on', info.event.start);
-                  }}
-                />
-              </div>
-              {selectedDate && (
-                <p className={`mt-2 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Selected: {format(selectedDate, 'MMM dd, yyyy')}
-                </p>
-              )}
-            </div>
-            {/* Quick Actions */}
+          {/* Quick Actions */}
+          <div className="lg:col-span-4">
             <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
               <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 Quick Actions
@@ -414,6 +289,186 @@ const DashboardPage: React.FC = () => {
                   View Notifications
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Scheduled Posts */}
+          <div className="lg:col-span-4">
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  Upcoming Posts
+                </h3>
+                <button
+                  onClick={() => handleSelect()}
+                  className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Post
+                </button>
+              </div>
+              <div className="space-y-4">
+                {scheduledPosts.map((post, index) => (
+                  <div
+                    key={index}
+                    className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-xl flex items-center justify-between`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-600' : 'bg-white'}`}>
+                        <Calendar className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <h4 className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                          {post.title}
+                        </h4>
+                        <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {format(new Date(post.date), 'MMM dd, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {post.platforms.map((platform) => (
+                        <div key={platform} className="tooltip" data-tip={platform}>
+                          {platformIcons[platform as keyof typeof platformIcons]}
+                        </div>
+                      ))}
+                      <span className={`ml-4 px-2 py-1 rounded-full text-xs ${
+                        post.status === 'scheduled' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
+                      }`}>
+                        {post.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Social Media Engagement Chart */}
+          <div className="lg:col-span-4">
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg w-full`}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  Social Media Engagement
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <select
+                    className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-900'} rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  >
+                    <option>Last 7 days</option>
+                   <option>Last 30 days</option>
+                    <option>Last 90 days</option>
+                  </select>
+                </div>
+              </div>
+              <div className="w-full" style={{ height: '400px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={engagementData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
+                  >
+                    <CartesianGrid
+                      stroke={chartColors.grid}
+                      strokeDasharray="3 3"
+                      opacity={0.5}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      stroke={chartColors.text}
+                      fontSize={14}
+                      tickLine={false}
+                      axisLine={{ stroke: chartColors.text }}
+                    />
+                    <YAxis
+                      stroke={chartColors.text}
+                      fontSize={14}
+                      tickLine={false}
+                      axisLine={{ stroke: chartColors.text }}
+                      tickFormatter={(value) => `${value / 1000}k`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+                        border: `1px solid ${theme === 'dark' ? '#4B5563' : '#E5E7EB'}`,
+                        borderRadius: '8px',
+                        color: theme === 'dark' ? '#D1D5DB' : '#1F2937',
+                      }}
+                      formatter={(value: number) => `${value} engagements`}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Instagram"
+                      stackId="1"
+                      stroke={chartColors.instagram}
+                      fill={chartColors.instagram}
+                      fillOpacity={0.6}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Twitter"
+                      stackId="1"
+                      stroke={chartColors.twitter}
+                      fill={chartColors.twitter}
+                      fillOpacity={0.6}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Facebook"
+                      stackId="1"
+                      stroke={chartColors.facebook}
+                      fill={chartColors.facebook}
+                      fillOpacity={0.6}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Calendar */}
+          <div className="lg:col-span-4">
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-2xl shadow-lg`}>
+              <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Calendar
+              </h3>
+              <div className="calendar-container" style={{ position: 'relative', overflow: 'hidden' }}>
+                <FullCalendar
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  initialDate="2025-04-01"
+                  headerToolbar={{
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek'
+                  }}
+                  events={scheduledPosts.map(post => ({
+                    title: post.title,
+                    date: post.date,
+                    className: post.status === 'scheduled' ? 'scheduled' : 'draft',
+                    extendedProps: { status: post.status }
+                  }))}
+                  height="auto"
+                  contentHeight="auto"
+                  selectable={true}
+                  select={(info) => setSelectedDate(info.start)}
+                  dayMaxEvents={2}
+                  moreLinkClick="popover"
+                  eventContent={(eventInfo) => (
+                    <div className="fc-event-main flex flex-col items-start w-full">
+                      <span className="block text-xs font-medium truncate">{eventInfo.event.title}</span>
+                      <span className="text-xs text-gray-200">{eventInfo.event.extendedProps.status}</span>
+                    </div>
+                  )}
+                  eventDidMount={(info) => {
+                    console.log('Event Rendered:', info.event.title, 'on', info.event.start);
+                  }}
+                />
+              </div>
+              {selectedDate && (
+                <p className={`mt-2 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Selected: {format(selectedDate, 'MMM dd, yyyy')}
+                </p>
+              )}
             </div>
           </div>
         </div>

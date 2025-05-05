@@ -11,19 +11,14 @@ const userSchema = new mongoose.Schema(
         companyName: { type: String, default: '' },
         productCategories: {
             type: [
-                {
-                    category: {
-                        type: String,
-                        trim: true,
-                    },
-                    productName: {
-                        type: String,
-                        trim: true,
-                    },
-                }
+              {
+                category: { type: String, trim: true },
+                productName: { type: String, trim: true },
+                image: { type: String, trim: true, default: '' }, // Cloudinary URL for product image
+              },
             ],
-            default: []
-        },
+            default: [],
+          },
         services: {
             type: [{ type: String, trim: true, maxlength: 50 }],
             default: []

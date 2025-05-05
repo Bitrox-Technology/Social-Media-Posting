@@ -26,7 +26,7 @@ const UserDetail = () => {
   const location = useLocation();
   const email = location.state?.email;
 
-  const [userDetails] = useUserDetailsMutation()
+  const [userDetails] = useUserDetailsMutation();
 
   // Predefined country codes and locations
   const countryCodes = [
@@ -59,7 +59,7 @@ const UserDetail = () => {
     location: '',
     logo: null as File | null,
     companyName: '',
-    productCategories: [{ category: '', productName: '' }],
+    productCategories: [{ category: '', productName: '', image: null as File | null }],
     services: [''],
     keyProducts: [''],
     targetMarket: '',
@@ -69,7 +69,13 @@ const UserDetail = () => {
   useEffect(() => {
     const savedData = localStorage.getItem('userDetails');
     if (savedData) {
-      setInitialValues(JSON.parse(savedData));
+      const parsedData = JSON.parse(savedData);
+      // Ensure productCategories includes image field
+      parsedData.productCategories = parsedData.productCategories.map((item: any) => ({
+        ...item,
+        image: null, // Images can't be persisted in localStorage, reset to null
+      }));
+      setInitialValues(parsedData);
     }
   }, []);
 
@@ -92,6 +98,7 @@ const UserDetail = () => {
         Yup.object({
           category: Yup.string().trim().required('Category is required'),
           productName: Yup.string().trim().required('Product name is required'),
+          image: Yup.mixed().nullable(), // Image is optional
         })
       )
       .min(1, 'At least one product category is required'),
@@ -122,14 +129,11 @@ const UserDetail = () => {
           .map((item) => ({
             category: item.category.trim(),
             productName: item.productName.trim(),
+            image: item.image, // Keep the file object
           }))
           .filter((item) => item.category && item.productName),
-        services: values.services
-          .map((service) => service.trim())
-          .filter(Boolean),
-        keyProducts: values.keyProducts
-          .map((product) => product.trim())
-          .filter(Boolean),
+        services: values.services.map((service) => service.trim()).filter(Boolean),
+        keyProducts: values.keyProducts.map((product) => product.trim()).filter(Boolean),
         targetMarket: values.targetMarket.trim(),
         websiteUrl: values.websiteUrl.trim(),
       };
@@ -147,16 +151,20 @@ const UserDetail = () => {
       formData.append('targetMarket', cleanedValues.targetMarket);
       formData.append('websiteUrl', cleanedValues.websiteUrl);
 
+      // Append productCategories with images
       cleanedValues.productCategories.forEach((item, index) => {
         formData.append(`productCategories[${index}][category]`, item.category);
         formData.append(`productCategories[${index}][productName]`, item.productName);
+        if (item.image) {
+          formData.append(`productCategories[${index}][image]`, item.image);
+        }
       });
-  
+
       // Append services as individual array elements
       cleanedValues.services.forEach((service, index) => {
         formData.append(`services[${index}]`, service);
       });
-  
+
       // Append keyProducts as individual array elements
       cleanedValues.keyProducts.forEach((product, index) => {
         formData.append(`keyProducts[${index}]`, product);
@@ -167,7 +175,7 @@ const UserDetail = () => {
         formData.append('logo', cleanedValues.logo);
       }
 
-      // Log FormData for debugging (note: FormData doesn't log directly)
+      // Log FormData for debugging
       for (const [key, value] of formData.entries()) {
         console.log(`${key}:`, value);
       }
@@ -175,20 +183,21 @@ const UserDetail = () => {
       const response = await userDetails(formData).unwrap();
       console.log('API response:', response);
 
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to save profile');
-      }
+      // if (!response.success) {
+      //   throw new Error(response.message || 'Failed to save profile');
+      // }
 
-      toast.success(response.message || 'Profile saved successfully!', {
-        position: 'bottom-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      setTimeout(() => {navigate('/profile');}, 2000)
-      
+      // toast.success(response.message || 'Profile saved successfully!', {
+      //   position: 'bottom-right',
+      //   autoClose: 3000,
+      //   hideProgressBar: false,
+      //   closeOnClick: true,
+      //   pauseOnHover: true,
+      //   draggable: true,
+      // });
+      // setTimeout(() => {
+      //   navigate('/profile');
+      // }, 2000);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       setErrors({ submit: errorMessage });
@@ -206,10 +215,11 @@ const UserDetail = () => {
 
   return (
     <div
-      className={`min-h-screen ${theme === 'dark'
-        ? 'bg-gradient-to-br from-gray-900 dark:to-gray-800'
-        : 'bg-gradient-to-br from-purple-50 to-indigo-50'
-        }`}
+      className={`min-h-screen ${
+        theme === 'dark'
+          ? 'bg-gradient-to-br from-gray-900 dark:to-gray-800'
+          : 'bg-gradient-to-br from-purple-50 to-indigo-50'
+      }`}
     >
       <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -218,10 +228,11 @@ const UserDetail = () => {
           className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden"
         >
           <div
-            className={`${theme === 'dark'
-              ? 'bg-gradient-to-r from-gray-800 to-gray-900'
-              : 'bg-gradient-to-r from-indigo-600 to-purple-600'
-              } px-6 py-8 sm:px-10`}
+            className={`${
+              theme === 'dark'
+                ? 'bg-gradient-to-r from-gray-800 to-gray-900'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600'
+            } px-6 py-8 sm:px-10`}
           >
             <h2 className="text-2xl sm:text-3xl font-bold text-white text-center">Complete Your Profile</h2>
             <p className="mt-2 text-indigo-100 dark:text-gray-300 text-center max-w-2xl mx-auto">
@@ -400,34 +411,77 @@ const UserDetail = () => {
                     </h3>
                     <FieldArray name="productCategories">
                       {({ remove, push }) => (
-                        <div className="space-y-4">
-                          {values.productCategories.map((_, index) => (
-                            <div key={index} className="flex gap-4">
-                              <Field
-                                name={`productCategories.${index}.category`}
-                                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                                placeholder="Category name"
-                              />
-                              <Field
-                                name={`productCategories.${index}.productName`}
-                                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                                placeholder="Product name"
-                              />
-                              <motion.button
-                                type="button"
-                                onClick={() => remove(index)}
-                                className="p-2 text-red-500 hover:text-red-600 transition-colors"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                disabled={values.productCategories.length === 1}
-                              >
-                                <Trash2 size={20} />
-                              </motion.button>
+                        <div className="space-y-6">
+                          {values.productCategories.map((category, index) => (
+                            <div key={index} className="space-y-4">
+                              <div className="flex gap-4">
+                                <div className="flex-1">
+                                  <Field
+                                    name={`productCategories.${index}.category`}
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                                    placeholder="Category name"
+                                  />
+                                  <ErrorMessage
+                                    name={`productCategories.${index}.category`}
+                                    component="p"
+                                    className="mt-1 text-sm text-red-500"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <Field
+                                    name={`productCategories.${index}.productName`}
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                                    placeholder="Product name"
+                                  />
+                                  <ErrorMessage
+                                    name={`productCategories.${index}.productName`}
+                                    component="p"
+                                    className="mt-1 text-sm text-red-500"
+                                  />
+                                </div>
+                                <motion.button
+                                  type="button"
+                                  onClick={() => remove(index)}
+                                  className="p-2 text-red-500 hover:text-red-600 transition-colors"
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  disabled={values.productCategories.length === 1}
+                                >
+                                  <Trash2 size={20} />
+                                </motion.button>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                  <Upload className="inline-block w-4 h-4 mr-2" />
+                                  Product Image
+                                </label>
+                                <input
+                                  type="file"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      setFieldValue(`productCategories.${index}.image`, file);
+                                    }
+                                  }}
+                                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 transition-colors"
+                                  accept="image/*"
+                                />
+                                {values.productCategories[index].image && (
+                                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                    Selected: {values.productCategories[index].image!.name}
+                                  </p>
+                                )}
+                                <ErrorMessage
+                                  name={`productCategories.${index}.image`}
+                                  component="p"
+                                  className="mt-1 text-sm text-red-500"
+                                />
+                              </div>
                             </div>
                           ))}
                           <motion.button
                             type="button"
-                            onClick={() => push({ category: '', productName: '' })}
+                            onClick={() => push({ category: '', productName: '', image: null })}
                             className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}

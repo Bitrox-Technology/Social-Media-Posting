@@ -1,4 +1,5 @@
 import User from "../models/user.js";
+import Admin from "../models/admin.js";
 import { ApiError } from "../utils/ApiError.js";
 import { BAD_REQUEST, UN_AUTHORIZED } from "../utils/apiResponseCode.js";
 import jwt from "jsonwebtoken"

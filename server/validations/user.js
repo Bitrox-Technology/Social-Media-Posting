@@ -62,7 +62,8 @@ const validateforgetPassword = async (inputs) => {
 const validateUserProfile = async (inputs) => {
     const productCategorySchema = joi.object({
         category: joi.string().trim().required(),
-        productName: joi.string().trim().required()
+        productName: joi.string().trim().required(),
+        image: joi.string().trim().optional(),
     });
     const schema = joi.object({
         userName: joi.string().trim().required(),

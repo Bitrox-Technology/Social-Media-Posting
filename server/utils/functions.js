@@ -1,11 +1,11 @@
 import { generateOTP } from "./utilities.js";
 import OTP from "../models/otp.js";
-import { sendOtp } from "../services/sendOTP.js";
+import { sendOtp, sendOtpForAdmin } from "../services/sendOTP.js";
 import { ApiError } from "./ApiError.js";
 import { BAD_REQUEST } from "./apiResponseCode.js";
 import moment from "moment";
 
-const generateOTPForEmail = async (email) => {
+const generateOTPForEmail = async (email, role) => {
     let otpCode = 1234;
     otpCode = generateOTP();
     try {
@@ -15,7 +15,11 @@ const generateOTPForEmail = async (email) => {
             otp: otpCode,
             expiredAt: moment().add(10, "minutes").toDate()
         }
-        await sendOtp(email, otpCode)
+        if (role == "ADMIN") {
+            await sendOtpForAdmin(email, otpCode)
+        } else {
+            await sendOtp(email, otpCode)
+        }
         let otp = await OTP.create(data)
         return otp
     } catch (error) {

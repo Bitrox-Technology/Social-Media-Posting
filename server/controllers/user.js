@@ -56,9 +56,10 @@ const Logout = async (req, res, next) => {
 }
 
 const UserDetails = async (req, res, next) => {
+    console.log("UserDetails", req.body, req.user, req.file)
     try {
         await UserValidation.validateUserProfile(req.body)
-        let user = await UserServices.userDetails(req.body, req.user, req.file)
+        // let user = await UserServices.userDetails(req.body, req.user, req.file)
         return res.status(OK).json(new ApiResponse(OK, user, "User details saved successfully"))
     } catch (error) {
         next(error)

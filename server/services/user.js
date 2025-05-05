@@ -34,7 +34,7 @@ const signup = async (inputs) => {
             }
 
             user = await User.create(inputs);
-            await generateOTPForEmail(inputs.email)
+            await generateOTPForEmail(inputs.email, user.role)
             return user
         } else {
             throw new ApiError(BAD_REQUEST, "Email already exists")
@@ -79,21 +79,10 @@ const resendOTP = async (inputs) => {
         if (user) {
             await generateOTPForEmail(inputs.email)
         } else {
-            throw new ApiError(BAD_REQUEST, i18n.__("INVALID_EMAIL"))
+            throw new ApiError(BAD_REQUEST, "Invalid email")
         }
 
-    } else {
-        user = await User.findOne({
-            phone: inputs.phone,
-            countryCode: inputs.countryCode,
-            isDeleted: false,
-        })
-        if (user) {
-            await generateOTPForPhone(inputs.countryCode, inputs.phone)
-        } else {
-            throw new ApiError(BAD_REQUEST, i18n.__("INVALID_PHONE"))
-        }
-    }
+    } 
 }
 
 const forgetPassword = async (inputs) => {
@@ -105,10 +94,8 @@ const forgetPassword = async (inputs) => {
             isDeleted: false,
             isEmailVerify: true
         });
-        if (!user) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_EMAIL"))
+        if (!user) throw new ApiError(BAD_REQUEST, "Invalid email")
 
-        let compare = Utils.comparePasswordAndConfirmpassword(inputs.newPassword, inputs.confirmPassword)
-        if (compare == false) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_CREDENTIALS"))
         inputs.newPassword = await Utils.Hashed_Password(inputs.newPassword)
 
         user = await User.findByIdAndUpdate({ _id: user._id }, { password: inputs.newPassword })

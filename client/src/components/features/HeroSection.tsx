@@ -1,11 +1,40 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { ArrowRight, Bot, TrendingUp, Zap, Shield } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import ContentCard from '../ui/ContentCard';
-import { Link } from 'react-router-dom';
+import { logout, setUser } from '../../store/appSlice';
+import { Link, useNavigate } from 'react-router-dom';
+
 
 const HeroSection: React.FC = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
+  const user = useAppSelector((state) => state.app.user);
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+     if (!user) {
+       const storedUser = localStorage.getItem('user');
+       if (storedUser) {
+         const parsedUser = JSON.parse(storedUser);
+         const { token, expiresAt, email } = parsedUser;
+ 
+         // Check if token is still valid
+         if (expiresAt && Date.now() < expiresAt) {
+           dispatch(setUser({ email, token, expiresAt }));
+         } else {
+           dispatch(logout());
+           localStorage.removeItem('user');
+           navigate('/signin');
+         }
+       }
+     }
+   }, [user, dispatch, navigate]);
+
+  const handleGetStarted = () => {
+    // Navigate to dashboard if authenticated, otherwise to signup
+    navigate(user ? '/dashboard' : '/signup');
+  };
 
   const sampleContent = [
     {
@@ -37,9 +66,12 @@ const HeroSection: React.FC = () => {
               Effortlessly create engaging, personalized content for all your social platforms with our AI assistant. Save time, increase engagement, and grow your audience.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/signup" className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-lg font-medium">
+              <button
+                onClick={handleGetStarted}
+                className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-lg font-medium"
+              >
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+              </button>
               <Link to="/features" className={`px-8 py-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-xl shadow-lg hover:shadow-xl transition-all text-lg font-medium`}>
                 Learn More
               </Link>
