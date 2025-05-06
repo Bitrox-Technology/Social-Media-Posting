@@ -80,6 +80,18 @@ const jwtVerifyForRefreshToken = async(token) => {
   return jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)
 }
 
+const getPagination = (query, total) => {
+  const page = parseInt(query.page || 1, 10);
+  const limit = parseInt(query.limit || 10, 10);
+  const skip = (page - 1) * limit;
 
+  return {
+    page,
+    limit,
+    skip,
+    total,
+    totalPages: Math.ceil(total / limit),
+  };
+};
 
-export { convertToCron, Hashed_Password, isEmail, generateAccessToken, generateRefershToken, jwtVerify, jwtVerifyForRefreshToken, comparePasswordUsingBcrypt, generateOTP  };
+export { convertToCron, Hashed_Password, isEmail, generateAccessToken, generateRefershToken, jwtVerify, jwtVerifyForRefreshToken, comparePasswordUsingBcrypt, generateOTP, getPagination  };

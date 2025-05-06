@@ -21,11 +21,10 @@ const AuthMiddleware = async (req, res, next) => {
             user = await User.findOne({_id: decordedToken?._id, isDeleted: false}).lean()
         }
 
-        if (!user) {
-            throw new ApiError(BAD_REQUEST, "Invalid Token")
-        }
+        if (!user)  throw new ApiError(BAD_REQUEST, "Invalid Token")
+        
+        user.role === "ADMIN" ? req.admin = user : req.user = user;
 
-        req.user = user;
         next()
     } catch (error) {
         next(error)

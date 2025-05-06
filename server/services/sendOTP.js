@@ -8,7 +8,7 @@ const sendOtp = async (to, code) => {
         
         <!-- Header with Gradient -->
         <div style="background: linear-gradient(135deg, #4f46e5 0%, #a855f7 100%); padding: 30px 20px; text-align: center;">
-          <img src="https://via.placeholder.com/150x50?text=SocialAI+Logo" alt="SocialAI Logo" style="max-width: 150px; margin-bottom: 10px;" />
+          <img src="https://res.cloudinary.com/deuvfylc5/image/upload/v1746011885/qubuptite8g43g35fmnn.png" alt="SocialAI Logo" style="max-width: 150px; margin-bottom: 10px;" />
           <h1 style="color: #ffffff; font-size: 28px; margin: 0; font-weight: 600;">Transform Your Social Media</h1>
           <p style="color: #e0e7ff; font-size: 16px; margin: 5px 0 0;">AI-Powered Content Creation</p>
         </div>
@@ -59,7 +59,7 @@ const sendOtpForAdmin = async (to, code) => {
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);">
         <!-- Header with Gradient -->
         <div style="background: linear-gradient(135deg, #4f46e5 0%, #a855f7 100%); padding: 30px 20px; text-align: center;">
-          <img src="https://res.cloudinary.com/your-cloud-name/image/upload/v1234567890/socialai-logo.png" alt="SocialAI Admin Logo" style="max-width: 150px; margin-bottom: 10px;" />
+          <img src="https://res.cloudinary.com/deuvfylc5/image/upload/v1746011885/qubuptite8g43g35fmnn.png" alt="SocialAI Admin Logo" style="max-width: 150px; margin-bottom: 10px;" />
           <h1 style="color: #ffffff; font-size: 28px; margin: 0; font-weight: 600;">SocialAI Admin Panel</h1>
           <p style="color: #e0e7ff; font-size: 16px; margin: 5px 0 0;">Secure Access for Administrators</p>
         </div>

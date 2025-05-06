@@ -80,6 +80,7 @@ const validateUserProfile = async (inputs) => {
         targetMarket: joi.string().trim().optional(),
         websiteUrl: joi.string().uri().trim().optional(),
         logo: joi.string().trim().optional(),
+        bio: joi.string().trim().optional(),
     });
 
     try {

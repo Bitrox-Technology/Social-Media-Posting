@@ -8,6 +8,10 @@ const adminSchema = new mongoose.Schema(
         phone: { type: String, trim: true, default: "" },
         profileImage: { type: String, trim: true },
         location: { type: String, default: "" },
+        bio: { type: String, default: "" },
+        website: { type: String, default: "" },
+        twitter: { type: String, default: "" },
+        linkedin: { type: String, default: "" },
         isProfileCompleted: {
             type: Boolean,
             default: false,
@@ -21,9 +25,8 @@ const adminSchema = new mongoose.Schema(
             type: String,
             select: false,
         },
-        
+
         isEmailVerify: { type: Boolean, default: false },
-        isPhoneVerify: { type: Boolean, default: false },
         isDeleted: { type: Boolean, default: false },
         totalUsers: { type: Number, default: 0 },
 

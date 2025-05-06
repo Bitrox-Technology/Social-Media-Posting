@@ -58,13 +58,17 @@ const validateforgetPassword = async (inputs) => {
 
 const validateAdminProfile = async (inputs) => {
     const schema = joi.object({
-        userName: joi.string().trim().required(),
+        username: joi.string().trim().required(),
         email: joi.string().email().trim().lowercase().required(),
         countryCode: joi.string().trim().required(),
         phone: joi.string().trim().pattern(/^[0-9]{10}$/).optional(),
         location: joi.string().trim().optional(),
         companyName: joi.string().trim().optional(),
         profileImage: joi.string().trim().optional(),
+        bio: joi.string().trim().optional(),
+        website: joi.string().trim().optional(),
+        twitter: joi.string().trim().optional(),
+        linkedin: joi.string().trim().optional(),
     });
 
     try {

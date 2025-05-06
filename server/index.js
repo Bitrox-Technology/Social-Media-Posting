@@ -50,6 +50,7 @@ app.use(
 
 app.use("/api/v1/user", Routers.userRouter);
 app.use("/api/v1/social", Routers.socialRouter);
+app.use("/api/v1/admin", Routers.adminRouter);
 app.use("/api/v1", router);
 
 app.use(function (err, req, res, next) {

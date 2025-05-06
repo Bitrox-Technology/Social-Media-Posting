@@ -5,18 +5,23 @@ import { INTERNAL_SERVER_ERROR } from "./apiResponseCode.js";
 
 
 const configCloudinary = () => {
-  return cloudinary.config({
+  let config = cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
+  return config;
 }
 const uploadOnClodinary = async (localFilePath, folder) => {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
 
-  let cloudinary = configCloudinary();
   try {
     if (!localFilePath) return null;
-    // Upload the file on cloudinary
+    
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "image",
       folder: folder
@@ -30,7 +35,11 @@ const uploadOnClodinary = async (localFilePath, folder) => {
 };
 
 const carouselUploadOnCloudinary = async (files) => {
-  let cloudinary = configCloudinary();
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
   const urls = [];
 
   try {
@@ -58,7 +67,11 @@ const carouselUploadOnCloudinary = async (files) => {
 
 
 const deleteImageFromCloudinary = async (url) => {
-  let cloudinary = configCloudinary();
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
   const publicId = url.split("/").pop().split(".")[0];
   try {
     const response = await cloudinary.uploader.destroy(publicId, {
@@ -71,7 +84,11 @@ const deleteImageFromCloudinary = async (url) => {
 }
 
 const deleteMultipleImagesFromCloudinary = async (urls) => {
-  let cloudinary = configCloudinary();
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
   const publicIds = urls.map(url => url.split("/").pop().split(".")[0]);
   try {
     const response = await cloudinary.api.delete_resources(publicIds, {

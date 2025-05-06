@@ -9,8 +9,10 @@ import Subscriptions from './pages/Subscriptions';
 import Settings from './pages/Settings';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
-// import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import VerifyOtp from './pages/auth/verifyOtp';
+import Profile from './pages/auth/Profile';
+import AdminDetails from './pages/auth/AdminDetails';
 
 function App() {
   return (
@@ -19,16 +21,19 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/verify-otp" element={<VerifyOtp />} />
           <Route path="/" element={<AdminLayout />} >
-          <Route index element={<Dashboard />} />
-          <Route path="users" element={<Users />} />
-          <Route path="posts" element={<Posts />} />
-          <Route path="requests" element={<Requests />} />
-          <Route path="subscriptions" element={<Subscriptions />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
-      </Routes>
-    </Router>
+            <Route path='/profile' element={<Profile />} />
+            <Route path='/admin-details/:id' element={<AdminDetails />} />
+            <Route index element={<Dashboard />} />
+            <Route path="users" element={<Users />} />
+            <Route path="posts" element={<Posts />} />
+            <Route path="requests" element={<Requests />} />
+            <Route path="subscriptions" element={<Subscriptions />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+        </Routes>
+      </Router>
     </ThemeProvider>
   );
 }

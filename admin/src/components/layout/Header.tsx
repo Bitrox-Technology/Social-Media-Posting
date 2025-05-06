@@ -1,11 +1,10 @@
-import React from 'react';
-import { useLocation, NavLink } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
-import { logout } from '../../store/authSlice';
-import { useGetMeQuery } from '../../store/authApi';
+import { logout, setAdmin } from '../../store/authSlice';
 import { useTheme } from '../../context/ThemeContext';
-import { Menu, Bell, Search, Sun, Moon, Settings, LogIn, UserPlus } from 'lucide-react';
+import { Menu, Bell, Search, Sun, Moon, Settings, LogIn, UserPlus, Shield } from 'lucide-react';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -13,21 +12,55 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const { isDarkMode, toggleTheme } = useTheme();
+  const admin = useSelector((state: RootState) => state.auth.admin);
   const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { data: fetchedUser } = useGetMeQuery(undefined, { skip: !user });
+  const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (!admin) {
+      const storedUser = localStorage.getItem('admin');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        const { token, expiresAt, email } = parsedUser;
+
+        // Check if token is still valid
+        if (expiresAt && Date.now() < expiresAt) {
+          dispatch(setAdmin({ email, token, expiresAt}));
+        } else {
+          dispatch(logout());
+          localStorage.removeItem('admin');
+          navigate('/login');
+        }
+      } else {
+        // No user in localStorage, redirect to login
+        navigate('/login');
+      }
+    }
+  }, [admin, dispatch, navigate]);
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path === '/') return 'Dashboard';
-    if (path === '/login') return 'Sign In';
-    if (path === '/signup') return 'Sign Up';
-    return path.substring(1).charAt(0).toUpperCase() + path.substring(2);
+    switch (path) {
+      case '/':
+        return 'Dashboard';
+      case '/login':
+        return 'Sign In';
+      case '/signup':
+        return 'Sign Up';
+      case '/verify-otp':
+        return 'Verify OTP';
+      case '/verify-admin-otp':
+        return 'Verify Admin OTP';
+      default:
+        return path.substring(1).charAt(0).toUpperCase() + path.substring(2);
+    }
   };
 
   const handleLogout = () => {
     dispatch(logout());
+    localStorage.removeItem('admin');
+    navigate('/login');
   };
 
   return (
@@ -40,9 +73,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           >
             <Menu size={20} />
           </button>
-          <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
-            {getPageTitle()}
-          </h1>
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-white">{getPageTitle()}</h1>
         </div>
 
         <div className="hidden md:flex items-center bg-gray-100 dark:bg-gray-700 rounded-md px-3 py-2 flex-1 max-w-md mx-4">
@@ -62,7 +93,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          {user || fetchedUser ? (
+          {admin ? (
             <>
               <button className="p-2 rounded-full text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 relative">
                 <Bell size={20} />
@@ -76,30 +107,23 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               </button>
 
               <div className="relative group">
-                <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">
-                  {(user?.userName || fetchedUser?.userName)?.charAt(0).toUpperCase() || 'A'}
+                <div className="h-8 w-8 rounded-full bg-primary dark:bg-primary/90 text-white flex items-center justify-center font-medium relative">
+                  {admin.email?.charAt(0).toUpperCase() || 'A'}
+                  {admin.email  && (
+                    <Shield
+                      size={14}
+                      className="absolute bottom-0 right-0 text-yellow-400 dark:text-yellow-300"
+                      aria-label="Admin"
+                    />
+                  )}
                 </div>
                 <div className="absolute right-0 top-10 hidden group-hover:block bg-white dark:bg-gray-800 shadow-lg rounded-md py-2 w-48 border border-gray-200 dark:border-gray-700">
                   <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
-                    <p className="font-medium">
-                      {user?.userName || fetchedUser?.userName || 'Admin User'}
-                    </p>
+                    <p className="font-medium">{admin.email || 'User'}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {user?.email || fetchedUser?.email}
+                      {admin.email} 
                     </p>
                   </div>
-                  <NavLink
-                    to="/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    Profile
-                  </NavLink>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    Sign Out
-                  </button>
                 </div>
               </div>
             </>

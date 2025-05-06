@@ -5,6 +5,7 @@ import { comparePasswordUsingBcrypt, Hashed_Password, isEmail } from "../utils/u
 import { generateOTPForEmail, verifyEmailOTP } from "../utils/functions.js";
 import { uploadOnClodinary } from "../utils/cloudinary.js";
 import Admin from "../models/admin.js";
+import User from "../models/user.js";
 
 const signup = async (inputs) => {
     let admin;
@@ -29,7 +30,6 @@ const signup = async (inputs) => {
             }
 
             admin = await Admin.create(inputs);
-            console.log("admin", admin)
             await generateOTPForEmail(inputs.email, admin.role)
             return admin
         } else {
@@ -103,7 +103,7 @@ const login = async (inputs) => {
     let admin;
     if (isEmail(inputs.email)) {
         admin = await Admin.findOne({ email: inputs.email, isDeleted: false }).select("+password")
-        if (!admin) throw new ApiError(BAD_REQUEST, "Invalid user")
+        if (!admin) throw new ApiError(BAD_REQUEST, "Invalid Admin")
         let compare = await comparePasswordUsingBcrypt(inputs.password, admin.password);
         if (!compare) throw new ApiError(BAD_REQUEST, "Invalid password")
 
@@ -131,24 +131,23 @@ const logout = async (admin) => {
 
 }
 
-const adminProfile = async (inputs, admin, file) => {
+const updateAdminProfile = async (inputs, admin, file) => {
+    let updateAdmin;
+    if (!file) throw new ApiError(BAD_REQUEST, "Profile image is required")
 
-    // if (!file) throw new ApiError(BAD_REQUEST, "Logo is required");
+    let image = await uploadOnClodinary(file.path, "admin-profile-image")
+    if (!image) throw new ApiError(BAD_REQUEST, "Image not uploaded")
 
-    // let logoUrl = await uploadOnClodinary(file.path, "logo")
-    // if (!logoUrl) throw new ApiError(BAD_REQUEST, "Unable to upload logo")
+    inputs.profileImage = image.secure_url
+    inputs.isProfileCompleted = true
 
-    // inputs.logo = logoUrl.secure_url
-    // inputs.isProfileCompleted = true
+    updateAdmin = await Admin.findByIdAndUpdate({ _id: admin._id }, inputs, { new: true }).lean()
+    if (!updateAdmin) throw new ApiError(BAD_REQUEST, "Admin not found")
 
-    // let updateUser = await User.findOne({ _id: user._id, email: inputs.email, isEmailVerify: true, isDeleted: false })
-    // if (!updateUser) throw new ApiError(BAD_REQUEST, "User not found")
+    updateAdmin = await Admin.findById({ _id: admin._id }).lean()
 
-    // updateUser = await User.findByIdAndUpdate({ _id: updateUser._id }, inputs, { new: true })
-    // if (!updateUser) throw new ApiError(BAD_REQUEST, "Unable to update user details")
+    return updateAdmin
 
-    // updateUser = await User.findById({ _id: updateUser._id })
-    // return updateUser
 }
 
 const getAdminProfile = async (admin) => {
@@ -160,6 +159,33 @@ const getAdminProfile = async (admin) => {
     return adminProfile;
 }
 
+const getAllUsers = async (query) => {
+    const total = await User.countDocuments();
+
+    const pagination = Utils.getPagination(query, total);
+
+    const users = await User.find()
+        .select('username email status role subscription createdAt isDeleted')
+        .skip(pagination.skip)
+        .limit(pagination.limit)
+        .lean()
+
+
+    if (!users || users.length === 0) {
+        throw new ApiError(BAD_REQUEST, 'No users found');
+    }
+    return {
+        users,
+        pagination,
+    };
+}
+
+const getUserById = async (userId) => {
+    const user = await User.findById(userId).lean()
+    if (!user) throw new ApiError(BAD_REQUEST, "User not found")
+    return user
+}
+
 
 const AdminServices = {
     signup,
@@ -168,8 +194,10 @@ const AdminServices = {
     forgetPassword,
     login,
     logout,
-    adminProfile,
-    getAdminProfile
+    updateAdminProfile,
+    getAdminProfile,
+    getAllUsers,
+    getUserById
 }
 
 export default AdminServices;

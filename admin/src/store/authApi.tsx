@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setAdmin, logout } from './authSlice.tsx';
 import { backendURL } from "../constants/urls.tsx";
+import { Params } from 'react-router-dom';
 
 interface ApiResponse<T> {
   statusCode: number;
@@ -21,20 +22,20 @@ export const authApi = createApi({
       let token = state.app?.user?.token;
 
       if (!token) {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          token = user.token;
-          const expiresAt = user.expiresAt;
+        const storedAdmin = localStorage.getItem('admin');
+        if (storedAdmin) {
+          const admin = JSON.parse(storedAdmin);
+          token = admin.token;
+          const expiresAt = admin.expiresAt;
 
           if (expiresAt && Date.now() > expiresAt) {
             dispatch(logout());
-            localStorage.removeItem('user');
+            localStorage.removeItem('admin');
             window.location.href = '/signin';
             return headers;
           }
 
-          dispatch(setAdmin(user));
+          dispatch(setAdmin(admin));
         }
       }
 
@@ -56,7 +57,7 @@ export const authApi = createApi({
     }),
     verifyOTP: builder.mutation<ApiResponse<any>, { email: string; otp: string}>({
       query: (body) => ({
-        url: '/user/verify-otp',
+        url: '/admin/verify-otp',
         method: 'POST',
         body,
       }),
@@ -67,11 +68,11 @@ export const authApi = createApi({
           const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
 
           // Store in Redux
-          const userData = { email, token: accessToken, expiresAt };
-          dispatch(setAdmin(userData));
+          const adminData = { email, token: accessToken, expiresAt };
+          dispatch(setAdmin(adminData));
 
           // Store in localStorage
-          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('admin', JSON.stringify(adminData));
         } catch (error) {
           alert(`OTP verify failed:, ${error}`);
         }
@@ -80,21 +81,21 @@ export const authApi = createApi({
     }),
     resendOTP: builder.mutation<ApiResponse<any>, { email: string; }>({
       query: (body) => ({
-        url: '/user/resend',
+        url: '/admin/resend',
         method: 'POST',
         body,
       }),
     }),
     forgetPassword: builder.mutation<ApiResponse<any>, { email: string; newPassword: string }>({
       query: (body) => ({
-        url: '/user/forget-password',
+        url: '/admin/forget-password',
         method: 'POST',
         body,
       }),
     }),
     signIn: builder.mutation<ApiResponse<any>, { email: string; password: string }>({
       query: (body) => ({
-        url: '/user/signin',
+        url: '/admin/signin',
         method: 'POST',
         body,
       }),
@@ -105,28 +106,35 @@ export const authApi = createApi({
           const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
 
           // Store in Redux
-          const userData = { email, token: accessToken, expiresAt };
-          dispatch(setAdmin(userData));
+          const adminData = { email, token: accessToken, expiresAt };
+          dispatch(setAdmin(adminData));
 
           // Store in localStorage
-          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('admin', JSON.stringify(adminData));
         } catch (error) {
           alert(`Sign-in failed:, ${error}`);
         }
       },
       invalidatesTags: ['Auth'],
     }),
-    userDetails: builder.mutation<ApiResponse<any>, FormData>({
+    updateAdminProfile: builder.mutation<ApiResponse<any>, FormData>({
       query: (formData) => ({
-        url: '/user/user-details',
-        method: 'POST',
+        url: '/admin/update-profile',
+        method: 'PUT',
         body: formData,
       }),
     }),
-    getUserProfile: builder.query<ApiResponse<any>, void>({
+    getAdminProfile: builder.query<ApiResponse<any>, void>({
       query: () => ({
-        url: '/user/get-user-profile',
+        url: '/admin/get-profile',
         method: 'GET',
+      }),
+    }),
+    getAllUsers: builder.query<ApiResponse<any>, {page: number; limit: number}>({
+      query: (params) => ({
+        url: '/admin/get-profile',
+        method: 'GET',
+        params, 
       }),
     }),
   }),
@@ -138,6 +146,7 @@ export const {
   useResendOTPMutation,
   useForgetPasswordMutation,
   useSignInMutation,
-  useUserDetailsMutation,
-  useGetUserProfileQuery,
+  useUpdateAdminProfileMutation,
+  useLazyGetAdminProfileQuery,
+  useLazyGetAllUsersQuery
  } = authApi;

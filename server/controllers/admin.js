@@ -1,12 +1,12 @@
 import { OK } from "../utils/apiResponseCode.js";
-import { ApiResponse } from "../utils/apiResponse.js";
-import AdnminValidation from "../validations/admin";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import AdnminValidation from "../validations/admin.js";
 import AdminServices from "../services/admin.js";
 const Signup = async (req, res, next) => {
     try {
         await AdnminValidation.validateSignup(req.body)
-        let user = await AdminServices.signup(req.body)
-        return res.status(OK).json(new ApiResponse(OK, {email: user.email}, "OTP send successfully"))
+        let admin = await AdminServices.signup(req.body)
+        return res.status(OK).json(new ApiResponse(OK, {email: admin.email}, "OTP send successfully"))
     } catch (error) {
         next(error)
     }
@@ -16,8 +16,8 @@ const Signup = async (req, res, next) => {
 const VerifyOTP = async (req, res, next) => {
     try {
         await AdnminValidation.validateOTP(req.body)
-        let user = await AdminServices.verifyOTP(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "User verified successfully"))
+        let admin = await AdminServices.verifyOTP(req.body)
+        return res.status(OK).json(new ApiResponse(OK, admin, "Admin verified successfully"))
     } catch (error) {
         next(error)
     }
@@ -27,8 +27,8 @@ const VerifyOTP = async (req, res, next) => {
 const ResendOTP = async (req, res, next) => {
     try {
         await AdnminValidation.validateResendOTP(req.body);
-        let user = await AdminServices.resendOTP(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "OTP resent successfully"))
+        let admin = await AdminServices.resendOTP(req.body)
+        return res.status(OK).json(new ApiResponse(OK, admin, "OTP resent successfully"))
     } catch (error) {
         next(error)
     }
@@ -37,8 +37,8 @@ const ResendOTP = async (req, res, next) => {
 const ForgetPassword = async (req, res, next) => {
     try {
         await AdnminValidation.validateforgetPassword(req.body)
-        let user = await AdminServices.forgetPassword(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "Password reset successfully"))
+        let admin = await AdminServices.forgetPassword(req.body)
+        return res.status(OK).json(new ApiResponse(OK, admin, "Password reset successfully"))
     } catch (error) {
         next(error)
     }
@@ -47,19 +47,18 @@ const ForgetPassword = async (req, res, next) => {
 
 const Logout = async (req, res, next) => {
     try {
-        let user = await AdnminValidation.logout(req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "User Logout Successfully"))
+        let admin = await AdnminValidation.logout(req.admin)
+        return res.status(OK).json(new ApiResponse(OK, admin, "Admin Logout Successfully"))
     } catch (error) {
         next(error)
     }
 }
 
-const UserDetails = async (req, res, next) => {
-    console.log("UserDetails", req.body, req.user, req.file)
+const UpdateAdminProfile = async (req, res, next) => {
     try {
-        await AdnminValidation.validateUserProfile(req.body)
-        // let user = await AdminServices.userDetails(req.body, req.user, req.file)
-        return res.status(OK).json(new ApiResponse(OK, user, "User details saved successfully"))
+        await AdnminValidation.validateAdminProfile(req.body)
+        let admin = await AdminServices.updateAdminProfile(req.body, req.admin, req.file)
+        return res.status(OK).json(new ApiResponse(OK, admin, "Admin details updated successfully"))
     } catch (error) {
         next(error)
     }
@@ -68,8 +67,8 @@ const UserDetails = async (req, res, next) => {
 
 const GetAdminProfile = async (req, res, next) => {
     try {
-        let user = await AdminServices.getUserProfile(req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "User profile fetched successfully"))
+        let admin = await AdminServices.getAdminProfile(req.admin)
+        return res.status(OK).json(new ApiResponse(OK, admin, "Admin profile fetched successfully"))
     } catch (error) {
         next(error)
     }
@@ -79,20 +78,43 @@ const GetAdminProfile = async (req, res, next) => {
 const Login = async (req, res, next) => {
     try {
         await AdnminValidation.validateLogin(req.body)
-        let user = await AdminServices.login(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "User Login Successfully"))
+        let admin = await AdminServices.login(req.body)
+        return res.status(OK).json(new ApiResponse(OK, admin, "Admin Login Successfully"))
     } catch (error) {
         next(error)
     }
 }
+
+const GetAllUsers = async (req, res, next) => {
+    try {
+        let users = await AdminServices.getAllUsers(req.query)
+        return res.status(OK).json(new ApiResponse(OK, users, "All users fetched successfully"))
+    } catch (error) {
+        next(error)
+    }
+}
+
+const GetUserById = async (req, res, next) => {
+    try {
+        let user = await AdminServices.getUserById(req.params.userId)
+        return res.status(OK).json(new ApiResponse(OK, user, "User fetched successfully"))
+    } catch (error) {
+        next(error)
+    }
+}   
+
+
+
 const AdminControllers = {
     Signup,
     VerifyOTP,
     ResendOTP,
     ForgetPassword,
     Logout,
-    UserDetails,
+    UpdateAdminProfile,
     GetAdminProfile,
-    Login
+    Login,
+    GetAllUsers,
+    GetUserById
 }
 export default AdminControllers
