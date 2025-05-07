@@ -1,4 +1,3 @@
-import React from 'react';
 
 export interface ImageSlide {
     title: string;
@@ -16,7 +15,7 @@ export interface ImageTemplate {
     coverImageUrl?: string;
 }
 
-// Template 1: Teddy Bear Design (Inspired by the provided image)
+
 const ImageTemplate1: ImageTemplate = {
     id: 'teddy-bear-love',
     name: 'Teddy Bear Love',
@@ -225,7 +224,7 @@ const ImageTemplate13: ImageTemplate = {
     ),
 };
 
-// Template 2: Minimalist Split
+
 const ImageTemplate14: ImageTemplate = {
     id: 'minimalist-split',
     name: 'Minimalist Split',
@@ -270,7 +269,7 @@ const ImageTemplate14: ImageTemplate = {
     ),
 };
 
-// Template 3: Gradient Overlay
+
 const ImageTemplate15: ImageTemplate = {
     id: 'gradient-overlay',
     name: 'Gradient Overlay',
@@ -309,7 +308,7 @@ const ImageTemplate15: ImageTemplate = {
     ),
 };
 
-// Template 4: Modern Frame
+
 const ImageTemplate4: ImageTemplate = {
     id: 'modern-frame',
     name: 'Modern Frame',
@@ -722,6 +721,7 @@ const ImageTemplate16: ImageTemplate = {
         </div>
     ),
 };
+
 export const imageTemplates: ImageTemplate[] = [
     ImageTemplate1,
     ImageTemplate2,

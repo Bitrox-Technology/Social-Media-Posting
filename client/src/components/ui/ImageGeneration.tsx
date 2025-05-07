@@ -78,8 +78,8 @@ export const ImageGeneration: React.FC<ImageGenerationProps> = ({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
-  const [generateImage, { isLoading: isGeneratingImage }] = useGenerateImageMutation();
-  const [generateImageContent, { isLoading: isGeneratingContent }] = useGenerateImageContentMutation();
+  const [generateImage] = useGenerateImageMutation();
+  const [generateImageContent] = useGenerateImageContentMutation();
   const [getImageContent, { isFetching: isFetchingContent }] = useLazyGetImageContentQuery();
   const [updatePost] = useUpdatePostMutation();
 

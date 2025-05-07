@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppDispatch } from '../../store/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import { createRoot } from 'react-dom/client';
@@ -35,7 +34,6 @@ import { doYouKnowTemplates, DoYouKnowSlide } from '../../templetes/doYouKnowTem
 export const AutoPostCreator: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useAppDispatch();
   const { theme } = useTheme();
 
   // State management
@@ -77,10 +75,6 @@ export const AutoPostCreator: React.FC = () => {
   ];
 
   const isLoading = isLoadingTopics || isFetchingPostContent || isLoadingPosts || isFetchingPosts;
-
-  const registerRef = (topic: string, ref: HTMLDivElement) => {
-    postRefs.current.set(topic, ref);
-  };
 
   // Fetch topics and posts on mount
   useEffect(() => {
@@ -433,7 +427,7 @@ export const AutoPostCreator: React.FC = () => {
 
           const doYouKnowTemplate = doYouKnowTemplates.find((t) => t.id === randomDoYouKnowTemplate.id) || doYouKnowTemplates[0];
           const doYouKnowSlideElement = doYouKnowTemplate.renderSlide
-            ? doYouKnowTemplate.renderSlide(newDoYouKnowSlide, true, '/images/Logo2.png')
+            ? doYouKnowTemplate.renderSlide(newDoYouKnowSlide, true, '/images/Logo1.png')
             : <div>{newDoYouKnowSlide.title}</div>;
           const root = createRoot(tempContainerDYK);
           root.render(doYouKnowSlideElement);

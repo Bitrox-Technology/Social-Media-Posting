@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../store/hooks';
-import { setContentType } from '../store/appSlice';
 import {
   FileText, Clock, Activity, Settings2,
   Calendar, Plus, Bell,
@@ -26,7 +25,6 @@ import {
 const DashboardPage: React.FC = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const handleSelect = () => {

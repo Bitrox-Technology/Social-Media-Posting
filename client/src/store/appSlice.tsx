@@ -48,6 +48,7 @@ interface AppState {
   selectedBusiness: string | null;
   posts: Post[];
   apiTopics: string[];
+  customTopics: string[];
 }
 
 const initialState: AppState = {
@@ -62,6 +63,7 @@ const initialState: AppState = {
   selectedBusiness: null,
   posts: [],
   apiTopics: [],
+  customTopics: [],
 };
 
 const appSlice = createSlice({
@@ -82,6 +84,14 @@ const appSlice = createSlice({
     },
     setSelectedIdea(state, action: PayloadAction<ContentIdea | null>) {
       state.selectedIdea = action.payload;
+    },
+    addCustomTopic(state, action: PayloadAction<string>) {
+      if (!state.customTopics.includes(action.payload)) {
+        state.customTopics.push(action.payload);
+      }
+    },
+    clearCustomTopics(state) {
+      state.customTopics = [];
     },
     setSelectedFile(state, action: PayloadAction<SelectedFileData | null>) {
       state.selectedFile = action.payload;
@@ -144,6 +154,8 @@ export const {
   setSelectedBusiness,
   setPosts,
   setApiTopics,
+  addCustomTopic,
+  clearCustomTopics,
 } = appSlice.actions;
 
 export default appSlice.reducer;

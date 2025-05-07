@@ -1,69 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowLeft, Sparkles, Building2, Hash } from 'lucide-react';
+import { Search, ArrowLeft, Sparkles, Building2, Hash, Sun, Moon } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setSelectedTopic, setSelectedBusiness, setApiTopics } from '../../store/appSlice';
+import { setSelectedTopic, setSelectedBusiness, setApiTopics, addCustomTopic, clearCustomTopics } from '../../store/appSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGenerateTopicsMutation, useSavePostContentMutation } from '../../store/api';
+import { useTheme } from '../../context/ThemeContext';
 
 export const TopicSelector: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
   const dispatch = useAppDispatch();
-  const { selectedTopic, selectedBusiness, apiTopics: reduxApiTopics } = useAppSelector((state) => state.app);
-  const [isDark, setIsDark] = useState(true);
+  const { selectedTopic, selectedBusiness, apiTopics: reduxApiTopics, customTopics } = useAppSelector(
+    (state) => state.app
+  );
+  const [businesses, setBusinesses] = useState<string[]>(['E-commerce', 'Healthcare', 'Technology', 'Finance', 'Education']);
   const [customBusiness, setCustomBusiness] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [customTopic, setCustomTopic] = useState('');
-  const [customTopics, setCustomTopics] = useState<string[]>([]);
   const [fetchingTopics, setFetchingTopics] = useState(false);
   const [generateTopics, { isLoading, error }] = useGenerateTopicsMutation();
   const [savePostContent] = useSavePostContentMutation();
 
-  const businesses = ['E-commerce', 'Healthcare', 'Technology', 'Finance', 'Education'];
-
-  // Restore state on mount
+  // Restore selected topics from Redux state
   useEffect(() => {
-    const savedBusiness = localStorage.getItem('selectedBusiness');
-    const savedTopics = localStorage.getItem('selectedTopic');
-    const savedCustomTopics = localStorage.getItem('customTopics');
-
-    if (savedBusiness) {
-      dispatch(setSelectedBusiness(savedBusiness));
-      // Only fetch topics if reduxApiTopics is empty
-      if (!reduxApiTopics.length) {
-        fetchTopics(savedBusiness);
-      }
-    }
-    if (savedTopics) {
-      const topicsArray = savedTopics.split(', ').filter(Boolean);
-      dispatch(setSelectedTopic(savedTopics));
+    if (selectedTopic) {
+      const topicsArray = selectedTopic.split(', ').filter(Boolean);
       setSelectedTopics(topicsArray);
     }
-    if (savedCustomTopics) {
-      setCustomTopics(JSON.parse(savedCustomTopics));
-    }
-  }, [dispatch, reduxApiTopics.length]);
-
-  // Save state to localStorage
-  useEffect(() => {
-    localStorage.setItem('selectedBusiness', selectedBusiness || '');
-    localStorage.setItem('selectedTopic', selectedTopics.join(', '));
-    localStorage.setItem('customTopics', JSON.stringify(customTopics));
-  }, [selectedBusiness, selectedTopics, customTopics]);
+  }, [selectedTopic]);
 
   // Handle navigation state from AutoPostCreator
   useEffect(() => {
     if (location.state?.fromAutoPostCreator && selectedBusiness && reduxApiTopics.length) {
-      // Skip fetching topics if coming back from AutoPostCreator and topics exist
       setFetchingTopics(false);
     }
   }, [location.state, selectedBusiness, reduxApiTopics.length]);
-
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle('dark');
-  };
 
   const fetchTopics = async (business: string) => {
     if (fetchingTopics || reduxApiTopics.length > 0) return;
@@ -83,14 +56,17 @@ export const TopicSelector: React.FC = () => {
   const handleBusinessSelect = (business: string) => {
     if (business !== selectedBusiness) {
       dispatch(setSelectedBusiness(business));
-      setCustomBusiness('');
       setSelectedTopics([]);
-      setCustomTopics([]);
       dispatch(setSelectedTopic(''));
-      dispatch(setApiTopics([]));
-      localStorage.removeItem('selectedTopic');
-      localStorage.removeItem('customTopics');
-      fetchTopics(business);
+      dispatch(setApiTopics([])); // Clear previous API topics
+      dispatch(clearCustomTopics()); // Clear custom topics
+    }
+  };
+
+  const handleAddCustomBusiness = () => {
+    if (customBusiness && !businesses.includes(customBusiness)) {
+      setBusinesses((prev) => [...prev, customBusiness]);
+      setCustomBusiness('');
     }
   };
 
@@ -114,8 +90,7 @@ export const TopicSelector: React.FC = () => {
       !selectedTopics.includes(customTopic) &&
       !customTopics.includes(customTopic)
     ) {
-      const newCustomTopics = [...customTopics, customTopic];
-      setCustomTopics(newCustomTopics);
+      dispatch(addCustomTopic(customTopic));
       setCustomTopic('');
     }
   };
@@ -125,7 +100,7 @@ export const TopicSelector: React.FC = () => {
       try {
         const response = await savePostContent({ topics: selectedTopics }).unwrap();
         dispatch(setSelectedTopic(selectedTopics.join(', ')));
-        navigate('/auto', { state: { postContentId: response.data._id } });
+        navigate('/auto', { state: { postContentId: response.data._id, fromTopicSelector: true } });
       } catch (err) {
         console.error('Failed to save selected topics:', err);
         const errorMessage = (err as { data?: { message?: string } })?.data?.message || 'Unknown error';
@@ -139,7 +114,7 @@ export const TopicSelector: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'dark' : ''}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'dark' : ''}`}>
       <div className="container mx-auto px-4 py-12 max-w-6xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
           <div className="flex items-center justify-between">
@@ -157,6 +132,7 @@ export const TopicSelector: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Content Creation Hub</h2>
               </div>
             </div>
+            
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
@@ -174,7 +150,7 @@ export const TopicSelector: React.FC = () => {
                     className={`p-4 rounded-xl text-left transition-all ${
                       selectedBusiness === business
                         ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-blue-50 dark:hover:bg-gray-600'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600'
                     }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -196,13 +172,13 @@ export const TopicSelector: React.FC = () => {
                   <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 </div>
                 <motion.button
-                  onClick={() => customBusiness && handleBusinessSelect(customBusiness)}
+                  onClick={handleAddCustomBusiness}
                   disabled={!customBusiness}
                   className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Use Custom Business
+                  Add Custom Business
                 </motion.button>
               </div>
             </div>
@@ -259,7 +235,7 @@ export const TopicSelector: React.FC = () => {
                               className={`p-4 rounded-xl text-left transition-all ${
                                 isSelected
                                   ? 'bg-purple-500 text-white'
-                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-purple-50 dark:hover:bg-gray-600'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-gray-600'
                               } ${!isSelected && selectedTopics.length >= 7 ? 'opacity-50 cursor-not-allowed' : ''}`}
                               whileHover={!isSelected && selectedTopics.length >= 7 ? {} : { scale: 1.02 }}
                               whileTap={!isSelected && selectedTopics.length >= 7 ? {} : { scale: 0.98 }}
