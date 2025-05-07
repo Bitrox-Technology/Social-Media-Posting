@@ -8,7 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 export const ImageGenerationTemplate: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const defaultLogoUrl = '/images/Logo1.png';
+  const defaultLogoUrl = '/images/Logo2.jpg';
   const [selectedTemplate, setSelectedTemplate] = useState<ImageTemplate | null>(null);
 
   const handleSelectTemplate = (template: ImageTemplate) => {

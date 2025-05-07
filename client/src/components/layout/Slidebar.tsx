@@ -5,12 +5,12 @@ import { Close as CloseIcon, Home, Lightbulb, Image, Description, Rocket, Info, 
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { logout } from '../../store/appSlice';
 
-interface DashboardProps {
+interface SlidebarProps {
   isOpen: boolean;
   toggleDrawer: (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ isOpen, toggleDrawer }) => {
+const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
   const user = useAppSelector((state) => state.app.user);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -91,7 +91,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isOpen, toggleDrawer }) => {
             <ListItemIcon>
               <Person className="text-gray-600 dark:text-gray-300" />
             </ListItemIcon>
-            <ListItemText primary="View Details" className="text-gray-700 dark:text-gray-200" />
+            <ListItemText primary="Profile" className="text-gray-700 dark:text-gray-200" />
           </ListItem>
           <ListItem  onClick={handleLogout} className="cursor-pointer">
             <ListItemIcon>
@@ -122,4 +122,4 @@ const Dashboard: React.FC<DashboardProps> = ({ isOpen, toggleDrawer }) => {
   );
 };
 
-export default Dashboard;
+export default Slidebar;

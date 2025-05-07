@@ -31,7 +31,7 @@ export const authApi = createApi({
           if (expiresAt && Date.now() > expiresAt) {
             dispatch(logout());
             localStorage.removeItem('admin');
-            window.location.href = '/signin';
+            window.location.href = '/login';
             return headers;
           }
 
@@ -132,9 +132,15 @@ export const authApi = createApi({
     }),
     getAllUsers: builder.query<ApiResponse<any>, {page: number; limit: number}>({
       query: (params) => ({
-        url: '/admin/get-profile',
+        url: '/admin/get-all-users',
         method: 'GET',
         params, 
+      }),
+    }),
+    getUser: builder.query<ApiResponse<any>, {userId: string}>({
+      query: ({userId}) => ({
+        url: `/admin/get-user/${userId}`,
+        method: 'GET', 
       }),
     }),
   }),
@@ -148,5 +154,6 @@ export const {
   useSignInMutation,
   useUpdateAdminProfileMutation,
   useLazyGetAdminProfileQuery,
-  useLazyGetAllUsersQuery
+  useLazyGetAllUsersQuery,
+  useLazyGetUserQuery,
  } = authApi;

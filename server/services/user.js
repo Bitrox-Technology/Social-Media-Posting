@@ -82,7 +82,7 @@ const resendOTP = async (inputs) => {
             throw new ApiError(BAD_REQUEST, "Invalid email")
         }
 
-    } 
+    }
 }
 
 const forgetPassword = async (inputs) => {
@@ -137,31 +137,50 @@ const logout = async (user) => {
 
 }
 
-const userDetails = async (inputs, user, file) => {
+const userDetails = async (inputs, user, files) => {
 
-    if ( !file) throw new ApiError(BAD_REQUEST, "Logo is required");
 
-    let logoUrl = await uploadOnClodinary(file.path, "logo")
-    if (!logoUrl) throw new ApiError(BAD_REQUEST, "Unable to upload logo")
+    if (files && files.length > 0) {
+        for (const file of files) {
+            if (file.fieldname === 'logo') {
+                // Upload logo to Cloudinary
+                const result = await uploadOnClodinary(file.path, 'logo');
+                if (!result || !result.secure_url) throw new ApiError(BAD_REQUEST, 'Unable to upload logo');
+                inputs.logo = result.secure_url;
 
-    inputs.logo = logoUrl.secure_url
+            } else if (file.fieldname.startsWith('productCategories[')) {
+
+                const match = file.fieldname.match(/productCategories\[(\d+)\]\[image\]/);
+                if (match) {
+                    const index = parseInt(match[1], 10);
+                    const result = await uploadOnClodinary(file.path, `productCategories_${index}`);
+                    if (!result || !result.secure_url) {
+                        throw new ApiError(BAD_REQUEST, `Unable to upload product image for index ${index}`);
+                    }
+                    inputs.productCategories[index].image = result.secure_url;
+                }
+            }
+        }
+    }
+
     inputs.isProfileCompleted = true
-    
-    let updateUser = await User.findOne({ _id: user._id , email: inputs.email, isEmailVerify: true, isDeleted: false })
-    if (!updateUser) throw new ApiError(BAD_REQUEST, "User not found")    
 
-    updateUser = await User.findByIdAndUpdate({ _id: updateUser._id }, inputs, { new: true })
-    if (!updateUser) throw new ApiError(BAD_REQUEST, "Unable to update user details")
-
-    updateUser = await User.findById({ _id: updateUser._id })
-    return updateUser
+    let updatedUser = await User.findOneAndUpdate(
+        { _id: user._id, isEmailVerify: true, isDeleted: false },
+        inputs,
+        { new: true, runValidators: true }
+    );
+    if (!updatedUser) {
+        throw new ApiError(BAD_REQUEST, 'User not found or invalid conditions');
+    }
+    return updatedUser;
 }
 
 const getUserProfile = async (user) => {
-    const userProfile = await User.findById(user._id).lean(); 
+    const userProfile = await User.findById(user._id).lean();
 
     if (!userProfile) {
-      throw new ApiError(BAD_REQUEST, 'User not found');
+        throw new ApiError(BAD_REQUEST, 'User not found');
     }
     return userProfile;
 }

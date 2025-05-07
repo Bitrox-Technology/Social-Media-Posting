@@ -54,6 +54,7 @@ const UserDetail = () => {
   const [initialValues, setInitialValues] = useState({
     userName: '',
     email: email || '',
+    bio: '', // New bio field
     countryCode: '',
     phone: '',
     location: '',
@@ -75,6 +76,8 @@ const UserDetail = () => {
         ...item,
         image: null, // Images can't be persisted in localStorage, reset to null
       }));
+      // Ensure bio is included if not present in saved data
+      parsedData.bio = parsedData.bio || '';
       setInitialValues(parsedData);
     }
   }, []);
@@ -86,6 +89,10 @@ const UserDetail = () => {
       .trim()
       .lowercase()
       .required('Email is required'),
+    bio: Yup.string()
+      .trim()
+      .required('Bio is required')
+      .max(500, 'Bio must be 500 characters or less'), // New validation for bio
     countryCode: Yup.string().trim().required('Country code is required'),
     phone: Yup.string()
       .trim()
@@ -121,6 +128,7 @@ const UserDetail = () => {
         ...values,
         userName: values.userName.trim(),
         email: values.email.trim().toLowerCase(),
+        bio: values.bio.trim(), // Clean bio
         countryCode: values.countryCode.trim(),
         phone: values.phone.trim(),
         location: values.location.trim(),
@@ -129,7 +137,7 @@ const UserDetail = () => {
           .map((item) => ({
             category: item.category.trim(),
             productName: item.productName.trim(),
-            image: item.image, // Keep the file object
+            image: item.image,
           }))
           .filter((item) => item.category && item.productName),
         services: values.services.map((service) => service.trim()).filter(Boolean),
@@ -144,6 +152,7 @@ const UserDetail = () => {
       // Append simple fields
       formData.append('userName', cleanedValues.userName);
       formData.append('email', cleanedValues.email);
+      formData.append('bio', cleanedValues.bio); // Append bio
       formData.append('countryCode', cleanedValues.countryCode);
       formData.append('phone', cleanedValues.phone);
       formData.append('location', cleanedValues.location);
@@ -180,24 +189,37 @@ const UserDetail = () => {
         console.log(`${key}:`, value);
       }
 
+      // Save to localStorage (excluding files)
+      const dataToSave = {
+        ...cleanedValues,
+        logo: null, // Exclude file
+        productCategories: cleanedValues.productCategories.map((item) => ({
+          category: item.category,
+          productName: item.productName,
+          image: null, // Exclude file
+        })),
+      };
+      localStorage.setItem('userDetails', JSON.stringify(dataToSave));
+
       const response = await userDetails(formData).unwrap();
       console.log('API response:', response);
 
+      // Uncomment when API response structure is confirmed
       // if (!response.success) {
       //   throw new Error(response.message || 'Failed to save profile');
       // }
 
-      // toast.success(response.message || 'Profile saved successfully!', {
-      //   position: 'bottom-right',
-      //   autoClose: 3000,
-      //   hideProgressBar: false,
-      //   closeOnClick: true,
-      //   pauseOnHover: true,
-      //   draggable: true,
-      // });
-      // setTimeout(() => {
-      //   navigate('/profile');
-      // }, 2000);
+      toast.success(response.message || 'Profile saved successfully!', {
+        position: 'bottom-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setTimeout(() => {
+        navigate('/profile');
+      }, 2000);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       setErrors({ submit: errorMessage });
@@ -253,7 +275,7 @@ const UserDetail = () => {
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                       Basic Information
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Username
@@ -283,6 +305,25 @@ const UserDetail = () => {
                         />
                         <ErrorMessage
                           name="email"
+                          component="p"
+                          className="mt-1 text-sm text-red-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <FileText className="inline-block w-4 h-4 mr-2" />
+                          Bio
+                        </label>
+                        <Field
+                          as="textarea"
+                          name="bio"
+                          rows={4}
+                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                          placeholder="Tell us about yourself or your company (max 500 characters)"
+                        />
+                        <ErrorMessage
+                          name="bio"
                           component="p"
                           className="mt-1 text-sm text-red-500"
                         />

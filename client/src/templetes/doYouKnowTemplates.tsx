@@ -1189,6 +1189,689 @@ const DoYouKnowTemplate10: DoYouKnowTemplate = {
     </div>
   ),
 };
+const DoYouKnowTemplate11: DoYouKnowTemplate = {
+  id: 'do-you-know-minimalist',
+  name: 'Minimalist Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover1.png', // Thumbnail for the template
+  slides: [
+    {
+      title: 'DID YOU KNOW?',
+      fact: 'Besides being done conventionally, it can be done through online media on the internet, which is more efficient in terms of time and budget.',
+      imageUrl: '', // No background image; we'll use a solid color with icons
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div
+      className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden flex flex-col justify-between text-black"
+      style={{
+        background: '#B3D7F5', // Light blue background as per the image
+      }}
+    >
+      {/* Light Bulb Icon (Top-Right) */}
+      <div className="absolute top-10 right-10 w-16 h-16 md:w-20 md:h-20 pointer-events-none">
+        <svg
+          viewBox="0 0 24 24"
+          className="w-full h-full text-yellow-400"
+          fill="currentColor"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M12 2a6 6 0 00-6 6c0 2.5 1.5 4.5 3.5 5.5v2h5v-2c2-1 3.5-3 3.5-5.5a6 6 0 00-6-6zm0 16a1 1 0 01-1-1h2a1 1 0 01-1 1z" />
+        </svg>
+      </div>
+
+      {/* Paper Airplane (Bottom-Left) */}
+      <div className="absolute bottom-10 left-10 w-16 h-16 md:w-20 md:h-20 pointer-events-none">
+        <svg
+          viewBox="0 0 24 24"
+          className="w-full h-full text-white"
+          fill="currentColor"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
+        </svg>
+      </div>
+
+      {/* Logo (Top-Right, below icons) */}
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-2 right-2 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+        />
+      )}
+
+      {/* Content Section (Centered) */}
+      <div className="relative z-10 flex flex-col items-center justify-center flex-grow p-6 md:p-10">
+        {/* Title */}
+        <h2 className="text-4xl md:text-6xl font-bold mb-4 leading-tight text-center">
+          {slide.title}
+        </h2>
+
+        {/* Fact */}
+        <p className="text-lg md:text-xl max-w-md text-center leading-relaxed">
+          {slide.fact}
+        </p>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="relative z-10 flex justify-between items-center pb-6 md:pb-10 px-6 md:px-10">
+        {/* Footer (Bottom-Left) */}
+        <span className="text-gray-700 text-sm md:text-base">
+          @{slide.footer}
+        </span>
+
+        {/* Website URL (Bottom-Right) */}
+        <a
+          href={slide.websiteUrl}
+          className="text-gray-700 text-sm md:text-base hover:underline"
+        >
+          {slide.websiteUrl}
+        </a>
+      </div>
+    </div>
+  ),
+};
+const DoYouKnowTemplate12: DoYouKnowTemplate = {
+  id: 'do-you-know-minimalist',
+  name: 'Minimalist Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover1.png', // Thumbnail for the template
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'The human body contains about 0.2 milligrams of gold, most of it in the blood.',
+      imageUrl: '', // No background image; we'll use a solid color with icons
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div
+      className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden flex flex-col justify-between text-black"
+      style={{
+        background: '#B3D7F5', // Light blue background as per the image
+      }}
+    >
+      {/* Light Bulb Icon (Top-Right) */}
+      <div className="absolute top-10 right-10 w-16 h-16 md:w-20 md:h-20 pointer-events-none">
+        <svg
+          viewBox="0 0 24 24"
+          className="w-full h-full text-yellow-400"
+          fill="currentColor"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M12 2a6 6 0 00-6 6c0 2.5 1.5 4.5 3.5 5.5v2h5v-2c2-1 3.5-3 3.5-5.5a6 6 0 00-6-6zm0 16a1 1 0 01-1-1h2a1 1 0 01-1 1z" />
+        </svg>
+      </div>
+
+      {/* Paper Airplane (Bottom-Left) */}
+      <div className="absolute bottom-10 left-10 w-16 h-16 md:w-20 md:h-20 pointer-events-none">
+        <svg
+          viewBox="0 0 24 24"
+          className="w-full h-full text-white"
+          fill="currentColor"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
+        </svg>
+      </div>
+
+      {/* Logo (Top-Right, below icons) */}
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-2 right-2 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
+        />
+      )}
+
+      {/* Content Section (Centered) */}
+      <div className="relative z-10 flex flex-col items-center justify-center flex-grow p-6 md:p-10">
+        {/* Title */}
+        <h2 className="text-4xl md:text-6xl font-bold mb-4 leading-tight text-center">
+          {slide.title}
+        </h2>
+
+        {/* Fact */}
+        <p className="text-lg md:text-xl max-w-md text-center leading-relaxed">
+          {slide.fact}
+        </p>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="relative z-10 flex justify-between items-center pb-6 md:pb-10 px-6 md:px-10">
+        {/* Footer (Bottom-Left) */}
+        <span className="text-gray-700 text-sm md:text-base">
+          @{slide.footer}
+        </span>
+
+        {/* Website URL (Bottom-Right) */}
+        <a
+          href={slide.websiteUrl}
+          className="text-gray-700 text-sm md:text-base hover:underline"
+        >
+          {slide.websiteUrl}
+        </a>
+      </div>
+    </div>
+  ),
+};
+const DidYouKnowTemplate13: DoYouKnowTemplate  = {
+  id: 'did-you-know-bright',
+  name: 'Bright Did You Know',
+  coverImageUrl: '/images/didyouknow-cover/cover1.png', // Thumbnail for the template
+  slides: [
+    {
+      title: 'DID YOU KNOW?',
+      fact: 'Besides being done conventionally, it turns out that selling products can be done through online media on the internet, which is more efficient in terms of time, effort, and budget.',
+      footer: 'bitrox.tech',
+      imageUrl: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div
+      className="relative w-full h-64 md:h-96 rounded-lg overflow-hidden flex flex-col justify-between"
+      style={{
+        background: '#CCEAFF', // Light blue background
+      }}
+    >
+      {/* Background Blobs */}
+      <div className="absolute left-0 top-0 w-32 h-32 rounded-br-full" style={{ background: '#B1DCFF' }}></div>
+      <div className="absolute right-0 bottom-0 w-32 h-32 rounded-tl-full" style={{ background: '#B1DCFF' }}></div>
+      
+      {/* Logo */}
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-2 right-2 w-20 h-8 object-contain z-20"
+        />
+      )}
+
+      {/* Main Content Card */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-lg p-6 w-4/5 z-10">
+        {/* Title */}
+        <h2 className="text-2xl md:text-3xl font-bold mb-4 text-center text-blue-800">
+          {slide.title}
+        </h2>
+        
+        {/* Fact */}
+        <p className="text-sm md:text-base text-center text-gray-800">
+          {slide.fact}
+        </p>
+      </div>
+      
+      {/* Light Bulb Icon */}
+      <div className="absolute top-12 right-12 md:top-16 md:right-20 z-20">
+        <div className="relative">
+          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-yellow-400"></div>
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-6 md:w-8 h-4 md:h-5 bg-gray-700 rounded-b-lg"></div>
+          
+          {/* Light Rays */}
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full">
+            <div className="w-2 h-6 bg-yellow-400 rounded-full"></div>
+          </div>
+          <div className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45">
+            <div className="w-2 h-6 bg-yellow-400 rounded-full"></div>
+          </div>
+          <div className="absolute right-0 top-1/2 transform translate-x-full -translate-y-1/2">
+            <div className="w-6 h-2 bg-yellow-400 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Paper Airplane */}
+      <div className="absolute bottom-12 left-16 z-20">
+        <div className="w-12 h-12 md:w-16 md:h-16 transform rotate-12">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3L2 12H5V20H19V12H22L12 3Z" fill="#E6E6E6" stroke="#CCCCCC"/>
+          </svg>
+        </div>
+      </div>
+      
+      {/* Footer */}
+      <div className="absolute bottom-2 left-0 right-0 flex justify-center z-10">
+        <span className="text-xs md:text-sm text-blue-800">
+          @{slide.footer} | {slide.websiteUrl}
+        </span>
+      </div>
+    </div>
+  ),
+};
+const DoYouKnowTemplate14: DoYouKnowTemplate = {
+  id: 'do-you-know-modern-card',
+  name: 'Modern Card Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover3.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'A day on Venus is longer than its year. Venus takes 243 Earth days to rotate on its axis but only 225 Earth days to orbit the Sun.',
+      imageUrl: '/images/space-bg.jpg',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+      <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+      
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+        />
+      )}
+
+      <div className="relative z-10 h-full flex flex-col justify-center items-center p-8">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl w-full">
+          <div className="text-white text-center">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">{slide.title}</h2>
+            <p className="text-lg md:text-xl leading-relaxed">{slide.fact}</p>
+          </div>
+        </div>
+        
+        <div className="absolute bottom-6 w-full px-8 flex justify-between text-white/80">
+          <span>@{slide.footer}</span>
+          <a href={slide.websiteUrl} className="hover:text-white">{slide.websiteUrl}</a>
+        </div>
+      </div>
+    </div>
+  ),
+};
+
+// Template 4: Neon Style
+const DoYouKnowTemplate15: DoYouKnowTemplate = {
+  id: 'do-you-know-neon',
+  name: 'Neon Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover4.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still perfectly edible.',
+      imageUrl: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden bg-black">
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
+      
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+        />
+      )}
+
+      <div className="relative z-10 h-full flex flex-col justify-center items-center p-8">
+        <div className="text-center">
+          <h2 className="text-5xl md:text-6xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 animate-pulse">
+            {slide.title}
+          </h2>
+          <p className="text-xl md:text-2xl text-white max-w-2xl mx-auto leading-relaxed">
+            {slide.fact}
+          </p>
+        </div>
+        
+        <div className="absolute bottom-6 w-full px-8 flex justify-between text-cyan-400">
+          <span>@{slide.footer}</span>
+          <a href={slide.websiteUrl} className="hover:text-purple-400">{slide.websiteUrl}</a>
+        </div>
+      </div>
+    </div>
+  ),
+};
+
+// Template 5: Split Design
+const DoYouKnowTemplate16: DoYouKnowTemplate = {
+  id: 'do-you-know-split',
+  name: 'Split Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover5.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'The world\'s oldest known living tree is a Great Basin Bristlecone Pine that is over 5,000 years old.',
+      imageUrl: '/images/nature-bg.jpg',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden flex">
+      <div className="w-1/2 bg-emerald-900 p-8 flex flex-col justify-center">
+        <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">{slide.title}</h2>
+        <p className="text-lg md:text-xl text-emerald-100 leading-relaxed">{slide.fact}</p>
+      </div>
+      
+      <div className="w-1/2 relative">
+        <img src={slide.imageUrl} alt="Background" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/40"></div>
+        
+        {addLogo && (
+          <img
+            src={defaultLogoUrl}
+            alt="Logo"
+            className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+          />
+        )}
+      </div>
+      
+      <div className="absolute bottom-6 w-full px-8 flex justify-between text-white">
+        <span>@{slide.footer}</span>
+        <a href={slide.websiteUrl} className="hover:text-emerald-300">{slide.websiteUrl}</a>
+      </div>
+    </div>
+  ),
+};
+
+// Template 6: Minimal Dark
+const DoYouKnowTemplate17: DoYouKnowTemplate = {
+  id: 'do-you-know-minimal-dark',
+  name: 'Minimal Dark Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover6.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'A single cloud can weigh more than 1 million pounds.',
+      imageUrl: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden bg-zinc-900 p-8">
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+        />
+      )}
+
+      <div className="h-full flex flex-col justify-center items-center">
+        <div className="max-w-2xl text-center">
+          <h2 className="text-4xl md:text-5xl font-bold mb-2 text-white">{slide.title}</h2>
+          <div className="w-20 h-1 bg-zinc-700 mx-auto mb-8"></div>
+          <p className="text-xl md:text-2xl text-zinc-400 leading-relaxed">{slide.fact}</p>
+        </div>
+      </div>
+      
+      <div className="absolute bottom-6 w-full px-8 flex justify-between text-zinc-500">
+        <span>@{slide.footer}</span>
+        <a href={slide.websiteUrl} className="hover:text-white">{slide.websiteUrl}</a>
+      </div>
+    </div>
+  ),
+};
+
+// Template 7: Gradient Cards
+const DoYouKnowTemplate18: DoYouKnowTemplate = {
+  id: 'do-you-know-gradient-cards',
+  name: 'Gradient Cards Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover7.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'Bananas are berries, but strawberries aren\'t.',
+      imageUrl: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden bg-gradient-to-br from-rose-400 via-fuchsia-500 to-indigo-500">
+      <div className="absolute inset-0 bg-black/20"></div>
+      
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+        />
+      )}
+
+      <div className="relative z-10 h-full flex flex-col justify-center items-center p-8">
+        <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-10 max-w-2xl">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white text-center">{slide.title}</h2>
+          <p className="text-xl md:text-2xl text-white/90 text-center leading-relaxed">{slide.fact}</p>
+        </div>
+      </div>
+      
+      <div className="absolute bottom-6 w-full px-8 flex justify-between text-white/80">
+        <span>@{slide.footer}</span>
+        <a href={slide.websiteUrl} className="hover:text-white">{slide.websiteUrl}</a>
+      </div>
+    </div>
+  ),
+};
+
+// Template 8: Modern Minimal
+const DoYouKnowTemplate19: DoYouKnowTemplate = {
+  id: 'do-you-know-modern-minimal',
+  name: 'Modern Minimal Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover8.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'The first oranges weren\'t orange; they were green.',
+      imageUrl: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden bg-slate-100">
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+        />
+      )}
+
+      <div className="h-full flex flex-col justify-center items-center p-8">
+        <div className="max-w-2xl w-full">
+          <h2 className="text-4xl md:text-5xl font-bold mb-8 text-slate-900">{slide.title}</h2>
+          <div className="h-px w-full bg-gradient-to-r from-slate-300 to-slate-100 mb-8"></div>
+          <p className="text-xl md:text-2xl text-slate-600 leading-relaxed">{slide.fact}</p>
+        </div>
+      </div>
+      
+      <div className="absolute bottom-6 w-full px-8 flex justify-between text-slate-500">
+        <span>@{slide.footer}</span>
+        <a href={slide.websiteUrl} className="hover:text-slate-900">{slide.websiteUrl}</a>
+      </div>
+    </div>
+  ),
+};
+
+// Template 9: Geometric
+const DoYouKnowTemplate20: DoYouKnowTemplate = {
+  id: 'do-you-know-geometric',
+  name: 'Geometric Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover9.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'Honeybees can recognize human faces.',
+      imageUrl: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden bg-amber-50">
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-100 to-amber-50"></div>
+      
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+        />
+      )}
+
+      <div className="relative z-10 h-full flex flex-col justify-center items-center p-8">
+        <div className="bg-white rounded-lg shadow-xl p-10 max-w-2xl">
+          <div className="text-amber-500 text-4xl mb-4">?</div>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">{slide.title}</h2>
+          <p className="text-xl md:text-2xl text-gray-600 leading-relaxed">{slide.fact}</p>
+        </div>
+      </div>
+      
+      <div className="absolute bottom-6 w-full px-8 flex justify-between text-amber-800">
+        <span>@{slide.footer}</span>
+        <a href={slide.websiteUrl} className="hover:text-amber-600">{slide.websiteUrl}</a>
+      </div>
+    </div>
+  ),
+};
+
+// Template 10: Tech Style
+const DoYouKnowTemplate21: DoYouKnowTemplate = {
+  id: 'do-you-know-tech',
+  name: 'Tech Style Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover10.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'The first computer mouse was made of wood.',
+      imageUrl: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden bg-gray-900">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(51,65,85,0.5),rgba(15,23,42,0))]"></div>
+      
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+        />
+      )}
+
+      <div className="relative z-10 h-full flex flex-col justify-center items-center p-8">
+        <div className="max-w-2xl text-center">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-blue-400">{slide.title}</h2>
+          <p className="text-xl md:text-2xl text-gray-300 leading-relaxed">{slide.fact}</p>
+        </div>
+      </div>
+      
+      <div className="absolute bottom-6 w-full px-8 flex justify-between text-gray-400">
+        <span>@{slide.footer}</span>
+        <a href={slide.websiteUrl} className="hover:text-blue-400">{slide.websiteUrl}</a>
+      </div>
+    </div>
+  ),
+};
+
+// Template 11: Nature Theme
+const DoYouKnowTemplate22: DoYouKnowTemplate = {
+  id: 'do-you-know-nature',
+  name: 'Nature Theme Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover11.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'Trees can communicate with each other through an underground network of fungi.',
+      imageUrl: '/images/forest-bg.jpg',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden">
+      <img src={slide.imageUrl} alt="Background" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-green-900/70 backdrop-blur-sm"></div>
+      
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+        />
+      )}
+
+      <div className="relative z-10 h-full flex flex-col justify-center items-center p-8">
+        <div className="bg-white/10 backdrop-blur rounded-lg p-10 max-w-2xl border border-white/20">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white text-center">{slide.title}</h2>
+          <p className="text-xl md:text-2xl text-green-50 text-center leading-relaxed">{slide.fact}</p>
+        </div>
+      </div>
+      
+      <div className="absolute bottom-6 w-full px-8 flex justify-between text-green-100">
+        <span>@{slide.footer}</span>
+        <a href={slide.websiteUrl} className="hover:text-white">{slide.websiteUrl}</a>
+      </div>
+    </div>
+  ),
+};
+
+// Template 12: Futuristic
+const DoYouKnowTemplate23: DoYouKnowTemplate = {
+  id: 'do-you-know-futuristic',
+  name: 'Futuristic Do You Know',
+  coverImageUrl: '/images/doyouknow-cover/cover12.png',
+  slides: [
+    {
+      title: 'DO YOU KNOW?',
+      fact: 'Quantum computers can perform calculations in 200 seconds that would take traditional supercomputers 10,000 years.',
+      imageUrl: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl) => (
+    <div className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden bg-black">
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-900/20 to-cyan-900/20"></div>
+      
+      {addLogo && (
+        <img
+          src={defaultLogoUrl}
+          alt="Logo"
+          className="absolute top-4 right-4 w-32 h-12 object-contain z-20"
+        />
+      )}
+
+      <div className="relative z-10 h-full flex flex-col justify-center items-center p-8">
+        <div className="max-w-2xl text-center space-y-8">
+          <h2 className="text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">
+            {slide.title}
+          </h2>
+          <p className="text-xl md:text-2xl text-white/90 leading-relaxed">{slide.fact}</p>
+        </div>
+      </div>
+      
+      <div className="absolute bottom-6 w-full px-8 flex justify-between text-cyan-400">
+        <span>@{slide.footer}</span>
+        <a href={slide.websiteUrl} className="hover:text-violet-400">{slide.websiteUrl}</a>
+      </div>
+    </div>
+  ),
+};
+
+
 export const doYouKnowTemplates: DoYouKnowTemplate[] = [
   DoYouKnowTemplate1,
   DoYouKnowTemplate2,
@@ -1200,4 +1883,18 @@ export const doYouKnowTemplates: DoYouKnowTemplate[] = [
   DoYouKnowTemplate8,
   DoYouKnowTemplate9,
   DoYouKnowTemplate10,
+  DoYouKnowTemplate11,
+  DoYouKnowTemplate12,
+  DidYouKnowTemplate13,
+  DoYouKnowTemplate14,
+  DoYouKnowTemplate15,
+  DoYouKnowTemplate16,
+  DoYouKnowTemplate17,
+  DoYouKnowTemplate18,
+  DoYouKnowTemplate19,
+  DoYouKnowTemplate20,
+  DoYouKnowTemplate21,
+  DoYouKnowTemplate22,
+  DoYouKnowTemplate23,
+  
 ];

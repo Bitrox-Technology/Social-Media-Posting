@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {Navbar} from './Navbar';
-import Dashboard from './Dashboard';
+import Dashboard from './Slidebar';
 import Footer from './Footer';
 
 interface LayoutProps {

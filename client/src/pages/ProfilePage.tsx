@@ -27,23 +27,18 @@ const ProfilePage = () => {
     const fetchUserProfile = async () => {
       setIsLoading(true);
       try {
-        // Fetch user profile from API
         const response = await getUserProfile().unwrap();
         if (response.success && response.data) {
-          // Set user details from API response
           setUserDetails(response.data);
-          // Optionally, cache in localStorage
           localStorage.setItem('userDetails', JSON.stringify(response.data));
         } else {
           throw new Error(response.message || 'Failed to fetch user profile');
         }
       } catch (error) {
-        // Fallback to localStorage or default values on error
         const savedData = localStorage.getItem('userDetails');
         if (savedData) {
           setUserDetails(JSON.parse(savedData));
         } else {
-          // Default values
           setUserDetails({
             userName: 'User Not Set',
             email: 'email@example.com',
@@ -53,7 +48,7 @@ const ProfilePage = () => {
             logo: null,
             companyName: 'Company Not Set',
             productCategories: [
-              { category: 'Category Not Set', productName: 'Product Not Set' },
+              { category: 'Category Not Set', productName: 'Product Not Set', image: null },
             ],
             services: ['Service Not Set'],
             keyProducts: ['Product Not Set'],
@@ -107,27 +102,17 @@ const ProfilePage = () => {
             className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 lg:col-span-1`}
           >
             <div className="relative">
-            <div className="w-32 h-32 mx-auto relative flex items-center justify-center">
+              <div className="w-32 h-32 mx-auto relative flex items-center justify-center">
                 <img
-                  src={
-                    userDetails.logo
-                      ? `${userDetails.logo}` // Prepend server base URL
-                      : 'https://via.placeholder.com/128'
-                  }
+                  src={userDetails.logo || 'https://via.placeholder.com/128'}
                   alt="Profile Logo"
-                  className="max-w-full max-h-full rounded-full object-cover shadow-lg transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl "
+                  className="max-w-full max-h-full rounded-full object-cover shadow-lg transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl"
                   style={{ filter: theme === 'dark' ? 'brightness(0.8)' : 'none' }}
                   onError={(e) => {
                     console.error('Failed to load logo:', userDetails.logo);
                     e.currentTarget.src = 'https://via.placeholder.com/128';
                   }}
                 />
-                {/* <button
-                  onClick={handleEdit}
-                  className="absolute bottom-0 right-0 p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 transition-colors"
-                >
-                  <Camera className="w-4 h-4" />
-                </button> */}
               </div>
               <div className="mt-4 text-center">
                 <h2
@@ -257,20 +242,36 @@ const ProfilePage = () => {
                     {(userDetails.productCategories || []).map((item: any, index: number) => (
                       <div
                         key={index}
-                        className={`p-4 rounded-lg ${
+                        className={`p-4 rounded-lg flex items-start space-x-4 ${
                           theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
                         }`}
                       >
-                        <h5
-                          className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
-                        >
-                          {item.category || 'Category Not Set'}
-                        </h5>
-                        <p
-                          className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
-                        >
-                          {item.productName || 'Product Not Set'}
-                        </p>
+                        {item.image && (
+                          <div className="flex-shrink-0">
+                            <img
+                              src={item.image}
+                              alt={`${item.productName} Image`}
+                              className="w-16 h-16 rounded-lg object-cover shadow-md transition-transform duration-300 ease-in-out transform hover:scale-105"
+                              style={{ filter: theme === 'dark' ? 'brightness(0.8)' : 'none' }}
+                              onError={(e) => {
+                                console.error('Failed to load product image:', item.image);
+                                e.currentTarget.src = 'https://via.placeholder.com/64';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h5
+                            className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                          >
+                            {item.category || 'Category Not Set'}
+                          </h5>
+                          <p
+                            className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
+                          >
+                            {item.productName || 'Product Not Set'}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>

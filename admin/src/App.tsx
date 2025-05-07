@@ -10,9 +10,10 @@ import Settings from './pages/Settings';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import { ThemeProvider } from './context/ThemeContext';
-import VerifyOtp from './pages/auth/verifyOtp';
+import VerifyOtp from './pages/auth/VerifyOtp';
 import Profile from './pages/auth/Profile';
 import AdminDetails from './pages/auth/AdminDetails';
+import UserDetails from './pages/UserDetails';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path='/admin-details/:id' element={<AdminDetails />} />
             <Route index element={<Dashboard />} />
             <Route path="users" element={<Users />} />
+            <Route path="users/:id" element={<UserDetails />} />
             <Route path="posts" element={<Posts />} />
             <Route path="requests" element={<Requests />} />
             <Route path="subscriptions" element={<Subscriptions />} />

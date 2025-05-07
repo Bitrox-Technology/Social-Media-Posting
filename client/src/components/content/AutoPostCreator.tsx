@@ -433,7 +433,7 @@ export const AutoPostCreator: React.FC = () => {
 
           const doYouKnowTemplate = doYouKnowTemplates.find((t) => t.id === randomDoYouKnowTemplate.id) || doYouKnowTemplates[0];
           const doYouKnowSlideElement = doYouKnowTemplate.renderSlide
-            ? doYouKnowTemplate.renderSlide(newDoYouKnowSlide, true, '/images/Logo1.png')
+            ? doYouKnowTemplate.renderSlide(newDoYouKnowSlide, true, '/images/Logo2.png')
             : <div>{newDoYouKnowSlide.title}</div>;
           const root = createRoot(tempContainerDYK);
           root.render(doYouKnowSlideElement);

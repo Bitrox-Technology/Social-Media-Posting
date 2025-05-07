@@ -6,6 +6,9 @@ import { generateOTPForEmail, verifyEmailOTP } from "../utils/functions.js";
 import { uploadOnClodinary } from "../utils/cloudinary.js";
 import Admin from "../models/admin.js";
 import User from "../models/user.js";
+import { getPagination } from "../utils/utilities.js";
+import mongoose from "mongoose";
+
 
 const signup = async (inputs) => {
     let admin;
@@ -162,10 +165,10 @@ const getAdminProfile = async (admin) => {
 const getAllUsers = async (query) => {
     const total = await User.countDocuments();
 
-    const pagination = Utils.getPagination(query, total);
+    const pagination = getPagination(query, total);
 
     const users = await User.find()
-        .select('username email status role subscription createdAt isDeleted')
+        .select('userName email status role subscription createdAt isDeleted')
         .skip(pagination.skip)
         .limit(pagination.limit)
         .lean()
@@ -180,10 +183,71 @@ const getAllUsers = async (query) => {
     };
 }
 
-const getUserById = async (userId) => {
-    const user = await User.findById(userId).lean()
-    if (!user) throw new ApiError(BAD_REQUEST, "User not found")
-    return user
+const getUserById = async (param) => {
+    const result = await User.aggregate([
+        {
+          $match: {
+            _id: new mongoose.Types.ObjectId(param.userId),
+          },
+        },
+        
+        {
+          $lookup: {
+            from: 'saveposts', 
+            localField: '_id',
+            foreignField: 'author',
+            as: 'posts',
+          },
+        },
+        
+        {
+          $project: {
+            userName: 1,
+            email: 1,
+            countryCode: 1,
+            phone: 1,
+            location: 1,
+            logo: 1,
+            companyName: 1,
+            services: 1,
+            keyProducts: 1,
+            targetMarket: 1,
+            websiteUrl: 1,
+            isProfileCompleted: 1,
+            role: 1,
+            subscription: 1,
+            status: 1,
+            bio: 1,
+            isEmailVerify: 1,
+            isDeleted: 1,
+            isBlocked: 1,
+            productCategories: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            posts: {
+              $map: {
+                input: '$posts',
+                as: 'post',
+                in: {
+                  _id: '$$post._id',
+                  topic: '$$post.topic',
+                  contentType: '$$post.contentType',
+                  type: '$$post.type',
+                  status: '$$post.status',
+                  images: '$$post.images',
+                  createdAt: '$$post.createdAt',
+                },
+              },
+            },
+          },
+        },
+      ]).exec();
+
+      if (!result || result.length === 0) {
+        throw new ApiError(BAD_REQUEST, 'User not found');
+      }
+    
+      return result[0];
 }
 
 

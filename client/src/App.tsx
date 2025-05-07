@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import Header from './components/header/Header';
-import Dashboard from './components/layout/Dashboard';
+import Dashboard from './components/layout/Slidebar';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';

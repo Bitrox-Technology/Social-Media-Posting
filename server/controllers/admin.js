@@ -96,7 +96,7 @@ const GetAllUsers = async (req, res, next) => {
 
 const GetUserById = async (req, res, next) => {
     try {
-        let user = await AdminServices.getUserById(req.params.userId)
+        let user = await AdminServices.getUserById(req.params)
         return res.status(OK).json(new ApiResponse(OK, user, "User fetched successfully"))
     } catch (error) {
         next(error)
