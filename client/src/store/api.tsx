@@ -235,6 +235,12 @@ export const api = createApi({
         body: topics,
       }),
     }),
+    getPendingPosts: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: `/user/get-pending-topics`,
+        method: 'GET',
+      }),
+    }),
     getPostContent: builder.query<ApiResponse<any>, { postContentId: string }>({
       query: ({ postContentId }) => ({
         url: `/user/get-topics/${postContentId}`,
@@ -339,4 +345,5 @@ export const {
   useUserDetailsMutation,
   useLazyGetUserProfileQuery,
   useLazyAuthLinkedInQuery,
+  useLazyGetPendingPostsQuery
 } = api;

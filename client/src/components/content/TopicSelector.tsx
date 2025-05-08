@@ -4,13 +4,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setSelectedTopic, setSelectedBusiness, setApiTopics, addCustomTopic, clearCustomTopics } from '../../store/appSlice';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGenerateTopicsMutation, useSavePostContentMutation } from '../../store/api';
+import { useGenerateTopicsMutation, useLazyGetPendingPostsQuery, useSavePostContentMutation } from '../../store/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useAlert } from '../hooks/useAlert'; // Adjust path to where useAlert is defined
+import { Alert } from '../ui/Alert'; // Adjust path to where Alert component is defined
 
 export const TopicSelector: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const { selectedTopic, selectedBusiness, apiTopics: reduxApiTopics, customTopics } = useAppSelector(
     (state) => state.app
@@ -22,6 +24,8 @@ export const TopicSelector: React.FC = () => {
   const [fetchingTopics, setFetchingTopics] = useState(false);
   const [generateTopics, { isLoading, error }] = useGenerateTopicsMutation();
   const [savePostContent] = useSavePostContentMutation();
+  const [getPendingPosts, { isFetching: isFetchingPendingPosts }] = useLazyGetPendingPostsQuery();
+  const { isOpen, config, showAlert, closeAlert, handleConfirm, error: showErrorAlert, confirm: showConfirmAlert } = useAlert();
 
   // Restore selected topics from Redux state
   useEffect(() => {
@@ -58,8 +62,8 @@ export const TopicSelector: React.FC = () => {
       dispatch(setSelectedBusiness(business));
       setSelectedTopics([]);
       dispatch(setSelectedTopic(''));
-      dispatch(setApiTopics([])); // Clear previous API topics
-      dispatch(clearCustomTopics()); // Clear custom topics
+      dispatch(setApiTopics([]));
+      dispatch(clearCustomTopics());
     }
   };
 
@@ -75,8 +79,8 @@ export const TopicSelector: React.FC = () => {
       const newSelectedTopics = prevSelectedTopics.includes(topic)
         ? prevSelectedTopics.filter((t) => t !== topic)
         : prevSelectedTopics.length < 7
-        ? [...prevSelectedTopics, topic]
-        : prevSelectedTopics;
+          ? [...prevSelectedTopics, topic]
+          : prevSelectedTopics;
 
       dispatch(setSelectedTopic(newSelectedTopics.join(', ')));
       return newSelectedTopics;
@@ -96,16 +100,40 @@ export const TopicSelector: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (selectedTopics.length > 0) {
-      try {
-        const response = await savePostContent({ topics: selectedTopics }).unwrap();
+    if (selectedTopics.length === 0) {
+      showErrorAlert('No Topics Selected', 'Please select at least one topic to continue.');
+      return;
+    }
+
+    try {
+      // Check for pending posts
+      const response = await getPendingPosts().unwrap();
+      if (response.data === null || response.data.status === 'success') {
+        const saveResponse = await savePostContent({ topics: selectedTopics }).unwrap();
         dispatch(setSelectedTopic(selectedTopics.join(', ')));
-        navigate('/auto', { state: { postContentId: response.data._id, fromTopicSelector: true } });
-      } catch (err) {
-        console.error('Failed to save selected topics:', err);
-        const errorMessage = (err as { data?: { message?: string } })?.data?.message || 'Unknown error';
-        alert(`Failed to save topics. Please try again: ${errorMessage}`);
+        navigate('/auto', { state: { postContentId: saveResponse.data._id, fromTopicSelector: true } });
       }
+
+      if (response.data.status === 'pending') {
+        showConfirmAlert(
+          'Pending Post Found',
+          'You have a pending post. Do you want to continue with it?',
+          async () => {
+            // On confirm, navigate to /auto with pending postContentId
+            const saveResponse = await savePostContent({ topics: selectedTopics }).unwrap();
+            dispatch(setSelectedTopic(selectedTopics.join(', ')));
+            navigate('/auto', { state: { postContentId: saveResponse.data._id, fromTopicSelector: true } });
+          }
+        );
+        return;
+      } else {
+        showErrorAlert('Invalid Post Data', 'No valid postContentId found in pending posts.');
+        return;
+      }
+    } catch (err) {
+      console.error('Failed to process topics:', err);
+      const errorMessage = (err as { data?: { message?: string } })?.data?.message || 'Unknown error';
+      showErrorAlert('Failed to Process Topics', `Please try again: ${errorMessage}`);
     }
   };
 
@@ -113,26 +141,62 @@ export const TopicSelector: React.FC = () => {
     navigate('/content-type');
   };
 
+  // New function to handle continuing with pending posts
+  const handleContinueWithPendingPosts = async () => {
+    try {
+      const response = await getPendingPosts().unwrap();
+      if (response.data === null) {
+        showErrorAlert('No Pending Posts', 'There are no pending posts to continue with.');
+        return;
+      }
+
+      const pendingPosts = response.data.status
+
+      if (pendingPosts === 'pending') {
+        navigate('/auto', { state: { postContentId: response.data._id, fromTopicSelector: true } });
+      } else {
+        showErrorAlert('No Pending Posts', 'There are no pending posts to continue with.');
+      }
+    } catch (err) {
+      console.error('Failed to fetch pending posts:', err);
+      const errorMessage = (err as { data?: { message?: string } })?.data?.message || 'Unknown error';
+      showErrorAlert('Failed to Fetch Pending Posts', `Please try again: ${errorMessage}`);
+    }
+  };
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'dark' : ''}`}>
       <div className="container mx-auto px-4 py-12 max-w-6xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <motion.button
-                onClick={handleBack}
-                className="p-2 rounded-full bg-gray-800 dark:bg-gray-700 text-gray-200 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </motion.button>
-              <div className="flex items-center space-x-2">
-                <Sparkles className="w-6 h-6 text-blue-500" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Content Creation Hub</h2>
-              </div>
+          <div className="flex items-center justify-between mb-6 px-4">
+            {/* Left: Back Button */}
+            <motion.button
+              onClick={handleBack}
+              className="p-2 rounded-full bg-gray-800 dark:bg-gray-700 text-gray-200 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </motion.button>
+
+            {/* Center: Title with Sparkles Icon */}
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-6 h-6 text-blue-500" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Content Creation Hub</h2>
             </div>
-            
+
+            {/* Right: Continue with Pending Posts Button */}
+            <motion.button
+              onClick={handleContinueWithPendingPosts}
+              disabled={isLoading || fetchingTopics || isFetchingPendingPosts}
+              className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              aria-label="Continue with pending posts"
+            >
+              Continue with Pending Posts
+            </motion.button>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
@@ -147,11 +211,10 @@ export const TopicSelector: React.FC = () => {
                   <motion.button
                     key={business}
                     onClick={() => handleBusinessSelect(business)}
-                    className={`p-4 rounded-xl text-left transition-all ${
-                      selectedBusiness === business
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600'
-                    }`}
+                    className={`p-4 rounded-xl text-left transition-all ${selectedBusiness === business
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600'
+                      }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -200,7 +263,7 @@ export const TopicSelector: React.FC = () => {
                     </h3>
                   </div>
 
-                  {(isLoading || fetchingTopics) && (
+                  {(isLoading || fetchingTopics || isFetchingPendingPosts) && (
                     <div className="flex items-center justify-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
                     </div>
@@ -232,11 +295,10 @@ export const TopicSelector: React.FC = () => {
                             <motion.button
                               key={topic}
                               onClick={() => handleTopicToggle(topic)}
-                              className={`p-4 rounded-xl text-left transition-all ${
-                                isSelected
-                                  ? 'bg-purple-500 text-white'
-                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-gray-600'
-                              } ${!isSelected && selectedTopics.length >= 7 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              className={`p-4 rounded-xl text-left transition-all ${isSelected
+                                ? 'bg-purple-500 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-gray-600'
+                                } ${!isSelected && selectedTopics.length >= 7 ? 'opacity-50 cursor-not-allowed' : ''}`}
                               whileHover={!isSelected && selectedTopics.length >= 7 ? {} : { scale: 1.02 }}
                               whileTap={!isSelected && selectedTopics.length >= 7 ? {} : { scale: 0.98 }}
                               disabled={!isSelected && selectedTopics.length >= 7}
@@ -276,21 +338,33 @@ export const TopicSelector: React.FC = () => {
                         </div>
                       </div>
 
-                      <motion.button
-                        onClick={handleSubmit}
-                        disabled={selectedTopics.length === 0 || isLoading || fetchingTopics}
-                        className="w-full px-6 py-4 bg-blue-500 text-white font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        Continue with {selectedTopics.length} Topics Selected
-                      </motion.button>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <motion.button
+                          onClick={handleSubmit}
+                          disabled={selectedTopics.length === 0 || isLoading || fetchingTopics || isFetchingPendingPosts}
+                          className="w-full px-6 py-4 bg-blue-500 text-white font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          Continue with {selectedTopics.length} Topics Selected
+                        </motion.button>
+                      </div>
                     </div>
                   )}
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Alert Component */}
+          <Alert
+            type={config.type}
+            title={config.title}
+            message={config.message}
+            isOpen={isOpen}
+            onClose={closeAlert}
+            onConfirm={config.type === 'confirm' ? handleConfirm : undefined}
+          />
         </motion.div>
       </div>
     </div>

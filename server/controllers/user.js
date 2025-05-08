@@ -193,9 +193,18 @@ const UpdatePost = async (req, res, next) => {
 }
 
 
+const GetPendingTopics = async (req, res, next) => {
+    try {
+        let user = await UserServices.getPendingTopics(req.user)
+        return res.status(OK).json(new ApiResponse(OK, user, "Topics fetched Successfully"))
+    } catch (error) {
+        next(error)
+    }
+}
+
 const UserControllers = {
     Signup, VerifyOTP, ResendOTP, UserDetails,
-    ForgetPassword, Logout,
+    ForgetPassword, Logout, GetPendingTopics,
     Login, SavePosts, PostContent, GetPostContent, SaveImageContent,
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts,
     GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile

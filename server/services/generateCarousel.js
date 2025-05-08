@@ -1,122 +1,171 @@
 import { Ollama } from "ollama";
 import { ApiError } from "../utils/ApiError.js";
 
-const ollama = new Ollama({ host: "http://localhost:11434" });
+const ollama = new Ollama({ host: process.env.OLLAMA_API_URL });
 
 const generateCarouselContent = async (topic) => {
   try {
-    // Craft a single prompt for all five slides with strict instructions
+    // Craft a single prompt for all five slides with hashtags and a sixth object
     const prompt = `
-      Generate content for a 5-slide carousel about "${topic}". Each slide should have specific content as follows:
+      Generate content for a 5-slide carousel about "${topic}", plus an additional summary slide. Return a JSON array with 6 objects, each containing the specified fields. The structure is as follows:
 
       - Slide 1:
-        - A tagline (a short, catchy phrase)
-        - A title that is an overview of the topic in uppercase (e.g., "${topic.toUpperCase()}") (2-3 words )
+        - "tagline": A short, catchy phrase (5-10 words).
+        - "title": An overview of the topic in uppercase (2-3 words, e.g., "${topic.toUpperCase()}").
+        
       - Slide 2:
-        - A title in the format "why ${topic}" (2-3 words )
-        - A description (1-2 sentences explaining the importance of the topic)
+        - "title": "Why ${topic}" (2-3 words).
+        - "description": 1-2 sentences explaining the importance of the topic (15-25 words, max 30 words).
+       
       - Slide 3:
-        - A title in the format "Improtance ${topic}" (2-3 words )
-        - A description (1-2 sentences explaining the significance of the topic)
+        - "title": "Importance ${topic}" (2-3 words).
+        - "description": 1-2 sentences explaining the significance of the topic (15-25 words, max 30 words).
+        
       - Slide 4:
-        - A title in the format "Future of ${topic}" (2-3 words )
-        - A description (1-2 sentences exploring future trends or developments related to the topic)
+        - "title": "Future of ${topic}" (2-3 words).
+        - "description": 1-2 sentences exploring future trends or developments (15-25 words, max 30 words).
+       
       - Slide 5:
-        - A tagline (a short closing phrase)
-        - A title that is "Connect With US!"
-        - A description (1-2 sentences encouraging the audience to follow for more content)
+        - "tagline": A short closing phrase (5-10 words).
+        - "title": "Connect With US!" (exact text).
+        - "description": 1-2 sentences encouraging the audience to follow (15-25 words, max 30 words).
+        
+      - Slide 6 (Summary):
+        - "title": The same title as Slide 1 (e.g., "${topic.toUpperCase()}").
+        - "description": A brief summary of the carousel or Slide 1’s content (1-2 sentences, 15-25 words, max 30 words).
+        - "hashtags": A list of 5-10 relevant hashtags (can overlap with Slide 1’s hashtags).
 
-      Return the data as a JSON array with 5 objects, each containing the appropriate fields (tagline, title, description). For example:
+      Return the data as a JSON array with 6 objects. Example:
       [
         { "tagline": "Welcome to the Journey", "title": "${topic.toUpperCase()}" },
         { "title": "Why ${topic}", "description": "..." },
-        { "title": "Improtance ${topic}", "description": "..." },
+        { "title": "Importance ${topic}", "description": "..." },
         { "title": "Future of ${topic}", "description": "..." },
-        { "tagline": "Connect with use", "title": "Connect With US!", "description": "..." }
+        { "tagline": "Stay Connected!", "title": "Connect With US!", "description": "..." },
+        { "title": "${topic.toUpperCase()}", "description": "...", "hashtags": ["#${topic.replace(/\s/g, '')}", "#Topic"] }
       ]
 
       **Important Instructions:**
       - Return ONLY the JSON array with no additional text, comments, or explanations before or after the JSON.
       - Ensure the JSON is valid and properly formatted.
-      - Do not include any markdown, HTML tags (like <think>), or other non-JSON content in the response.
+      - Hashtags must be unique within each slide, relevant to the topic, and start with "#".
+      - Do not include markdown, HTML tags, or other non-JSON content in the response.
     `;
 
-    // Call Ollama DeepSeek API once
     const response = await ollama.chat({
-      model: "gemma3:latest",
+      model: 'gemma3:latest',
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: prompt,
         },
       ],
     });
 
-    let generatedContent;
+
     const jsonMatch = response.message.content.match(/\[[\s\S]*\]/);
-    generatedContent = JSON.parse(jsonMatch[0]);
+    if (!jsonMatch) {
+      throw new Error('No valid JSON array found in response');
+    }
+    const generatedContent = JSON.parse(jsonMatch[0]);
+    console.log('Generated carousel content:', generatedContent);
+
+
     return generatedContent;
   } catch (error) {
-    throw new ApiError(400, "Failed to generate carousel content");
+    throw new ApiError(400, `Failed to generate carousel content: ${error.message}`);
   }
 };
 
 const generateDoYouKnow = async (topic) => {
   try {
-    const prompt = `Generate a "Did You Know?" fact about the topic "${topic}" in JSON format. The JSON must have two fields: "title" and "description". The "title" must be "DID YOU KNOW?" in uppercase. The "description" must be a concise, interesting fact (1-2 sentences, 15-25 words, max 30 words). Example: {"title": "DID YOU KNOW?", "description": "Social media in digital marketing reaches billions, surpassing traditional ads with real-time engagement."}`;
+    const prompt = `
+      Generate a "Did You Know?" fact about the topic "${topic}" in JSON format. The JSON must have three fields:
+      - "title": "DID YOU KNOW?" (exact text, uppercase).
+      - "description": A concise, interesting fact (1-2 sentences, 15-25 words, max 30 words).
+      - "hashtags": A list of 5-10 relevant hashtags (e.g., ["#${topic.replace(/\s/g, '')}", "#Topic"], no duplicates, start with "#").
+      
+      Example:
+      {
+        "title": "DID YOU KNOW?",
+        "description": "Social media reaches billions, surpassing traditional ads with real-time engagement.",
+        "hashtags": ["#SocialMedia", "#Marketing", "#DigitalMarketing", "#Engagement", "#Online"]
+      }
+
+      **Important Instructions:**
+      - Return ONLY the JSON object with no additional text, comments, or explanations.
+      - Ensure the JSON is valid and properly formatted.
+      - Do not include markdown, code fences (e.g., \`\`\`json), or other non-JSON content.
+    `;
+
     const response = await ollama.chat({
-      model: "gemma3:latest",
+      model: 'gemma3:latest',
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: prompt,
         },
       ],
     });
 
+    // Clean and parse the response
     const cleanedResponse = response.message.content
-      .replace(/<think>[\s\S]*<\/think>/g, "")
-      .replace(/```json|```/g, "")
+      .replace(/```json|```/g, '')
       .trim();
-    console.log(cleanedResponse);
+    console.log('Do You Know response:', cleanedResponse);
 
     const generatedContent = JSON.parse(cleanedResponse);
-    console.log(generatedContent);
+    console.log('Parsed Do You Know content:', generatedContent);
 
     return generatedContent;
   } catch (error) {
-    throw new ApiError(400, "Failed to generate do you know content");
+    throw new ApiError(400, `Failed to generate Do You Know content: ${error.message}`);
   }
 };
 
-const generateImageContent = async (topic) => {
+const generateImageContent = async (topic) => { 
   try {
-    const prompt = `Generate content for a social media post about the topic "${topic}". Provide the following in JSON format:
-      - "title": A short, engaging title (e.g., "ENCOURAGING WORDS").
-      - "description": A brief description or quote (1-2 sentences, 15-25 words, max 30 words), (e.g., "Is it too soon to say 'I love you'?").`;
+    const prompt = `
+      Generate content for a social media post about the topic "${topic}" in JSON format. The JSON must have three fields:
+      - "title": A short, engaging title in uppercase (2-5 words, e.g., "ENCOURAGING WORDS").
+      - "description": A brief description or quote (1-2 sentences, 15-25 words, max 30 words).
+      - "hashtags": A list of 5-10 relevant hashtags (e.g., ["#${topic.replace(/\s/g, '')}", "#Topic"], no duplicates, start with "#").
+      
+      Example:
+      {
+        "title": "ENCOURAGING WORDS",
+        "description": "Is it too soon to say 'I love you'?",
+        "hashtags": ["#Love", "#Relationship", "#Dating", "#Advice", "#Encouragement"]
+      }
+
+      **Important Instructions:**
+      - Return ONLY the JSON object with no additional text, comments, or explanations.
+      - Ensure the JSON is valid and properly formatted.
+      - Do not include markdown, code fences (e.g., \`\`\`json), or other non-JSON content.
+    `;
 
     const response = await ollama.chat({
-      model: "gemma3:latest",
+      model: 'gemma3:latest',
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: prompt,
         },
       ],
     });
 
+    // Clean and parse the response
     const cleanedResponse = response.message.content
-      .replace(/<think>[\s\S]*<\/think>/g, "") // Remove <think> tags and their content
-      .replace(/```json|```/g, "") // Remove code fences if present
+      .replace(/```json|```/g, '')
       .trim();
-    console.log(cleanedResponse);
-    const generatedContent = JSON.parse(cleanedResponse);
+    console.log('Image content response:', cleanedResponse);
 
-    console.log(generatedContent);
+    const generatedContent = JSON.parse(cleanedResponse);
+    console.log('Parsed image content:', generatedContent);
 
     return generatedContent;
   } catch (error) {
-    throw new ApiError(400, "Failed to generate topics content");
+    throw new ApiError(400, `Failed to generate image content: ${error.message}`);
   }
 };
 

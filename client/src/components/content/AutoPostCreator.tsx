@@ -29,6 +29,7 @@ import { Post, ImageContent, CarouselContent } from './AutoPost/Types';
 import { imageTemplates } from '../../templetes/ImageTemplate';
 import { carouselTemplates, Slide } from '../../templetes/templetesDesign';
 import { doYouKnowTemplates, DoYouKnowSlide } from '../../templetes/doYouKnowTemplates';
+import { generateImagePost } from '../../Utilities/functions';
 
 
 export const AutoPostCreator: React.FC = () => {
@@ -47,6 +48,7 @@ export const AutoPostCreator: React.FC = () => {
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [topicsError, setTopicsError] = useState<string | null>(null);
   const [postsError, setPostsError] = useState<string | null>(null);
+  const [userLogo, setUserLogo] = useState<string | null>(null);
 
   // API hooks
   const [getPostContent, { isFetching: isFetchingPostContent }] = useLazyGetPostContentQuery();
@@ -91,13 +93,13 @@ export const AutoPostCreator: React.FC = () => {
       setPostsError(null);
 
       try {
-        // Fetch topics
         const topicsResponse = await getPostContent({ postContentId }).unwrap();
         if (topicsResponse.data.topics && topicsResponse.data.topics.length > 0) {
           const fetchedTopics = topicsResponse.data.topics.slice(0, 7);
           setTopics(fetchedTopics);
+          setUserLogo(topicsResponse?.data?.logo);
 
-          // Fetch saved posts
+          
           try {
             const postsResponse = await getSavePosts({ postContentId }).unwrap();
             const savedPosts = postsResponse.data || [];
@@ -203,7 +205,7 @@ export const AutoPostCreator: React.FC = () => {
     }
 
     const type = postTypes[index % postTypes.length];
-    setGeneratingTopic(`${topic}-${type}`);
+    setGeneratingTopic(`${topic}`);
     setLocalPosts((prev) =>
       prev.map((p) =>
         p.topic === topic && p.type === type ? { ...p, status: 'generating' } : p
@@ -212,76 +214,86 @@ export const AutoPostCreator: React.FC = () => {
 
     try {
       let newPost: Post;
-      let screenshotUrl = '';
+      let screenshotUrl: string | undefined;
 
       switch (type) {
         case 'image':
-          const randomTemplateIndex = Math.floor(Math.random() * imageTemplates.length);
-          const randomTemplate = imageTemplates[randomTemplateIndex];
-          const contentRes = await generateImageContent({ topic }).unwrap();
-          const generatedContent = contentRes.data;
-          const imageRes = await generateImage({ prompt: topic }).unwrap();
-          const imageUrl = imageRes.data || '';
+          let post = await generateImagePost(topic, type, postContentId, {
+            generateImageContent,
+            generateImage,
+            imageContent,
+            savePosts,
+            uploadImageToCloudinary
+          },userLogo || '/images/Logo1.png');
+          console.log('Generated Image Post:', post);
+        
+          // const randomTemplateIndex = Math.floor(Math.random() * imageTemplates.length);
+          // const randomTemplate = imageTemplates[randomTemplateIndex];
 
-          const newImageSlide: ImageContent = {
-            title: generatedContent.title || randomTemplate.slides[0].title,
-            description: generatedContent.description || randomTemplate.slides[0].description,
-            footer: randomTemplate.slides[0].footer,
-            websiteUrl: randomTemplate.slides[0].websiteUrl || '',
-            imageUrl: imageUrl,
-          };
+          // const contentRes = await generateImageContent({ topic }).unwrap();
+          // const generatedContent = contentRes.data;
+          // const imageRes = await generateImage({ prompt: topic }).unwrap();
+          // const imageUrl = imageRes.data || '';
 
-          const imageResult = await imageContent({
-            postContentId,
-            topic,
-            templateId: randomTemplate.id,
-            content: newImageSlide,
-            status: 'success',
-          }).unwrap();
+          // const newImageSlide: ImageContent = {
+          //   title: generatedContent.title || randomTemplate.slides[0].title,
+          //   description: generatedContent.description || randomTemplate.slides[0].description,
+          //   footer: randomTemplate.slides[0].footer,
+          //   websiteUrl: randomTemplate.slides[0].websiteUrl || '',
+          //   imageUrl: imageUrl,
+          // };
 
-          newPost = {
-            topic,
-            type,
-            content: newImageSlide,
-            templateId: randomTemplate.id,
-            status: 'success',
-            contentId: imageResult.data._id,
-            contentType: 'ImageContent',
-          };
+          // const imageResult = await imageContent({
+          //   postContentId,
+          //   topic,
+          //   templateId: randomTemplate.id,
+          //   content: newImageSlide,
+          //   status: 'success',
+          // }).unwrap();
 
-          let tempContainer = document.createElement('div');
-          tempContainer.style.position = 'absolute';
-          tempContainer.style.top = '-9999px';
-          tempContainer.style.width = '500px';
-          tempContainer.style.height = '700px';
-          document.body.appendChild(tempContainer);
+          // newPost = {
+          //   topic,
+          //   type,
+          //   content: newImageSlide,
+          //   templateId: randomTemplate.id,
+          //   status: 'success',
+          //   contentId: imageResult.data._id,
+          //   contentType: 'ImageContent',
+          // };
 
-          const slide = newPost.content as ImageContent;
-          let template = imageTemplates.find((t) => t.id === newPost.templateId) || imageTemplates[0];
-          let slideElement = template.renderSlide(
-            { ...slide, footer: slide.footer || '', websiteUrl: slide.websiteUrl || '' },
-            true,
-            '/images/Logo1.png'
-          );
-          const rootImage = createRoot(tempContainer);
-          rootImage.render(slideElement);
+          // let tempContainer = document.createElement('div');
+          // tempContainer.style.position = 'absolute';
+          // tempContainer.style.top = '-9999px';
+          // tempContainer.style.width = '500px';
+          // tempContainer.style.height = '700px';
+          // document.body.appendChild(tempContainer);
 
-          screenshotUrl = await captureAndUploadScreenshot(tempContainer, topic, type);
-          document.body.removeChild(tempContainer);
-          rootImage.unmount();
+          // const slide = newPost.content as ImageContent;
+          // let template = imageTemplates.find((t) => t.id === newPost.templateId) || imageTemplates[0];
+          // let slideElement = template.renderSlide(
+          //   { ...slide, footer: slide.footer || '', websiteUrl: slide.websiteUrl || '' },
+          //   true,
+          //   userLogo  || '/images/Logo1.png'
+          // );
+          // const rootImage = createRoot(tempContainer);
+          // rootImage.render(slideElement);
 
-          if (screenshotUrl) {
-            await savePosts({
-              postContentId,
-              topic,
-              type: 'image',
-              status: 'success',
-              images: [{ url: screenshotUrl, label: 'Image Post' }],
-              contentId: imageResult.data._id,
-              contentType: 'ImageContent',
-            }).unwrap();
-            newPost.images = [{ url: screenshotUrl, label: 'Image Post' }];
-          }
+          // screenshotUrl = await captureAndUploadScreenshot(tempContainer, topic, type);
+          // document.body.removeChild(tempContainer);
+          // rootImage.unmount();
+
+          // if (screenshotUrl) {
+          //   await savePosts({
+          //     postContentId,
+          //     topic,
+          //     type: 'image',
+          //     status: 'success',
+          //     images: [{ url: screenshotUrl, label: 'Image Post' }],
+          //     contentId: imageResult.data._id,
+          //     contentType: 'ImageContent',
+          //   }).unwrap();
+          //   newPost.images = [{ url: screenshotUrl, label: 'Image Post' }];
+          // }
           break;
 
         case 'carousel':

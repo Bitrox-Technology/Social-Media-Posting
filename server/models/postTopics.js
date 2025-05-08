@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const postContentSchema = new mongoose.Schema({
+const postTopicsSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
@@ -15,5 +15,5 @@ const postContentSchema = new mongoose.Schema({
     },
 }, {timestamp: true });
 
-const PostContent = mongoose.model("PostContent", postContentSchema);
-export default PostContent;
+const PostTopic = mongoose.model("PostTopic", postTopicsSchema);
+export default PostTopic;

@@ -15,6 +15,7 @@ userRouter.post("/logout", AuthMiddleware, UserControllers.Logout)
 
 
 userRouter.post("/save-topics", AuthMiddleware, UserControllers.PostContent)
+userRouter.get("/get-pending-topics", AuthMiddleware, UserControllers.GetPendingTopics)
 userRouter.get("/get-topics/:postcontentid", AuthMiddleware, UserControllers.GetPostContent)
 userRouter.post("/image-content", AuthMiddleware, UserControllers.SaveImageContent)
 userRouter.post("/carousel-content", AuthMiddleware, UserControllers.SaveCarouselContent)

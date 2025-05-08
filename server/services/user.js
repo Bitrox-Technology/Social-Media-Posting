@@ -1,9 +1,10 @@
+import mongoose from "mongoose";
 import User from "../models/user.js";
 import { ApiError } from "../utils/ApiError.js";
 import { generateAccessAndRefreshTokenForUser } from "../utils/generateToken.js";
 import { BAD_REQUEST } from "../utils/apiResponseCode.js";
 import { comparePasswordUsingBcrypt, Hashed_Password, isEmail } from "../utils/utilities.js";
-import PostContent from "../models/postContent.js";
+import PostTopic from "../models/postTopics.js";
 import ImageContent from "../models/imageContent.js";
 import CarouselContent from "../models/carouselContent.js";
 import DYKContent from "../models/dykContent.js";
@@ -187,27 +188,65 @@ const getUserProfile = async (user) => {
 
 const postContent = async (inputs, user) => {
 
-    let postContent = await PostContent.findOne({ userId: user._id })
+    let postContent = await PostTopic.findOne({ userId: user._id })
     if (postContent) {
-        postContent = await PostContent.findByIdAndDelete({ _id: postContent._id }, { new: true })
-        postContent = await PostContent.create({ userId: user._id, topics: inputs.topics })
+        postContent = await PostTopic.findByIdAndUpdate({ _id: postContent._id }, { topics: inputs.topics }, { new: true })
     } else {
-        postContent = await PostContent.create({ userId: user._id, topics: inputs.topics })
+        postContent = await PostTopic.create({ userId: user._id, topics: inputs.topics })
     }
     if (!postContent) throw new ApiError(BAD_REQUEST, "Unable to save topics")
     return postContent;
 }
 
+const getPendingTopics = async (user) => {
+    const postContent = await PostTopic.findOne({ userId: user._id})    
+    return postContent;
+}
+
 const getPostContent = async (user, postcontentid) => {
 
-    let postContent = await PostContent.findById({ _id: postcontentid })
-    if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
-    return postContent;
+    const postContent = await PostTopic.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(postcontentid),
+                userId: new mongoose.Types.ObjectId(user._id)
+            }
+        },
+        {
+            $lookup: {
+                from: 'users', 
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'userData'
+            }
+        },
+        {
+            $unwind: {
+                path: '$userData',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $project: {
+                status: 1,
+                topics: 1,
+                userId: 1,
+                logo: '$userData.logo', // Assuming logo is a field in the user document
+                _id: 1
+            }
+        }
+    ]);
+
+    if (!postContent || postContent.length === 0) {
+        throw new ApiError(BAD_REQUEST, "No post content found");
+    }
+
+    return postContent[0];
 }
 
 const saveImageContent = async (inputs, user) => {
 
-    let postContent = await PostContent.findById({ _id: inputs.postContentId })
+    let postContent = await PostTopic.findById({ _id: inputs.postContentId, userId: user._id })
     if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
 
     let topic = postContent.topics.find((topic) => topic === inputs.topic)
@@ -222,7 +261,7 @@ const saveImageContent = async (inputs, user) => {
 
 const saveCarouselContent = async (inputs, user) => {
 
-    let postContent = await PostContent.findById({ _id: inputs.postContentId })
+    let postContent = await PostTopic.findById({ _id: inputs.postContentId, userId: user._id })
     if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
 
     let topic = postContent.topics.find((topic) => topic === inputs.topic)
@@ -235,7 +274,7 @@ const saveCarouselContent = async (inputs, user) => {
 
 const saveDYKContent = async (inputs, user) => {
 
-    let postContent = await PostContent.findById({ _id: inputs.postContentId })
+    let postContent = await PostTopic.findById({ _id: inputs.postContentId, userId: user._id })
     if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
 
     let topic = postContent.topics.find((topic) => topic === inputs.topic)
@@ -247,7 +286,7 @@ const saveDYKContent = async (inputs, user) => {
 }
 
 const savePosts = async (inputs, user) => {
-    let postContent = await PostContent.findById({ _id: inputs.postContentId })
+    let postContent = await PostTopic.findById({ _id: inputs.postContentId, userId: user._id })
     if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
 
     inputs.userId = user._id
@@ -316,6 +355,7 @@ const UserServices = {
     getDYKContent,
     updatePost,
     userDetails,
-    getUserProfile
+    getUserProfile,
+    getPendingTopics
 }
 export default UserServices;
