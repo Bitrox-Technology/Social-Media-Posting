@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const imageContentSchema = new mongoose.Schema({
     postContentId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "PostContent"
+        ref: "PostTopic"
     },
     templateId: { type: String, trim: true },
     content: {
@@ -12,6 +12,10 @@ const imageContentSchema = new mongoose.Schema({
         footer: { type: String, trim: true },
         websiteUrl: { type: String, trim: true },
         imageUrl: { type: String, trim: true },
+    },
+    hashtags: {
+        type: [String],
+        default: [],
     },
     topic: {
         type: String,

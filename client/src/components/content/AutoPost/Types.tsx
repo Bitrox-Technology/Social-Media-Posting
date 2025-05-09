@@ -19,6 +19,7 @@ export interface ImageContent {
     title: string;
     description?: string;
     imageUrl?: string;
+    hashtags?: [];
   }
   
   export interface Slide {

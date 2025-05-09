@@ -25,7 +25,7 @@ import {
   useGenerateCarouselMutation,
   useUploadImageToCloudinaryMutation,
   useLazyGetCarouselContentQuery,
-  useUploadCarouselMutation,
+  useUploadCarouselToCloudinaryMutation,
   useUpdatePostMutation,
 } from '../../store/api';
 import { carouselTemplates, Slide, CarouselTemplate } from '../../templetes/templetesDesign';
@@ -71,7 +71,7 @@ export const Carousel: React.FC<CarouselProps> = ({
   const [generateCarousel] = useGenerateCarouselMutation();
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const [getCarouselContent] = useLazyGetCarouselContentQuery();
-  const [uploadCarousel] = useUploadCarouselMutation();
+  const [uploadCarousel] = useUploadCarouselToCloudinaryMutation();
   const [updatePost] = useUpdatePostMutation();
 
   useEffect(() => {
@@ -310,7 +310,8 @@ export const Carousel: React.FC<CarouselProps> = ({
                         {selectedTemplate.renderSlide(
                           editMode ? editedSlides[index] : slide,
                           addLogo,
-                          logoUrl
+                          logoUrl,
+                          selectedTemplate.colors // Assuming `colors` is part of the selectedTemplate or define it accordingly
                         )}
                       </div>
                     </SwiperSlide>

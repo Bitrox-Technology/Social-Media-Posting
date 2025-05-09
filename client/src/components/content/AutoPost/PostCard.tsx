@@ -9,9 +9,16 @@ interface PostCardProps {
   theme: string;
   onEditPost: (post: Post) => void;
   registerRef: (topic: string, ref: HTMLDivElement) => void;
+  platform?: 'instagram' | 'facebook' | 'linkedin'; // Add platform prop
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post, theme, onEditPost, registerRef }) => {
+export const PostCard: React.FC<PostCardProps> = ({
+  post,
+  theme,
+  onEditPost,
+  registerRef,
+  platform = 'instagram', // Default to Instagram
+}) => {
   const getStatusIcon = (status: string) => {
     if (status === 'success') {
       return <CheckCircle className="w-5 h-5 text-green-400" />;
@@ -46,7 +53,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, theme, onEditPost, reg
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
               }`}
             >
-              {post.type} Post
+              {post.type} Post for {platform}
             </span>
           </div>
         </div>
@@ -75,10 +82,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, theme, onEditPost, reg
             : 'bg-gray-50 border border-gray-200'
         }`}
       >
-        <ImageGallery 
-          images={post.images || []} 
-          type={post.type} 
-          theme={theme} 
+        <ImageGallery
+          images={post.images || []}
+          type={post.type}
+          theme={theme}
+           // Pass platform to ImageGallery
         />
       </div>
     </motion.div>

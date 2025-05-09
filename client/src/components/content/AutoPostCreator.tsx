@@ -17,6 +17,7 @@ import {
   useCarouselContentMutation,
   useDykContentMutation,
   useLazyGetSavePostsQuery,
+  useUploadCarouselToCloudinaryMutation
 } from '../../store/api';
 
 import { useTheme } from '../../context/ThemeContext';
@@ -29,7 +30,10 @@ import { Post, ImageContent, CarouselContent } from './AutoPost/Types';
 import { imageTemplates } from '../../templetes/ImageTemplate';
 import { carouselTemplates, Slide } from '../../templetes/templetesDesign';
 import { doYouKnowTemplates, DoYouKnowSlide } from '../../templetes/doYouKnowTemplates';
-import { generateImagePost } from '../../Utilities/functions';
+import { generateImagePost, generateCarouselPost, generateDoYouKnowPost } from '../../Utilities/functions';
+
+import { useAlert } from '../hooks/useAlert';
+import { Alert } from '../ui/Alert';
 
 
 export const AutoPostCreator: React.FC = () => {
@@ -49,6 +53,7 @@ export const AutoPostCreator: React.FC = () => {
   const [topicsError, setTopicsError] = useState<string | null>(null);
   const [postsError, setPostsError] = useState<string | null>(null);
   const [userLogo, setUserLogo] = useState<string | null>(null);
+  const { isOpen, config, showAlert, closeAlert, handleConfirm, error: showErrorAlert, confirm: showConfirmAlert } = useAlert()
 
   // API hooks
   const [getPostContent, { isFetching: isFetchingPostContent }] = useLazyGetPostContentQuery();
@@ -62,6 +67,7 @@ export const AutoPostCreator: React.FC = () => {
   const [imageContent] = useImageContentMutation();
   const [carouselContent] = useCarouselContentMutation();
   const [dykContent] = useDykContentMutation();
+  const [uploadCarouselToCloudinary] = useUploadCarouselToCloudinaryMutation();
 
   // References and data
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -99,7 +105,7 @@ export const AutoPostCreator: React.FC = () => {
           setTopics(fetchedTopics);
           setUserLogo(topicsResponse?.data?.logo);
 
-          
+
           try {
             const postsResponse = await getSavePosts({ postContentId }).unwrap();
             const savedPosts = postsResponse.data || [];
@@ -143,7 +149,7 @@ export const AutoPostCreator: React.FC = () => {
             setLocalPosts(pending);
             setCurrentIndex(completed.length - 1);
           } catch (postError) {
-            console.error('Error fetching posts:', postError);
+
             setPostsError('Failed to load saved posts. You can still generate new posts.');
             const initialPosts: Post[] = fetchedTopics.map((topic: string, index: number): Post => ({
               topic,
@@ -200,6 +206,7 @@ export const AutoPostCreator: React.FC = () => {
   };
 
   const generatePost = async (topic: string, index: number) => {
+
     if (!postContentId) {
       throw new Error('No postContentId available');
     }
@@ -213,277 +220,85 @@ export const AutoPostCreator: React.FC = () => {
     );
 
     try {
-      let newPost: Post;
-      let screenshotUrl: string | undefined;
+      let newPost: Post | undefined;
 
       switch (type) {
         case 'image':
-          let post = await generateImagePost(topic, type, postContentId, {
-            generateImageContent,
-            generateImage,
-            imageContent,
-            savePosts,
-            uploadImageToCloudinary
-          },userLogo || '/images/Logo1.png');
-          console.log('Generated Image Post:', post);
-        
-          // const randomTemplateIndex = Math.floor(Math.random() * imageTemplates.length);
-          // const randomTemplate = imageTemplates[randomTemplateIndex];
-
-          // const contentRes = await generateImageContent({ topic }).unwrap();
-          // const generatedContent = contentRes.data;
-          // const imageRes = await generateImage({ prompt: topic }).unwrap();
-          // const imageUrl = imageRes.data || '';
-
-          // const newImageSlide: ImageContent = {
-          //   title: generatedContent.title || randomTemplate.slides[0].title,
-          //   description: generatedContent.description || randomTemplate.slides[0].description,
-          //   footer: randomTemplate.slides[0].footer,
-          //   websiteUrl: randomTemplate.slides[0].websiteUrl || '',
-          //   imageUrl: imageUrl,
-          // };
-
-          // const imageResult = await imageContent({
-          //   postContentId,
-          //   topic,
-          //   templateId: randomTemplate.id,
-          //   content: newImageSlide,
-          //   status: 'success',
-          // }).unwrap();
-
-          // newPost = {
-          //   topic,
-          //   type,
-          //   content: newImageSlide,
-          //   templateId: randomTemplate.id,
-          //   status: 'success',
-          //   contentId: imageResult.data._id,
-          //   contentType: 'ImageContent',
-          // };
-
-          // let tempContainer = document.createElement('div');
-          // tempContainer.style.position = 'absolute';
-          // tempContainer.style.top = '-9999px';
-          // tempContainer.style.width = '500px';
-          // tempContainer.style.height = '700px';
-          // document.body.appendChild(tempContainer);
-
-          // const slide = newPost.content as ImageContent;
-          // let template = imageTemplates.find((t) => t.id === newPost.templateId) || imageTemplates[0];
-          // let slideElement = template.renderSlide(
-          //   { ...slide, footer: slide.footer || '', websiteUrl: slide.websiteUrl || '' },
-          //   true,
-          //   userLogo  || '/images/Logo1.png'
-          // );
-          // const rootImage = createRoot(tempContainer);
-          // rootImage.render(slideElement);
-
-          // screenshotUrl = await captureAndUploadScreenshot(tempContainer, topic, type);
-          // document.body.removeChild(tempContainer);
-          // rootImage.unmount();
-
-          // if (screenshotUrl) {
-          //   await savePosts({
-          //     postContentId,
-          //     topic,
-          //     type: 'image',
-          //     status: 'success',
-          //     images: [{ url: screenshotUrl, label: 'Image Post' }],
-          //     contentId: imageResult.data._id,
-          //     contentType: 'ImageContent',
-          //   }).unwrap();
-          //   newPost.images = [{ url: screenshotUrl, label: 'Image Post' }];
-          // }
+          newPost = await generateImagePost(
+            topic,
+            type,
+            postContentId,
+            {
+              generateImageContent,
+              generateImage,
+              imageContent,
+              savePosts,
+              uploadImageToCloudinary,
+            },
+            userLogo || '/images/Logo1.png',
+            showAlert
+          );
+          console.log('Generated Image Post:', newPost);
           break;
 
         case 'carousel':
-          const randomCarouselTemplateIndex = Math.floor(Math.random() * carouselTemplates.length);
-          const randomCarouselTemplate = carouselTemplates[randomCarouselTemplateIndex];
-          const carouselResponse = await generateCarousel({ topic }).unwrap();
-
-          const generatedCarouselContent: CarouselContent[] = carouselResponse.data;
-
-          const newSlides: Slide[] = randomCarouselTemplate.slides.map((slide, index) => {
-            const content = generatedCarouselContent[index] || {};
-            let formattedDescription = content.description || slide.description;
-
-            if ((formattedDescription ?? '').trim().match(/^\d+\./)) {
-              formattedDescription = (formattedDescription || '')
-                .split(/,\s*\d+\./)
-                .map((item, i) => {
-                  const cleanItem = item.replace(/^\s*\d+\.\s*/, '').trim();
-                  return i === 0 ? cleanItem : `${i + 1}. ${cleanItem}`;
-                })
-                .join('\n')
-                .replace(/^\s+/, '');
-            }
-
-            return {
-              ...slide,
-              tagline: content.tagline || slide.tagline,
-              title: content.title || slide.title,
-              description: formattedDescription,
-            };
-          });
-
-          const extractedContent = generatedCarouselContent.map((content, index) => ({
-            tagline: content.tagline || '',
-            title: content.title || '',
-            description: content.description || '',
-          }));
-
-          const carouselResult = await carouselContent({
-            postContentId,
-            topic,
-            templateId: randomCarouselTemplate.id,
-            content: extractedContent,
-            status: 'success',
-          }).unwrap();
-
-          newPost = {
+          newPost = await generateCarouselPost(
             topic,
             type,
-            content: newSlides.map((slide) => ({
-              ...slide,
-              description: slide.description || '',
-            })),
-            templateId: randomCarouselTemplate.id,
-            status: 'success',
-            contentId: carouselResult.data._id,
-            contentType: 'CarouselContent',
-          };
-
-          const images: { url: string; label: string }[] = [];
-          for (let i = 0; i < newSlides.length; i++) {
-            const slide = newSlides[i];
-            const tempContainer = document.createElement('div');
-            tempContainer.style.position = 'absolute';
-            tempContainer.style.top = '-9999px';
-            tempContainer.style.width = '1080px';
-            tempContainer.style.height = '1080px';
-            tempContainer.style.backgroundColor = '#1A2526';
-            document.body.appendChild(tempContainer);
-
-            const template = carouselTemplates.find((t) => t.id === randomCarouselTemplate.id) || carouselTemplates[0];
-            const slideElement = template.renderSlide
-              ? template.renderSlide(slide, true, '/images/Logo1.png')
-              : <div>{slide.title}</div>;
-            const root = createRoot(tempContainer);
-            root.render(slideElement);
-
-            await new Promise((resolve) => setTimeout(resolve, 100));
-
-            const slideScreenshotUrl = await captureAndUploadScreenshot(tempContainer, `${topic}-slide-${i + 1}`, type);
-            document.body.removeChild(tempContainer);
-            root.unmount();
-
-            if (slideScreenshotUrl) {
-              images.push({ url: slideScreenshotUrl, label: `Slide ${i + 1}` });
-            }
-          }
-
-          if (images.length > 0) {
-            await savePosts({
-              postContentId,
-              topic,
-              type: 'carousel',
-              status: 'success',
-              images,
-              contentId: carouselResult.data._id,
-              contentType: 'CarouselContent',
-            }).unwrap();
-            newPost.images = images;
-          }
+            postContentId,
+            {
+              generateCarousel,
+              carouselContent,
+              savePosts,
+              uploadCarouselToCloudinary, // Pass the new mutation
+            },
+            showAlert,
+            userLogo || '/images/Logo1.png',
+          );
+          console.log('Generated Carousel Post:', newPost);
           break;
 
         case 'doyouknow':
-          const randomDoYouKnowTemplateIndex = Math.floor(Math.random() * doYouKnowTemplates.length);
-          const randomDoYouKnowTemplate = doYouKnowTemplates[randomDoYouKnowTemplateIndex];
-          const doYouKnowResponse = await generateDoYouKnow({ topic }).unwrap();
-          const generatedDoYouKnowContent = doYouKnowResponse.data;
-
-          const newDoYouKnowSlide: DoYouKnowSlide = {
-            title: generatedDoYouKnowContent.title || randomDoYouKnowTemplate.slides[0].title,
-            fact: generatedDoYouKnowContent.description || randomDoYouKnowTemplate.slides[0].fact,
-            footer: randomDoYouKnowTemplate.slides[0].footer,
-            websiteUrl: randomDoYouKnowTemplate.slides[0].websiteUrl || '',
-            imageUrl: randomDoYouKnowTemplate.slides[0].imageUrl || '',
-            slideNumber: 1,
-          };
-
-          const dykResult = await dykContent({
-            postContentId,
-            topic,
-            templateId: randomDoYouKnowTemplate.id,
-            content: { title: generatedDoYouKnowContent.title, fact: generatedDoYouKnowContent.description },
-            status: 'success',
-          }).unwrap();
-
-          newPost = {
+          newPost = await generateDoYouKnowPost(
             topic,
             type,
-            content: newDoYouKnowSlide,
-            templateId: randomDoYouKnowTemplate.id,
-            status: 'success',
-            contentId: dykResult.data._id,
-            contentType: 'DoyouknowContent',
-          };
-
-          const tempContainerDYK = document.createElement('div');
-          tempContainerDYK.style.position = 'absolute';
-          tempContainerDYK.style.top = '-9999px';
-          tempContainerDYK.style.width = '500px';
-          tempContainerDYK.style.height = '700px';
-          tempContainerDYK.style.backgroundColor = '#1A2526';
-          document.body.appendChild(tempContainerDYK);
-
-          const doYouKnowTemplate = doYouKnowTemplates.find((t) => t.id === randomDoYouKnowTemplate.id) || doYouKnowTemplates[0];
-          const doYouKnowSlideElement = doYouKnowTemplate.renderSlide
-            ? doYouKnowTemplate.renderSlide(newDoYouKnowSlide, true, '/images/Logo1.png')
-            : <div>{newDoYouKnowSlide.title}</div>;
-          const root = createRoot(tempContainerDYK);
-          root.render(doYouKnowSlideElement);
-
-          await new Promise((resolve) => setTimeout(resolve, 100));
-
-          screenshotUrl = await captureAndUploadScreenshot(tempContainerDYK, topic, type);
-          document.body.removeChild(tempContainerDYK);
-          root.unmount();
-
-          if (screenshotUrl) {
-            await savePosts({
-              postContentId,
-              topic,
-              type: 'doyouknow',
-              status: 'success',
-              images: [{ url: screenshotUrl, label: 'Did You Know?' }],
-              contentId: dykResult.data._id,
-              contentType: 'DYKContent',
-            }).unwrap();
-            newPost.images = [{ url: screenshotUrl, label: 'Did You Know?' }];
-          }
+            postContentId,
+            {
+              generateDoYouKnow,
+              dykContent,
+              savePosts,
+              uploadImageToCloudinary,
+            },
+            showAlert,
+            userLogo || '/images/Logo1.png',
+          );
+          console.log('Generated Do You Know Post:', newPost);
           break;
-
         default:
           throw new Error(`Unknown post type: ${type}`);
       }
 
-      setLocalPosts((prev) => prev.filter((p) => p.topic !== topic || p.type !== type));
-      setCompletedPosts((prev) => [...prev, newPost]);
-      setCurrentIndex(index);
-      setGeneratingTopic(null);
-
-      return true;
+      // Only update state if newPost is defined
+      if (newPost) {
+        setLocalPosts((prev) => prev.filter((p) => p.topic !== topic || p.type !== type));
+        setCompletedPosts((prev) => [...prev, newPost]);
+        setCurrentIndex(index);
+        setGeneratingTopic(null);
+        return true;
+      } else {
+        throw new Error('Failed to generate post: newPost is undefined');
+      }
     } catch (err) {
       console.error(`Error generating post for ${topic}:`, err);
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setLocalPosts((prev) =>
         prev.map((p) =>
           p.topic === topic && p.type === type
             ? {
-                ...p,
-                status: 'error',
-                errorMessage: err instanceof Error ? err.message : 'An error occurred',
-              }
+              ...p,
+              status: 'error',
+              errorMessage,
+            }
             : p
         )
       );
@@ -550,25 +365,22 @@ export const AutoPostCreator: React.FC = () => {
     }
   };
 
-  const handleBack = () => navigate('/topic', { state: { fromAutoPostCreator: true }});
+  const handleBack = () => navigate('/topic', { state: { fromAutoPostCreator: true } });
 
   // Calculate progress for the progress bar
   const progressPercentage = topics.length > 0 ? (completedPosts.length / topics.length) * 100 : 0;
 
   return (
     <div
-      className={`min-h-screen ${
-        theme === 'dark'
+      className={`min-h-screen ${theme === 'dark'
           ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black'
           : 'bg-gradient-to-br from-gray-50 to-white'
-      } px-4 py-6 md:py-12`}
+        } px-4 py-6 md:py-12`}
     >
       <div
-        className={`relative max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-10 ${
-          theme === 'dark' ? '' : 'bg-white/90 shadow-xl rounded-xl border border-gray-200'
-        }`}
-      >  
-      
+        className={`relative max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-10 ${theme === 'dark' ? '' : 'bg-white/90 shadow-xl rounded-xl border border-gray-200'
+          }`}
+      >
         <Header
           theme={theme}
           handleBack={handleBack}
@@ -579,21 +391,16 @@ export const AutoPostCreator: React.FC = () => {
           isLoading={isLoading}
         />
 
-        {/* Progress Bar */}
         {topics.length > 0 && (
           <div className="mb-6">
             <div className="flex justify-between mb-2">
               <span
-                className={`text-sm font-medium ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                }`}
+                className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}
               >
                 Generation Progress
               </span>
               <span
-                className={`text-sm font-medium ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                }`}
+                className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}
               >
                 {completedPosts.length}/{topics.length} Posts
               </span>
@@ -617,16 +424,14 @@ export const AutoPostCreator: React.FC = () => {
 
         {!isLoading && !topicsError && !postsError && topics.length === 0 && (
           <div
-            className={`rounded-xl p-6 text-center ${
-              theme === 'dark'
+            className={`rounded-xl p-6 text-center ${theme === 'dark'
                 ? 'bg-yellow-500/10 backdrop-blur-lg'
                 : 'bg-yellow-100 border border-yellow-200'
-            }`}
+              }`}
           >
             <p
-              className={`text-base md:text-lg ${
-                theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'
-              }`}
+              className={`text-base md:text-lg ${theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'
+                }`}
             >
               No topics found. Please go back and select topics.
             </p>
@@ -644,14 +449,12 @@ export const AutoPostCreator: React.FC = () => {
                   className="space-y-4 md:space-y-6"
                 >
                   <h2
-                    className={`text-xl md:text-2xl font-semibold flex items-center ${
-                      theme === 'dark' ? 'text-white' : 'text-gray-800'
-                    }`}
+                    className={`text-xl md:text-2xl font-semibold flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'
+                      }`}
                   >
                     <Loader2
-                      className={`w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 ${
-                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                      } ${isGenerating ? 'animate-spin' : ''}`}
+                      className={`w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                        } ${isGenerating ? 'animate-spin' : ''}`}
                     />
                     In Progress
                   </h2>
@@ -661,7 +464,9 @@ export const AutoPostCreator: React.FC = () => {
                         key={`${post.topic}-${post.type}`}
                         post={post}
                         theme={theme}
-                        isGenerating={post.status === 'generating' && generatingTopic === `${post.topic}-${post.type}`}
+                        isGenerating={
+                          post.status === 'generating' && generatingTopic === `${post.topic}-${post.type}`
+                        }
                       />
                     ))}
                   </div>
@@ -672,27 +477,27 @@ export const AutoPostCreator: React.FC = () => {
             {completedPosts.length > 0 && (
               <div className="space-y-4 md:space-y-6">
                 <h2
-                  className={`text-xl md:text-2xl font-semibold flex items-center ${
-                    theme === 'dark' ? 'text-white' : 'text-gray-800'
-                  }`}
+                  className={`text-xl md:text-2xl font-semibold flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'
+                    }`}
                 >
                   <CheckCircle
-                    className={`w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 ${
-                      theme === 'dark' ? 'text-green-400' : 'text-green-600'
-                    }`}
+                    className={`w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                      }`}
                   />
                   Completed Posts
                 </h2>
                 <div className="grid grid-cols-1 gap-6 md:gap-8">
-                  {completedPosts.map((post) => (
-                    <PostCard
-                      key={`${post.topic}-${post.type}`}
-                      post={post}
-                      theme={theme}
-                      onEditPost={handleEditPost}
-                      registerRef={(topic, ref) => postRefs.current.set(topic, ref)}
-                    />
-                  ))}
+                  {completedPosts
+                    .filter((post): post is Post => post !== undefined && post !== null) // Filter out undefined/null
+                    .map((post, index) => (
+                      <PostCard
+                        key={`${post.topic}-${post.type}`}
+                        post={post}
+                        theme={theme}
+                        onEditPost={handleEditPost}
+                        registerRef={(topic, ref) => postRefs.current.set(topic, ref)}
+                      />
+                    ))}
                 </div>
               </div>
             )}
@@ -703,6 +508,14 @@ export const AutoPostCreator: React.FC = () => {
           </div>
         )}
       </div>
+      <Alert
+        type={config.type}
+        title={config.title}
+        message={config.message}
+        isOpen={isOpen}
+        onClose={closeAlert}
+        onConfirm={config.type === 'confirm' ? handleConfirm : undefined}
+      />
     </div>
   );
 };

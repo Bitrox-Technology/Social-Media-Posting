@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowLeft, Sparkles, Building2, Hash, Sun, Moon } from 'lucide-react';
+import { Search, ArrowLeft, Sparkles, Building2, Hash } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setSelectedTopic, setSelectedBusiness, setApiTopics, addCustomTopic, clearCustomTopics } from '../../store/appSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGenerateTopicsMutation, useLazyGetPendingPostsQuery, useSavePostContentMutation } from '../../store/api';
 import { useTheme } from '../../context/ThemeContext';
-import { useAlert } from '../hooks/useAlert'; // Adjust path to where useAlert is defined
-import { Alert } from '../ui/Alert'; // Adjust path to where Alert component is defined
+import { useAlert } from '../hooks/useAlert'; 
+import { Alert } from '../ui/Alert'; 
 
 export const TopicSelector: React.FC = () => {
   const navigate = useNavigate();

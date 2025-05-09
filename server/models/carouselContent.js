@@ -1,22 +1,27 @@
 import mongoose from "mongoose";
 
-const carouselContentSchema = new mongoose.Schema({ 
+const carouselContentSchema = new mongoose.Schema({
     postContentId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "PostContent"
+        ref: "PostTopic"
     },
     templateId: { type: String, trim: true },
     content: [
         {
-          tagline: { type: String, trim: true, default: '' },
-          title: { type: String, trim: true, default: ''},
-          description: { type: String, trim: true, default: ''},
+            tagline: { type: String, trim: true, default: '' },
+            title: { type: String, trim: true, default: '' },
+            description: { type: String, trim: true, default: '' },
+            hashtags: {
+                type: [String],
+                default: [],
+            },
         },
     ],
     topic: {
         type: String,
         trim: true
     },
+
     status: {
         type: String,
         enum: ["pending", "error", "success"],

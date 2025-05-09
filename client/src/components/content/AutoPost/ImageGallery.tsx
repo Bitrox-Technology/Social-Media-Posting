@@ -6,9 +6,15 @@ interface ImageGalleryProps {
   images: { url: string; label: string }[];
   type: 'image' | 'carousel' | 'doyouknow';
   theme: string;
+  platform?: 'instagram' | 'facebook' | 'linkedin';
 }
 
-export const ImageGallery: React.FC<ImageGalleryProps> = ({ images, type, theme }) => {
+export const ImageGallery: React.FC<ImageGalleryProps> = ({
+  images,
+  type,
+  theme,
+  platform = 'instagram',
+}) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   if (!images || images.length === 0) {
@@ -23,6 +29,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ images, type, theme 
     );
   }
 
+  // Determine aspect ratio based on platform
+  const aspectRatio = platform === 'linkedin' ? '1200 / 627' : '1 / 1'; // 1:1 for Instagram/Facebook, 1.91:1 for LinkedIn
+
   if (type === 'carousel') {
     return (
       <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
@@ -34,14 +43,19 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ images, type, theme 
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.1 }}
           >
-            <div 
-              className="relative w-48 h-48 md:w-56 md:h-56 cursor-pointer overflow-hidden rounded-lg shadow-md"
+            <div
+              className="relative cursor-pointer overflow-hidden rounded-lg shadow-md"
+              style={{
+                aspectRatio: aspectRatio, // Set aspect ratio dynamically
+                width: '300px', // Fixed width for carousel items to ensure consistency
+              }}
               onClick={() => setSelectedImage(img.url)}
             >
               <img
                 src={img.url}
                 alt={img.label}
-                className="w-full h-full object-cover transition-transform hover:scale-105"
+                className="w-full h-full object-contain transition-transform hover:scale-105"
+                style={{ objectFit: 'contain' }} // Ensure the full image is visible
               />
             </div>
             <p
@@ -67,14 +81,20 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ images, type, theme 
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
         >
-          <div 
-            className="relative aspect-[4/5] overflow-hidden rounded-lg shadow-md cursor-pointer"
+          <div
+            className="relative overflow-hidden rounded-lg shadow-md cursor-pointer"
+            style={{
+              aspectRatio: aspectRatio, // Set aspect ratio dynamically
+              width: '100%', // Take full width of the parent container
+              maxWidth: '500px', // Maximum width to prevent overly large images
+            }}
             onClick={() => setSelectedImage(img.url)}
           >
             <img
               src={img.url}
               alt={img.label}
-              className="w-full h-full object-cover transition-transform hover:scale-105"
+              className="w-full h-full object-contain transition-transform hover:scale-105"
+              style={{ objectFit: 'contain' }} // Ensure the full image is visible
             />
           </div>
           <p
@@ -110,9 +130,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ images, type, theme 
               exit={{ scale: 0.9 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <img 
-                src={selectedImage} 
-                alt="Enlarged view" 
+              <img
+                src={selectedImage}
+                alt="Enlarged view"
                 className="max-w-full max-h-[90vh] object-contain"
               />
             </motion.div>

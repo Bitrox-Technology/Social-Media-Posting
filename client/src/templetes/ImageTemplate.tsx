@@ -1,5 +1,4 @@
-
-import chroma from 'chroma-js';
+import chroma from "chroma-js";
 
 export interface ImageSlide {
     title: string;
@@ -13,6 +12,9 @@ export interface Colors {
     logoColors?: string[];
     imageColors?: string[];
     ensureContrast?: (color1: string, color2: string) => string;
+    vibrantLogoColor?: string;
+    footerColor?: string;
+    vibrantTextColor?: string;
 }
 
 export interface ImageTemplate {
@@ -27,23 +29,40 @@ export interface ImageTemplate {
 // const ImageTemplate1: ImageTemplate = {
 //     id: 'teddy-bear-love',
 //     name: 'Teddy Bear Love',
-//     coverImageUrl: '/images/image-cover/cover1.png', // Thumbnail for the template
+//     coverImageUrl:'/images/image-cover/cover1.png', 
 //     slides: [
 //         {
 //             title: 'ENCOURAGING WORDS',
 //             description: '"Is it too soon to say \'I love you\'?"',
-//             imageUrl: '/images/background14.jpg', // Default background image
+//             imageUrl: '/images/background14.jpg', 
 //             footer: 'bitrox.tech',
 //             websiteUrl: 'https://bitrox.tech',
 //         },
 //     ],
-//     renderSlide: (slide, addLogo, defaultLogoUrl) => (
+//     renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+//         // Fallback colors if extraction fails
+//       const logoColors = colors?.logoColors || ['#FF5733', '#33FF57', '#5733FF', '#FFFFFF', '#000000'];
+//       const imageColors = colors?.imageColors || ['#A0A0A0', '#D3D3D3', '#4A4A4A', '#FFFFFF', '#000000'];
+//       const ensureContrast = colors?.ensureContrast ?? ((textColor: string) => textColor);
+        
+  
+//       // Select colors for styling
+//       const backgroundColor = imageColors[0]; 
+//       const textColor = logoColors[0];
+//       const accentColor = logoColors[1]; 
+//       const footerColor = imageColors[2]; 
+  
+//       // Ensure text readability
+//       const adjustedTextColor = ensureContrast(textColor, backgroundColor);
+//     const adjustedFooterColor = ensureContrast(footerColor, backgroundColor);
+//       return (
 //         <div
 //             className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden flex flex-col justify-end text-white"
 //             style={{
 //                 backgroundImage: `url(${slide.imageUrl})`,
 //                 backgroundSize: 'cover',
 //                 backgroundPosition: 'center',
+//                 backgroundColor: backgroundColor, 
 //             }}
 //         >
 //             {/* Logo (Top-Right) */}
@@ -58,27 +77,29 @@ export interface ImageTemplate {
 //             {/* Content Section (Bottom) */}
 //             <div className="relative z-10 bg-black bg-opacity-50 p-6 md:p-8">
 //                 {/* Title */}
-//                 <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center uppercase">
+//                 <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center uppercase" style={{ color: adjustedTextColor }}>
 //                     {slide.title}
+                    
 //                 </h2>
 
 //                 {/* Description */}
-//                 <p className="text-lg md:text-xl text-center italic">
+//                 <p className="text-lg md:text-xl text-center italic" style={{ color: adjustedTextColor }}>
 //                     {slide.description}
 //                 </p>
 
 //                 {/* Footer (Bottom-Right) */}
 //                 <div className="flex justify-end mt-4">
-//                     <span className="text-sm md:text-base text-gray-300">
+//                     <span className="text-sm md:text-base text-gray-300" style={{ color: adjustedFooterColor }}>
 //                         @{slide.footer}
 //                     </span>
 //                 </div>
 //             </div>
 //         </div>
-//     ),
+//       )
+//     }
+
 // };
 
-// const ImageTemplate2: ImageTemplate = {
 //     id: 'whimsical-garden',
 //     name: 'Whimsical Garden',
 //     coverImageUrl: '/images/whimsical-garden-cover/cover2.png',
@@ -148,35 +169,44 @@ const ImageTemplate3: ImageTemplate = {
       const logoColors = colors?.logoColors || ['#FF5733', '#33FF57', '#5733FF', '#FFFFFF', '#000000'];
       const imageColors = colors?.imageColors || ['#A0A0A0', '#D3D3D3', '#4A4A4A', '#FFFFFF', '#000000'];
       const ensureContrast = colors?.ensureContrast ?? ((textColor: string) => textColor);
-        
   
-      // Select colors for styling
-      const backgroundColor = imageColors[0]; // Use image's dominant color for background
-      const textColor = logoColors[0];
-      const accentColor = logoColors[1]; // Use logo's secondary color for accents
-      const footerColor = imageColors[2]; // Use image's tertiary color for footer
+      // Use vibrant colors passed from generateImagePost
+      const vibrantLogoColor = colors?.vibrantLogoColor || logoColors[1];
+      const vibrantTextColor = colors?.vibrantTextColor || logoColors[0];
+      const footerColor = colors?.footerColor || imageColors[2];
   
-      // Ensure text readability
-      const adjustedTextColor = ensureContrast(textColor, backgroundColor);
-    const adjustedFooterColor = ensureContrast(footerColor, backgroundColor);
+      // Background color for overlay
+      const backgroundColor = imageColors[0];
+      const adjustedTextColor = ensureContrast(vibrantTextColor, backgroundColor);
+      const adjustedFooterColor = ensureContrast(footerColor, backgroundColor);
+  
       return (
         <div
-          className="relative w-full h-[600px] md:h-[700px] rounded-lg overflow-hidden flex flex-col justify-end text-white"
+          className="relative w-[1080px] h-[1080px] rounded-lg overflow-hidden flex flex-col justify-between text-white"
           style={{
             backgroundImage: slide.imageUrl ? `url(${slide.imageUrl})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundColor: backgroundColor, 
+            backgroundColor: backgroundColor,
           }}
         >
+          {/* Semi-transparent Overlay for Readability */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundColor: chroma(backgroundColor).alpha(0.5).css(),
+            }}
+          />
+  
           {/* Logo (Top-Right) */}
           {addLogo && (
             <div
-              className="absolute top-4 right-4 w-32 h-12 md:w-40 md:h-16 flex items-center justify-center z-20"
+              className="absolute top-8 right-8 w-48 h-24 flex items-center justify-center z-20"
               style={{
-                // backgroundColor: chroma(accentColor).alpha(0.8).css(), // Semi-transparent accent background
-                borderRadius: '8px',
-                padding: '4px',
+                // backgroundColor: chroma(vibrantLogoColor).alpha(0.8).css(),
+                borderRadius: '12px',
+                padding: '8px',
+                boxShadow: `0 0 15px ${vibrantLogoColor}, 0 0 30px ${vibrantLogoColor}`, // Glow effect
               }}
             >
               <img
@@ -187,33 +217,45 @@ const ImageTemplate3: ImageTemplate = {
             </div>
           )}
   
-          {/* Content Section (Bottom) */}
-          <div className="relative z-10 bg-black bg-opacity-60 p-6 md:p-8">
+          {/* Content Section (Center) */}
+          <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center">
             {/* Title */}
             <h2
-              className="text-3xl md:text-5xl font-extrabold mb-3 text-center uppercase tracking-wide"
-              style={{ color: adjustedTextColor }}
+              className="text-6xl font-extrabold mb-6 uppercase tracking-wide"
+              style={{
+                // color: adjustedTextColor,
+                textShadow: `0 0 10px ${adjustedTextColor}, 0 0 20px ${adjustedTextColor}`, // Glow effect
+              }}
             >
               {slide.title}
             </h2>
   
             {/* Description */}
             <p
-              className="text-lg md:text-2xl text-center font-light"
-              style={{ color: adjustedTextColor }}
+              className="text-3xl font-light"
+              style={{
+                // color: adjustedTextColor,
+                textShadow: `0 0 8px ${adjustedTextColor}, 0 0 16px ${adjustedTextColor}`, // Glow effect
+              }}
             >
               {slide.description}
             </p>
+          </div>
   
-            {/* Footer (Bottom-Right) */}
-            <div className="flex justify-end mt-4">
-              <span
-                className="text-sm md:text-base"
-                style={{ color: adjustedFooterColor }}
-              >
-                @{slide.footer}
-              </span>
-            </div>
+          {/* Footer (Bottom-Right) */}
+          <div className="relative z-10 flex justify-end p-6">
+            <a
+              href={slide.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg"
+              style={{
+                // color: adjustedFooterColor,
+                textShadow: `0 0 5px ${adjustedFooterColor}, 0 0 10px ${adjustedFooterColor}`, // Glow effect
+              }}
+            >
+              @{slide.footer}
+            </a>
           </div>
         </div>
       );
@@ -590,45 +632,6 @@ const ImageTemplate3: ImageTemplate = {
 //     ),
 // };
 
-// // Template 10: Modern Grid
-// const ImageTemplate10: ImageTemplate = {
-//     id: 'modern-grid',
-//     name: 'Modern Grid',
-//     coverImageUrl: '/images/image-cover/cover10.png',
-//     slides: [
-//         {
-//             title: 'STRUCTURED BEAUTY',
-//             description: 'Finding harmony in organization',
-//             imageUrl: '/images/background23.jpg',
-//             footer: 'bitrox.tech',
-//             websiteUrl: 'https://bitrox.tech',
-//         },
-//     ],
-//     renderSlide: (slide, addLogo, defaultLogoUrl) => (
-//         <div className="relative w-full h-[600px] md:h-[700px] bg-gray-900 grid grid-cols-2 grid-rows-2 gap-1 p-1">
-//             <div
-//                 className="bg-cover bg-center"
-//                 style={{ backgroundImage: `url(${slide.imageUrl})` }}
-//             />
-//             <div className="bg-gray-800 flex items-center justify-center">
-//                 <h2 className="text-4xl font-bold text-white">{slide.title}</h2>
-//             </div>
-//             <div className="bg-gray-800 flex items-center justify-center p-6">
-//                 <p className="text-xl text-white text-center">{slide.description}</p>
-//             </div>
-//             <div className="bg-gray-800 flex items-center justify-center">
-//                 <span className="text-lg text-white">@{slide.footer}</span>
-//             </div>
-//             {addLogo && (
-//                 <img
-//                     src={defaultLogoUrl}
-//                     alt="Logo"
-//                     className="absolute top-4 right-4 w-32 object-contain z-10"
-//                 />
-//             )}
-//         </div>
-//     ),
-// };
 
 // // Template 11: Neon Glow
 // const ImageTemplate11: ImageTemplate = {
@@ -767,7 +770,7 @@ const ImageTemplate3: ImageTemplate = {
 
 export const imageTemplates: ImageTemplate[] = [
     // ImageTemplate1,
-    // ImageTemplate2,
+ 
     ImageTemplate3,
     // ImageTemplate4,
     // ImageTemplate5,
@@ -775,7 +778,7 @@ export const imageTemplates: ImageTemplate[] = [
     // ImageTemplate7,
     // ImageTemplate8,
     // ImageTemplate9,
-    // ImageTemplate10,
+
     // ImageTemplate11,
     // ImageTemplate12,
     // ImageTemplate13,

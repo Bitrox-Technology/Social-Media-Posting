@@ -30,6 +30,7 @@ import ForgotPassword from './components/auth/ForgotPassword';
 import ProfilePage from './pages/ProfilePage';
 import { Features } from './pages/FeaturePage';
 import { Pricing } from './pages/PricingPage';
+import CompetitorPostAnalyzer from './components/content/CompetitorPostAnalyzer';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -101,6 +102,7 @@ function App() {
                   <Route path="/tmcarousel" element={<TemplateCarousel initialTopic="defaultTopic" />} />
                   <Route path="/tmimagegeneration" element={<ImageGenerationTemplate />} />
                   <Route path="/tmdoyouknow" element={<DoYouKnowTemplateSelector />} />
+                  <Route path='/post-analyzer' element={<CompetitorPostAnalyzer />} />
                   <Route path="/content-type" element={<ContentTypeSelector />} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/doyouknow" element={<DoYouKnow />} />

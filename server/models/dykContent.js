@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const dykContentSchema = new mongoose.Schema({
     postContentId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "PostContent"
+        ref: "PostTopic"
     },
     templateId: { type: String, trim: true },
     content: {
@@ -13,6 +13,10 @@ const dykContentSchema = new mongoose.Schema({
     topic: {
         type: String,
         trim: true
+    },
+    hashtags: {
+        type: [String],
+        default: [],
     },
     status: {
         type: String,

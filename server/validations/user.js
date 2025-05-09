@@ -138,6 +138,7 @@ const validateImageContent = async (inputs) => {
             websiteUrl: joi.string().trim().uri().allow('').optional(),
             imageUrl: joi.string().trim().uri().required(),
         }),
+        hashtags: joi.array().items(joi.string().trim()).optional(),
         status: joi.string().valid("pending", "error", "success").default("pending")
     });
 
@@ -156,6 +157,7 @@ const validateCarouselContent = async (inputs) => {
         tagline: joi.string().allow('').empty('').optional(),
         title: joi.string().allow('').empty('').optional(),
         description: joi.string().allow('').empty('').optional(),
+        hashtags: joi.array().items(joi.string().trim()).optional(),
     });
 
     const schema = joi.object({
@@ -186,6 +188,7 @@ const validateDYKContent = async (inputs) => {
             title: joi.string().trim().optional(),
             fact: joi.string().trim().optional(),
         }),
+        hashtags: joi.array().items(joi.string().trim()).optional(),
         status: joi.string().valid("pending", "error", "success").default("pending")
     });
 

@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { setUser, clearUser } from './appSlice'; 
+import { setUser, clearUser } from './appSlice';
 import { backendURL } from '../constants/urls';
 
 interface ContentIdea {
@@ -43,9 +43,9 @@ interface SavePostRequest {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: backendURL ,
+    baseUrl: backendURL,
     prepareHeaders: (headers, { getState }: { getState: () => unknown }) => {
-      const dispatch = (action: any) => { }; 
+      const dispatch = (action: any) => { };
       const state = getState() as { app?: { user?: { token?: string; expiresAt?: number; email?: string } } };
       let token = state.app?.user?.token;
 
@@ -104,7 +104,7 @@ export const api = createApi({
         body,
       }),
     }),
-    uploadCarousel: builder.mutation<ApiResponse<any>, FormData>({
+    uploadCarouselToCloudinary: builder.mutation<ApiResponse<any>, FormData>({
       query: (body) => ({
         url: '/upload-carousel',
         method: 'POST',
@@ -118,7 +118,7 @@ export const api = createApi({
         body: formData,
       }),
     }),
-    generateDoYouKnow: builder.mutation<ApiResponse<GenerateDoYouKnowResponse>, { topic: string }>({
+    generateDoYouKnow: builder.mutation<ApiResponse<any>, { topic: string }>({
       query: (body) => ({
         url: '/generate-doyouknow',
         method: 'POST',
@@ -132,7 +132,7 @@ export const api = createApi({
         body,
       }),
     }),
-    verifyOTP: builder.mutation<ApiResponse<any>, { email: string; otp: string}>({
+    verifyOTP: builder.mutation<ApiResponse<any>, { email: string; otp: string }>({
       query: (body) => ({
         url: '/user/verify-otp',
         method: 'POST',
@@ -214,14 +214,14 @@ export const api = createApi({
         body,
       }),
     }),
-    generateImageContent: builder.mutation<{ data: { title: string; description: string } }, { topic: string }>({
+    generateImageContent: builder.mutation<ApiResponse<any>, { topic: string }>({
       query: (body) => ({
         url: '/image-content',
         method: 'POST',
         body,
       }),
     }),
-    generateBlog: builder.mutation({
+    generateBlog: builder.mutation<ApiResponse<any>, void>({
       query: (topic) => ({
         url: '/generate-blog',
         method: 'POST',
@@ -247,7 +247,7 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
-    imageContent: builder.mutation<ApiResponse<any>, { postContentId: string; topic: string; templateId: string; content: object; status: string }>({
+    imageContent: builder.mutation<ApiResponse<any>, { postContentId: string; topic: string; templateId: string; content: object; hashtags: [string]; status: string }>({
       query: (body) => ({
         url: '/user/image-content',
         method: 'POST',
@@ -261,7 +261,7 @@ export const api = createApi({
         body,
       }),
     }),
-    dykContent: builder.mutation<ApiResponse<any>, { postContentId: string; topic: string; templateId: string; content: object; status: string }>({
+    dykContent: builder.mutation<ApiResponse<any>, { postContentId: string; topic: string; templateId: string; content: object; hashtags: [string]; status: string }>({
       query: (body) => ({
         url: '/user/dyk-content',
         method: 'POST',
@@ -320,7 +320,7 @@ export const {
   useGenerateImageMutation,
   usePostContentMutation,
   useGenerateCarouselMutation,
-  useUploadCarouselMutation,
+  useUploadCarouselToCloudinaryMutation,
   useUploadImageToCloudinaryMutation,
   useGenerateDoYouKnowMutation,
   useSignUpMutation,

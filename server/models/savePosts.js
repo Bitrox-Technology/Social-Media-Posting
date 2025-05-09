@@ -15,7 +15,7 @@ const savePostsSchema = new mongoose.Schema({
     },
     postContentId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'PostContent',
+        ref: 'PostTopic',
     },
     topic: {
         type: String,

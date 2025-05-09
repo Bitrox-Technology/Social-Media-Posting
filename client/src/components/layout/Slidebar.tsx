@@ -80,6 +80,12 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
           </ListItemIcon>
           <ListItemText primary="Blog" className="text-gray-700 dark:text-gray-200" />
         </ListItem>
+        <ListItem component={Link} to="/post-analyzer" onClick={toggleDrawer(false)}>
+          <ListItemIcon>
+            <Description className="text-gray-600 dark:text-gray-300" />
+          </ListItemIcon>
+          <ListItemText primary="Post Analyzer" className="text-gray-700 dark:text-gray-200" />
+        </ListItem>
       </List>
       <div className="p-6 border-t border-gray-200 dark:border-gray-700">
         <div className="text-sm text-gray-500 dark:text-gray-400">
