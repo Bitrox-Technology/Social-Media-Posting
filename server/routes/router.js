@@ -17,5 +17,6 @@ router.post('/generate-doyouknow', PostControllers.GenerateDoYouKnow);
 router.post('/image-content', PostControllers.GenerateImageContent);
 router.post('/blog-post', PostControllers.BlogPost);
 router.post('/generate-blog', PostControllers.GenerateBlog);
+router.post("/generate-code",upload.single('image'), PostControllers.GenerateCode)
 
 export default router;

@@ -195,7 +195,7 @@ const getUserById = async (param) => {
           $lookup: {
             from: 'saveposts', 
             localField: '_id',
-            foreignField: 'author',
+            foreignField: 'userId',
             as: 'posts',
           },
         },
@@ -229,9 +229,7 @@ const getUserById = async (param) => {
                 input: '$posts',
                 as: 'post',
                 in: {
-                  _id: '$$post._id',
                   topic: '$$post.topic',
-                  contentType: '$$post.contentType',
                   type: '$$post.type',
                   status: '$$post.status',
                   images: '$$post.images',

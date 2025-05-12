@@ -22,7 +22,6 @@ import { toast, ToastContainer } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
 import { useLazyGetUserQuery } from '../store/authApi';
 import { motion } from 'framer-motion';
-import { mockPostsData } from '../data/mockData';
 
 // Default user fallback (used only if API fails and no cached data exists)
 const defaultUser = {
@@ -56,6 +55,7 @@ const defaultUser = {
   ],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
+  posts: [],
 };
 
 const UserDetails: React.FC = () => {
@@ -88,16 +88,12 @@ const UserDetails: React.FC = () => {
         toast.error('Failed to fetch user data', {
           theme: isDarkMode ? 'dark' : 'light',
         });
-        // Fallback to defaultUser if API fails
         setUser(defaultUser);
       }
     };
 
     fetchUser();
   }, [id, getUser, isDarkMode]);
-
-  // Filter posts by userName (mock data, as API doesn't provide posts)
-  const userPosts = mockPostsData.filter((post) => post.author === user.userName);
 
   // Handle loading state
   if (isLoading) {
@@ -198,7 +194,7 @@ const UserDetails: React.FC = () => {
               }`}
             >
               <FileText className="h-5 w-5 mr-2" />
-              <span>{userPosts.length} Posts</span>
+              <span>{user.posts?.length || 0} Posts</span>
             </div>
             <div
               className={`flex items-center ${
@@ -400,9 +396,9 @@ const UserDetails: React.FC = () => {
         <div className="p-6">
           {activeTab === 'posts' ? (
             <div className="space-y-6">
-              {userPosts.map((post) => (
+              {(user.posts || []).map((post: any) => (
                 <div
-                  key={post.id}
+                  key={post._id}
                   className={`border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                     isDarkMode ? 'border-gray-700' : 'border-gray-200'
                   }`}
@@ -414,15 +410,25 @@ const UserDetails: React.FC = () => {
                           isDarkMode ? 'text-white' : 'text-gray-900'
                         }`}
                       >
-                        {post.title}
+                        {post.topic}
                       </h3>
                       <p
                         className={`mt-1 ${
                           isDarkMode ? 'text-gray-400' : 'text-gray-500'
                         }`}
                       >
-                        {post.excerpt}
+                        Type: {post.type}
                       </p>
+                      {post.images && post.images.length > 0 && (
+                        <img
+                          src={post.images[0].url}
+                          alt={post.images[0].label}
+                          className="mt-2 h-32 w-auto object-cover rounded-md"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://via.placeholder.com/150';
+                          }}
+                        />
+                      )}
                     </div>
                     <div className="flex space-x-2">
                       <motion.button
@@ -467,19 +473,15 @@ const UserDetails: React.FC = () => {
                   >
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-1" />
-                      {post.date}
+                      {new Date(post.createdAt).toLocaleDateString()}
                     </div>
                     <div className="flex items-center">
                       <Tag className="h-4 w-4 mr-1" />
-                      {post.category}
-                    </div>
-                    <div className="flex items-center">
-                      <ThumbsUp className="h-4 w-4 mr-1" />
-                      24 Likes
+                      {post.contentType}
                     </div>
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        post.status === 'published'
+                        post.status === 'success'
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                           : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                       }`}
@@ -490,7 +492,7 @@ const UserDetails: React.FC = () => {
                 </div>
               ))}
 
-              {userPosts.length === 0 && (
+              {(!user.posts || user.posts.length === 0) && (
                 <div className="text-center py-12">
                   <FileText
                     className={`mx-auto h-12 w-12 ${

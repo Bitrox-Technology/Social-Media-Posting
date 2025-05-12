@@ -1,30 +1,44 @@
 import chroma from "chroma-js";
+import cn from 'classnames';
 
 export interface ImageSlide {
-    title: string;
-    description: string;
-    imageUrl: string; // Background image (default or AI-generated)
-    footer: string;
-    websiteUrl: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  footer: string;
+  websiteUrl: string;
 }
 
 export interface Colors {
-    logoColors?: string[];
-    imageColors?: string[];
-    ensureContrast?: (color1: string, color2: string) => string;
-    vibrantLogoColor?: string;
-    footerColor?: string;
-    vibrantTextColor?: string;
+  logoColors: { primary: string; secondary: string; accent: string[] };
+  imageColors: string[];
+  ensureContrast: (color1: string, color2: string) => string;
+  vibrantLogoColor: string;
+  vibrantTextColor: string;
+  footerColor: string;
+  backgroundColor: string;
+  typography: { fontFamily: string; fontWeight: number; fontSize: string };
+  graphicStyle: { borderRadius: string; iconStyle: string; filter: string };
+  materialTheme: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+    background: string;
+    surface: string;
+    onPrimary: string;
+    onSecondary: string;
+    onBackground: string;
+    onSurface: string;
+  };
 }
 
 export interface ImageTemplate {
-    id: string;
-    name: string;
-    slides: ImageSlide[];
-    renderSlide: (slide: ImageSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => JSX.Element;
-    coverImageUrl?: string;
+  id: string;
+  name: string;
+  slides: ImageSlide[];
+  renderSlide: (slide: ImageSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => JSX.Element;
+  coverImageUrl?: string;
 }
-
 
 // const ImageTemplate1: ImageTemplate = {
 //     id: 'teddy-bear-love',
@@ -150,117 +164,124 @@ export interface ImageTemplate {
 //         </div>
 //     ),
 // };
+export const ImageTemplate3: ImageTemplate = {
+  id: 'dna-mystery-m3',
+  name: 'DNA Mystery M3',
+  coverImageUrl: '/images/image-cover/cover2.png',
+  slides: [
+    {
+      title: 'A MYSTERIOUS DISCOVERY',
+      description: '"Unraveling the secrets of ancient DNA hidden within us."',
+      imageUrl: '/images/background16.jpg',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      materialTheme,
+      typography,
+      graphicStyle,
+      ensureContrast,
+    } = colors;
 
-const ImageTemplate3: ImageTemplate = {
-    id: 'dna-mystery',
-    name: 'DNA Mystery',
-    coverImageUrl: '/images/image-cover/cover2.png',
-    slides: [
-      {
-        title: 'A MYSTERIOUS DISCOVERY',
-        description: '"Unraveling the secrets of ancient DNA hidden within us."',
-        imageUrl: '/images/background16.jpg',
-        footer: 'bitrox.tech',
-        websiteUrl: 'https://bitrox.tech',
-      },
-    ],
-    renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-      // Fallback colors if extraction fails
-      const logoColors = colors?.logoColors || ['#FF5733', '#33FF57', '#5733FF', '#FFFFFF', '#000000'];
-      const imageColors = colors?.imageColors || ['#A0A0A0', '#D3D3D3', '#4A4A4A', '#FFFFFF', '#000000'];
-      const ensureContrast = colors?.ensureContrast ?? ((textColor: string) => textColor);
-  
-      // Use vibrant colors passed from generateImagePost
-      const vibrantLogoColor = colors?.vibrantLogoColor || logoColors[1];
-      const vibrantTextColor = colors?.vibrantTextColor || logoColors[0];
-      const footerColor = colors?.footerColor || imageColors[2];
-  
-      // Background color for overlay
-      const backgroundColor = imageColors[0];
-      const adjustedTextColor = ensureContrast(vibrantTextColor, backgroundColor);
-      const adjustedFooterColor = ensureContrast(footerColor, backgroundColor);
-  
-      return (
+    // Responsive layout adjustments
+    const hasImage = !!slide.imageUrl;
+    const isLongText = slide.description.length > 100;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col justify-between', {
+          'rounded-lg': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundImage: hasImage ? `url(${slide.imageUrl})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundColor: materialTheme.background,
+          fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+        }}
+      >
+        {/* Adaptive Semi-transparent Overlay */}
         <div
-          className="relative w-[1080px] h-[1080px] rounded-lg overflow-hidden flex flex-col justify-between text-white"
+          className="absolute inset-0"
           style={{
-            backgroundImage: slide.imageUrl ? `url(${slide.imageUrl})` : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundColor: backgroundColor,
+            backgroundColor: chroma(materialTheme.background).alpha(0.6).css(),
+          }}
+        />
+
+        {/* Logo with M3 Principles (No Background, Higher z-index) */}
+        {addLogo && (
+          <img
+            src={defaultLogoUrl}
+            alt="Logo"
+            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
+           
+          />
+        )}
+
+        {/* Content Section with M3 Typography and Color */}
+        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center">
+          {/* Title with Dynamic Sizing and Color */}
+          <h2
+            className={cn('font-bold mb-6 uppercase tracking-wide', {
+              'text-6xl': !isLongText,
+              'text-5xl': isLongText,
+            })}
+            style={{
+              color: ensureContrast(materialTheme.onBackground, materialTheme.background),
+              fontSize: typography.fontSize,
+              textShadow: `0 2px 4px ${chroma(materialTheme.onBackground).alpha(0.3).css()}`,
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description with Dynamic Sizing and Color */}
+          <p
+            className={cn('font-medium', {
+              'text-3xl': !isLongText,
+              'text-2xl': isLongText,
+            })}
+            style={{
+              color: ensureContrast(materialTheme.onBackground, materialTheme.background),
+              fontSize: `calc(${typography.fontSize} * 0.6)`,
+              textShadow: `0 2px 4px ${chroma(materialTheme.onBackground).alpha(0.3).css()}`,
+            }}
+          >
+            {slide.description}
+          </p>
+        </div>
+
+        {/* Footer with M3 Color Principles */}
+        <div
+          className="relative z-10 flex justify-end p-6"
+          style={{
+            backgroundColor: chroma(materialTheme.surface).alpha(0.2).css(),
+            borderRadius: graphicStyle.borderRadius,
           }}
         >
-          {/* Semi-transparent Overlay for Readability */}
-          <div
-            className="absolute inset-0"
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg font-medium"
             style={{
-              backgroundColor: chroma(backgroundColor).alpha(0.5).css(),
+              color: ensureContrast(materialTheme.onSecondary, materialTheme.surface),
+              textShadow: `0 2px 4px ${chroma(materialTheme.onSecondary).alpha(0.3).css()}`,
             }}
-          />
-  
-          {/* Logo (Top-Right) */}
-          {addLogo && (
-            <div
-              className="absolute top-8 right-8 w-48 h-24 flex items-center justify-center z-20"
-              style={{
-                // backgroundColor: chroma(vibrantLogoColor).alpha(0.8).css(),
-                borderRadius: '12px',
-                padding: '8px',
-                boxShadow: `0 0 15px ${vibrantLogoColor}, 0 0 30px ${vibrantLogoColor}`, // Glow effect
-              }}
-            >
-              <img
-                src={defaultLogoUrl}
-                alt="Logo"
-                className="w-full h-full object-contain"
-              />
-            </div>
-          )}
-  
-          {/* Content Section (Center) */}
-          <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center">
-            {/* Title */}
-            <h2
-              className="text-6xl font-extrabold mb-6 uppercase tracking-wide"
-              style={{
-                // color: adjustedTextColor,
-                textShadow: `0 0 10px ${adjustedTextColor}, 0 0 20px ${adjustedTextColor}`, // Glow effect
-              }}
-            >
-              {slide.title}
-            </h2>
-  
-            {/* Description */}
-            <p
-              className="text-3xl font-light"
-              style={{
-                // color: adjustedTextColor,
-                textShadow: `0 0 8px ${adjustedTextColor}, 0 0 16px ${adjustedTextColor}`, // Glow effect
-              }}
-            >
-              {slide.description}
-            </p>
-          </div>
-  
-          {/* Footer (Bottom-Right) */}
-          <div className="relative z-10 flex justify-end p-6">
-            <a
-              href={slide.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-lg"
-              style={{
-                // color: adjustedFooterColor,
-                textShadow: `0 0 5px ${adjustedFooterColor}, 0 0 10px ${adjustedFooterColor}`, // Glow effect
-              }}
-            >
-              @{slide.footer}
-            </a>
-          </div>
+          >
+            @{slide.footer}
+          </a>
         </div>
-      );
-    },
-  };
+      </div>
+    );
+  },
+};
+
+
 
 
 // const ImageTemplate13: ImageTemplate = {

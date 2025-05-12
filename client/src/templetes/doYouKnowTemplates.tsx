@@ -1,4 +1,5 @@
-import React from 'react';
+import chroma from 'chroma-js';
+import cn from 'classnames';
 
 export interface DoYouKnowSlide {
   title: string;
@@ -10,13 +11,17 @@ export interface DoYouKnowSlide {
 }
 
 export interface Colors {
-  logoColors?: string[];
-  imageColors?: string[];
-  ensureContrast?: (color1: string, color2: string) => string;
-  vibrantLogoColor?: string;
-  footerColor?: string;
-  vibrantTextColor?: string;
-  vibrantAccentColor?: string;
+  logoColors: { primary: string; secondary: string; accent: string[] };
+  imageColors: string[];
+  ensureContrast: (color1: string, color2: string) => string;
+  vibrantLogoColor: string;
+  vibrantTextColor: string;
+  footerColor: string;
+  vibrantAccentColor: string;
+  backgroundColor: string;
+  typography: { fontFamily: string; fontWeight: number; fontSize: string };
+  graphicStyle: { borderRadius: string; iconStyle: string; filter: string };
+  materialTheme: { [key: string]: string };
 }
 
 export interface DoYouKnowTemplate {
@@ -26,7 +31,6 @@ export interface DoYouKnowTemplate {
   renderSlide: (slide: DoYouKnowSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => JSX.Element;
   coverImageUrl?: string;
 }
-
 // Template 1: Minimalist Design (Single Slide)
 export const DoYouKnowTemplate1: DoYouKnowTemplate = {
   id: 'do-you-know-minimalist',
@@ -43,18 +47,53 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    // Fallback colors if extraction fails
-    const textColor = colors?.vibrantTextColor || '#FFFFFF';
-    const accentColor = colors?.vibrantAccentColor || '#4A90E2'; // Gradient color from the design
+    const {
+      logoColors,
+      imageColors,
+      ensureContrast,
+      vibrantLogoColor,
+      vibrantTextColor,
+      footerColor,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+      materialTheme,
+    } = colors;
+
+    // Fallback colors
+    const primaryColor = logoColors?.primary || materialTheme.primary;
+    const secondaryColor = logoColors?.secondary || materialTheme.secondary;
+    const accentColor = vibrantAccentColor || materialTheme.secondary;
+    const textColor = vibrantTextColor || ensureContrast(materialTheme.onSurface, backgroundColor);
+    const footerTextColor = footerColor || ensureContrast(materialTheme.onSecondary, backgroundColor);
+
+    // Responsive layout adjustments
+    const hasImage = !!slide.imageUrl;
+    const isLongFact = slide.fact.length > 100;
 
     return (
       <div
-        className="relative w-[1080px] h-[1080px] rounded-lg overflow-hidden flex flex-col justify-between text-white"
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col justify-between', {
+          'rounded-lg': graphicStyle.borderRadius !== '0px',
+        })}
         style={{
-          background: 'linear-gradient(to bottom, #2A4365, rgb(29, 34, 44))',
-          backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
+          backgroundImage: hasImage ? `url(${slide.imageUrl})` : 'none',
+          backgroundColor: hasImage ? 'transparent' : backgroundColor,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
         }}
       >
+        {/* Background Overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundColor: hasImage ? chroma(backgroundColor).alpha(0.6).css() : chroma(backgroundColor).alpha(0.8).css(),
+          }}
+        />
+
         {/* Abstract Shapes */}
         {/* Top-Left Circle */}
         <div className="absolute top-0 left-0 w-48 h-48 pointer-events-none">
@@ -63,7 +102,7 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
             <defs>
               <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" style={{ stopColor: accentColor, stopOpacity: 1 }} />
-                <stop offset="100%" style={{ stopColor: '#50E3C2', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: secondaryColor, stopOpacity: 1 }} />
               </linearGradient>
             </defs>
           </svg>
@@ -76,12 +115,16 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
           </svg>
         </div>
 
-        {/* Logo (Top-Right) */}
+        {/* Logo (Top-Right, no background modification) */}
         {addLogo && (
           <img
             src={defaultLogoUrl}
             alt="Logo"
             className="absolute top-8 right-8 w-48 h-24 object-contain z-20"
+            style={{
+              borderRadius: graphicStyle.borderRadius,
+              boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+            }}
           />
         )}
 
@@ -90,7 +133,7 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
           {/* Small Question Mark Icon Above Title */}
           <div className="mb-8">
             <svg
-              className="w-24 h-24 text-teal-300"
+              className="w-24 h-24"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -108,10 +151,14 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
 
           {/* Title */}
           <h2
-            className="text-6xl font-bold mb-6 leading-tight text-center"
+            className={cn('text-center font-bold mb-6 leading-tight', {
+              'text-6xl': !isLongFact,
+              'text-5xl': isLongFact,
+            })}
             style={{
               color: textColor,
-              textShadow: `0 0 10px ${textColor}, 0 0 20px ${textColor}`, // Glow effect
+              fontSize: typography.fontSize,
+              textShadow: `0 2px 4px ${chroma(textColor).alpha(0.5).css()}`,
             }}
           >
             {slide.title}
@@ -126,10 +173,14 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
 
           {/* Fact */}
           <p
-            className="text-3xl max-w-4xl text-center leading-relaxed"
+            className={cn('text-center leading-relaxed max-w-4xl', {
+              'text-3xl': !isLongFact,
+              'text-2xl': isLongFact,
+            })}
             style={{
               color: textColor,
-              textShadow: `0 0 5px ${textColor}, 0 0 10px ${textColor}`, // Subtle glow
+              fontSize: `calc(${typography.fontSize} * 0.6)`,
+              textShadow: `0 2px 4px ${chroma(textColor).alpha(0.5).css()}`,
             }}
           >
             {slide.fact}
@@ -141,7 +192,7 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
           {/* Footer (Bottom-Left) */}
           <span
             className="text-2xl"
-            style={{ color: accentColor }}
+            style={{ color: footerTextColor }}
           >
             @{slide.footer}
           </span>
@@ -150,7 +201,7 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
           <a
             href={slide.websiteUrl}
             className="text-2xl hover:underline"
-            style={{ color: accentColor }}
+            style={{ color: footerTextColor }}
           >
             {slide.websiteUrl}
           </a>

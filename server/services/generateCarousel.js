@@ -1,5 +1,7 @@
 import { Ollama } from "ollama";
 import { ApiError } from "../utils/ApiError.js";
+import fs from 'fs'
+
 
 const ollama = new Ollama({ host: process.env.OLLAMA_API_URL });
 
@@ -123,7 +125,7 @@ const generateDoYouKnow = async (topic) => {
   }
 };
 
-const generateImageContent = async (topic) => { 
+const generateImageContent = async (topic) => {
   try {
     const prompt = `
       Generate content for a social media post about the topic "${topic}" in JSON format. The JSON must have three fields:
@@ -302,10 +304,41 @@ const generateBlog = async (topic) => {
   }
 };
 
+
+const generateCode = async (input, file) => {
+  if (!file) throw new ApiError(400, "Image is required")
+
+   console.log(file)
+  const imageBuffer = fs.readFileSync(file.path);
+  const base64Image = imageBuffer.toString('base64');
+  let prompt= input.code;
+  const response = await ollama.chat({
+    model: 'llava:13b',
+    messages: [
+      {
+        role: 'user',
+        content: prompt,
+        images: [base64Image] 
+      }
+    ],
+    options: {
+      temperature: 0.7,
+      max_tokens: 2000, 
+    }
+  });
+   
+  console.log("Response", response)
+  // Extract and return the generated code
+  const generatedCode = response.message.content;
+
+  return generatedCode;
+
+}
 export {
   generateCarouselContent,
   generateDoYouKnow,
   generateTopics,
   generateImageContent,
-  generateBlog
+  generateBlog,
+  generateCode
 };

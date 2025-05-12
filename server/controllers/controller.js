@@ -7,8 +7,9 @@ import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
-import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent, generateBlog } from "../services/generateCarousel.js";
+import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent, generateBlog, generateCode } from "../services/generateCarousel.js";
 import { postBlog } from "../services/blogPost.js";
+import { ConsentRepository } from "instagram-private-api/dist/repositories/consent.repository.js";
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
@@ -528,10 +529,19 @@ const GenerateBlog = async (req, res, next) => {
   }
 };
 
+const GenerateCode = async (req, res, next) => {
+  try {
+    const result = await generateCode(req.body, req.file);
+    return res.status(200).json(new ApiResponse(200, result, "Blog generated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 const PostControllers = {
   Post, Content, Ideas, GenerateImage, GenerateCarousel, GenerateBlog,
   UploadCarouselImages, UploadSingleImage, GenerateDoYouKnow, GenerateTopics, GenerateImageContent,
-  BlogPost
+  BlogPost, GenerateCode
 };
 export default PostControllers;

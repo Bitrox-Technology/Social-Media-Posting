@@ -311,7 +311,16 @@ export const api = createApi({
         url: '/social/linkedin/auth',
         method: 'GET',
       }),
+    }),
+    generateCode: builder.mutation<ApiResponse<any>, FormData>({
+      query: (formData) => ({
+        url: '/generate-code',
+        method: 'POST',
+        body: formData
+      }),
     })
+
+   
   }),
 });
 
@@ -345,5 +354,6 @@ export const {
   useUserDetailsMutation,
   useLazyGetUserProfileQuery,
   useLazyAuthLinkedInQuery,
-  useLazyGetPendingPostsQuery
+  useLazyGetPendingPostsQuery,
+  useGenerateCodeMutation
 } = api;

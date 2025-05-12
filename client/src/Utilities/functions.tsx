@@ -9,9 +9,149 @@ import chroma from 'chroma-js';
 import { createRoot } from 'react-dom/client';
 import html2canvas from 'html2canvas';
 import { useAlert } from '../components/hooks/useAlert';
+import { argbFromHex, themeFromSourceColor } from '@material/material-color-utilities';
+
+// Define BrandStyle type
+type BrandStyle = 'Modern' | 'Traditional' | 'Playful' | 'Corporate' | 'Minimal';
 
 
+const m3Typography: Record<BrandStyle, { fontFamily: string; fontWeight: number; fontSize: string }> = {
+  Modern: {
+    fontFamily: 'Roboto, sans-serif',
+    fontWeight: 500,
+    fontSize: '2.5rem',
+  },
+  Traditional: {
+    fontFamily: 'Roboto Serif, serif',
+    fontWeight: 400,
+    fontSize: '2.5rem',
+  },
+  Playful: {
+    fontFamily: 'Rubik, sans-serif',
+    fontWeight: 400,
+    fontSize: '2.5rem',
+  },
+  Corporate: {
+    fontFamily: 'Montserrat, sans-serif',
+    fontWeight: 600,
+    fontSize: '2.5rem',
+  },
+  Minimal: {
+    fontFamily: 'Inter, sans-serif',
+    fontWeight: 300,
+    fontSize: '2.5rem',
+  },
+};
 
+// M3 Shape System
+const m3Shapes: Record<BrandStyle, { borderRadius: string }> = {
+  Modern: { borderRadius: '8px' }, 
+  Traditional: { borderRadius: '4px' }, 
+  Corporate: { borderRadius: '8px' },
+  Playful: { borderRadius: '16px' }, 
+  Minimal: { borderRadius: '4px' }, 
+};
+
+// Graphic Styles
+const graphicStyles: Record<BrandStyle, { borderRadius: string; iconStyle: string; filter: string }> = {
+  Modern: {
+    borderRadius: m3Shapes.Corporate.borderRadius,
+    iconStyle: 'sharp',
+    filter: 'none',
+  },
+  Traditional: {
+    borderRadius: m3Shapes.Minimal.borderRadius,
+    iconStyle: 'outlined',
+    filter: 'grayscale(0.2)',
+  },
+  Playful: {
+    borderRadius: m3Shapes.Playful.borderRadius,
+    iconStyle: 'rounded',
+    filter: 'brightness(1.1) contrast(1.1)',
+  },
+  Corporate: {
+    borderRadius: m3Shapes.Corporate.borderRadius,
+    iconStyle: 'sharp',
+    filter: 'contrast(1.2)',
+  },
+  Minimal: {
+    borderRadius: m3Shapes.Minimal.borderRadius,
+    iconStyle: 'outlined',
+    filter: 'none',
+  },
+};
+
+// Helper Functions
+ const generateM3Theme = (sourceColor: string) => {
+  try {
+    const argbColor = argbFromHex(sourceColor);
+    const theme = themeFromSourceColor(argbColor);
+    const lightScheme = theme.schemes.light;
+
+    return {
+      primary: `#${lightScheme.primary.toString(16).padStart(6, '0')}`,
+      secondary: `#${lightScheme.secondary.toString(16).padStart(6, '0')}`,
+      tertiary: `#${lightScheme.tertiary.toString(16).padStart(6, '0')}`,
+      background: `#${lightScheme.background.toString(16).padStart(6, '0')}`,
+      surface: `#${lightScheme.surface.toString(16).padStart(6, '0')}`,
+      onPrimary: `#${lightScheme.onPrimary.toString(16).padStart(6, '0')}`,
+      onSecondary: `#${lightScheme.onSecondary.toString(16).padStart(6, '0')}`,
+      onBackground: `#${lightScheme.onBackground.toString(16).padStart(6, '0')}`,
+      onSurface: `#${lightScheme.onSurface.toString(16).padStart(6, '0')}`,
+    };
+  } catch (error) {
+    console.error('Error generating M3 theme:', error);
+    // Fallback theme if color generation fails
+    return {
+      primary: sourceColor,
+      secondary: chroma(sourceColor).set('hsl.l', 0.5).hex(),
+      tertiary: chroma(sourceColor).set('hsl.h', '+30').hex(),
+      background: '#FFFFFF',
+      surface: '#F5F5F5',
+      onPrimary: '#FFFFFF',
+      onSecondary: '#000000',
+      onBackground: '#000000',
+      onSurface: '#000000',
+    };
+  }
+};
+
+const selectVibrantColor = (colors: string[]): string => {
+  return colors.reduce((mostVibrant, color) => {
+    const [h, s, l] = chroma(color).hsl();
+    const [hMost, sMost, lMost] = mostVibrant ? chroma(mostVibrant).hsl() : [0, 0, 0];
+    const vibrancy = s * (1 - Math.abs(l - 0.5));
+    const vibrancyMost = sMost * (1 - Math.abs(lMost - 0.5));
+    return vibrancy > vibrancyMost ? color : mostVibrant;
+  }, colors[0]);
+};
+
+const ensureContrast = (textColor: string, bgColor: string) => {
+  const contrast = chroma.contrast(textColor, bgColor);
+  if (contrast < 4.5) {
+    const adjusted = chroma(textColor).luminance(contrast < 4.5 ? 0.7 : 0.3).hex();
+    return chroma.contrast(adjusted, bgColor) >= 4.5 ? adjusted : '#ffffff';
+  }
+  return textColor;
+};
+
+const mapCompetitorPalette = (
+  competitorColors: string[],
+  userColors: { primary: string; secondary: string; accent: string[] }
+) => {
+  const sortedCompetitorColors = competitorColors.sort((a, b) => {
+    const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
+    const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
+    return vibrancyB - vibrancyA;
+  });
+  return {
+    primary: userColors.primary,
+    secondary: userColors.secondary,
+    accent: sortedCompetitorColors.slice(2).map((_, i) => userColors.accent[i] || chroma(userColors.primary).set('hsl.l', 0.5).hex()),
+  };
+};
+
+// Capture and Upload Screenshot
 const captureAndUploadScreenshot = async (
   ref: HTMLDivElement | null,
   topic: string,
@@ -36,17 +176,6 @@ const captureAndUploadScreenshot = async (
   return result?.data?.secure_url || '';
 };
 
-const selectVibrantColor = (colors: string[]): string => {
-  return colors.reduce((mostVibrant, color) => {
-    const [h, s, l] = chroma(color).hsl();
-    const [hMost, sMost, lMost] = mostVibrant ? chroma(mostVibrant).hsl() : [0, 0, 0];
-    const vibrancy = s * (1 - Math.abs(l - 0.5));
-    const vibrancyMost = sMost * (1 - Math.abs(lMost - 0.5));
-    return vibrancy > vibrancyMost ? color : mostVibrant;
-  }, colors[0]);
-};
-
-
 export const generateImagePost = async (
   topic: string,
   type: 'image',
@@ -59,16 +188,20 @@ export const generateImagePost = async (
     uploadImageToCloudinary: ReturnType<typeof useUploadImageToCloudinaryMutation>[0];
   },
   userLogo?: string,
-  showAlert?: ReturnType<typeof useAlert>['showAlert'],
+  brandStyle: BrandStyle = 'Modern',
+  competitorImageUrl?: string,
+  showAlert?: ReturnType<typeof useAlert>['showAlert']
 ): Promise<Post> => {
   let newPost: Post;
   let screenshotUrl: string | undefined;
 
   try {
-    console.log("Generating image post with topic:", topic);
-    console.log("Post content ID:", postContentId);
-    console.log("Post type:", type);
-    console.log("User logo URL:", userLogo);
+    console.log('Generating image post with topic:', topic);
+    console.log('Post content ID:', postContentId);
+    console.log('Post type:', type);
+    console.log('User logo URL:', userLogo);
+    console.log('Brand style:', brandStyle);
+    console.log('Competitor image URL:', competitorImageUrl);
 
     const randomTemplateIndex = Math.floor(Math.random() * imageTemplates.length);
     const randomTemplate = imageTemplates[randomTemplateIndex];
@@ -76,7 +209,7 @@ export const generateImagePost = async (
     const contentRes = await mutations.generateImageContent({ topic }).unwrap();
     const generatedContent = contentRes.data;
 
-    const imageUrl = "https://res.cloudinary.com/deuvfylc5/image/upload/v1746701127/mlauaov0nc6e1ugqfp5w.png";
+    const imageUrl = 'https://res.cloudinary.com/deuvfylc5/image/upload/v1746701127/mlauaov0nc6e1ugqfp5w.png';
 
     const newImageSlide: ImageContent = {
       title: generatedContent.title || randomTemplate.slides[0].title,
@@ -115,37 +248,61 @@ export const generateImagePost = async (
     const ColorExtractor = ({
       logoUrl,
       imageUrl,
+      competitorUrl,
       onColorsExtracted,
     }: {
       logoUrl: string;
       imageUrl: string;
-      onColorsExtracted: (colors: { logoColors: string[]; imageColors: string[] }) => void;
+      competitorUrl?: string;
+      onColorsExtracted: (colors: {
+        logoColors: { primary: string; secondary: string; accent: string[] };
+        imageColors: string[];
+        competitorColors?: string[];
+      }) => void;
     }) => {
       const { data: logoPalette } = usePalette(logoUrl, 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
       const { data: imagePalette } = usePalette(imageUrl, 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
+      const { data: competitorPalette } = usePalette(competitorUrl || '', 5, 'hex', {
+        crossOrigin: 'anonymous',
+        quality: 10,
+      });
 
       React.useEffect(() => {
         if (logoPalette && imagePalette) {
+          const sortedLogoColors = logoPalette.sort((a, b) => {
+            const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
+            const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
+            return vibrancyB - vibrancyA;
+          });
+          const logoColors = {
+            primary: sortedLogoColors[0],
+            secondary: sortedLogoColors[1] || chroma(sortedLogoColors[0]).set('hsl.l', 0.3).hex(),
+            accent: sortedLogoColors.slice(2),
+          };
           onColorsExtracted({
-            logoColors: logoPalette,
+            logoColors,
             imageColors: imagePalette,
+            competitorColors: competitorPalette,
           });
         }
-      }, [logoPalette, imagePalette]);
+      }, [logoPalette, imagePalette, competitorPalette]);
 
       return null;
     };
 
-    // Extract colors and defer unmounting
-    const colors = await new Promise<{ logoColors: string[]; imageColors: string[] }>((resolve) => {
+    const colors = await new Promise<{
+      logoColors: { primary: string; secondary: string; accent: string[] };
+      imageColors: string[];
+      competitorColors?: string[];
+    }>((resolve) => {
       const tempRoot = createRoot(tempContainer);
       tempRoot.render(
         <ColorExtractor
           logoUrl={userLogo || '/images/Logo1.png'}
           imageUrl={imageUrl}
+          competitorUrl={competitorImageUrl}
           onColorsExtracted={(extractedColors) => {
             resolve(extractedColors);
-            // Defer unmounting to avoid race condition
             setTimeout(() => {
               tempRoot.unmount();
               document.body.removeChild(tempContainer);
@@ -155,28 +312,28 @@ export const generateImagePost = async (
       );
     });
 
-    console.log("Extracted Colors:", colors);
+    console.log('Extracted Colors:', colors);
 
-    const ensureContrast = (textColor: string, bgColor: string) => {
-      const contrast = chroma.contrast(textColor, bgColor);
-      if (contrast < 4.5) {
-        return chroma(textColor).luminance(0.5).hex();
-      }
-      return textColor;
-    };
+    // Generate M3 theme from logo's primary color
+    const materialTheme = generateM3Theme(colors.logoColors.primary);
+    const mappedPalette = colors.competitorColors
+      ? mapCompetitorPalette(colors.competitorColors, colors.logoColors)
+      : colors.logoColors;
 
-    const vibrantLogoColor = selectVibrantColor(colors.logoColors);
-    const vibrantTextColor = selectVibrantColor(colors.logoColors);
-    const backgroundColor = colors.imageColors[0];
-    const footerColor = selectVibrantColor(colors.imageColors.slice(1));
+    const vibrantLogoColor = materialTheme.primary;
+    const vibrantTextColor = ensureContrast(materialTheme.onSurface, materialTheme.background);
+    const backgroundColor = materialTheme.background;
+    const footerColor = materialTheme.secondary;
 
-    const adjustedTextColor = ensureContrast(vibrantTextColor, backgroundColor);
-    const adjustedFooterColor = ensureContrast(footerColor, backgroundColor);
+    console.log('Material Theme:', materialTheme);
+    console.log('Selected Vibrant Logo Color:', vibrantLogoColor);
+    console.log('Selected Vibrant Text Color:', vibrantTextColor);
+    console.log('Background Color:', backgroundColor);
+    console.log('Footer Color:', footerColor);
 
-    console.log("Selected Vibrant Logo Color:", vibrantLogoColor);
-    console.log("Selected Vibrant Text Color:", adjustedTextColor);
-    console.log("Background Color:", backgroundColor);
-    console.log("Footer Color:", adjustedFooterColor);
+    // Type-safe access to typography and graphicStyle
+    const typography = m3Typography[brandStyle] || m3Typography.Modern;
+    const graphicStyle = graphicStyles[brandStyle] || graphicStyles.Modern;
 
     const slide = newPost.content as ImageContent;
     const template = imageTemplates.find((t) => t.id === newPost.templateId) || imageTemplates[0];
@@ -186,12 +343,16 @@ export const generateImagePost = async (
       true,
       userLogo || '/images/Logo1.png',
       {
-        logoColors: colors.logoColors,
+        logoColors: mappedPalette,
         imageColors: colors.imageColors,
         ensureContrast,
         vibrantLogoColor,
-        vibrantTextColor: adjustedTextColor,
-        footerColor: adjustedFooterColor,
+        vibrantTextColor,
+        footerColor,
+        backgroundColor,
+        typography,
+        graphicStyle,
+        materialTheme,
       }
     );
 
@@ -205,8 +366,8 @@ export const generateImagePost = async (
     const rootImage = createRoot(tempContainerSlide);
     rootImage.render(slideElement);
 
-    console.log("Root Image:", rootImage);
-    console.log("Slide Element:", slideElement);
+    console.log('Root Image:', rootImage);
+    console.log('Slide Element:', slideElement);
 
     screenshotUrl = await captureAndUploadScreenshot(tempContainerSlide, topic, type, {
       uploadImageToCloudinary: mutations.uploadImageToCloudinary,
@@ -252,20 +413,26 @@ export const generateCarouselPost = async (
     savePosts: ReturnType<typeof useSavePostsMutation>[0];
     uploadCarouselToCloudinary: ReturnType<typeof useUploadCarouselToCloudinaryMutation>[0];
   },
+  platform: 'instagram' | 'facebook' | 'linkedin' = 'instagram',
   showAlert: ReturnType<typeof useAlert>['showAlert'],
   userLogo?: string,
+  brandStyle: BrandStyle = 'Modern',
+  competitorImageUrl?: string
 ): Promise<Post> => {
   let newPost: Post;
 
   try {
+    console.log(`Generating carousel post for ${platform} with topic: ${topic}, postContentId: ${postContentId}`);
 
     // Select random carousel template
     const randomCarouselTemplateIndex = Math.floor(Math.random() * carouselTemplates.length);
     const randomCarouselTemplate = carouselTemplates[randomCarouselTemplateIndex];
+    console.log('Selected Template:', randomCarouselTemplate.id);
 
     // Generate carousel content via API
     const carouselResponse = await mutations.generateCarousel({ topic }).unwrap();
     const generatedCarouselContent: CarouselContent[] = carouselResponse.data;
+    console.log('Generated Carousel Content:', generatedCarouselContent);
 
     // Map generated content to slides
     const newSlides: Slide[] = randomCarouselTemplate.slides.map((slide, index) => {
@@ -290,13 +457,13 @@ export const generateCarouselPost = async (
         description: formattedDescription,
       };
     });
+    console.log('New Slides:', newSlides);
 
     // Extract content for saving
-    const extractedContent = generatedCarouselContent.map((content, index) => ({
+    const extractedContent = generatedCarouselContent.map((content) => ({
       tagline: content.tagline || '',
       title: content.title || '',
       description: content.description || '',
-      hashtags: content.hashtags || [],
     }));
 
     // Save carousel content
@@ -307,6 +474,7 @@ export const generateCarouselPost = async (
       content: extractedContent,
       status: 'success',
     }).unwrap();
+    console.log('Carousel Content Upload:', carouselResult);
 
     // Create new post object
     newPost = {
@@ -321,67 +489,114 @@ export const generateCarouselPost = async (
       contentId: carouselResult.data._id,
       contentType: 'CarouselContent',
     };
+    console.log('New Post:', newPost);
 
-    // Step 1: Extract colors for each slide
-    const slideColors: Array<{ vibrantTextColor: string; vibrantAccentColor: string; footerColor: string }> = [];
-    for (let i = 0; i < newSlides.length; i++) {
-      const slide = newSlides[i];
+    // Extract colors for logo and slides
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.top = '-9999px';
+    tempContainer.style.width = '1080px';
+    tempContainer.style.height = '1080px';
+    document.body.appendChild(tempContainer);
 
-      // Create temporary container for color extraction
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.top = '-9999px';
-      tempContainer.style.width = '1080px';
-      tempContainer.style.height = '1080px';
-      document.body.appendChild(tempContainer);
-
-      const ColorExtractor = ({
-        imageUrl,
-        onColorsExtracted,
-      }: {
-        imageUrl: string;
-        onColorsExtracted: (colors: { imageColors: string[] }) => void;
-      }) => {
-        const { data: imagePalette } = usePalette(imageUrl, 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
-
-        React.useEffect(() => {
-          if (imagePalette) {
-            onColorsExtracted({ imageColors: imagePalette });
-          }
-        }, [imagePalette]);
-
-        return null;
-      };
-
-      const slideColorsResult = await new Promise<{ imageColors: string[] }>((resolve) => {
-        const tempRoot = createRoot(tempContainer);
-        tempRoot.render(
-          <ColorExtractor
-            imageUrl={slide.imageUrl || '/images/background3.png'}
-            onColorsExtracted={(extractedColors) => {
-              resolve(extractedColors);
-              setTimeout(() => {
-                tempRoot.unmount();
-                document.body.removeChild(tempContainer);
-              }, 0);
-            }}
-          />
-        );
+    const ColorExtractor = ({
+      logoUrl,
+      imageUrls,
+      competitorUrl,
+      onColorsExtracted,
+    }: {
+      logoUrl: string;
+      imageUrls: string[];
+      competitorUrl?: string;
+      onColorsExtracted: (colors: {
+        logoColors: { primary: string; secondary: string; accent: string[] };
+        slideImageColors: string[][];
+        competitorColors?: string[];
+      }) => void;
+    }) => {
+      const { data: logoPalette, error: logoError } = usePalette(logoUrl, 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
+      const slidePalettes = imageUrls.map((url) => {
+        const { data, error } = usePalette(url, 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
+        if (error) console.error(`Error extracting palette for ${url}:`, error);
+        return data;
       });
+      const { data: competitorPalette, error: competitorError } = usePalette(competitorUrl || '', 5, 'hex', {
+        crossOrigin: 'anonymous',
+        quality: 10,
+      });
+      if (competitorError) console.error('Error extracting competitor palette:', competitorError);
 
-      // Select vibrant colors for styling
-      const vibrantTextColor = selectVibrantColor(slideColorsResult.imageColors);
-      const vibrantAccentColor = selectVibrantColor(slideColorsResult.imageColors.slice(1));
-      const footerColor = selectVibrantColor(slideColorsResult.imageColors.slice(2));
+      React.useEffect(() => {
+        if (logoPalette && slidePalettes.every((palette) => palette)) {
+          console.log('Logo Palette:', logoPalette);
+          console.log('Slide Palettes:', slidePalettes);
+          const sortedLogoColors = logoPalette.sort((a, b) => {
+            const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
+            const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
+            return vibrancyB - vibrancyA;
+          });
+          const logoColors = {
+            primary: sortedLogoColors[0],
+            secondary: sortedLogoColors[1] || chroma(sortedLogoColors[0]).set('hsl.l', 0.3).hex(),
+            accent: sortedLogoColors.slice(2),
+          };
+          onColorsExtracted({
+            logoColors,
+            slideImageColors: slidePalettes as string[][],
+            competitorColors: competitorPalette,
+          });
+        } else if (logoError) {
+          console.error('Logo palette extraction failed:', logoError);
+          onColorsExtracted({
+            logoColors: { primary: '#4A90E2', secondary: '#50E3C2', accent: ['#50E3C2'] },
+            slideImageColors: imageUrls.map(() => ['#4A90E2', '#50E3C2']),
+            competitorColors: competitorPalette || ['#4A90E2'],
+          });
+        }
+      }, [logoPalette, ...slidePalettes, competitorPalette, logoError]);
+      return null;
+    };
 
-      slideColors.push({ vibrantTextColor, vibrantAccentColor, footerColor });
-    }
+    const colors = await new Promise<{
+      logoColors: { primary: string; secondary: string; accent: string[] };
+      slideImageColors: string[][];
+      competitorColors?: string[];
+    }>((resolve, reject) => {
+      const tempRoot = createRoot(tempContainer);
+      tempRoot.render(
+        <ColorExtractor
+          logoUrl={userLogo || '/images/Logo1.png'}
+          imageUrls={newSlides.map((slide) => slide.imageUrl || '/images/background3.png')}
+          competitorUrl={competitorImageUrl}
+          onColorsExtracted={(extractedColors) => {
+            console.log('Extracted Colors:', extractedColors);
+            resolve(extractedColors);
+            setTimeout(() => {
+              tempRoot.unmount();
+              document.body.removeChild(tempContainer);
+            }, 0);
+          }}
+        />
+      );
+      // Timeout to prevent hanging
+      setTimeout(() => reject(new Error('Color extraction timed out')), 10000);
+    });
+    console.log('Colors Extracted:', colors);
 
-    // Step 2: Capture screenshots for all slides
+    // Generate M3 theme from logo's primary color
+    const materialTheme = generateM3Theme(colors.logoColors.primary);
+    const mappedPalette = colors.competitorColors
+      ? mapCompetitorPalette(colors.competitorColors, colors.logoColors)
+      : colors.logoColors;
+    console.log('Material Theme:', materialTheme);
+    console.log('Mapped Palette:', mappedPalette);
+
+    // Capture screenshots for all slides
     const slideScreenshots: Blob[] = [];
     for (let i = 0; i < newSlides.length; i++) {
       const slide = newSlides[i];
-      const slideColor = slideColors[i];
+      const slideImageColors = colors.slideImageColors[i];
+      console.log(`Rendering slide ${i + 1}:`, slide.title);
 
       const tempContainer = document.createElement('div');
       tempContainer.style.position = 'absolute';
@@ -390,53 +605,86 @@ export const generateCarouselPost = async (
       tempContainer.style.height = '1080px';
       document.body.appendChild(tempContainer);
 
+      const vibrantTextColor = ensureContrast(materialTheme.onSurface, materialTheme.background);
+      const vibrantAccentColor = selectVibrantColor(slideImageColors);
+      const footerColor = materialTheme.secondary;
+      const backgroundColor = materialTheme.background;
+      console.log(`Slide ${i + 1} Colors:`, { vibrantTextColor, vibrantAccentColor, footerColor, backgroundColor });
+
       const template = carouselTemplates.find((t) => t.id === randomCarouselTemplate.id) || carouselTemplates[0];
-      const slideElement = template.renderSlide
-        ? template.renderSlide(
-          slide,
-          true,
-          userLogo || '/images/Logo1.png',
-          slideColor
-        )
-        : <div>{slide.title}</div>;
+      const slideElement = template.renderSlide(
+        slide,
+        true,
+        userLogo || '/images/Logo1.png',
+        {
+          logoColors: mappedPalette,
+          imageColors: slideImageColors,
+          ensureContrast,
+          vibrantLogoColor: materialTheme.primary,
+          vibrantTextColor,
+          footerColor,
+          vibrantAccentColor,
+          backgroundColor,
+          typography: m3Typography[brandStyle] || m3Typography.Modern,
+          graphicStyle: graphicStyles[brandStyle] || graphicStyles.Modern,
+          materialTheme,
+        }
+      );
+
       const root = createRoot(tempContainer);
       root.render(slideElement);
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Increased delay to ensure rendering
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
+      console.log(`Capturing screenshot for slide ${i + 1}`);
       const canvas = await html2canvas(tempContainer, {
         useCORS: true,
         scale: 2,
         backgroundColor: null,
         width: 1080,
         height: 1080,
+        logging: true,
       });
-      const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'));
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (b) {
+            console.log(`Blob created for slide ${i + 1}, size: ${b.size} bytes`);
+            resolve(b);
+          } else {
+            reject(new Error(`Failed to create blob for slide ${i + 1}`));
+          }
+        }, 'image/png');
+      });
       slideScreenshots.push(blob);
 
       document.body.removeChild(tempContainer);
       root.unmount();
     }
+    console.log('Screenshots Captured:', slideScreenshots.length);
 
-    // Step 3: Upload all screenshots in one shot
+    // Upload all screenshots using uploadCarouselToCloudinary
     const formData = new FormData();
     slideScreenshots.forEach((blob, index) => {
+      console.log(`Appending blob for slide ${index + 1}, size: ${blob.size} bytes`);
       formData.append('images', blob, `${topic}-slide-${index + 1}.png`);
     });
 
+    console.log('Uploading to Cloudinary...');
     const uploadResult = await mutations.uploadCarouselToCloudinary(formData).unwrap();
-    console.log("Upload Result:", uploadResult);
     const uploadedUrls = uploadResult?.data || [];
-    console.log("Uploaded URLs:", uploadedUrls);
+    console.log('Upload Result:', uploadedUrls);
 
-    // Step 4: Map uploaded URLs to images
+    // Map uploaded URLs to images
     const images: { url: string; label: string }[] = uploadedUrls.map((url: string, index: number) => ({
       url,
       label: `Slide ${index + 1}`,
     }));
+    console.log('Mapped Images:', images);
 
-    // Step 5: Save post with images
+    // Save post with images
     if (images.length > 0) {
+      console.log('Saving post with images...');
       await mutations.savePosts({
         postContentId,
         topic,
@@ -448,12 +696,14 @@ export const generateCarouselPost = async (
       }).unwrap();
       newPost.images = images;
     } else {
-      throw new Error('Failed to upload carousel images');
+      throw new Error('No images were uploaded to Cloudinary');
     }
 
+    console.log('Post Generated Successfully:', newPost);
     return newPost;
   } catch (error) {
-    const errorMessage = (error as any)?.data?.message || 'An unexpected error occurred while generating the carousel post.';
+    const errorMessage = (error as any)?.data?.message || `An unexpected error occurred while generating the carousel post: ${error}`;
+    console.error('Error in generateCarouselPost:', error);
     showAlert({
       type: 'error',
       title: 'Failed to Generate Carousel Post',
@@ -462,7 +712,6 @@ export const generateCarouselPost = async (
     throw error;
   }
 };
-
 
 export const generateDoYouKnowPost = async (
   topic: string,
@@ -476,11 +725,14 @@ export const generateDoYouKnowPost = async (
   },
   showAlert: ReturnType<typeof useAlert>['showAlert'],
   userLogo?: string,
+  brandStyle: BrandStyle = 'Modern',
+  competitorImageUrl?: string
 ): Promise<Post> => {
   let newPost: Post;
   let screenshotUrl: string | undefined;
 
   try {
+    console.log(`Generating Do You Know post with topic: ${topic}, postContentId: ${postContentId}`);
 
     // Select random DYK template
     const randomDoYouKnowTemplateIndex = Math.floor(Math.random() * doYouKnowTemplates.length);
@@ -521,7 +773,7 @@ export const generateDoYouKnowPost = async (
       contentType: 'DoyouknowContent',
     };
 
-    // Step 1: Extract colors from the logo
+    // Extract colors from logo and slide image
     const tempContainerColor = document.createElement('div');
     tempContainerColor.style.position = 'absolute';
     tempContainerColor.style.top = '-9999px';
@@ -531,29 +783,61 @@ export const generateDoYouKnowPost = async (
 
     const ColorExtractor = ({
       logoUrl,
+      imageUrl,
+      competitorUrl,
       onColorsExtracted,
     }: {
       logoUrl: string;
-      onColorsExtracted: (colors: { logoColors: string[] }) => void;
+      imageUrl: string;
+      competitorUrl?: string;
+      onColorsExtracted: (colors: {
+        logoColors: { primary: string; secondary: string; accent: string[] };
+        imageColors: string[];
+        competitorColors?: string[];
+      }) => void;
     }) => {
       const { data: logoPalette } = usePalette(logoUrl, 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
+      const { data: imagePalette } = usePalette(imageUrl || '', 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
+      const { data: competitorPalette } = usePalette(competitorUrl || '', 5, 'hex', {
+        crossOrigin: 'anonymous',
+        quality: 10,
+      });
 
       React.useEffect(() => {
         if (logoPalette) {
+          const sortedLogoColors = logoPalette.sort((a, b) => {
+            const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
+            const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
+            return vibrancyB - vibrancyA;
+          });
+          const logoColors = {
+            primary: sortedLogoColors[0],
+            secondary: sortedLogoColors[1] || chroma(sortedLogoColors[0]).set('hsl.l', 0.3).hex(),
+            accent: sortedLogoColors.slice(2),
+          };
           onColorsExtracted({
-            logoColors: logoPalette,
+            logoColors,
+            imageColors: imagePalette || [materialTheme.background, materialTheme.surface],
+            competitorColors: competitorPalette,
           });
         }
-      }, [logoPalette]);
+      }, [logoPalette, imagePalette, competitorPalette]);
 
       return null;
     };
 
-    const colors = await new Promise<{ logoColors: string[] }>((resolve) => {
+    const materialTheme = generateM3Theme('#4A90E2'); // Fallback theme for initial use
+    const colors = await new Promise<{
+      logoColors: { primary: string; secondary: string; accent: string[] };
+      imageColors: string[];
+      competitorColors?: string[];
+    }>((resolve) => {
       const tempRoot = createRoot(tempContainerColor);
       tempRoot.render(
         <ColorExtractor
           logoUrl={userLogo || '/images/Logo1.png'}
+          imageUrl={newDoYouKnowSlide.imageUrl || ''}
+          competitorUrl={competitorImageUrl}
           onColorsExtracted={(extractedColors) => {
             resolve(extractedColors);
             setTimeout(() => {
@@ -565,34 +849,54 @@ export const generateDoYouKnowPost = async (
       );
     });
 
-    console.log("Extracted Colors:", colors);
+    console.log('Extracted Colors:', colors);
 
-    // Select vibrant colors for styling
-    const vibrantTextColor = selectVibrantColor(colors.logoColors);
-    const vibrantAccentColor = selectVibrantColor(colors.logoColors.slice(1));
+    // Generate M3 theme from logo's primary color
+    const finalMaterialTheme = generateM3Theme(colors.logoColors.primary);
+    const mappedPalette = colors.competitorColors
+      ? mapCompetitorPalette(colors.competitorColors, colors.logoColors)
+      : colors.logoColors;
 
-    // Step 2: Render DYK slide with extracted colors
+    const typography = m3Typography[brandStyle] || m3Typography.Modern;
+    const graphicStyle = graphicStyles[brandStyle] || graphicStyles.Modern;
+
+    // Render DYK slide with extracted colors
     const tempContainerDYK = document.createElement('div');
     tempContainerDYK.style.position = 'absolute';
     tempContainerDYK.style.top = '-9999px';
     tempContainerDYK.style.width = '1080px';
     tempContainerDYK.style.height = '1080px';
-    tempContainerDYK.style.backgroundColor = '#1A2526';
     document.body.appendChild(tempContainerDYK);
 
+    const vibrantTextColor = ensureContrast(finalMaterialTheme.onSurface, finalMaterialTheme.background);
+    const vibrantAccentColor = colors.imageColors.length > 0 ? selectVibrantColor(colors.imageColors) : finalMaterialTheme.secondary;
+    const footerColor = finalMaterialTheme.secondary;
+    const backgroundColor = finalMaterialTheme.background;
+
     const doYouKnowTemplate = doYouKnowTemplates.find((t) => t.id === randomDoYouKnowTemplate.id) || doYouKnowTemplates[0];
-    const doYouKnowSlideElement = doYouKnowTemplate.renderSlide
-      ? doYouKnowTemplate.renderSlide(newDoYouKnowSlide, true, userLogo || '/images/Logo1.png', {
-          vibrantTextColor,
-          vibrantAccentColor,
-        })
-      : <div>{newDoYouKnowSlide.title}</div>;
+    const doYouKnowSlideElement = doYouKnowTemplate.renderSlide(
+      newDoYouKnowSlide,
+      true,
+      userLogo || '/images/Logo1.png',
+      {
+        logoColors: mappedPalette,
+        imageColors: colors.imageColors,
+        ensureContrast,
+        vibrantLogoColor: finalMaterialTheme.primary,
+        vibrantTextColor,
+        footerColor,
+        vibrantAccentColor,
+        backgroundColor,
+        typography,
+        graphicStyle,
+        materialTheme: finalMaterialTheme,
+      }
+    );
+
     const root = createRoot(tempContainerDYK);
     root.render(doYouKnowSlideElement);
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Step 3: Capture and upload screenshot
+    // Capture and upload screenshot
     screenshotUrl = await captureAndUploadScreenshot(tempContainerDYK, topic, type, {
       uploadImageToCloudinary: mutations.uploadImageToCloudinary,
     });
@@ -600,7 +904,7 @@ export const generateDoYouKnowPost = async (
     document.body.removeChild(tempContainerDYK);
     root.unmount();
 
-    // Step 4: Save post with screenshot
+    // Save post with screenshot
     if (screenshotUrl) {
       await mutations.savePosts({
         postContentId,
@@ -627,4 +931,3 @@ export const generateDoYouKnowPost = async (
     throw error;
   }
 };
-

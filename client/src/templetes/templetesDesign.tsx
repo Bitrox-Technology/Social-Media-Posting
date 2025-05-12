@@ -1,3 +1,6 @@
+import chroma from "chroma-js";
+import cn from 'classnames';
+
 export interface Slide {
   tagline?: string;
   title: string;
@@ -13,27 +16,78 @@ export interface Slide {
   like?: string;
   save?: string;
   overlayGraphic?: string;
-  sticker?: string; // Optional sticker URL
-  shape?: string; // Optional shape URL
+  sticker?: string;
+  shape?: string;
 }
+
 export interface Colors {
-  logoColors?: string[];
-  imageColors?: string[];
-  ensureContrast?: (color1: string, color2: string) => string;
-  vibrantLogoColor?: string;
-  footerColor?: string;
-  vibrantTextColor?: string;
-  vibrantAccentColor?: string;
+  logoColors: { primary: string; secondary: string; accent: string[] };
+  imageColors: string[];
+  ensureContrast: (color1: string, color2: string) => string;
+  vibrantLogoColor: string;
+  vibrantTextColor: string;
+  footerColor: string;
+  vibrantAccentColor: string;
+  backgroundColor: string;
+  typography: { fontFamily: string; fontWeight: number; fontSize: string };
+  graphicStyle: { borderRadius: string; iconStyle: string; filter: string };
+  materialTheme: { [key: string]: string };
 }
 
 export interface CarouselTemplate {
   id: string;
   name: string;
   slides: Slide[];
-  renderSlide: (slide: Slide, addLogo: boolean, defaultLogoUrl: string, colors:Colors) => JSX.Element;
+  colors: Colors;
+  renderSlide: (slide: Slide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => JSX.Element;
   coverImageUrl?: string;
 }
-
+const defaultColors: Colors = {
+  logoColors: {
+    primary: '#4A90E2',
+    secondary: '#50E3C2',
+    accent: ['#50E3C2', '#F5A623'],
+  },
+  imageColors: ['#4A90E2', '#50E3C2'],
+  ensureContrast: (color1: string, color2: string) => {
+    try {
+      const contrast = chroma.contrast(color1, color2);
+      if (contrast < 4.5) {
+        const adjusted = chroma(color1).luminance(contrast < 4.5 ? 0.7 : 0.3).hex();
+        return chroma.contrast(adjusted, color2) >= 4.5 ? adjusted : '#ffffff';
+      }
+      return color1;
+    } catch {
+      return '#ffffff';
+    }
+  },
+  vibrantLogoColor: '#4A90E2',
+  vibrantTextColor: '#FFFFFF',
+  footerColor: '#50E3C2',
+  vibrantAccentColor: '#F5A623',
+  backgroundColor: '#FFFFFF',
+  typography: {
+    fontFamily: 'Roboto, sans-serif',
+    fontWeight: 500,
+    fontSize: '2.5rem',
+  },
+  graphicStyle: {
+    borderRadius: '8px',
+    iconStyle: 'sharp',
+    filter: 'none',
+  },
+  materialTheme: {
+    primary: '#4A90E2',
+    secondary: '#50E3C2',
+    tertiary: '#F5A623',
+    background: '#FFFFFF',
+    surface: '#F5F5F5',
+    onPrimary: '#FFFFFF',
+    onSecondary: '#000000',
+    onBackground: '#000000',
+    onSurface: '#000000',
+  },
+};
 // Template 1: Modern Overlay (Your Original Design with 5 Slides)
 // const Template1: CarouselTemplate = {
 //   id: 'template1',
@@ -2785,6 +2839,7 @@ export const Template2: CarouselTemplate = {
   id: 'template-social-media',
   name: 'Social Media Growth Hacks',
   coverImageUrl: '/images/carousel-cover/cover4.png',
+  colors: defaultColors, // Added colors property
   slides: [
     {
       title: 'Growth Hacks for Your Social Media Business',
@@ -2853,7 +2908,7 @@ export const Template2: CarouselTemplate = {
       headshotUrl: '',
       header: '',
       footer: 'bitrox.tech',
-      socialHandle: '@bitroxtech', // Updated for Slide 5
+      socialHandle: '@bitroxtech',
       websiteUrl: 'https://bitrox.tech',
       slideNumber: 5,
       comment: '',
@@ -2863,53 +2918,91 @@ export const Template2: CarouselTemplate = {
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    // Fallback colors if extraction fails
-    const textColor = colors?.vibrantTextColor || '#FFFFFF';
-    const accentColor = colors?.vibrantAccentColor || '#14B8A6'; // Teal-500
-    const footerColor = colors?.footerColor || '#14B8A6';
+    const {
+      logoColors,
+      imageColors,
+      ensureContrast,
+      vibrantLogoColor,
+      vibrantTextColor,
+      footerColor,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+      materialTheme,
+    } = colors;
+
+    // Fallback colors
+    const primaryColor = logoColors?.primary || materialTheme.primary;
+    const secondaryColor = logoColors?.secondary || materialTheme.secondary;
+    const accentColor = vibrantAccentColor || materialTheme.secondary;
+    const textColor = vibrantTextColor || ensureContrast(materialTheme.onSurface, backgroundColor);
+    const footerTextColor = footerColor || ensureContrast(materialTheme.onSecondary, backgroundColor);
+
+    // Responsive layout adjustments
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
 
     return (
       <div
-        className="relative w-[1080px] h-[1080px] bg-cover bg-center rounded-lg overflow-hidden flex flex-col justify-between text-white"
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col justify-between', {
+          'rounded-lg': graphicStyle.borderRadius !== '0px',
+        })}
         style={{
           backgroundImage: `url(${slide.imageUrl})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
+          fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
         }}
       >
         {/* Background Overlay */}
-        <div className="absolute inset-0 bg-gray-900 bg-opacity-60"></div>
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundColor: chroma(backgroundColor).alpha(0.6).css(),
+          }}
+        />
 
-        {/* Logo (Top-Right) */}
+        {/* Logo (Top-Right, no background modification) */}
         {addLogo && (
           <img
             src={defaultLogoUrl}
             alt="Logo"
-            className="absolute top-16 right-16 w-48 h-24 object-contain z-20"
+            className="absolute top-20 right-16 w-48 h-24 object-contain z-30" // Increased top-20 for visibility
+            style={{
+              borderRadius: graphicStyle.borderRadius,
+              boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+            }}
           />
         )}
 
         {/* Content Section (Center-Aligned) */}
         <div className="relative z-10 flex flex-col items-center justify-center flex-grow px-16">
           <h2
-            className={`text-center font-bold mb-8 leading-tight ${
-              slide.slideNumber === 1 || slide.slideNumber === 5
-                ? 'text-6xl'
-                : 'text-5xl'
-            }`}
+            className={cn('text-center font-bold mb-8 leading-tight', {
+              'text-6xl': slide.slideNumber === 1 || slide.slideNumber === 5,
+              'text-5xl': !(slide.slideNumber === 1 || slide.slideNumber === 5),
+              'text-4xl': isLongText,
+            })}
             style={{
               color: textColor,
-              textShadow: `0 0 10px ${textColor}, 0 0 20px ${textColor}`, // Glow effect
+              fontSize: typography.fontSize,
+              textShadow: `0 2px 4px ${chroma(textColor).alpha(0.5).css()}`,
             }}
           >
             {slide.title}
           </h2>
-          {slide.description && (
+          {hasDescription && (
             <p
-              className="text-2xl text-center leading-relaxed whitespace-pre-line max-w-3xl"
+              className={cn('text-center leading-relaxed whitespace-pre-line max-w-3xl', {
+                'text-2xl': !isLongText,
+                'text-xl': isLongText,
+              })}
               style={{
                 color: textColor,
-                textShadow: `0 0 5px ${textColor}, 0 0 10px ${textColor}`, // Subtle glow
+                fontSize: `calc(${typography.fontSize} * 0.6)`,
+                textShadow: `0 2px 4px ${chroma(textColor).alpha(0.5).css()}`,
               }}
             >
               {slide.description}
@@ -2921,10 +3014,21 @@ export const Template2: CarouselTemplate = {
         <div className="relative z-10 flex flex-col items-end pb-16 px-16">
           {/* Navigation Button (Right-Aligned) */}
           <button
-            className="bg-white text-gray-800 px-6 py-3 rounded-full flex items-center justify-center mb-8 hover:bg-gray-200 transition-colors"
-            style={{ boxShadow: `0 0 10px ${accentColor}` }}
+            className={cn('px-6 py-3 rounded-full flex items-center justify-center mb-8 transition-colors', {
+              'bg-white text-gray-800 hover:bg-gray-200': true,
+            })}
+            style={{
+              boxShadow: `0 4px 12px ${chroma(accentColor).alpha(0.3).css()}`,
+              borderRadius: graphicStyle.borderRadius,
+            }}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-8 w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
           </button>
@@ -2932,16 +3036,10 @@ export const Template2: CarouselTemplate = {
           {/* Social Handle (Left Side, Slide 5 Only) */}
           {slide.slideNumber === 5 && slide.socialHandle && (
             <div className="absolute left-16 bottom-16 flex flex-col items-start">
-              <h3
-                className="text-3xl font-bold text-left"
-                style={{ color: accentColor }}
-              >
+              <h3 className="text-3xl font-bold text-left" style={{ color: accentColor }}>
                 {slide.socialHandle.replace('@', '')}
               </h3>
-              <p
-                className="text-2xl text-left"
-                style={{ color: accentColor }}
-              >
+              <p className="text-2xl text-left" style={{ color: accentColor }}>
                 {slide.socialHandle}
               </p>
             </div>
@@ -2949,17 +3047,10 @@ export const Template2: CarouselTemplate = {
 
           {/* Website URL (Left) and Footer (Right) */}
           <div className="w-full flex justify-between items-center">
-            <a
-              href={slide.websiteUrl}
-              className="text-2xl hover:underline"
-              style={{ color: footerColor }}
-            >
+            <a href={slide.websiteUrl} className="text-2xl hover:underline" style={{ color: footerTextColor }}>
               {slide.websiteUrl}
             </a>
-            <span
-              className="text-2xl"
-              style={{ color: footerColor }}
-            >
+            <span className="text-2xl" style={{ color: footerTextColor }}>
               {slide.footer}
             </span>
           </div>
@@ -2971,14 +3062,15 @@ export const Template2: CarouselTemplate = {
             className="text-2xl font-bold px-6 py-3 rounded-full"
             style={{
               backgroundColor: accentColor,
-              color: '#FFFFFF',
+              color: ensureContrast(materialTheme.onSecondary, accentColor),
+              borderRadius: graphicStyle.borderRadius,
             }}
           >
             {`0${slide.slideNumber}`}
           </span>
         </div>
 
-        {/* Teal Geometric Shape (Bottom-Right) */}
+        {/* Geometric Shape (Bottom-Right) */}
         <div className="absolute bottom-0 right-0 w-1/2 h-1/2 pointer-events-none">
           <svg viewBox="0 0 500 500" className="w-full h-full fill-current opacity-50" style={{ fill: accentColor }}>
             <polygon points="0,500 500,500 0,0" />
@@ -2988,4 +3080,5 @@ export const Template2: CarouselTemplate = {
     );
   },
 };
-export const carouselTemplates: CarouselTemplate[] = [ Template2];
+
+export const carouselTemplates: CarouselTemplate[] = [Template2];

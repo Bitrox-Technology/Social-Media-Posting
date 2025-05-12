@@ -355,15 +355,17 @@ export const AutoPostCreator: React.FC = () => {
   };
 
   const handleContinueToPost = async () => {
-    if (confirm("Do you want to continue to Post? If you continue, you won't be able to edit these posts again. Please confirm.")) {
-      try {
+    // Show the confirmation dialog using the confirm method from useAlert
+    showConfirmAlert(
+      'Continue to Post',
+      'Do you want to continue to Post? If you continue, you won\'t be able to edit these posts again. Please confirm.',
+      async () => {
         navigate('/select-media', { state: { postContentId } });
-      } catch (error) {
-        console.error('Error navigating to post preview:', error);
-        alert('Failed to proceed. Please try again.');
+
       }
-    }
-  };
+    );
+    return;
+  }
 
   const handleBack = () => navigate('/topic', { state: { fromAutoPostCreator: true } });
 
@@ -373,8 +375,8 @@ export const AutoPostCreator: React.FC = () => {
   return (
     <div
       className={`min-h-screen ${theme === 'dark'
-          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black'
-          : 'bg-gradient-to-br from-gray-50 to-white'
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black'
+        : 'bg-gradient-to-br from-gray-50 to-white'
         } px-4 py-6 md:py-12`}
     >
       <div
@@ -425,8 +427,8 @@ export const AutoPostCreator: React.FC = () => {
         {!isLoading && !topicsError && !postsError && topics.length === 0 && (
           <div
             className={`rounded-xl p-6 text-center ${theme === 'dark'
-                ? 'bg-yellow-500/10 backdrop-blur-lg'
-                : 'bg-yellow-100 border border-yellow-200'
+              ? 'bg-yellow-500/10 backdrop-blur-lg'
+              : 'bg-yellow-100 border border-yellow-200'
               }`}
           >
             <p
