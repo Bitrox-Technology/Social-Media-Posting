@@ -30,6 +30,7 @@ export interface DoYouKnowTemplate {
   slides: DoYouKnowSlide[];
   renderSlide: (slide: DoYouKnowSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => JSX.Element;
   coverImageUrl?: string;
+  colors: Colors;
 }
 // Template 1: Minimalist Design (Single Slide)
 export const DoYouKnowTemplate1: DoYouKnowTemplate = {
@@ -46,10 +47,42 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
       slideNumber: 1,
     },
   ],
+  colors: {
+    logoColors: {
+      primary: '#4B5EAA',
+      secondary: '#F4F4F4',
+      accent: ['#FFD700', '#FF6F61'],
+    },
+    imageColors: ['#4B5EAA', '#F4F4F4'],
+    ensureContrast: (color1: string, color2: string) => {
+      const contrastRatio = chroma.contrast(color1, color2);
+      return contrastRatio < 4.5 ? chroma(color1).luminance(0.5).hex() : color1;
+    },
+    vibrantLogoColor: '#FFD700',
+    vibrantTextColor: '#FFFFFF',
+    footerColor: '#F4F4F4',
+    vibrantAccentColor: '#FF6F61',
+    backgroundColor: '#1A2526',
+    typography: {
+      fontFamily: 'Inter, sans-serif',
+      fontWeight: 700,
+      fontSize: '48px',
+    },
+    graphicStyle: {
+      borderRadius: '12px',
+      iconStyle: 'rounded',
+      filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
+    },
+    materialTheme: {
+      primary: '#4B5EAA',
+      secondary: '#F4F4F4',
+      onSurface: '#FFFFFF',
+      onSecondary: '#000000',
+    },
+  },
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const {
       logoColors,
-      imageColors,
       ensureContrast,
       vibrantLogoColor,
       vibrantTextColor,
@@ -58,15 +91,14 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
       backgroundColor,
       typography,
       graphicStyle,
-      materialTheme,
     } = colors;
 
-    // Fallback colors
-    const primaryColor = logoColors?.primary || materialTheme.primary;
-    const secondaryColor = logoColors?.secondary || materialTheme.secondary;
-    const accentColor = vibrantAccentColor || materialTheme.secondary;
-    const textColor = vibrantTextColor || ensureContrast(materialTheme.onSurface, backgroundColor);
-    const footerTextColor = footerColor || ensureContrast(materialTheme.onSecondary, backgroundColor);
+    // Fallback colors to prevent undefined errors
+    const primaryColor = logoColors.primary || '#4B5EAA';
+    const secondaryColor = logoColors.secondary || '#F4F4F4';
+    const accentColor = vibrantAccentColor || '#FF6F61';
+    const textColor = vibrantTextColor || '#FFFFFF';
+    const footerTextColor = footerColor || '#F4F4F4';
 
     // Responsive layout adjustments
     const hasImage = !!slide.imageUrl;
@@ -115,7 +147,7 @@ export const DoYouKnowTemplate1: DoYouKnowTemplate = {
           </svg>
         </div>
 
-        {/* Logo (Top-Right, no background modification) */}
+        {/* Logo (Top-Right) */}
         {addLogo && (
           <img
             src={defaultLogoUrl}

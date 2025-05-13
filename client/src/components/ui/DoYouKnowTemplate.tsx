@@ -1,18 +1,22 @@
+// src/components/ui/DoYouKnowTemplate.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setSelectedFile, setSelectedDoYouKnowTemplate } from '../../store/appSlice';
+import { setSelectedFile, setSelectedDoYouKnowTemplate } from '../../store/appSlice'; // Corrected import
 import { useUploadImageToCloudinaryMutation } from '../../store/api';
-import { DoYouKnowSlide, doYouKnowTemplates } from '../../templetes/doYouKnowTemplates';
-import { ArrowLeft, Image as ImageIcon, Type, Settings2, Layout, Save } from 'lucide-react';
+import { DoYouKnowSlide, doYouKnowTemplates, Colors } from '../../templetes/doYouKnowTemplates';
+import { ArrowLeft, Type, Settings2, Layout, Save } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ExtendedDoYouKnowTemplate {
   id: string;
+  name: string;
   slides: DoYouKnowSlide[];
-  renderSlide: (slide: DoYouKnowSlide, showLogo: boolean, logoUrl: string) => JSX.Element;
-  coverImage: string;
+  renderSlide: (slide: DoYouKnowSlide, showLogo: boolean, logoUrl: string, colors: Colors) => JSX.Element;
+  coverImageUrl: string;
+  colors: Colors;
 }
 
 interface DoYouKnowTemplateSelectorProps {
@@ -26,6 +30,7 @@ export const DoYouKnowTemplateSelector: React.FC<DoYouKnowTemplateSelectorProps>
   generatedImageUrl,
   onSave,
 }) => {
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const defaultLogoUrl = '/images/Logo1.png';
@@ -33,7 +38,8 @@ export const DoYouKnowTemplateSelector: React.FC<DoYouKnowTemplateSelectorProps>
 
   const extendedTemplates: ExtendedDoYouKnowTemplate[] = doYouKnowTemplates.map((template) => ({
     ...template,
-    coverImage: template.coverImageUrl || '/images/default-cover.jpg',
+    coverImageUrl: template.coverImageUrl || '/images/default-cover.jpg',
+    colors: template.colors,
   }));
 
   const [selectedTemplate, setSelectedTemplate] = useState<ExtendedDoYouKnowTemplate>(extendedTemplates[0]);
@@ -48,6 +54,7 @@ export const DoYouKnowTemplateSelector: React.FC<DoYouKnowTemplateSelectorProps>
   const [customFooter, setCustomFooter] = useState<string>(slide.footer || '');
   const [customWebsiteUrl, setCustomWebsiteUrl] = useState<string>(slide.websiteUrl || '');
   const [activeTab, setActiveTab] = useState<'templates' | 'content' | 'settings'>('templates');
+  const [error, setError] = useState<string | null>(null);
 
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
   const slideRef = useRef<HTMLDivElement>(null);
@@ -60,9 +67,15 @@ export const DoYouKnowTemplateSelector: React.FC<DoYouKnowTemplateSelectorProps>
           new Promise((resolve) => {
             const img = new Image();
             img.src = url || '';
-            img.crossOrigin = 'Anonymous';
-            img.onload = resolve;
-            img.onerror = resolve;
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+              console.log(`Image loaded: ${url}`);
+              resolve(undefined);
+            };
+            img.onerror = () => {
+              console.error(`Failed to load image: ${url}`);
+              resolve(undefined);
+            };
           })
       )
     );
@@ -70,49 +83,66 @@ export const DoYouKnowTemplateSelector: React.FC<DoYouKnowTemplateSelectorProps>
 
   useEffect(() => {
     const loadSlide = async () => {
-      const updatedSlide = {
-        ...selectedTemplate.slides[0],
-        imageUrl: generatedImageUrl || selectedTemplate.slides[0].imageUrl,
-        title: customTitle || selectedTemplate.slides[0].title,
-        fact: customFact || selectedTemplate.slides[0].fact,
-        footer: customFooter || selectedTemplate.slides[0].footer || '',
-        websiteUrl: customWebsiteUrl || selectedTemplate.slides[0].websiteUrl || '',
-      };
-      await preloadSlideImages(updatedSlide);
-      setSlide(updatedSlide);
+      try {
+        const updatedSlide = {
+          ...selectedTemplate.slides[0],
+          imageUrl: generatedImageUrl || selectedTemplate.slides[0].imageUrl,
+          title: customTitle || selectedTemplate.slides[0].title,
+          fact: customFact || selectedTemplate.slides[0].fact,
+          footer: customFooter || selectedTemplate.slides[0].footer || '',
+          websiteUrl: customWebsiteUrl || selectedTemplate.slides[0].websiteUrl || '',
+          slideNumber: selectedTemplate.slides[0].slideNumber,
+        };
+        await preloadSlideImages(updatedSlide);
+        setSlide(updatedSlide);
 
-      if (onSave && slideRef.current) {
-        const canvas = await html2canvas(slideRef.current, {
-          useCORS: true,
-          scale: 2,
-          backgroundColor: '#1A2526',
-          logging: true,
-        });
-        const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'));
-        const formData = new FormData();
-        formData.append('image', blob, 'do-you-know-slide.png');
-        const result = await uploadImageToCloudinary(formData).unwrap();
-        const cloudinaryUrl = result?.data?.secure_url;
-        if (cloudinaryUrl) {
-          dispatch(setSelectedFile({ name: 'do-you-know-slide.png', url: cloudinaryUrl }));
-          onSave(updatedSlide, cloudinaryUrl);
+        if (onSave && slideRef.current) {
+          setIsUploading(true);
+          const canvas = await html2canvas(slideRef.current, {
+            useCORS: true,
+            scale: 2,
+            backgroundColor: theme === 'dark' ? '#1A2526' : '#FFFFFF',
+            logging: true,
+          });
+          const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'));
+          const formData = new FormData();
+          formData.append('image', blob, 'do-you-know-slide.png');
+          const result = await uploadImageToCloudinary(formData).unwrap();
+          const cloudinaryUrl = result?.data?.secure_url;
+          if (cloudinaryUrl) {
+            dispatch(setSelectedFile({ name: 'do-you-know-slide.png', url: cloudinaryUrl }));
+            onSave(updatedSlide, cloudinaryUrl);
+          }
         }
+      } catch (err) {
+        console.error('Error loading slide:', err);
+        setError('Failed to load or save slide. Please try again.');
+      } finally {
+        setIsUploading(false);
       }
     };
     loadSlide();
-  }, [selectedTemplate, generatedImageUrl, customTitle, customFact, customFooter, customWebsiteUrl, showLogo, onSave]);
+  }, [selectedTemplate, generatedImageUrl, customTitle, customFact, customFooter, customWebsiteUrl, showLogo, onSave, theme, dispatch]);
 
   const handleTemplateSelect = (template: ExtendedDoYouKnowTemplate) => {
-    setSelectedTemplate(template);
-    const newSlide = {
-      ...template.slides[0],
-      imageUrl: generatedImageUrl || template.slides[0].imageUrl,
-      title: customTitle || template.slides[0].title,
-      fact: customFact || template.slides[0].fact,
-      footer: customFooter || template.slides[0].footer || '',
-      websiteUrl: customWebsiteUrl || template.slides[0].websiteUrl || '',
-    };
-    setSlide(newSlide);
+    try {
+      setSelectedTemplate(template);
+      const newSlide = {
+        ...template.slides[0],
+        imageUrl: generatedImageUrl || template.slides[0].imageUrl,
+        title: customTitle || template.slides[0].title,
+        fact: customFact || template.slides[0].fact,
+        footer: customFooter || template.slides[0].footer || '',
+        websiteUrl: customWebsiteUrl || template.slides[0].websiteUrl || '',
+        slideNumber: template.slides[0].slideNumber,
+      };
+      setSlide(newSlide);
+      setError(null);
+      console.log('Selected template:', template.name, 'Slide:', newSlide);
+    } catch (err) {
+      console.error('Error selecting template:', err);
+      setError('Failed to select template. Please try again.');
+    }
   };
 
   const handleBack = () => {
@@ -120,210 +150,394 @@ export const DoYouKnowTemplateSelector: React.FC<DoYouKnowTemplateSelectorProps>
     navigate('/');
   };
 
+  // Error Boundary Component
+  class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    state = { hasError: false };
+
+    static getDerivedStateFromError() {
+      return { hasError: true };
+    }
+
+    render() {
+      if (this.state.hasError) {
+        return <div className="text-red-500 p-4">Something went wrong. Please try again.</div>;
+      }
+      return this.props.children;
+    }
+  }
+
   if (!slide) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-400"></div>
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} flex items-center justify-center`}>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <motion.button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-all"
-            whileHover={{ x: -4 }}
-          >
-            <ArrowLeft className="w-6 h-6" />
-            <span className="text-lg font-medium">Back</span>
-          </motion.button>
-          
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-            Did You Know Template Editor
-          </h1>
-        </div>
+    <ErrorBoundary>
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} p-6`}>
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <motion.button
+              onClick={handleBack}
+              className={`flex items-center gap-2 p-2 rounded-lg ${
+                theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+              }`}
+              whileHover={{ x: -4 }}
+            >
+              <ArrowLeft className="w-6 h-6" />
+              <span className="text-lg font-medium">Back</span>
+            </motion.button>
+            <h1
+              className={`text-3xl font-bold ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}
+            >
+              Did You Know Template Editor
+            </h1>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
-              <div
-                ref={slideRef}
-                className="relative rounded-xl overflow-hidden shadow-xl mx-auto"
-                style={{
-                  width: '500px',
-                  height: '700px',
-                  maxWidth: '100%',
-                  aspectRatio: '5/7',
-                }}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500 text-red-500 p-4 rounded-lg mb-6">
+              {error}
+            </div>
+          )}
+
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Left Sidebar: All Templates */}
+            <div
+              className={`lg:w-1/4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-xl p-6 overflow-y-auto max-h-[80vh]`}
+            >
+              <h2
+                className={`text-2xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
               >
-                {selectedTemplate.renderSlide(slide, showLogo, defaultLogoUrl)}
+                All Templates
+              </h2>
+              <div className="grid grid-cols-1 gap-4">
+                {extendedTemplates.map((template) => (
+                  <motion.div
+                    key={template.id}
+                    className={`cursor-pointer rounded-lg border transition-all ${
+                      selectedTemplate.id === template.id
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : theme === 'dark'
+                        ? 'border-gray-700 hover:border-gray-600'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleTemplateSelect(template)}
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="aspect-square rounded-t-lg overflow-hidden">
+                      <img
+                        src={template.coverImageUrl}
+                        alt={template.name}
+                        className="w-full h-full object-cover"
+                        onError={() => console.error(`Failed to load cover image: ${template.coverImageUrl}`)}
+                      />
+                    </div>
+                    <div
+                      className={`p-3 text-center ${
+                        theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                      }`}
+                    >
+                      <p className="text-sm font-medium">{template.name}</p>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50"
-          >
-            <div className="flex gap-4 mb-6">
-              {[
-                { id: 'templates', icon: <Layout className="w-5 h-5" />, label: 'Templates' },
-                { id: 'content', icon: <Type className="w-5 h-5" />, label: 'Content' },
-                { id: 'settings', icon: <Settings2 className="w-5 h-5" />, label: 'Settings' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
+            {/* Right Side: Slide Preview and Editor */}
+            <div className="lg:w-3/4 space-y-6">
+              <div
+                className={`rounded-2xl shadow-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-8 overflow-visible`}
               >
-                {activeTab === 'templates' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    {extendedTemplates.map((template) => (
-                      <motion.div
-                        key={template.id}
-                        className={`cursor-pointer rounded-lg border transition-all ${
-                          selectedTemplate.id === template.id
-                            ? 'border-yellow-500 bg-gray-700/50'
-                            : 'border-gray-700 hover:border-gray-600'
-                        }`}
-                        onClick={() => handleTemplateSelect(template)}
-                        whileHover={{ scale: 1.02 }}
+                <AnimatePresence mode="wait">
+                  {isUploading ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center justify-center min-h-[1080px]"
+                    >
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex justify-center"
+                    >
+                      <div
+                        ref={slideRef}
+                        className="relative rounded-xl overflow-visible shadow-xl"
+                        style={{
+                          width: '1080px',
+                          height: '1080px',
+                          maxWidth: '100%',
+                          aspectRatio: '1/1',
+                        }}
                       >
-                        <div className="aspect-square rounded-t-lg overflow-hidden">
-                          <img
-                            src={template.coverImage}
-                            alt={template.id}
-                            className="w-full h-full object-cover"
+                        {selectedTemplate.renderSlide(slide, showLogo, defaultLogoUrl, selectedTemplate.colors)}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Editor Tabs */}
+              {/* <div
+                className={`rounded-2xl shadow-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6`}
+              >
+                <div className="flex gap-4 mb-6">
+                  {[
+                    { id: 'templates', icon: <Layout className="w-5 h-5" />, label: 'Templates' },
+                    { id: 'content', icon: <Type className="w-5 h-5" />, label: 'Content' },
+                    { id: 'settings', icon: <Settings2 className="w-5 h-5" />, label: 'Settings' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                        activeTab === tab.id
+                          ? 'bg-blue-500 text-white'
+                          : theme === 'dark'
+                          ? 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="space-y-6"
+                  >
+                    {activeTab === 'templates' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {extendedTemplates.map((template) => (
+                          <motion.div
+                            key={template.id}
+                            className={`cursor-pointer rounded-lg border transition-all ${
+                              selectedTemplate.id === template.id
+                                ? 'border-blue-500 bg-blue-500/10'
+                                : theme === 'dark'
+                                ? 'border-gray-700 hover:border-gray-600'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => handleTemplateSelect(template)}
+                            whileHover={{ scale: 1.02 }}
+                          >
+                            <div className="aspect-square rounded-t-lg overflow-hidden">
+                              <img
+                                src={template.coverImageUrl}
+                                alt={template.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div
+                              className={`p-3 text-center ${
+                                theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                              }`}
+                            >
+                              <p className="text-sm font-medium">{template.name}</p>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+
+                    {activeTab === 'content' && (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label
+                            className={`block text-sm font-medium ${
+                              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                            }`}
+                          >
+                            Title
+                          </label>
+                          <input
+                            type="text"
+                            value={customTitle}
+                            onChange={(e) => {
+                              setCustomTitle(e.target.value);
+                              setSlide((prev) => ({ ...prev, title: e.target.value }));
+                            }}
+                            className={`w-full px-4 py-2 rounded-lg ${
+                              theme === 'dark'
+                                ? 'bg-gray-700 text-white border-gray-600'
+                                : 'bg-white text-gray-900 border-gray-300'
+                            } border focus:ring-2 focus:ring-blue-500`}
                           />
                         </div>
-                        <div className="p-3 text-center">
-                          <p className="text-sm font-medium">{template.id}</p>
+
+                        <div className="space-y-2">
+                          <label
+                            className={`block text-sm font-medium ${
+                              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                            }`}
+                          >
+                            Fact
+                          </label>
+                          <textarea
+                            value={customFact}
+                            onChange={(e) => {
+                              setCustomFact(e.target.value);
+                              setSlide((prev) => ({ ...prev, fact: e.target.value }));
+                            }}
+                            className={`w-full px-4 py-2 rounded-lg h-32 ${
+                              theme === 'dark'
+                                ? 'bg-gray-700 text-white border-gray-600'
+                                : 'bg-white text-gray-900 border-gray-300'
+                            } border focus:ring-2 focus:ring-blue-500`}
+                          />
                         </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
 
-                {activeTab === 'content' && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="block text-gray-300">Title</label>
-                      <input
-                        type="text"
-                        value={customTitle}
-                        onChange={(e) => {
-                          setCustomTitle(e.target.value);
-                          setSlide((prev) => ({ ...prev, title: e.target.value }));
-                        }}
-                        className="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
+                        <div className="space-y-2">
+                          <label
+                            className={`block text-sm font-medium ${
+                              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                            }`}
+                          >
+                            Footer
+                          </label>
+                          <div className="flex items-center">
+                            <span
+                              className={`px-3 ${
+                                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                              }`}
+                            >
+                              @
+                            </span>
+                            <input
+                              type="text"
+                              value={customFooter}
+                              onChange={(e) => {
+                                setCustomFooter(e.target.value);
+                                setSlide((prev) => ({ ...prev, footer: e.target.value }));
+                              }}
+                              className={`flex-1 px-4 py-2 rounded-lg ${
+                                theme === 'dark'
+                                  ? 'bg-gray-700 text-white border-gray-600'
+                                  : 'bg-white text-gray-900 border-gray-300'
+                              } border focus:ring-2 focus:ring-blue-500`}
+                            />
+                          </div>
+                        </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-gray-300">Fact</label>
-                      <textarea
-                        value={customFact}
-                        onChange={(e) => {
-                          setCustomFact(e.target.value);
-                          setSlide((prev) => ({ ...prev, fact: e.target.value }));
-                        }}
-                        className="w-full px-4 py-2 bg-gray-700 rounded-lg h-32 focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-gray-300">Footer</label>
-                      <div className="flex items-center">
-                        <span className="text-gray-400 px-3">@</span>
-                        <input
-                          type="text"
-                          value={customFooter}
-                          onChange={(e) => {
-                            setCustomFooter(e.target.value);
-                            setSlide((prev) => ({ ...prev, footer: e.target.value }));
-                          }}
-                          className="flex-1 px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        />
+                        <div className="space-y-2">
+                          <label
+                            className={`block text-sm font-medium ${
+                              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                            }`}
+                          >
+                            Website URL
+                          </label>
+                          <input
+                            type="text"
+                            value={customWebsiteUrl}
+                            onChange={(e) => {
+                              setCustomWebsiteUrl(e.target.value);
+                              setSlide((prev) => ({ ...prev, websiteUrl: e.target.value }));
+                            }}
+                            className={`w-full px-4 py-2 rounded-lg ${
+                              theme === 'dark'
+                                ? 'bg-gray-700 text-white border-gray-600'
+                                : 'bg-white text-gray-900 border-gray-300'
+                              } border focus:ring-2 focus:ring-blue-500`}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    <div className="space-y-2">
-                      <label className="block text-gray-300">Website URL</label>
-                      <input
-                        type="text"
-                        value={customWebsiteUrl}
-                        onChange={(e) => {
-                          setCustomWebsiteUrl(e.target.value);
-                          setSlide((prev) => ({ ...prev, websiteUrl: e.target.value }));
-                        }}
-                        className="w-full px-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                )}
+                    {activeTab === 'settings' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <label
+                            className={`text-sm font-medium ${
+                              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                            }`}
+                          >
+                            Show Logo
+                          </label>
+                          <input
+                            type="checkbox"
+                            checked={showLogo}
+                            onChange={(e) => setShowLogo(e.target.checked)}
+                            className="w-5 h-5 text-blue-500 rounded focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
 
-                {activeTab === 'settings' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-gray-300">Show Logo</label>
-                      <input
-                        type="checkbox"
-                        checked={showLogo}
-                        onChange={(e) => setShowLogo(e.target.checked)}
-                        className="w-5 h-5 text-blue-500 rounded focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
-
-            <motion.button
-              onClick={() => {
-                if (onSave && slideRef.current) {
-                  onSave(slide, '');
-                }
-              }}
-              disabled={isUploading}
-              className={`mt-8 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-                isUploading
-                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:shadow-lg hover:shadow-green-500/20 text-white'
-              }`}
-              whileHover={{ scale: isUploading ? 1 : 1.02 }}
-            >
-              <Save className="w-5 h-5" />
-              {isUploading ? 'Saving...' : 'Save Changes'}
-            </motion.button>
-          </motion.div>
+                <motion.button
+                  onClick={() => {
+                    if (onSave && slideRef.current) {
+                      onSave(slide, '');
+                    }
+                  }}
+                  disabled={isUploading}
+                  className={`mt-8 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                    isUploading
+                      ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                      : theme === 'dark'
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                  whileHover={{ scale: isUploading ? 1 : 1.02 }}
+                >
+                  <Save className="w-5 h-5" />
+                  {isUploading ? 'Saving...' : 'Save Changes'}
+                </motion.button>
+              </div> */}
+            </div>
+          </div>
         </div>
+
+        {/* Inline CSS for Responsiveness */}
+        <style>
+          {`
+            @media (max-width: 1024px) {
+              .flex.lg\\:flex-row {
+                flex-direction: column;
+              }
+              .lg\\:w-1\\/4 {
+                width: 100%;
+                max-height: 40vh;
+                overflow-y: auto;
+              }
+              .lg\\:w-3\\/4 {
+                width: 100%;
+              }
+              .relative.rounded-xl.overflow-visible.shadow-xl {
+                transform: scale(0.85);
+                margin: 0 auto;
+              }
+            }
+            @media (max-width: 768px) {
+              .relative.rounded-xl.overflow-visible.shadow-xl {
+                transform: scale(0.7);
+                margin: 0 auto;
+              }
+            }
+            .min-h-[1080px] {
+              min-height: 1080px;
+            }
+          `}
+        </style>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };

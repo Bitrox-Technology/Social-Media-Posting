@@ -26,6 +26,8 @@ const defaultColors: Colors = {
   vibrantTextColor: '#FFFFFF',
   footerColor: '#50E3C2',
   backgroundColor: '#FFFFFF',
+  glowColor: '#FFD700', // Added default glow color
+  complementaryGlowColor: '#00BFFF', // Added default complementary glow color
   typography: {
     fontFamily: 'Roboto, sans-serif',
     fontWeight: 500,

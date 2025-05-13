@@ -35,6 +35,8 @@ import { generateImagePost, generateCarouselPost, generateDoYouKnowPost } from '
 import { useAlert } from '../hooks/useAlert';
 import { Alert } from '../ui/Alert';
 
+type BrandStyle = 'Modern' | 'Traditional' | 'Playful' | 'Corporate' | 'Minimal';
+
 
 export const AutoPostCreator: React.FC = () => {
   const navigate = useNavigate();
@@ -194,16 +196,16 @@ export const AutoPostCreator: React.FC = () => {
     }
   }, [location.state, navigate]);
 
-  const captureAndUploadScreenshot = async (ref: HTMLDivElement | null, topic: string, type: string) => {
-    if (!ref) return '';
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const canvas = await html2canvas(ref, { useCORS: true, scale: 2, backgroundColor: null });
-    const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'));
-    const formData = new FormData();
-    formData.append('image', blob, `${topic}-${type}.png`);
-    const result = await uploadImageToCloudinary(formData).unwrap();
-    return result?.data?.secure_url || '';
-  };
+  // const captureAndUploadScreenshot = async (ref: HTMLDivElement | null, topic: string, type: string) => {
+  //   if (!ref) return '';
+  //   await new Promise((resolve) => setTimeout(resolve, 500));
+  //   const canvas = await html2canvas(ref, { useCORS: true, scale: 2, backgroundColor: null });
+  //   const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'));
+  //   const formData = new FormData();
+  //   formData.append('image', blob, `${topic}-${type}.png`);
+  //   const result = await uploadImageToCloudinary(formData).unwrap();
+  //   return result?.data?.secure_url || '';
+  // };
 
   const generatePost = async (topic: string, index: number) => {
 
@@ -236,6 +238,7 @@ export const AutoPostCreator: React.FC = () => {
               uploadImageToCloudinary,
             },
             userLogo || '/images/Logo1.png',
+            'Modern',
             showAlert
           );
           console.log('Generated Image Post:', newPost);
@@ -258,22 +261,22 @@ export const AutoPostCreator: React.FC = () => {
           console.log('Generated Carousel Post:', newPost);
           break;
 
-        case 'doyouknow':
-          newPost = await generateDoYouKnowPost(
-            topic,
-            type,
-            postContentId,
-            {
-              generateDoYouKnow,
-              dykContent,
-              savePosts,
-              uploadImageToCloudinary,
-            },
-            showAlert,
-            userLogo || '/images/Logo1.png',
-          );
-          console.log('Generated Do You Know Post:', newPost);
-          break;
+        // case 'doyouknow':
+        //   newPost = await generateDoYouKnowPost(
+        //     topic,
+        //     type,
+        //     postContentId,
+        //     {
+        //       generateDoYouKnow,
+        //       dykContent,
+        //       savePosts,
+        //       uploadImageToCloudinary,
+        //     },
+        //     showAlert,
+        //     userLogo || '/images/Logo1.png',
+        //   );
+        //   console.log('Generated Do You Know Post:', newPost);
+        //   break;
         default:
           throw new Error(`Unknown post type: ${type}`);
       }

@@ -1,29 +1,26 @@
-import chroma from "chroma-js";
+import chroma from 'chroma-js';
 import cn from 'classnames';
 
+// Simplified Slide interface (removed unused fields)
 export interface Slide {
   tagline?: string;
   title: string;
   description?: string;
   imageUrl: string;
-  headshotUrl: string;
-  header: string;
   footer: string;
-  socialHandle: string;
+  socialHandle?: string;
   websiteUrl: string;
   slideNumber: number;
-  comment?: string;
-  like?: string;
-  save?: string;
-  overlayGraphic?: string;
-  sticker?: string;
-  shape?: string;
 }
 
+// Updated Colors interface to include complementary colors
 export interface Colors {
   logoColors: { primary: string; secondary: string; accent: string[] };
   imageColors: string[];
-  ensureContrast: (color1: string, color2: string) => string;
+  glowColor: string; // For glow effects
+  complementaryTextColor: string; // For title, description
+  complementaryFooterColor: string; // For footer, website URL, social handle
+  ensureContrast: (color1: string, color2: string, minContrast?: number) => string;
   vibrantLogoColor: string;
   vibrantTextColor: string;
   footerColor: string;
@@ -34,14 +31,15 @@ export interface Colors {
   materialTheme: { [key: string]: string };
 }
 
+// Updated CarouselTemplate interface (removed colors property)
 export interface CarouselTemplate {
   id: string;
   name: string;
   slides: Slide[];
-  colors: Colors;
   renderSlide: (slide: Slide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => JSX.Element;
   coverImageUrl?: string;
 }
+
 const defaultColors: Colors = {
   logoColors: {
     primary: '#4A90E2',
@@ -49,16 +47,23 @@ const defaultColors: Colors = {
     accent: ['#50E3C2', '#F5A623'],
   },
   imageColors: ['#4A90E2', '#50E3C2'],
-  ensureContrast: (color1: string, color2: string) => {
+  glowColor: '#FF5733', // Default complementary color
+  complementaryTextColor: '#FFFFFF',
+  complementaryFooterColor: '#E0E0E0',
+  ensureContrast: (color1: string, color2: string, minContrast: number = 4.5) => {
     try {
+      if (!chroma.valid(color1) || !chroma.valid(color2)) {
+        return '#FFFFFF';
+      }
       const contrast = chroma.contrast(color1, color2);
-      if (contrast < 4.5) {
-        const adjusted = chroma(color1).luminance(contrast < 4.5 ? 0.7 : 0.3).hex();
-        return chroma.contrast(adjusted, color2) >= 4.5 ? adjusted : '#ffffff';
+      if (contrast < minContrast) {
+        const adjusted = chroma(color1).luminance(contrast < minContrast ? 0.7 : 0.3).hex();
+        return chroma.contrast(adjusted, color2) >= minContrast ? adjusted : '#FFFFFF';
       }
       return color1;
-    } catch {
-      return '#ffffff';
+    } catch (error) {
+      console.warn(`ensureContrast error: ${error}`);
+      return '#FFFFFF';
     }
   },
   vibrantLogoColor: '#4A90E2',
@@ -2835,96 +2840,68 @@ const defaultColors: Colors = {
 //   ),
 // };
 
+
 export const Template2: CarouselTemplate = {
   id: 'template-social-media',
   name: 'Social Media Growth Hacks',
   coverImageUrl: '/images/carousel-cover/cover4.png',
-  colors: defaultColors, // Added colors property
   slides: [
     {
       title: 'Growth Hacks for Your Social Media Business',
       description: '',
       imageUrl: '/images/background3.png',
-      headshotUrl: '',
-      header: '',
       footer: 'bitrox.tech',
       socialHandle: '',
       websiteUrl: 'https://bitrox.tech',
       slideNumber: 1,
-      comment: '',
-      save: '',
-      like: '',
-      overlayGraphic: '',
     },
     {
       title: 'Content is King, Engagement is Queen',
       description: "It's not enough to just create content; you need to create content that resonates with your audience and sparks engagement.",
       imageUrl: '/images/background3.png',
-      headshotUrl: '',
-      header: '',
       footer: 'bitrox.tech',
       socialHandle: '',
       websiteUrl: 'https://bitrox.tech',
       slideNumber: 2,
-      comment: '',
-      save: '',
-      like: '',
-      overlayGraphic: '',
     },
     {
       title: 'Leverage the Power of Collaboration',
-      description: 'Partner with influencers in your niche to reach a wider audience.\n\nLook for creators who align with your brand values and have a strong following.\n\nCo-create content, host giveaways, or do shoutouts to tap into their audience and gain new followers.',
+      description:
+        'Partner with influencers in your niche to reach a wider audience.\n\nLook for creators who align with your brand values and have a strong following.\n\nCo-create content, host giveaways, or do shoutouts to tap into their audience and gain new followers.',
       imageUrl: '/images/background3.png',
-      headshotUrl: '',
-      header: '',
       footer: 'bitrox.tech',
       socialHandle: '',
       websiteUrl: 'https://bitrox.tech',
       slideNumber: 3,
-      comment: '',
-      save: '',
-      like: '',
-      overlayGraphic: '',
     },
     {
       title: 'Hashtag Hero',
-      description: 'Hashtags are a powerful tool for discovery on social media. Research relevant hashtags for your industry and target audience.\n\nUse a mix of popular and niche hashtags to increase your reach without getting lost in the noise.\n\nTrack which hashtags perform best and adapt your strategy accordingly.',
+      description:
+        'Hashtags are a powerful tool for discovery on social media. Research relevant hashtags for your industry and target audience.\n\nUse a mix of popular and niche hashtags to increase your reach without getting lost in the noise.\n\nTrack which hashtags perform best and adapt your strategy accordingly.',
       imageUrl: '/images/background3.png',
-      headshotUrl: '',
-      header: '',
       footer: 'bitrox.tech',
       socialHandle: '',
       websiteUrl: 'https://bitrox.tech',
       slideNumber: 4,
-      comment: '',
-      save: '',
-      like: '',
-      overlayGraphic: '',
     },
     {
       title: 'FOLLOW ME FOR MORE',
       description: '',
       imageUrl: '/images/background3.png',
-      headshotUrl: '',
-      header: '',
       footer: 'bitrox.tech',
       socialHandle: '@bitroxtech',
       websiteUrl: 'https://bitrox.tech',
       slideNumber: 5,
-      comment: '',
-      save: '',
-      like: '',
-      overlayGraphic: '',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const {
       logoColors,
       imageColors,
+      glowColor,
+      complementaryTextColor,
+      complementaryFooterColor,
       ensureContrast,
-      vibrantLogoColor,
-      vibrantTextColor,
-      footerColor,
       vibrantAccentColor,
       backgroundColor,
       typography,
@@ -2932,12 +2909,20 @@ export const Template2: CarouselTemplate = {
       materialTheme,
     } = colors;
 
-    // Fallback colors
-    const primaryColor = logoColors?.primary || materialTheme.primary;
-    const secondaryColor = logoColors?.secondary || materialTheme.secondary;
-    const accentColor = vibrantAccentColor || materialTheme.secondary;
-    const textColor = vibrantTextColor || ensureContrast(materialTheme.onSurface, backgroundColor);
-    const footerTextColor = footerColor || ensureContrast(materialTheme.onSecondary, backgroundColor);
+    // Validate colors with fallbacks
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : materialTheme.primary || '#4A90E2';
+    const secondaryColor = chroma.valid(logoColors?.secondary)
+      ? logoColors.secondary
+      : materialTheme.secondary || '#50E3C2';
+    const accentColor = chroma.valid(vibrantAccentColor)
+      ? vibrantAccentColor
+      : imageColors[0] || materialTheme.tertiary || '#F5A623';
+    const textColor = chroma.valid(complementaryTextColor)
+      ? complementaryTextColor
+      : ensureContrast(materialTheme.onSurface || '#000000', backgroundColor);
+    const footerTextColor = chroma.valid(complementaryFooterColor)
+      ? complementaryFooterColor
+      : ensureContrast(materialTheme.onSecondary || '#000000', backgroundColor);
 
     // Responsive layout adjustments
     const hasDescription = !!slide.description;
@@ -2954,6 +2939,7 @@ export const Template2: CarouselTemplate = {
           backgroundPosition: 'center',
           fontFamily: typography.fontFamily,
           fontWeight: typography.fontWeight,
+          boxShadow: `0 0 20px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect for slide
         }}
       >
         {/* Background Overlay */}
@@ -2964,16 +2950,17 @@ export const Template2: CarouselTemplate = {
           }}
         />
 
-        {/* Logo (Top-Right, no background modification) */}
+        {/* Logo (Top-Right) */}
         {addLogo && (
           <img
             src={defaultLogoUrl}
             alt="Logo"
-            className="absolute top-20 right-16 w-48 h-24 object-contain z-30" // Increased top-20 for visibility
+            className="absolute top-20 right-16 w-48 h-24 object-contain z-30"
             style={{
               borderRadius: graphicStyle.borderRadius,
-              boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+              boxShadow: `0 4px 12px ${chroma(glowColor).alpha(0.7).css()}`, // Glow effect
             }}
+            onError={() => console.warn(`Failed to load logo: ${defaultLogoUrl}`)}
           />
         )}
 
@@ -2988,7 +2975,7 @@ export const Template2: CarouselTemplate = {
             style={{
               color: textColor,
               fontSize: typography.fontSize,
-              textShadow: `0 2px 4px ${chroma(textColor).alpha(0.5).css()}`,
+              textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
             }}
           >
             {slide.title}
@@ -3002,7 +2989,7 @@ export const Template2: CarouselTemplate = {
               style={{
                 color: textColor,
                 fontSize: `calc(${typography.fontSize} * 0.6)`,
-                textShadow: `0 2px 4px ${chroma(textColor).alpha(0.5).css()}`,
+                textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
               }}
             >
               {slide.description}
@@ -3018,7 +3005,7 @@ export const Template2: CarouselTemplate = {
               'bg-white text-gray-800 hover:bg-gray-200': true,
             })}
             style={{
-              boxShadow: `0 4px 12px ${chroma(accentColor).alpha(0.3).css()}`,
+              boxShadow: `0 4px 12px ${chroma(glowColor).alpha(0.3).css()}`, // Glow effect
               borderRadius: graphicStyle.borderRadius,
             }}
           >
@@ -3036,10 +3023,22 @@ export const Template2: CarouselTemplate = {
           {/* Social Handle (Left Side, Slide 5 Only) */}
           {slide.slideNumber === 5 && slide.socialHandle && (
             <div className="absolute left-16 bottom-16 flex flex-col items-start">
-              <h3 className="text-3xl font-bold text-left" style={{ color: accentColor }}>
+              <h3
+                className="text-3xl font-bold text-left"
+                style={{
+                  color: footerTextColor,
+                  textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
+                }}
+              >
                 {slide.socialHandle.replace('@', '')}
               </h3>
-              <p className="text-2xl text-left" style={{ color: accentColor }}>
+              <p
+                className="text-2xl text-left"
+                style={{
+                  color: footerTextColor,
+                  textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
+                }}
+              >
                 {slide.socialHandle}
               </p>
             </div>
@@ -3047,10 +3046,23 @@ export const Template2: CarouselTemplate = {
 
           {/* Website URL (Left) and Footer (Right) */}
           <div className="w-full flex justify-between items-center">
-            <a href={slide.websiteUrl} className="text-2xl hover:underline" style={{ color: footerTextColor }}>
+            <a
+              href={slide.websiteUrl}
+              className="text-2xl hover:underline"
+              style={{
+                color: footerTextColor,
+                textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
+              }}
+            >
               {slide.websiteUrl}
             </a>
-            <span className="text-2xl" style={{ color: footerTextColor }}>
+            <span
+              className="text-2xl"
+              style={{
+                color: footerTextColor,
+                textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
+              }}
+            >
               {slide.footer}
             </span>
           </div>
@@ -3062,8 +3074,9 @@ export const Template2: CarouselTemplate = {
             className="text-2xl font-bold px-6 py-3 rounded-full"
             style={{
               backgroundColor: accentColor,
-              color: ensureContrast(materialTheme.onSecondary, accentColor),
+              color: ensureContrast(materialTheme.onSecondary || '#000000', accentColor),
               borderRadius: graphicStyle.borderRadius,
+              boxShadow: `0 4px 12px ${chroma(glowColor).alpha(0.3).css()}`, // Glow effect
             }}
           >
             {`0${slide.slideNumber}`}
@@ -3072,7 +3085,14 @@ export const Template2: CarouselTemplate = {
 
         {/* Geometric Shape (Bottom-Right) */}
         <div className="absolute bottom-0 right-0 w-1/2 h-1/2 pointer-events-none">
-          <svg viewBox="0 0 500 500" className="w-full h-full fill-current opacity-50" style={{ fill: accentColor }}>
+          <svg
+            viewBox="0 0 500 500"
+            className="w-full h-full fill-current opacity-50"
+            style={{
+              fill: accentColor,
+              filter: `drop-shadow(0 0 10px ${chroma(glowColor).alpha(0.5).css()})`, // Glow effect
+            }}
+          >
             <polygon points="0,500 500,500 0,0" />
           </svg>
         </div>

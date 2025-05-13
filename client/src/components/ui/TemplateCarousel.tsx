@@ -1,21 +1,70 @@
 // src/components/ui/TemplateCarousel.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Swiper, SwiperSlide, SwiperRef } from 'swiper/react';
-import { Navigation, Pagination, EffectFade, Autoplay } from 'swiper/modules';
-import { Swiper as SwiperCore } from 'swiper';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
-import 'swiper/css/effect-fade';
-import html2canvas from 'html2canvas';
 import { useNavigate } from 'react-router-dom';
-import { carouselTemplates, Slide, CarouselTemplate } from '../../templetes/templetesDesign';
-import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, Image as ImageIcon, Upload, Settings } from 'lucide-react';
+import { carouselTemplates, Slide, CarouselTemplate, Colors } from '../../templetes/templetesDesign';
+import { ArrowLeft, Loader2, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import chroma from 'chroma-js';
+
+// Default Colors from Template2
+const defaultColors: Colors = {
+  logoColors: {
+    primary: '#4A90E2',
+    secondary: '#50E3C2',
+    accent: ['#50E3C2', '#F5A623'],
+  },
+  imageColors: ['#4A90E2', '#50E3C2'],
+  glowColor: '#FF5733',
+  complementaryTextColor: '#FFFFFF',
+  complementaryFooterColor: '#E0E0E0',
+  ensureContrast: (color1: string, color2: string, minContrast: number = 4.5) => {
+    try {
+      if (!chroma.valid(color1) || !chroma.valid(color2)) {
+        return '#FFFFFF';
+      }
+      const contrast = chroma.contrast(color1, color2);
+      if (contrast < minContrast) {
+        const adjusted = chroma(color1).luminance(contrast < minContrast ? 0.7 : 0.3).hex();
+        return chroma.contrast(adjusted, color2) >= minContrast ? adjusted : '#FFFFFF';
+      }
+      return color1;
+    } catch (error) {
+      console.warn(`ensureContrast error: ${error}`);
+      return '#FFFFFF';
+    }
+  },
+  vibrantLogoColor: '#4A90E2',
+  vibrantTextColor: '#FFFFFF',
+  footerColor: '#50E3C2',
+  vibrantAccentColor: '#F5A623',
+  backgroundColor: '#FFFFFF',
+  typography: {
+    fontFamily: 'Roboto, sans-serif',
+    fontWeight: 500,
+    fontSize: '2.5rem',
+  },
+  graphicStyle: {
+    borderRadius: '8px',
+    iconStyle: 'sharp',
+    filter: 'none',
+  },
+  materialTheme: {
+    primary: '#4A90E2',
+    secondary: '#50E3C2',
+    tertiary: '#F5A623',
+    background: '#FFFFFF',
+    surface: '#F5F5F5',
+    onPrimary: '#FFFFFF',
+    onSecondary: '#000000',
+    onBackground: '#000000',
+    onSurface: '#000000',
+  },
+};
 
 interface ExtendedCarouselTemplate extends CarouselTemplate {
   coverImage: string;
+  colors: Colors; // Use proper Colors interface
 }
 
 interface TemplateCarouselProps {
@@ -29,7 +78,8 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
   const [topic] = useState<string>(initialTopic);
   const [selectedTemplate, setSelectedTemplate] = useState<ExtendedCarouselTemplate>({
     ...carouselTemplates[0],
-    coverImage: carouselTemplates[0].slides[0]?.imageUrl || '/images/default-cover.jpg',
+    coverImage: carouselTemplates[0].coverImageUrl || '/images/default-cover.jpg',
+    colors: defaultColors, // Use defaultColors
   });
   const [slides, setSlides] = useState<Slide[]>(selectedTemplate.slides);
   const [loading, setLoading] = useState<boolean>(false);
@@ -37,35 +87,30 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
   const [editedSlides, setEditedSlides] = useState<Slide[]>([...slides]);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [addLogo, setAddLogo] = useState<boolean>(true);
-  const [platform, setPlatform] = useState<'instagram' | 'facebook'>('instagram');
-  const defaultLogoUrl = '/images/Logo.png' 
-  const swiperRef = useRef<SwiperRef>(null);
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const defaultLogoUrl = '/images/Logo.png';
+  const slideRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
 
   const extendedTemplates: ExtendedCarouselTemplate[] = carouselTemplates.map((template) => ({
     ...template,
     coverImage: template.coverImageUrl || '/images/default-cover.jpg',
+    colors: defaultColors, // Use defaultColors for all templates
   }));
 
-  // Log Swiper position for debugging
   useEffect(() => {
-    if (swiperRef.current && swiperRef.current.swiper && swiperRef.current.swiper.el) {
-      const swiperEl = swiperRef.current.swiper.el as HTMLElement;
-      console.log('Swiper Position:', {
-        top: swiperEl.offsetTop,
-        height: swiperEl.offsetHeight,
-        width: swiperEl.offsetWidth,
+    if (slideRef.current) {
+      console.log('Slide Position:', {
+        top: slideRef.current.offsetTop,
+        height: slideRef.current.offsetHeight,
+        width: slideRef.current.offsetWidth,
       });
     }
-  }, [loading, editMode]);
+  }, [loading, editMode, activeIndex]);
 
-  // Log selectedTemplate for debugging
   useEffect(() => {
     console.log('Selected Template:', {
       id: selectedTemplate.id,
       name: selectedTemplate.name,
-      colors: selectedTemplate.colors,
       slidesCount: selectedTemplate.slides.length,
     });
   }, [selectedTemplate]);
@@ -78,7 +123,8 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
       await Promise.all(newSlides.map(preloadSlideImages));
       setSlides(newSlides);
       setEditedSlides([...newSlides]);
-      console.log('Selected Template:', template.id, 'Logo URL:', defaultLogoUrl);
+      setActiveIndex(0); // Reset to first slide
+      console.log('Selected Template:', template.id, 'Slides:', newSlides.length, newSlides);
     } catch (error) {
       console.error('Error loading template:', error);
     } finally {
@@ -86,66 +132,9 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
     }
   };
 
-  // const captureScreenshots = async (slidesToCapture: Slide[]) => {
-  //   const images: string[] = [];
-  //   for (let i = 0; i < slidesToCapture.length; i++) {
-  //     const slideElement = slideRefs.current[i];
-  //     if (!slideElement) continue;
-  //     await preloadSlideImages(slidesToCapture[i]);
-  //     const canvas = await html2canvas(slideElement, {
-  //       useCORS: true,
-  //       scale: 2,
-  //       backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
-  //     });
-  //     const image = canvas.toDataURL('image/png');
-  //     images.push(image);
-  //   }
-  //   return images;
-  // };
-
-  // const handleImageUpload = (index: number, field: keyof Slide, event: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = event.target.files?.[0];
-  //   if (file) {
-  //     const reader = new FileReader();
-  //     reader.onloadend = () => {
-  //       const newEditedSlides = [...editedSlides];
-  //       newEditedSlides[index] = { ...newEditedSlides[index], [field]: reader.result as string };
-  //       setEditedSlides(newEditedSlides);
-  //     };
-  //     reader.readAsDataURL(file);
-  //   }
-  // };
-
-  // const handleEditChange = (index: number, field: keyof Slide, value: string) => {
-  //   const newEditedSlides = [...editedSlides];
-  //   newEditedSlides[index] = { ...newEditedSlides[index], [field]: value };
-  //   setEditedSlides(newEditedSlides);
-  // };
-
-  // const handleSaveChanges = async () => {
-  //   setLoading(true);
-  //   try {
-  //     setSlides([...editedSlides]);
-  //     const updatedImages = await captureScreenshots(editedSlides);
-  //     if (onSave) {
-  //       onSave(editedSlides, updatedImages);
-  //     }
-  //     setEditMode(false);
-  //   } catch (error) {
-  //     console.error('Error saving changes:', error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const preloadSlideImages = async (slide: Slide) => {
     const images = [
       slide.imageUrl,
-      slide.headshotUrl,
-      slide.overlayGraphic,
-      slide.like,
-      slide.comment,
-      slide.save,
       addLogo ? defaultLogoUrl : '',
     ].filter(Boolean);
 
@@ -170,26 +159,48 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
   };
 
   const getSlideDimensions = () => {
-    const baseDimensions = platform === 'instagram' ? { width: 1080, height: 1080 } : { width: 1200, height: 1200 };
     return {
-      width: `${baseDimensions.width}px`,
-      height: `${baseDimensions.height}px`,
-      maxHeight: '80vh',
+      width: '1080px',
+      height: '1080px',
+      maxWidth: '100%',
       aspectRatio: '1 / 1',
     };
   };
 
-  // Error Boundary Component
-  class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
-    state = { hasError: false };
+  const handlePrevClick = () => {
+    setActiveIndex((prev) => {
+      const newIndex = prev === 0 ? slides.length - 1 : prev - 1;
+      console.log('Navigating to previous slide:', newIndex);
+      return newIndex;
+    });
+  };
 
-    static getDerivedStateFromError() {
-      return { hasError: true };
+  const handleNextClick = () => {
+    setActiveIndex((prev) => {
+      const newIndex = prev === slides.length - 1 ? 0 : prev + 1;
+      console.log('Navigating to next slide:', newIndex);
+      return newIndex;
+    });
+  };
+
+  class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
+    state = { hasError: false, error: null };
+
+    static getDerivedStateFromError(error: Error) {
+      return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+      console.error('ErrorBoundary caught:', error, errorInfo);
     }
 
     render() {
       if (this.state.hasError) {
-        return <div className="text-red-500 p-4">Something went wrong. Please try again.</div>;
+        return (
+          <div className="text-red-500 p-4">
+            Something went wrong: {this.state.error || 'Unknown error'}. Please try again.
+          </div>
+        );
       }
       return this.props.children;
     }
@@ -200,13 +211,13 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
       <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Left Sidebar */}
+            {/* Left Sidebar: All Templates */}
             <div
-              className={`lg:w-1/4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-xl p-6`}
+              className={`lg:w-1/4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-xl p-6 overflow-y-auto max-h-[80vh]`}
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  Templates
+                  All Templates
                 </h2>
                 <motion.button
                   onClick={() => navigate(-1)}
@@ -220,7 +231,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
                 </motion.button>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {extendedTemplates.map((template) => (
                   <motion.div
                     key={template.id}
@@ -263,19 +274,19 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
               </div>
             </div>
 
-            {/* Main Content */}
+            {/* Right Side: Selected Template Display */}
             <div className="lg:w-3/4 space-y-6">
               <div
-                className={`rounded-2xl shadow-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+                className={`rounded-2xl shadow-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} overflow-visible`}
               >
-                <div className="p-8">
+                <div className="p-8 min-h-[1080px]">
                   <div className="flex items-center justify-between mb-6">
                     <h2
                       className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
                     >
                       {selectedTemplate.name}
                     </h2>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 items-center">
                       <motion.button
                         onClick={() => setEditMode(!editMode)}
                         className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
@@ -289,6 +300,11 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
                         <Settings size={18} />
                         {editMode ? 'Preview' : 'Edit'}
                       </motion.button>
+                      <span
+                        className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}
+                      >
+                        Slide {activeIndex + 1} of {slides.length}
+                      </span>
                     </div>
                   </div>
 
@@ -298,7 +314,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="flex items-center justify-center h-[600px]"
+                        className="flex items-center justify-center min-h-[1080px]"
                       >
                         <Loader2
                           className={`w-12 h-12 animate-spin ${
@@ -306,227 +322,68 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
                           }`}
                         />
                       </motion.div>
+                    ) : slides.length === 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center justify-center min-h-[1080px] text-red-500"
+                      >
+                        No slides available for this template.
+                      </motion.div>
                     ) : (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="relative"
+                        className="relative flex justify-center"
                       >
-                        <Swiper
-                          ref={swiperRef}
-                          modules={[Navigation, Pagination, EffectFade, Autoplay]}
-                          effect="fade"
-                          navigation={{
-                            prevEl: '.swiper-button-prev',
-                            nextEl: '.swiper-button-next',
-                          }}
-                          pagination={{
-                            clickable: true,
-                            el: '.swiper-pagination',
-                          }}
-                          autoplay={{
-                            delay: 5000,
-                            disableOnInteraction: false,
-                          }}
-                          loop={true}
-                          onSlideChange={(swiper: SwiperCore) => setActiveIndex(swiper.realIndex)}
-                          className="rounded-xl"
-                        >
-                          {slides.map((slide, index) => (
-                            <SwiperSlide key={index}>
-                              <div
-                                ref={(el) => (slideRefs.current[index] = el)}
-                                style={{ ...getSlideDimensions(), margin: '0 auto' }}
-                                className="relative mx-auto"
-                              >
-                                {selectedTemplate.renderSlide(
-                                  editMode ? editedSlides[index] : slide,
-                                  addLogo,
-                                  defaultLogoUrl,
-                                  selectedTemplate.colors
-                                )}
-                              </div>
-                            </SwiperSlide>
-                          ))}
-                        </Swiper>
-
-                        <div
-                          className={`swiper-button-prev !hidden lg:!flex !left-0 !text-white ${
-                            theme === 'dark' ? '!bg-gray-700/50' : '!bg-gray-200/50'
-                          } !z-10`}
-                        >
-                          <ChevronLeft className="w-6 h-6" />
+                        <div className="relative">
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={activeIndex}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.3 }}
+                              ref={slideRef}
+                              style={{ ...getSlideDimensions(), margin: '0 auto' }}
+                              className="relative rounded-xl"
+                            >
+                              {selectedTemplate.renderSlide(
+                                editMode ? editedSlides[activeIndex] : slides[activeIndex],
+                                addLogo,
+                                defaultLogoUrl,
+                                selectedTemplate.colors
+                              )}
+                            </motion.div>
+                          </AnimatePresence>
+                          <motion.div
+                            className={`absolute top-1/2 -translate-y-1/2 left-4 flex items-center justify-center w-12 h-12 rounded-full ${
+                              theme === 'dark' ? 'bg-gray-700/70' : 'bg-gray-200/70'
+                            } z-20`}
+                            onClick={handlePrevClick}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <ChevronLeft className="w-8 h-8 text-white" />
+                          </motion.div>
+                          <motion.div
+                            className={`absolute top-1/2 -translate-y-1/2 right-4 flex items-center justify-center w-12 h-12 rounded-full ${
+                              theme === 'dark' ? 'bg-gray-700/70' : 'bg-gray-200/70'
+                            } z-20`}
+                            onClick={handleNextClick}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <ChevronRight className="w-8 h-8 text-white" />
+                          </motion.div>
                         </div>
-                        <div
-                          className={`swiper-button-next !hidden lg:!flex !right-0 !text-white ${
-                            theme === 'dark' ? '!bg-gray-700/50' : '!bg-gray-200/50'
-                          } !z-10`}
-                        >
-                          <ChevronRight className="w-6 h-6" />
-                        </div>
-                        <div
-                          className={`swiper-pagination !bottom-4 ${
-                            theme === 'dark' ? '!text-white' : '!text-gray-900'
-                          } !z-10`}
-                        ></div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
               </div>
-
-              {/* {editMode && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className={`rounded-2xl shadow-xl p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
-                >
-                  <h3
-                    className={`text-xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
-                  >
-                    Edit Slide {activeIndex + 1}
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <label
-                          className={`block text-sm font-medium mb-1 ${
-                            theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                          }`}
-                        >
-                          Title
-                        </label>
-                        <input
-                          type="text"
-                          value={editedSlides[activeIndex].title || ''}
-                          onChange={(e) => handleEditChange(activeIndex, 'title', e.target.value)}
-                          className={`w-full px-4 py-2 rounded-lg ${
-                            theme === 'dark'
-                              ? 'bg-gray-700 text-white border-gray-600'
-                              : 'bg-white text-gray-900 border-gray-300'
-                          } border focus:ring-2 focus:ring-blue-500`}
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          className={`block text-sm font-medium mb-1 ${
-                            theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                          }`}
-                        >
-                          Description
-                        </label>
-                        <textarea
-                          value={editedSlides[activeIndex].description || ''}
-                          onChange={(e) => handleEditChange(activeIndex, 'description', e.target.value)}
-                          rows={4}
-                          className={`w-full px-4 py-2 rounded-lg ${
-                            theme === 'dark'
-                              ? 'bg-gray-700 text-white border-gray-600'
-                              : 'bg-white text-gray-900 border-gray-300'
-                          } border focus:ring-2 focus:ring-blue-500`}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label
-                          className={`block text-sm font-medium mb-1 ${
-                            theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                          }`}
-                        >
-                          Background Image
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload(activeIndex, 'imageUrl', e)}
-                            className="hidden"
-                            id="background-image"
-                          />
-                          <label
-                            htmlFor="background-image"
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer ${
-                              theme === 'dark'
-                                ? 'bg-gray-700 text-white hover:bg-gray-600'
-                                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                            }`}
-                          >
-                            <Upload size={18} />
-                            Upload Image
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <label
-                          className={`text-sm font-medium ${
-                            theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                          }`}
-                        >
-                          Show Logo
-                        </label>
-                        <input
-                          type="checkbox"
-                          checked={addLogo}
-                          onChange={(e) => setAddLogo(e.target.checked)}
-                          className="w-5 h-5 rounded text-blue-500 focus:ring-blue-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          className={`block text-sm font-medium mb-1 ${
-                            theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-                          }`}
-                        >
-                          Platform
-                        </label>
-                        <select
-                          value={platform}
-                          onChange={(e) => setPlatform(e.target.value as 'instagram' | 'facebook')}
-                          className={`w-full px-4 py-2 rounded-lg ${
-                            theme === 'dark'
-                              ? 'bg-gray-700 text-white border-gray-600'
-                              : 'bg-white text-gray-900 border-gray-300'
-                          } border focus:ring-2 focus:ring-blue-500`}
-                        >
-                          <option value="instagram">Instagram (1080x1080)</option>
-                          <option value="facebook">Facebook (1200x1200)</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-4 mt-6">
-                    <motion.button
-                      onClick={() => setEditMode(false)}
-                      className={`px-4 py-2 rounded-lg ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 text-white hover:bg-gray-600'
-                          : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                      }`}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      Cancel
-                    </motion.button>
-                    <motion.button
-                      onClick={handleSaveChanges}
-                      className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      Save Changes
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )} */}
             </div>
           </div>
         </div>
@@ -534,7 +391,7 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
         {/* Inline CSS for Responsiveness */}
         <style>
           {`
-            @media (max-width: 768px) {
+            @media (max-width: 1024px) {
               .flex.lg\\:flex-row {
                 flex-direction: column;
               }
@@ -546,19 +403,22 @@ export const TemplateCarousel: React.FC<TemplateCarouselProps> = ({ initialTopic
               .lg\\:w-3\\/4 {
                 width: 100%;
               }
-              .swiper {
-                max-height: 60vh;
-              }
-              .swiper-slide > div {
-                transform: scale(0.9); /* Adjusted scale to keep logo visible */
-                margin: 0 auto;
+              .relative.rounded-xl {
+                transform: scale(0.85);
+                margin: 16px auto;
               }
             }
-            .swiper-button-prev, .swiper-button-next {
-              z-index: 10 !important;
+            @media (max-width: 768px) {
+              .relative.rounded-xl {
+                transform: scale(0.7);
+                margin: 24px auto;
+              }
             }
-            .swiper-pagination {
-              z-index: 10 !important;
+            .relative.rounded-xl {
+              overflow: visible !important;
+            }
+            .min-h-\\32 1080px\\33  {
+              min-height: 1080px !important;
             }
           `}
         </style>

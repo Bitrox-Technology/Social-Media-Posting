@@ -327,7 +327,7 @@ const generateCode = async (input, file) => {
     }
   });
    
-  console.log("Response", response)
+  console.log("Response", response.message.content)
   // Extract and return the generated code
   const generatedCode = response.message.content;
 
