@@ -9,6 +9,7 @@ import { ArrowLeft, Type, Settings2, Layout, Save } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import chroma from 'chroma-js';
 
 interface ExtendedDoYouKnowTemplate {
   id: string;
@@ -25,6 +26,60 @@ interface DoYouKnowTemplateSelectorProps {
   onSave?: (updatedSlide: DoYouKnowSlide, imageUrl: string) => void;
 }
 
+const defaultColors: Colors =  {
+  logoColors: {
+    primary: '#4A90E2',
+    secondary: '#50E3C2',
+    accent: ['#50E3C2', '#F5A623'],
+  },
+  imageColors: ['#4A90E2', '#50E3C2'],
+  glowColor: '#FF5733', // Default complementary color
+  complementaryTextColor: '#FFFFFF',
+  complementaryFooterColor: '#E0E0E0',
+  ensureContrast: (color1: string, color2: string, minContrast: number = 4.5) => {
+    try {
+      if (!chroma.valid(color1) || !chroma.valid(color2)) {
+        return '#FFFFFF';
+      }
+      const contrast = chroma.contrast(color1, color2);
+      if (contrast < minContrast) {
+        const adjusted = chroma(color1).luminance(contrast < minContrast ? 0.7 : 0.3).hex();
+        return chroma.contrast(adjusted, color2) >= minContrast ? adjusted : '#FFFFFF';
+      }
+      return color1;
+    } catch (error) {
+      console.warn(`ensureContrast error: ${error}`);
+      return '#FFFFFF';
+    }
+  },
+  vibrantLogoColor: '#4A90E2',
+  vibrantTextColor: '#FFFFFF',
+  footerColor: '#50E3C2',
+  vibrantAccentColor: '#F5A623',
+  backgroundColor: '#FFFFFF',
+  typography: {
+    fontFamily: 'Roboto, sans-serif',
+    fontWeight: 500,
+    fontSize: '2.5rem',
+  },
+  graphicStyle: {
+    borderRadius: '8px',
+    iconStyle: 'sharp',
+    filter: 'none',
+  },
+  materialTheme: {
+    primary: '#4A90E2',
+    secondary: '#50E3C2',
+    tertiary: '#F5A623',
+    background: '#FFFFFF',
+    surface: '#F5F5F5',
+    onPrimary: '#FFFFFF',
+    onSecondary: '#000000',
+    onBackground: '#000000',
+    onSurface: '#000000',
+  },
+};
+
 export const DoYouKnowTemplateSelector: React.FC<DoYouKnowTemplateSelectorProps> = ({
   initialTopic = '',
   generatedImageUrl,
@@ -36,10 +91,12 @@ export const DoYouKnowTemplateSelector: React.FC<DoYouKnowTemplateSelectorProps>
   const defaultLogoUrl = '/images/Logo1.png';
   const selectedIdea = useAppSelector((state) => state.app.selectedIdea);
 
+  
+
   const extendedTemplates: ExtendedDoYouKnowTemplate[] = doYouKnowTemplates.map((template) => ({
     ...template,
     coverImageUrl: template.coverImageUrl || '/images/default-cover.jpg',
-    colors: template.colors,
+    colors: template.colors ?? defaultColors,
   }));
 
   const [selectedTemplate, setSelectedTemplate] = useState<ExtendedDoYouKnowTemplate>(extendedTemplates[0]);

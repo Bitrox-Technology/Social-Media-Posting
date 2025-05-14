@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import { Calendar, Linkedin, Instagram, Facebook, Clock, Share2, CheckCircle } from 'lucide-react';
-import { useLazyAuthLinkedInQuery, useLazyGetSavePostsQuery } from '../../store/api';
+import { useLazyGetSavePostsQuery, useLazyAuthLinkedInQuery, useLazyGetUserAllPostsQuery } from '../../store/api';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -26,7 +26,8 @@ interface Post {
   contentType: string;
   topic: string;
   status: string;
-  type: string; // Added to fix TS error
+  postContentId: string;
+  type: string; // Added to support normalized type
 }
 
 interface Schedule {
@@ -40,13 +41,10 @@ const platformIcons = {
   facebook: <Facebook className="w-4 h-4" />,
 };
 
-export const SelectSocialMedia: React.FC = () => {
-  const location = useLocation();
+export const UserAllPosts: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [schedules, setSchedules] = useState<{ [postId: string]: Schedule }>({});
-  const { postContentId } = location.state || {};
-  const [getSavePosts, { data: rawPosts, isLoading, isError, error }] = useLazyGetSavePostsQuery();
+  const [getUserAllPosts, { data: rawPosts, isLoading, isError, error }] = useLazyGetUserAllPostsQuery();
   const [authLinkedIn] = useLazyAuthLinkedInQuery();
 
   // Map posts and normalize type
@@ -64,42 +62,23 @@ export const SelectSocialMedia: React.FC = () => {
   }
 
   useEffect(() => {
-    if (postContentId) {
-      getSavePosts({ postContentId });
-    }
-  }, [postContentId, getSavePosts]);
-
-  const handlePlatformSelect = (platform: string) => {
-    setSelectedPlatforms((prev) =>
-      prev.includes(platform) ? prev.filter((p) => p !== platform) : [...prev, platform]
-    );
-  };
-
-  const handleScheduleAll = () => {
-    if (!selectedPlatforms.length) {
-      alert('Please select at least one platform');
-      return;
-    }
-    const scheduledData = posts.map((post) => ({
-      postId: post._id,
-      topic: post.topic,
-      type: post.type,
-      platforms: selectedPlatforms,
-      dateTime: new Date().toISOString(),
-    }));
-    navigate('/dashboard');
-  };
+    // Fetch all posts for the user (assuming postContentId is optional or fetched differently)
+    getUserAllPosts(); // Modify based on your API; assuming it fetches all posts if postContentId is empty
+  }, [getUserAllPosts]);
 
   const handleScheduleSingle = (postId: string) => {
     const schedule = schedules[postId];
     if (!schedule?.platforms.length || !schedule.dateTime) {
-      alert('Please select platforms and a date/time');
+      alert('Please select at least one platform and a date/time');
       return;
     }
+    // Simulate scheduling (replace with actual API call)
+    console.log('Scheduling post:', { postId, ...schedule });
     setSchedules((prev) => ({
       ...prev,
       [postId]: { platforms: [], dateTime: null },
     }));
+    alert('Post scheduled successfully!');
   };
 
   const updateSchedule = (postId: string, platform: string, dateTime?: Date | null) => {
@@ -140,9 +119,7 @@ export const SelectSocialMedia: React.FC = () => {
 
   const renderPost = (post: Post) => {
     if (!post.images || !post.images.length) {
-      return (
-        <div className="text-center text-gray-400">No images available for this post.</div>
-      );
+      return <div className="text-center text-gray-400">No images available for this post.</div>;
     }
 
     if (post.type === 'carousel') {
@@ -203,8 +180,12 @@ export const SelectSocialMedia: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-12 text-center"
         >
-          Schedule Your Posts
+          Your Generated Posts
         </motion.h1>
+
+        {posts.length === 0 && (
+          <div className="text-center text-gray-400">No posts found.</div>
+        )}
 
         <AnimatePresence>
           <div className="space-y-8">
@@ -225,26 +206,26 @@ export const SelectSocialMedia: React.FC = () => {
                       <h2 className="text-2xl font-semibold text-white mb-4 text-center">
                         {post.topic}
                       </h2>
-                      {renderPost(post)}
-                      {/* <h3 className="text-xl font-medium text-gray-200 mb-2 text-center">
+                      <h3 className="text-xl font-medium text-gray-200 mb-2 text-center">
                         {post.title}
-                      </h3> */}
+                      </h3>
                       <p className="text-gray-400 text-sm mb-4 text-center">
                         {post.description}
                       </p>
                       <div className="flex flex-wrap justify-center gap-2 mb-4">
                         {post.hashtags.map((hashtag: string, index: number) => (
-                          <span
-                          key={index}
-                          className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full"
-                          >
-                          {hashtag}
-                          </span>
+                            <span
+                                key={index}
+                                className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full"
+                            >
+                                {hashtag}
+                            </span>
                         ))}
                       </div>
                       <p className="text-gray-500 text-sm mb-4 text-center">
                         Content Type: {post.contentType} | Status: {post.status}
                       </p>
+                      {renderPost(post)}
                     </div>
 
                     <div className="bg-gray-900/50 p-6 space-y-4">
@@ -277,7 +258,7 @@ export const SelectSocialMedia: React.FC = () => {
                           onChange={(date: Date | null) => updateSchedule(post._id, '', date)}
                           showTimeSelect
                           dateFormat="Pp"
-                          className="bg-gray-700 text-white rounded-lg px-4 py-2 w-full text-center"
+                          className="bg-gray-700 text-white rounded-lg px-4 py-2 w-full max-w-xs text-center"
                           placeholderText="Select date and time"
                           minDate={new Date()}
                         />
@@ -297,21 +278,6 @@ export const SelectSocialMedia: React.FC = () => {
             ))}
           </div>
         </AnimatePresence>
-
-        {posts.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-12 text-center"
-          >
-            <button
-              onClick={handleScheduleAll}
-              className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
-            >
-              Schedule All Posts
-            </button>
-          </motion.div>
-        )}
       </div>
     </div>
   );

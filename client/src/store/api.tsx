@@ -125,7 +125,7 @@ export const api = createApi({
         body,
       }),
     }),
-    signUp: builder.mutation<ApiResponse<any>, { email: string; password: string }>({
+    signUp: builder.mutation<ApiResponse<any>, { email: string; password: string; provider: string; uid: string }>({
       query: (body) => ({
         url: '/user/signup',
         method: 'POST',
@@ -170,7 +170,7 @@ export const api = createApi({
         body,
       }),
     }),
-    signIn: builder.mutation<ApiResponse<any>, { email: string; password: string }>({
+    signIn: builder.mutation<ApiResponse<any>, { email: string; password: string; provider: string; uid: string  }>({
       query: (body) => ({
         url: '/user/signin',
         method: 'POST',
@@ -306,6 +306,22 @@ export const api = createApi({
         body,
       }),
     }),
+    updatePostTopicStatus: builder.mutation<ApiResponse<any>, {postTopicId: string; status: string }>({
+      query: ({postTopicId,...body }) => ({
+        url: `/user/update-post-topic/${postTopicId}`,
+        method: 'PUT',
+        body,
+      }),
+    }),
+    
+    getUserAllPosts: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: `/user/get-all-posts`,
+        method: 'GET',
+      
+      }),
+    }),
+    
     authLinkedIn: builder.query<ApiResponse<any>, void>({
       query: () => ({
         url: '/social/linkedin/auth',
@@ -355,5 +371,7 @@ export const {
   useLazyGetUserProfileQuery,
   useLazyAuthLinkedInQuery,
   useLazyGetPendingPostsQuery,
-  useGenerateCodeMutation
+  useGenerateCodeMutation,
+  useUpdatePostTopicStatusMutation,
+  useLazyGetUserAllPostsQuery
 } = api;

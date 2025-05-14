@@ -192,7 +192,6 @@ const UpdatePost = async (req, res, next) => {
     }
 }
 
-
 const GetPendingTopics = async (req, res, next) => {
     try {
         let user = await UserServices.getPendingTopics(req.user)
@@ -202,9 +201,26 @@ const GetPendingTopics = async (req, res, next) => {
     }
 }
 
+const UpdatePostTopicsStatus = async (req, res, next) => {
+    try {
+        let user = await UserServices.updatePostTopics(req.params.posttopicid, req.user, req.body)
+        return res.status(OK).json(new ApiResponse(OK, user, "Status Update Successfully"))
+    } catch (error) {
+        next(error)
+    }
+}
+
+const GetUserAllPosts = async(req, res, next) => {
+     try {
+        let user = await UserServices.getUserAllPosts(req.user)
+        return res.status(OK).json(new ApiResponse(OK, user, "Posts fetched Successfully"))
+    } catch (error) {
+        next(error)
+    }
+}
 const UserControllers = {
-    Signup, VerifyOTP, ResendOTP, UserDetails,
-    ForgetPassword, Logout, GetPendingTopics,
+    Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus,
+    ForgetPassword, Logout, GetPendingTopics, GetUserAllPosts,
     Login, SavePosts, PostContent, GetPostContent, SaveImageContent,
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts,
     GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile

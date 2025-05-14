@@ -8,10 +8,13 @@ import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { signInWithPopup } from 'firebase/auth';
+import { appleProvider, auth, googleProvider } from '../../Utilities/firebase';
 
 export const SignIn = () => {
   const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [signIn] = useSignInMutation();
   const navigate = useNavigate();
 
@@ -27,7 +30,7 @@ export const SignIn = () => {
 
   const handleSubmit = async (values: typeof initialValues, { setSubmitting, setErrors }: any) => {
     try {
-      const response = await signIn(values).unwrap();
+      const response = await signIn({email: values.email, password: values.password, provider: "", uid: ""}).unwrap();
       if (response.success) {
         toast.success('Signed in successfully!', {
           position: 'bottom-right',
@@ -37,7 +40,7 @@ export const SignIn = () => {
           pauseOnHover: true,
           draggable: true,
         });
-        setTimeout(() => {navigate('/dashboard');}, 2000);
+        setTimeout(() => { navigate('/dashboard'); }, 2000);
       }
     } catch (err: any) {
       const errorMessage = err?.data?.message || 'Invalid credentials';
@@ -54,18 +57,97 @@ export const SignIn = () => {
     setSubmitting(false);
   };
 
+  const handleGoogleSignIn = async () => {
+    if (isSocialLoading) return;
+    setIsSocialLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const response = await signIn({
+        email: user.email ?? "",
+        password: '',
+        provider: 'google',
+        uid: user.uid,
+      }).unwrap();
+
+      if (response.success) {
+        toast.success('Signed in successfully!', {
+          position: 'bottom-right',
+          autoClose: 3000,
+        });
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      let errorMessage = 'Google sign-in failed.';
+      if (typeof error === 'object' && error !== null && 'code' in error && 'message' in error) {
+        const err = error as { code?: string; message?: string };
+        errorMessage = err.code === 'auth/popup-closed-by-user'
+          ? 'Sign-in cancelled. Please try again.'
+          : err.message || 'Google sign-in failed.';
+      }
+      toast.error(errorMessage, {
+        position: 'bottom-right',
+        autoClose: 3000,
+      });
+    } finally {
+      setIsSocialLoading(false);
+    }
+  };
+
+  // Handle Apple Sign-In
+  const handleAppleSignIn = async () => {
+    if (isSocialLoading) return;
+    setIsSocialLoading(true);
+    try {
+      const result = await signInWithPopup(auth, appleProvider);
+      const user = result.user;
+      const response = await signIn({
+        email: user.email ?? "",
+        password: '',
+        provider: 'apple',
+        uid: user.uid,
+      }).unwrap();
+
+      if (response.success) {
+        toast.success('Signed in successfully!', {
+          position: 'bottom-right',
+          autoClose: 3000,
+        });
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Apple sign-in error:', error);
+      let errorMessage = 'Apple sign-in failed.';
+      if (typeof error === 'object' && error !== null && 'code' in error && 'message' in error) {
+        const err = error as { code?: string; message?: string };
+        errorMessage = err.code === 'auth/popup-closed-by-user'
+          ? 'Sign-in cancelled. Please try again.'
+          : err.message || 'Apple sign-in failed.';
+      }
+      toast.error(errorMessage, {
+        position: 'bottom-right',
+        autoClose: 3000,
+      });
+    } finally {
+      setIsSocialLoading(false);
+    }
+  };
+
   return (
     <div
-      className={`min-h-screen flex items-center justify-center p-4 ${
-        theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
-      }`}
+      className={`min-h-screen flex items-center justify-center p-4 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
+        }`}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`max-w-md w-full space-y-8 p-8 rounded-2xl shadow-lg ${
-          theme === 'dark' ? 'bg-gray-800/80 text-white' : 'bg-white text-gray-900'
-        } border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
+        className={`max-w-md w-full space-y-8 p-8 rounded-2xl shadow-lg ${theme === 'dark' ? 'bg-gray-800/80 text-white' : 'bg-white text-gray-900'
+          } border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
       >
         <div className="text-center">
           <h2 className="text-3xl font-bold">Welcome Back</h2>
@@ -74,21 +156,23 @@ export const SignIn = () => {
 
         <div className="grid grid-cols-2 gap-4">
           <button
-            className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${
-              theme === 'dark'
+            onClick={handleAppleSignIn}
+            disabled={isSocialLoading}
+            className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${theme === 'dark'
                 ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-white'
                 : 'border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-900'
-            }`}
+              } disabled:opacity-50`}
           >
             <Apple className="w-5 h-5 mr-2" />
             Apple
           </button>
           <button
-            className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${
-              theme === 'dark'
+            onClick={handleGoogleSignIn}
+            disabled={isSocialLoading}
+            className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${theme === 'dark'
                 ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-white'
                 : 'border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-900'
-            }`}
+              } disabled:opacity-50`}
           >
             <Mail className="w-5 h-5 mr-2" />
             Google
@@ -121,11 +205,10 @@ export const SignIn = () => {
                   <Field
                     type="email"
                     name="email"
-                    className={`mt-1 block w-full px-4 py-3 rounded-lg transition-colors ${
-                      theme === 'dark'
+                    className={`mt-1 block w-full px-4 py-3 rounded-lg transition-colors ${theme === 'dark'
                         ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                         : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'
-                    } focus:ring-2 focus:ring-primary focus:border-transparent`}
+                      } focus:ring-2 focus:ring-primary focus:border-transparent`}
                     placeholder="you@example.com"
                   />
                   <ErrorMessage name="email" component="p" className="mt-1 text-sm text-red-400" />
@@ -139,11 +222,10 @@ export const SignIn = () => {
                     <Field
                       type={showPassword ? 'text' : 'password'}
                       name="password"
-                      className={`block w-full px-4 py-3 rounded-lg transition-colors ${
-                        theme === 'dark'
+                      className={`block w-full px-4 py-3 rounded-lg transition-colors ${theme === 'dark'
                           ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                           : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'
-                      } focus:ring-2 focus:ring-primary focus:border-transparent`}
+                        } focus:ring-2 focus:ring-primary focus:border-transparent`}
                       placeholder="••••••••"
                     />
                     <button
@@ -162,9 +244,8 @@ export const SignIn = () => {
                 <div className="flex items-center">
                   <input
                     type="checkbox"
-                    className={`h-4 w-4 rounded focus:ring-primary ${
-                      theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'
-                    }`}
+                    className={`h-4 w-4 rounded focus:ring-primary ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'
+                      }`}
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm">
                     Remember me
@@ -184,11 +265,10 @@ export const SignIn = () => {
               <motion.button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full flex justify-center items-center px-4 py-3 font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                  theme === 'dark'
+                className={`w-full flex justify-center items-center px-4 py-3 font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${theme === 'dark'
                     ? 'bg-gray-700 border border-primary hover:bg-gray-600 text-white focus:ring-offset-gray-800'
                     : 'bg-gray-100 border border-primary hover:bg-gray-200 text-gray-900 focus:ring-offset-gray-100'
-                } disabled:opacity-50`}
+                  } disabled:opacity-50`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

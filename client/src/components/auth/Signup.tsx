@@ -9,6 +9,9 @@ import { useTheme } from '../../context/ThemeContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import {auth, googleProvider, appleProvider } from "../../Utilities/firebase"
+import {signInWithPopup  } from "firebase/auth"
+
 export const SignUp = () => {
   const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +40,7 @@ export const SignUp = () => {
 
   const handleSubmit = async (values: typeof initialValues, { setSubmitting, setErrors }: any) => {
     try {
-      const response = await signUp({ email: values.email, password: values.password }).unwrap();
+      const response = await signUp({ email: values.email, password: values.password, provider: "", uid: "" }).unwrap();
       if (response.success) {
         toast.success('Signup successful! Please verify your OTP.', {
           position: 'bottom-right',
@@ -65,7 +68,67 @@ export const SignUp = () => {
     }
     setSubmitting(false);
   };
+  
 
+  const handleGoogleSignUp = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log(result)
+      const user = result.user;
+
+      console.log(result)
+      // Optionally, send user data to your backend
+      const response = await signUp({
+        email: user.email ?? "",
+        provider: 'google',
+        password: "" ,
+        uid: user.uid,
+      }).unwrap();
+
+      if (response.success) {
+        toast.success('Google sign-up successful!', {
+          position: 'bottom-right',
+          autoClose: 3000,
+        });
+       setTimeout (() => {navigate('/otp-verification', { state: { email: response.data.email } });}, 2000); 
+      }
+    } catch (error) {
+      const errorMessage = (error as any)?.message || 'Google sign-up failed.';
+      toast.error(errorMessage, {
+        position: 'bottom-right',
+        autoClose: 3000,
+      });
+    }
+  };
+
+  // Handle Apple Sign-Up (Placeholder)
+  const handleAppleSignUp = async () => {
+    try {
+      const result = await signInWithPopup(auth, appleProvider);
+      const user = result.user;
+      // Optionally, send user data to your backend
+      const response = await signUp({
+        email: user.email ?? "",
+        provider: 'apple',
+        password: "",
+        uid: user.uid,
+      }).unwrap();
+
+      if (response.success) {
+        toast.success('Apple sign-up successful!', {
+          position: 'bottom-right',
+          autoClose: 3000,
+        });
+       setTimeout (() => {navigate('/otp-verification', { state: { email: response.data.email } });}, 2000); 
+      }
+    } catch (error) {
+      const errorMessage =  (error as any)?.message  || 'Apple sign-up failed.';
+      toast.error(errorMessage, {
+        position: 'bottom-right',
+        autoClose: 3000,
+      });
+    }
+  };
   return (
     <div
       className={`min-h-screen flex items-center justify-center p-4 ${
@@ -85,7 +148,8 @@ export const SignUp = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <button
+         <button
+            onClick={handleAppleSignUp}
             className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${
               theme === 'dark'
                 ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-white'
@@ -96,9 +160,10 @@ export const SignUp = () => {
             Apple
           </button>
           <button
+            onClick={handleGoogleSignUp}
             className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${
               theme === 'dark'
-                ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-white'
+                ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-white '
                 : 'border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-900'
             }`}
           >

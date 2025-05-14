@@ -15,7 +15,7 @@ import { uploadOnClodinary } from "../utils/cloudinary.js";
 const signup = async (inputs) => {
     let user;
     if (isEmail(inputs.email)) {
-        if (!inputs.password) throw new ApiError(BAD_REQUEST, "Password is required")
+        if (inputs.provider === "" && !inputs.password) throw new ApiError(BAD_REQUEST, "Password is required")
         inputs.password = await Hashed_Password(inputs.password)
         user = await User.findOne({
             email: inputs.email,
@@ -199,7 +199,7 @@ const postContent = async (inputs, user) => {
 }
 
 const getPendingTopics = async (user) => {
-    const postContent = await PostTopic.findOne({ userId: user._id})    
+    const postContent = await PostTopic.findOne({ userId: user._id })
     return postContent;
 }
 
@@ -214,7 +214,7 @@ const getPostContent = async (user, postcontentid) => {
         },
         {
             $lookup: {
-                from: 'users', 
+                from: 'users',
                 localField: 'userId',
                 foreignField: '_id',
                 as: 'userData'
@@ -298,30 +298,150 @@ const savePosts = async (inputs, user) => {
 
 const getSavePosts = async (postContentId, user) => {
 
-    console.log("postContentId", postContentId)
-    const posts = await SavePosts.find({ postContentId: postContentId, userId: user._id })
+    const topic = await PostTopic.findOne({ _id: postContentId, status: 'success', userId: user._id });
+    if (!topic) {
+        console.log('No topic found');
+        return [];
+    }
 
-    console.log("posts", posts)
-    return posts
+    // Find saved posts that match user, postContentId, topic, and one of the topics in PostTopic.topics
+    const savedPosts = await SavePosts.find({
+        postContentId: postContentId,
+        userId: user._id,
+        topic: { $in: topic.topics } // Match any topic from PostTopic.topics
+    });
+
+
+    // Array to store final results
+    const results = [];
+
+    // Process each saved post
+    for (const savedPost of savedPosts) {
+        let contentData = {};
+        // Fetch content based on contentType
+        if (savedPost.contentType === 'ImageContent') {
+            const content = await ImageContent.findById(savedPost.contentId, 'content hashtags');
+            if (content && content.content && content.hashtags) {
+                contentData = {
+                    title: content.content.title || '',
+                    description: content.content.description || '',
+                    hashtags: content.hashtags || []
+                };
+            }
+        } else if (savedPost.contentType === 'DYKContent') {
+            const content = await DYKContent.findById(savedPost.contentId, 'content hashtags');
+            if (content && content.content && content.hashtags) {
+                contentData = {
+                    title: content.content.title || '',
+                    description: content.content.fact || '', // Use fact as description for DYKContent
+                    hashtags: content.hashtags || []
+                };
+            }
+        } else if (savedPost.contentType === 'CarouselContent') {
+            const content = await CarouselContent.findById(savedPost.contentId, 'content');
+            if (content && content.content && content.content.length >= 6) {
+                // Extract title, description, hashtags from content[5] (sixth position)
+                contentData = {
+                    title: content.content[5].title || '',
+                    description: content.content[5].description || '',
+                    hashtags: content.content[5].hashtags || []
+                };
+            }
+        }
+
+        if (Object.keys(contentData).length > 0) {
+            results.push({
+                _id: savedPost._id,
+                images: savedPost.images || [], 
+                title: contentData.title,
+                description: contentData.description,
+                hashtags: contentData.hashtags,
+                contentType: savedPost.contentType,
+                topic: savedPost.topic || '', 
+                status: savedPost.status || ''
+            });
+        }
+    }
+
+    return results;
 }
 
+
+const getUserAllPosts = async(user) => {
+    const savedPosts = await SavePosts.find({
+        userId: user._id
+    });
+
+     const results = [];
+
+    // Process each saved post
+    for (const savedPost of savedPosts) {
+        let contentData = {};
+        // Fetch content based on contentType
+        if (savedPost.contentType === 'ImageContent') {
+            const content = await ImageContent.findById(savedPost.contentId, 'content hashtags');
+            if (content && content.content && content.hashtags) {
+                contentData = {
+                    title: content.content.title || '',
+                    description: content.content.description || '',
+                    hashtags: content.hashtags || []
+                };
+            }
+        } else if (savedPost.contentType === 'DYKContent') {
+            const content = await DYKContent.findById(savedPost.contentId, 'content hashtags');
+            if (content && content.content && content.hashtags) {
+                contentData = {
+                    title: content.content.title || '',
+                    description: content.content.fact || '', // Use fact as description for DYKContent
+                    hashtags: content.hashtags || []
+                };
+            }
+        } else if (savedPost.contentType === 'CarouselContent') {
+            const content = await CarouselContent.findById(savedPost.contentId, 'content');
+            if (content && content.content && content.content.length >= 6) {
+                contentData = {
+                    title: content.content[5].title || '',
+                    description: content.content[5].description || '',
+                    hashtags: content.content[5].hashtags || []
+                };
+            }
+        }
+
+        if (Object.keys(contentData).length > 0) {
+            results.push({
+                _id: savedPost._id,
+                images: savedPost.images || [], 
+                title: contentData.title,
+                description: contentData.description,
+                hashtags: contentData.hashtags,
+                contentType: savedPost.contentType,
+                topic: savedPost.topic || '', 
+                status: savedPost.status || '',
+                type: savedPost.type || ''
+            });
+        }
+    }
+
+    return results;
+
+}
 const getImageContent = async (contentId, user) => {
 
-    let content = await ImageContent.findOne({ _id: contentId })
+    let content = await ImageContent.findOne({ _id: contentId, userId: user._id })
     if (!content) throw new ApiError(BAD_REQUEST, "No content found")
     return content;
 }
 
 const getCarouselContent = async (contentId, user) => {
 
-    let content = await CarouselContent.findOne({ _id: contentId })
+    let content = await CarouselContent.findOne({ _id: contentId,  userId: user._id  })
     if (!content) throw new ApiError(BAD_REQUEST, "No content found")
     return content;
 }
 
 const getDYKContent = async (contentId, user) => {
 
-    let content = await DYKContent.findOne({ _id: contentId })
+    let content = await DYKContent.findOne({ _id: contentId, userId: user._id  })
     if (!content) throw new ApiError(BAD_REQUEST, "No content found")
     return content;
 }
@@ -335,6 +455,15 @@ const updatePost = async (postId, user, inputs) => {
     return update;
 }
 
+const updatePostTopics = async (postId, user, inputs) => {
+    let update;
+    update = await PostTopic.findByIdAndUpdate({ _id: postId, userId: user._id }, { status: inputs.status }, { new: true })
+    if (!update) throw new ApiError(BAD_REQUEST, "Unable to update Status")
+
+    update = await PostTopic.findById({ _id: update._id })
+    return update
+
+}
 
 const UserServices = {
     signup,
@@ -356,6 +485,8 @@ const UserServices = {
     updatePost,
     userDetails,
     getUserProfile,
-    getPendingTopics
+    getPendingTopics,
+    updatePostTopics,
+    getUserAllPosts
 }
 export default UserServices;

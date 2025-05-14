@@ -1,6 +1,6 @@
 import React from 'react';
 import { imageTemplates } from '../templetes/ImageTemplate';
-import { carouselTemplates, Slide } from '../templetes/templetesDesign';
+import { carouselTemplates, Slide, defaultColors } from '../templetes/templetesDesign';
 import { doYouKnowTemplates, DoYouKnowSlide } from '../templetes/doYouKnowTemplates';
 import { useGenerateImageContentMutation, useImageContentMutation, useGenerateImageMutation, useSavePostsMutation, useUploadImageToCloudinaryMutation, useGenerateCarouselMutation, useCarouselContentMutation, useUploadCarouselToCloudinaryMutation, useGenerateDoYouKnowMutation, useDykContentMutation } from '../store/api';
 import { ImageContent, Post, CarouselContent } from '../components/content/AutoPost/Types';
@@ -254,14 +254,17 @@ export const generateImagePost = async (
     const generatedContent = contentRes.data;
     console.log('Generated content:', generatedContent);
 
-    const imageUrl = 'https://res.cloudinary.com/deuvfylc5/image/upload/v1747125324/hdwulgzqmmmqtpxzsuoh.png';
+    const imageUrl = await mutations.generateImage({prompt: topic}).unwrap();
+    console.log("Generated Image: ", imageUrl.data)
+
+    // const imageUrl = 'https://res.cloudinary.com/deuvfylc5/image/upload/v1747125324/hdwulgzqmmmqtpxzsuoh.png';
 
     const newImageSlide: ImageContent = {
       title: generatedContent.title || randomTemplate.slides[0].title || 'Default Title',
       description: generatedContent.description || randomTemplate.slides[0].description || 'Default Description',
       footer: randomTemplate.slides[0].footer || 'bitrox.tech',
       websiteUrl: randomTemplate.slides[0].websiteUrl || 'https://bitrox.tech',
-      imageUrl: imageUrl,
+      imageUrl: imageUrl.data,
     };
 
     // Save image content
@@ -365,7 +368,7 @@ export const generateImagePost = async (
       tempRoot.render(
         <ColorExtractor
           logoUrl={userLogo || '/images/Logo1.png'}
-          imageUrl={imageUrl}
+          imageUrl={imageUrl.data}
           onColorsExtracted={(extractedColors) => {
             console.log('Extracted Colors:', extractedColors);
             resolve(extractedColors);
@@ -555,42 +558,52 @@ export const generateDoYouKnowPost = async (
   },
   showAlert: ReturnType<typeof useAlert>['showAlert'],
   userLogo?: string,
-  brandStyle: BrandStyle = 'Modern',
-  competitorImageUrl?: string
+  brandStyle: BrandStyle = 'Modern'
 ): Promise<Post> => {
   let newPost: Post;
   let screenshotUrl: string | undefined;
+  let tempContainerColor: HTMLDivElement | null = null;
+  let tempContainerDYK: HTMLDivElement | null = null;
+  let tempRootColor: ReturnType<typeof createRoot> | null = null;
+  let tempRootDYK: ReturnType<typeof createRoot> | null = null;
 
   try {
-    console.log(`Generating Do You Know post with topic: ${topic}, postContentId: ${postContentId}`);
+    console.log(`Generating Do You Know post with topic: ${topic}, postContentId: ${postContentId}, userLogo: ${userLogo}`);
 
-    // Select random DYK template
+    // Validate doYouKnowTemplates
+    if (!doYouKnowTemplates.length) {
+      throw new Error('No Do You Know templates available');
+    }
     const randomDoYouKnowTemplateIndex = Math.floor(Math.random() * doYouKnowTemplates.length);
     const randomDoYouKnowTemplate = doYouKnowTemplates[randomDoYouKnowTemplateIndex];
+    console.log('Selected Template:', randomDoYouKnowTemplate.id);
 
     // Generate DYK content via API
     const doYouKnowResponse = await mutations.generateDoYouKnow({ topic }).unwrap();
-    const generatedDoYouKnowContent = doYouKnowResponse.data;
+    const generatedDoYouKnowContent = doYouKnowResponse.data || {};
+    console.log('Generated Do You Know Content:', generatedDoYouKnowContent);
 
-    // Create new DYK slide
+    // Create new DYK slide with fallbacks
     const newDoYouKnowSlide: DoYouKnowSlide = {
-      title: generatedDoYouKnowContent.title || randomDoYouKnowTemplate.slides[0].title,
-      fact: generatedDoYouKnowContent.description || randomDoYouKnowTemplate.slides[0].fact,
-      footer: randomDoYouKnowTemplate.slides[0].footer || '',
-      websiteUrl: randomDoYouKnowTemplate.slides[0].websiteUrl || '',
-      imageUrl: randomDoYouKnowTemplate.slides[0].imageUrl || '',
+      title: generatedDoYouKnowContent.title || randomDoYouKnowTemplate.slides[0].title || 'Did You Know?',
+      fact: generatedDoYouKnowContent.description || randomDoYouKnowTemplate.slides[0].fact || 'Interesting fact here.',
+      footer: randomDoYouKnowTemplate.slides[0].footer || 'bitrox.tech',
+      websiteUrl: randomDoYouKnowTemplate.slides[0].websiteUrl || 'https://bitrox.tech',
+      imageUrl: randomDoYouKnowTemplate.slides[0].imageUrl || 'https://via.placeholder.com/1080',
       slideNumber: 1,
     };
+    console.log('New Do You Know Slide:', newDoYouKnowSlide);
 
     // Save DYK content
     const dykResult = await mutations.dykContent({
       postContentId,
       topic,
       templateId: randomDoYouKnowTemplate.id,
-      content: { title: generatedDoYouKnowContent.title, fact: generatedDoYouKnowContent.description },
-      hashtags: generatedDoYouKnowContent?.hashtags,
+      content: { title: newDoYouKnowSlide.title, fact: newDoYouKnowSlide.fact },
+      hashtags: generatedDoYouKnowContent?.hashtags || [],
       status: 'success',
     }).unwrap();
+    console.log('DYK Content Saved:', dykResult);
 
     // Create new post object
     newPost = {
@@ -602,9 +615,10 @@ export const generateDoYouKnowPost = async (
       contentId: dykResult.data._id,
       contentType: 'DoyouknowContent',
     };
+    console.log('New Post:', newPost);
 
-    // Extract colors from logo and slide image
-    const tempContainerColor = document.createElement('div');
+    // Extract colors from logo and background image
+    tempContainerColor = document.createElement('div');
     tempContainerColor.style.position = 'absolute';
     tempContainerColor.style.top = '-9999px';
     tempContainerColor.style.width = '1080px';
@@ -614,129 +628,265 @@ export const generateDoYouKnowPost = async (
     const ColorExtractor = ({
       logoUrl,
       imageUrl,
-      competitorUrl,
       onColorsExtracted,
     }: {
       logoUrl: string;
       imageUrl: string;
-      competitorUrl?: string;
       onColorsExtracted: (colors: {
         logoColors: { primary: string; secondary: string; accent: string[] };
         imageColors: string[];
-        competitorColors?: string[];
+        glowColor: string;
+        complementaryTextColor: string;
+        complementaryFooterColor: string;
       }) => void;
     }) => {
-      const { data: logoPalette } = usePalette(logoUrl, 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
-      const { data: imagePalette } = usePalette(imageUrl || '', 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
-      const { data: competitorPalette } = usePalette(competitorUrl || '', 5, 'hex', {
+      const { data: logoPalette, error: logoError, loading: logoLoading } = usePalette(logoUrl, 5, 'hex', {
+        crossOrigin: 'anonymous',
+        quality: 10,
+      });
+      const { data: imagePalette, error: imageError, loading: imageLoading } = usePalette(imageUrl, 5, 'hex', {
         crossOrigin: 'anonymous',
         quality: 10,
       });
 
       React.useEffect(() => {
-        if (logoPalette) {
-          const sortedLogoColors = logoPalette.sort((a, b) => {
-            const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
-            const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
-            return vibrancyB - vibrancyA;
+        console.log('ColorExtractor state:', {
+          logoPalette,
+          logoError,
+          logoLoading,
+          imagePalette,
+          imageError,
+          imageLoading,
+        });
+
+        if (logoError || imageError || logoPalette === null || imagePalette === null) {
+          console.error('Color extraction failed, using defaults:', {
+            logoError,
+            imageError,
+            logoPaletteNull: logoPalette === null,
+            imagePaletteNull: imagePalette === null,
           });
-          const logoColors = {
-            primary: sortedLogoColors[0],
-            secondary: sortedLogoColors[1] || chroma(sortedLogoColors[0]).set('hsl.l', 0.3).hex(),
-            accent: sortedLogoColors.slice(2),
-          };
           onColorsExtracted({
-            logoColors,
-            imageColors: imagePalette || [materialTheme.background, materialTheme.surface],
-            competitorColors: competitorPalette,
+            logoColors: defaultColors.logoColors,
+            imageColors: defaultColors.imageColors,
+            glowColor: defaultColors.glowColor,
+            complementaryTextColor: defaultColors.complementaryTextColor,
+            complementaryFooterColor: defaultColors.complementaryFooterColor,
           });
+          return;
         }
-      }, [logoPalette, imagePalette, competitorPalette]);
+
+        if (logoPalette && imagePalette && !logoLoading && !imageLoading) {
+          try {
+            const sortedLogoColors = logoPalette.sort((a, b) => {
+              const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
+              const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
+              return vibrancyB - vibrancyA;
+            });
+            const sortedImageColors = imagePalette.sort((a, b) => {
+              const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
+              const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
+              return vibrancyB - vibrancyA;
+            });
+            const logoColors = {
+              primary: sortedLogoColors[0] || defaultColors.logoColors.primary,
+              secondary: sortedLogoColors[1] || chroma(sortedLogoColors[0]).set('hsl.l', 0.3).hex() || defaultColors.logoColors.secondary,
+              accent: sortedLogoColors.slice(2).length > 0 ? sortedLogoColors.slice(2) : defaultColors.logoColors.accent,
+            };
+            const vibrantImageColor = selectVibrantColor(sortedImageColors) || defaultColors.vibrantAccentColor;
+            const glowColor = chroma(vibrantImageColor).luminance(0.7).hex();
+            const complementaryTextColor = defaultColors.ensureContrast(
+              chroma(vibrantImageColor).set('hsl.h', '+180').luminance(0.8).hex(),
+              defaultColors.backgroundColor,
+              4.5
+            );
+            const complementaryFooterColor = defaultColors.ensureContrast(
+              chroma(vibrantImageColor).set('hsl.h', '+180').set('hsl.s', '*0.5').luminance(0.6).hex(),
+              defaultColors.backgroundColor,
+              4.5
+            );
+            onColorsExtracted({
+              logoColors,
+              imageColors: sortedImageColors,
+              glowColor,
+              complementaryTextColor,
+              complementaryFooterColor,
+            });
+          } catch (error) {
+            console.error('Error processing colors:', error);
+            onColorsExtracted({
+              logoColors: defaultColors.logoColors,
+              imageColors: defaultColors.imageColors,
+              glowColor: defaultColors.glowColor,
+              complementaryTextColor: defaultColors.complementaryTextColor,
+              complementaryFooterColor: defaultColors.complementaryFooterColor,
+            });
+          }
+        }
+      }, [logoPalette, imagePalette, logoError, imageError, logoLoading, imageLoading]);
 
       return null;
     };
 
-    const materialTheme = generateM3Theme('#4A90E2'); // Fallback theme for initial use
     const colors = await new Promise<{
       logoColors: { primary: string; secondary: string; accent: string[] };
       imageColors: string[];
-      competitorColors?: string[];
-    }>((resolve) => {
-      const tempRoot = createRoot(tempContainerColor);
-      tempRoot.render(
-        <ColorExtractor
-          logoUrl={userLogo || '/images/Logo1.png'}
-          imageUrl={newDoYouKnowSlide.imageUrl || ''}
-          competitorUrl={competitorImageUrl}
-          onColorsExtracted={(extractedColors) => {
-            resolve(extractedColors);
-            setTimeout(() => {
-              tempRoot.unmount();
-              document.body.removeChild(tempContainerColor);
-            }, 0);
-          }}
-        />
-      );
+      glowColor: string;
+      complementaryTextColor: string;
+      complementaryFooterColor: string;
+    }>((resolve, reject) => {
+      try {
+        tempRootColor = createRoot(tempContainerColor!);
+        tempRootColor.render(
+          <ColorExtractor
+            logoUrl={userLogo || 'https://via.placeholder.com/150'}
+            imageUrl={newDoYouKnowSlide.imageUrl || 'https://via.placeholder.com/1080'}
+            onColorsExtracted={(extractedColors) => {
+              console.log('Extracted Colors:', extractedColors);
+              resolve(extractedColors);
+              setTimeout(() => {
+                if (tempRootColor) {
+                  tempRootColor.unmount();
+                  tempRootColor = null;
+                }
+                if (tempContainerColor && document.body.contains(tempContainerColor)) {
+                  document.body.removeChild(tempContainerColor);
+                  tempContainerColor = null;
+                }
+              }, 0);
+            }}
+          />
+        );
+        setTimeout(() => reject(new Error('Color extraction timed out')), 10000);
+      } catch (error) {
+        console.error('ColorExtractor setup error:', error);
+        reject(error);
+      }
     });
-
-    console.log('Extracted Colors:', colors);
+    console.log('Colors Extracted:', colors);
 
     // Generate M3 theme from logo's primary color
-    const finalMaterialTheme = generateM3Theme(colors.logoColors.primary);
-    const mappedPalette = colors.competitorColors
-      ? mapCompetitorPalette(colors.competitorColors, colors.logoColors)
-      : colors.logoColors;
+    let materialTheme;
+    try {
+      materialTheme = generateM3Theme(colors.logoColors.primary);
+      if (!materialTheme || Object.keys(materialTheme).length === 0) {
+        console.warn('generateM3Theme returned empty or invalid theme, using default');
+        materialTheme = defaultColors.materialTheme;
+      }
+    } catch (error) {
+      console.error('Error in generateM3Theme:', error);
+      materialTheme = defaultColors.materialTheme;
+    }
+    console.log('Material Theme:', materialTheme);
+
+    // Normalize theme colors
+    const normalizeHex = (color: string): string => {
+      if (color.length === 9 && color.startsWith('#ff')) {
+        return `#${color.slice(3, 9)}`;
+      }
+      return chroma.valid(color) ? color : defaultColors.materialTheme.background;
+    };
+
+    let vibrantLogoColor: string;
+    let vibrantTextColor: string;
+    let vibrantAccentColor: string;
+    let footerColor: string;
+    let backgroundColor: string;
+
+    try {
+      vibrantLogoColor = normalizeHex(materialTheme.primary);
+      vibrantTextColor = colors.complementaryTextColor; // Use complementary color for title and fact
+      vibrantAccentColor = colors.imageColors.length > 0
+        ? selectVibrantColor(colors.imageColors) || defaultColors.vibrantAccentColor
+        : normalizeHex(materialTheme.secondary);
+      footerColor = colors.complementaryFooterColor; // Use complementary color for footer and website URL
+      backgroundColor = normalizeHex(materialTheme.background);
+    } catch (error) {
+      console.error('Error processing theme colors:', error);
+      vibrantLogoColor = defaultColors.vibrantLogoColor;
+      vibrantTextColor = defaultColors.complementaryTextColor;
+      vibrantAccentColor = defaultColors.vibrantAccentColor;
+      footerColor = defaultColors.complementaryFooterColor;
+      backgroundColor = defaultColors.backgroundColor;
+    }
+    console.log('Theme Colors:', { vibrantLogoColor, vibrantTextColor, vibrantAccentColor, footerColor, backgroundColor });
 
     const typography = m3Typography[brandStyle] || m3Typography.Modern;
     const graphicStyle = graphicStyles[brandStyle] || graphicStyles.Modern;
+    console.log('Typography and Graphic Style:', { typography, graphicStyle });
 
-    // Render DYK slide with extracted colors
-    const tempContainerDYK = document.createElement('div');
+    // Render DYK slide
+    tempContainerDYK = document.createElement('div');
     tempContainerDYK.style.position = 'absolute';
     tempContainerDYK.style.top = '-9999px';
     tempContainerDYK.style.width = '1080px';
     tempContainerDYK.style.height = '1080px';
     document.body.appendChild(tempContainerDYK);
 
-    const vibrantTextColor = ensureContrast(finalMaterialTheme.onSurface, finalMaterialTheme.background);
-    const vibrantAccentColor = colors.imageColors.length > 0 ? selectVibrantColor(colors.imageColors) : finalMaterialTheme.secondary;
-    const footerColor = finalMaterialTheme.secondary;
-    const backgroundColor = finalMaterialTheme.background;
-
     const doYouKnowTemplate = doYouKnowTemplates.find((t) => t.id === randomDoYouKnowTemplate.id) || doYouKnowTemplates[0];
-    const doYouKnowSlideElement = doYouKnowTemplate.renderSlide(
-      newDoYouKnowSlide,
-      true,
-      userLogo || '/images/Logo1.png',
-      {
-        logoColors: mappedPalette,
-        imageColors: colors.imageColors,
-        ensureContrast,
-        vibrantLogoColor: finalMaterialTheme.primary,
-        vibrantTextColor,
-        footerColor,
-        vibrantAccentColor,
-        backgroundColor,
-        typography,
-        graphicStyle,
-        materialTheme: finalMaterialTheme,
-      }
-    );
+    if (!doYouKnowTemplate || !doYouKnowTemplate.renderSlide) {
+      throw new Error(`Invalid template: ${randomDoYouKnowTemplate.id}`);
+    }
+    console.log('Rendering slide for template:', doYouKnowTemplate.id);
 
-    const root = createRoot(tempContainerDYK);
-    root.render(doYouKnowSlideElement);
+    // Validate slide data
+    if (!newDoYouKnowSlide.title || !newDoYouKnowSlide.fact) {
+      console.warn('Incomplete slide data, using fallbacks', newDoYouKnowSlide);
+      newDoYouKnowSlide.title = newDoYouKnowSlide.title || 'Did You Know?';
+      newDoYouKnowSlide.fact = newDoYouKnowSlide.fact || 'Interesting fact here.';
+      newDoYouKnowSlide.footer = newDoYouKnowSlide.footer || 'bitrox.tech';
+      newDoYouKnowSlide.websiteUrl = newDoYouKnowSlide.websiteUrl || 'https://bitrox.tech';
+      newDoYouKnowSlide.imageUrl = newDoYouKnowSlide.imageUrl || 'https://via.placeholder.com/1080';
+    }
 
-    // Capture and upload screenshot
-    screenshotUrl = await captureAndUploadScreenshot(tempContainerDYK, topic, type, {
-      uploadImageToCloudinary: mutations.uploadImageToCloudinary,
-    });
+    let doYouKnowSlideElement: JSX.Element;
+    try {
+      doYouKnowSlideElement = doYouKnowTemplate.renderSlide(
+        newDoYouKnowSlide,
+        true,
+        userLogo || 'https://via.placeholder.com/150',
+        {
+          logoColors: colors.logoColors,
+          imageColors: colors.imageColors,
+          glowColor: colors.glowColor,
+          complementaryTextColor: colors.complementaryTextColor,
+          complementaryFooterColor: colors.complementaryFooterColor,
+          ensureContrast: defaultColors.ensureContrast,
+          vibrantLogoColor,
+          vibrantTextColor,
+          footerColor,
+          vibrantAccentColor,
+          backgroundColor,
+          typography,
+          graphicStyle,
+          materialTheme,
+        }
+      );
+      console.log('Slide Element Rendered:', doYouKnowSlideElement.type, Object.keys(doYouKnowSlideElement.props));
+    } catch (error) {
+      console.error('Error rendering slide:', error);
+      throw new Error(`Failed to render slide: ${(error as Error).message}`);
+    }
 
-    document.body.removeChild(tempContainerDYK);
-    root.unmount();
+    tempRootDYK = createRoot(tempContainerDYK);
+    try {
+      tempRootDYK.render(doYouKnowSlideElement);
+      console.log('Slide Element Mounted');
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      screenshotUrl = await captureAndUploadScreenshot(tempContainerDYK, topic, type, {
+        uploadImageToCloudinary: mutations.uploadImageToCloudinary,
+      });
+      console.log('Screenshot URL:', screenshotUrl);
+    } catch (error) {
+      console.error('Error during rendering or screenshot:', error);
+      throw new Error(`Failed to render or capture screenshot: ${(error as Error).message}`);
+    }
 
     // Save post with screenshot
     if (screenshotUrl) {
-      await mutations.savePosts({
+      const savePostResult = await mutations.savePosts({
         postContentId,
         topic,
         type: 'doyouknow',
@@ -745,20 +895,37 @@ export const generateDoYouKnowPost = async (
         contentId: dykResult.data._id,
         contentType: 'DYKContent',
       }).unwrap();
+      console.log('Post saved:', savePostResult);
       newPost.images = [{ url: screenshotUrl, label: 'Did You Know?' }];
     } else {
-      throw new Error('Failed to capture or upload screenshot');
+      console.warn('No screenshot URL generated, marking post as error');
+      newPost.status = 'error';
     }
 
+    console.log('Post Generated Successfully:', newPost);
     return newPost;
   } catch (error) {
-    const errorMessage = (error as any)?.data?.message || 'An unexpected error occurred while generating the Do You Know post.';
+    const errorMessage = (error as any)?.data?.message || `An unexpected error occurred while generating the Do You Know post: ${(error as Error).message}`;
+    console.error('Error in generateDoYouKnowPost:', error);
     showAlert({
       type: 'error',
       title: 'Failed to Generate Do You Know Post',
       message: errorMessage,
     });
     throw error;
+  } finally {
+    if (tempContainerColor && document.body.contains(tempContainerColor)) {
+      if (tempRootColor) {
+        tempRootColor;
+      }
+      document.body.removeChild(tempContainerColor);
+    }
+    if (tempContainerDYK && document.body.contains(tempContainerDYK)) {
+      if (tempRootDYK) {
+        tempRootDYK.unmount();
+      }
+      document.body.removeChild(tempContainerDYK);
+    }
   }
 };
 
@@ -817,7 +984,7 @@ export const generateCarouselPost = async (
         tagline: content.tagline || slide.tagline || '',
         title: content.title || slide.title || '',
         description: formattedDescription,
-        imageUrl: slide.imageUrl || '/images/background3.png',
+        imageUrl: slide.imageUrl || 'https://via.placeholder.com/1080',
         footer: slide.footer || 'example',
         websiteUrl: slide.websiteUrl || 'https://example.com',
       };
@@ -829,6 +996,7 @@ export const generateCarouselPost = async (
       tagline: content.tagline || '',
       title: content.title || '',
       description: content.description || '',
+      hashtags: content.hashtags || []
     }));
 
     // Save carousel content
@@ -863,6 +1031,7 @@ export const generateCarouselPost = async (
           new Promise<void>((resolve) => {
             const img = new Image();
             img.src = url;
+            img.crossOrigin = 'anonymous';
             img.onload = () => {
               console.log(`Image loaded: ${url}`);
               resolve();
@@ -877,8 +1046,9 @@ export const generateCarouselPost = async (
     };
 
     const imageUrls = newSlides
-      .map((slide) => slide.imageUrl || '/images/background3.png')
-      .concat(userLogo || '/images/Logo1.png');
+      .map((slide) => slide.imageUrl || 'https://via.placeholder.com/1080')
+      .concat(userLogo || 'https://via.placeholder.com/150');
+    console.log('Preloading images:', imageUrls);
     await preloadImages(imageUrls);
     console.log('Images preloaded');
 
@@ -913,42 +1083,65 @@ export const generateCarouselPost = async (
       });
 
       React.useEffect(() => {
-        if (logoError || slidePalettes.some((p) => p.error)) {
-          console.error('Color extraction error:', { logoError, slideErrors: slidePalettes.map((p) => p.error) });
+        console.log('ColorExtractor state:', {
+          logoPalette,
+          logoError,
+          logoLoading,
+          slidePalettes: slidePalettes.map((p) => ({ data: p.data, error: p.error, loading: p.loading })),
+        });
+
+        if (
+          logoError ||
+          slidePalettes.some((p) => p.error) ||
+          logoPalette === null ||
+          slidePalettes.some((p) => p.data === null)
+        ) {
+          console.error('Color extraction failed, using defaults:', {
+            logoError,
+            slideErrors: slidePalettes.map((p) => p.error),
+            logoPaletteNull: logoPalette === null,
+            slidePaletteNull: slidePalettes.some((p) => p.data === null),
+          });
           onColorsExtracted({
-            logoColors: {
-              primary: '#4A90E2',
-              secondary: '#50E3C2',
-              accent: ['#50E3C2', '#FF0266', '#FF5733'],
-            },
-            slideImageColors: imageUrls.map(() => ['#4A90E2', '#50E3C2', '#F5A623']),
+            logoColors: defaultColors.logoColors, // Use defaultColors
+            slideImageColors: imageUrls.map(() => defaultColors.imageColors),
           });
           return;
         }
+
         if (logoPalette && slidePalettes.every((p) => p.data && !p.loading)) {
-          const sortedLogoColors = logoPalette.sort((a, b) => {
-            const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
-            const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
-            return vibrancyB - vibrancyA;
-          });
-          const logoColors = {
-            primary: sortedLogoColors[0] || '#4A90E2',
-            secondary: sortedLogoColors[1] || chroma(sortedLogoColors[0]).set('hsl.l', 0.3).hex() || '#50E3C2',
-            accent: sortedLogoColors.slice(2).length > 0 ? sortedLogoColors.slice(2) : ['#50E3C2', '#FF0266', '#FF5733'],
-          };
-          const slideImageColors = slidePalettes.map((p) =>
-            p.data!.sort((a, b) => {
+          try {
+            const sortedLogoColors = logoPalette.sort((a, b) => {
               const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
               const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
               return vibrancyB - vibrancyA;
-            })
-          );
-          onColorsExtracted({
-            logoColors,
-            slideImageColors,
-          });
+            });
+            const logoColors = {
+              primary: sortedLogoColors[0] || defaultColors.logoColors.primary,
+              secondary: sortedLogoColors[1] || chroma(sortedLogoColors[0]).set('hsl.l', 0.3).hex() || defaultColors.logoColors.secondary,
+              accent: sortedLogoColors.slice(2).length > 0 ? sortedLogoColors.slice(2) : defaultColors.logoColors.accent,
+            };
+            const slideImageColors = slidePalettes.map((p) =>
+              p.data!.sort((a, b) => {
+                const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
+                const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
+                return vibrancyB - vibrancyA;
+              })
+            );
+            console.log('Extracted colors:', { logoColors, slideImageColors });
+            onColorsExtracted({
+              logoColors,
+              slideImageColors,
+            });
+          } catch (error) {
+            console.error('Error processing colors:', error);
+            onColorsExtracted({
+              logoColors: defaultColors.logoColors,
+              slideImageColors: imageUrls.map(() => defaultColors.imageColors),
+            });
+          }
         }
-      }, [logoPalette, ...slidePalettes.map((p) => p.data), logoError, logoLoading]);
+      }, [logoPalette, logoError, logoLoading, slidePalettes]);
 
       return null;
     };
@@ -957,65 +1150,81 @@ export const generateCarouselPost = async (
       logoColors: { primary: string; secondary: string; accent: string[] };
       slideImageColors: string[][];
     }>((resolve, reject) => {
-      tempRoot = createRoot(tempContainer!);
-      tempRoot.render(
-        <ColorExtractor
-          logoUrl={userLogo || '/images/Logo1.png'}
-          imageUrls={newSlides.map((slide) => slide.imageUrl || '/images/background3.png')}
-          onColorsExtracted={(extractedColors) => {
-            console.log('Extracted Colors:', extractedColors);
-            resolve(extractedColors);
-            setTimeout(() => {
-              tempRoot!.unmount();
-              document.body.removeChild(tempContainer!);
-              tempContainer = null;
-              tempRoot = null;
-            }, 0);
-          }}
-        />
-      );
-      setTimeout(() => reject(new Error('Color extraction timed out')), 8000);
+      try {
+        tempRoot = createRoot(tempContainer!);
+        tempRoot.render(
+          <ColorExtractor
+            logoUrl={userLogo || 'https://via.placeholder.com/150'}
+            imageUrls={newSlides.map((slide) => slide.imageUrl || 'https://via.placeholder.com/1080')}
+            onColorsExtracted={(extractedColors) => {
+              console.log('Extracted Colors:', extractedColors);
+              resolve(extractedColors);
+              setTimeout(() => {
+                if (tempRoot) {
+                  tempRoot.unmount();
+                  tempRoot = null;
+                }
+                if (tempContainer && document.body.contains(tempContainer)) {
+                  document.body.removeChild(tempContainer);
+                  tempContainer = null;
+                }
+              }, 0);
+            }}
+          />
+        );
+        setTimeout(() => reject(new Error('Color extraction timed out')), 8000);
+      } catch (error) {
+        console.error('ColorExtractor setup error:', error);
+        reject(error);
+      }
     });
     console.log('Colors Extracted:', colors);
 
-    // Validate colors
+    // Validate colors and merge with defaultColors
     const validatedColors = {
       logoColors: {
-        primary: chroma.valid(colors.logoColors.primary) ? colors.logoColors.primary : '#4A90E2',
-        secondary: chroma.valid(colors.logoColors.secondary) ? colors.logoColors.secondary : '#50E3C2',
-        accent: colors.logoColors.accent.length > 0 && colors.logoColors.accent.every((c) => chroma.valid(c))
-          ? colors.logoColors.accent
-          : ['#50E3C2', '#FF0266', '#FF5733'],
+        primary: chroma.valid(colors.logoColors.primary) ? colors.logoColors.primary : defaultColors.logoColors.primary,
+        secondary: chroma.valid(colors.logoColors.secondary) ? colors.logoColors.secondary : defaultColors.logoColors.secondary,
+        accent:
+          colors.logoColors.accent &&
+          colors.logoColors.accent.length > 0 &&
+          colors.logoColors.accent.every((c) => chroma.valid(c))
+            ? colors.logoColors.accent
+            : defaultColors.logoColors.accent,
       },
       slideImageColors: colors.slideImageColors.map((palette) =>
-        palette.every((c) => chroma.valid(c)) ? palette : ['#4A90E2', '#50E3C2', '#F5A623']
+        palette && palette.every((c) => chroma.valid(c)) ? palette : defaultColors.imageColors
       ),
     };
+    console.log('Validated Colors:', validatedColors);
 
-    // Generate M3 theme
-    const materialTheme = generateM3Theme(validatedColors.logoColors.primary) || {
-      primary: '#4A90E2',
-      secondary: '#50E3C2',
-      tertiary: '#755A2F',
-      background: '#FFFFFF',
-      surface: '#FAFAFA',
-      onPrimary: '#FFFFFF',
-      onSecondary: '#000000',
-      onBackground: '#1C2526',
-      onSurface: '#1C2526',
-    };
+    // Generate M3 theme with error handling
+    let materialTheme;
+    try {
+      console.log('Generating M3 theme with primary color:', validatedColors.logoColors.primary);
+      const generatedTheme = generateM3Theme(validatedColors.logoColors.primary);
+      if (generatedTheme && Object.keys(generatedTheme).length > 0) {
+        materialTheme = generatedTheme;
+      } else {
+        console.warn('generateM3Theme returned empty or invalid theme, using default');
+        materialTheme = defaultColors.materialTheme; // Use defaultColors.materialTheme
+      }
+    } catch (error) {
+      console.error('Error in generateM3Theme:', error);
+      materialTheme = defaultColors.materialTheme;
+    }
     console.log('Material Theme:', materialTheme);
 
     // Generate complementary colors for glow
     const baseColor = selectVibrantColor(validatedColors.slideImageColors[0]) || validatedColors.logoColors.primary;
     const glowColor = chroma(baseColor).set('hsl.h', '+180').luminance(0.7).hex();
-    const complementaryTextColor = ensureContrast(
+    const complementaryTextColor = defaultColors.ensureContrast(
       chroma(glowColor).luminance(0.8).hex(),
-      materialTheme.background
+      materialTheme.background || defaultColors.backgroundColor
     );
-    const complementaryFooterColor = ensureContrast(
+    const complementaryFooterColor = defaultColors.ensureContrast(
       chroma(glowColor).set('hsl.s', '*0.5').luminance(0.6).hex(),
-      materialTheme.surface
+      materialTheme.surface || defaultColors.backgroundColor
     );
     console.log('Complementary Colors:', { glowColor, complementaryTextColor, complementaryFooterColor });
 
@@ -1023,7 +1232,7 @@ export const generateCarouselPost = async (
     const slideScreenshots: Blob[] = [];
     for (let i = 0; i < newSlides.length; i++) {
       const slide = newSlides[i];
-      const slideImageColors = validatedColors.slideImageColors[i] || ['#4A90E2', '#50E3C2', '#F5A623'];
+      const slideImageColors = validatedColors.slideImageColors[i] || defaultColors.imageColors;
       console.log(`Rendering slide ${i + 1}:`, slide.title);
 
       const slideContainer = document.createElement('div');
@@ -1033,13 +1242,13 @@ export const generateCarouselPost = async (
       slideContainer.style.height = '1080px';
       document.body.appendChild(slideContainer);
 
-      const vibrantTextColor = ensureContrast(
-        materialTheme.onSurface || '#1C2526',
-        materialTheme.background || '#FFFFFF'
+      const vibrantTextColor = defaultColors.ensureContrast(
+        materialTheme.onSurface || defaultColors.materialTheme.onSurface,
+        materialTheme.background || defaultColors.backgroundColor
       );
-      const vibrantAccentColor = selectVibrantColor(slideImageColors) || '#50E3C2';
-      const footerColor = materialTheme.secondary || '#50E3C2';
-      const backgroundColor = materialTheme.background || '#FFFFFF';
+      const vibrantAccentColor = selectVibrantColor(slideImageColors) || defaultColors.vibrantAccentColor;
+      const footerColor = materialTheme.secondary || defaultColors.footerColor;
+      const backgroundColor = materialTheme.background || defaultColors.backgroundColor;
       console.log(`Slide ${i + 1} Colors:`, {
         vibrantTextColor,
         vibrantAccentColor,
@@ -1050,57 +1259,59 @@ export const generateCarouselPost = async (
         complementaryFooterColor,
       });
 
-      const template = carouselTemplates.find((t) => t.id === randomCarouselTemplate.id) || {
-        ...carouselTemplates[0],
-        renderSlide: defaultRenderSlide, // Use defined defaultRenderSlide
-      };
+      const template = carouselTemplates.find((t) => t.id === randomCarouselTemplate.id);
+      if (!template || !template.renderSlide) {
+        throw new Error(`Template with ID ${randomCarouselTemplate.id} not found or missing renderSlide`);
+      }
+
       let slideElement: JSX.Element;
       try {
         slideElement = template.renderSlide(
-          { ...slide, imageUrl: slide.imageUrl || '/images/background3.png' },
+          { ...slide, imageUrl: slide.imageUrl || 'https://via.placeholder.com/1080' },
           true,
-          userLogo || '/images/Logo1.png',
+          userLogo || 'https://via.placeholder.com/150',
           {
-            logoColors: {
-              primary: chroma.valid(validatedColors.logoColors.primary)
-                ? validatedColors.logoColors.primary
-                : '#4A90E2',
-              secondary: chroma.valid(validatedColors.logoColors.secondary)
-                ? validatedColors.logoColors.secondary
-                : '#50E3C2',
-              accent: validatedColors.logoColors.accent.every((c) => chroma.valid(c))
-                ? validatedColors.logoColors.accent
-                : ['#50E3C2', '#FF0266', '#FF5733'],
-            },
+            logoColors: validatedColors.logoColors,
             imageColors: slideImageColors,
             glowColor,
             complementaryTextColor,
             complementaryFooterColor,
-            ensureContrast,
-            vibrantLogoColor: materialTheme.primary || '#4A90E2',
+            ensureContrast: defaultColors.ensureContrast, // Use defaultColors.ensureContrast
+            vibrantLogoColor: materialTheme.primary || defaultColors.vibrantLogoColor,
             vibrantTextColor,
+            vibrantAccentColor,
             footerColor,
             backgroundColor,
             typography: {
-              fontFamily: (m3Typography[brandStyle] || m3Typography.Modern).fontFamily || 'Roboto',
-              fontWeight: (m3Typography[brandStyle] || m3Typography.Modern).fontWeight || 400,
-              fontSize: (m3Typography[brandStyle] || m3Typography.Modern).fontSize || '1rem',
+              fontFamily: (m3Typography[brandStyle] || m3Typography.Modern).fontFamily || defaultColors.typography.fontFamily,
+              fontWeight: (m3Typography[brandStyle] || m3Typography.Modern).fontWeight || defaultColors.typography.fontWeight,
+              fontSize: (m3Typography[brandStyle] || m3Typography.Modern).fontSize || defaultColors.typography.fontSize,
             },
             graphicStyle: {
-              borderRadius: (graphicStyles[brandStyle] || graphicStyles.Modern).borderRadius || '8px',
-              iconStyle: (graphicStyles[brandStyle] || graphicStyles.Modern).iconStyle || 'rounded',
-              filter: (graphicStyles[brandStyle] || graphicStyles.Modern).filter || 'none',
+              borderRadius: (graphicStyles[brandStyle] || graphicStyles.Modern).borderRadius || defaultColors.graphicStyle.borderRadius,
+              iconStyle: (graphicStyles[brandStyle] || graphicStyles.Modern).iconStyle || defaultColors.graphicStyle.iconStyle,
+              filter: (graphicStyles[brandStyle] || graphicStyles.Modern).filter || defaultColors.graphicStyle.filter,
             },
             materialTheme: {
-              primary: chroma.valid(materialTheme.primary) ? materialTheme.primary : '#4A90E2',
-              secondary: chroma.valid(materialTheme.secondary) ? materialTheme.secondary : '#50E3C2',
-              tertiary: chroma.valid(materialTheme.tertiary) ? materialTheme.tertiary : '#755A2F',
-              background: chroma.valid(materialTheme.background) ? materialTheme.background : '#FFFFFF',
-              surface: chroma.valid(materialTheme.surface) ? materialTheme.surface : '#FAFAFA',
-              onPrimary: chroma.valid(materialTheme.onPrimary) ? materialTheme.onPrimary : '#FFFFFF',
-              onSecondary: chroma.valid(materialTheme.onSecondary) ? materialTheme.onSecondary : '#000000',
-              onBackground: chroma.valid(materialTheme.onBackground) ? materialTheme.onBackground : '#1C2526',
-              onSurface: chroma.valid(materialTheme.onSurface) ? materialTheme.onSurface : '#1C2526',
+              primary: chroma.valid(materialTheme.primary) ? materialTheme.primary : defaultColors.materialTheme.primary,
+              secondary: chroma.valid(materialTheme.secondary) ? materialTheme.secondary : defaultColors.materialTheme.secondary,
+              tertiary: chroma.valid(materialTheme.tertiary) ? materialTheme.tertiary : defaultColors.materialTheme.tertiary,
+              background: chroma.valid(materialTheme.background)
+                ? materialTheme.background
+                : defaultColors.materialTheme.background,
+              surface: chroma.valid(materialTheme.surface) ? materialTheme.surface : defaultColors.materialTheme.surface,
+              onPrimary: chroma.valid(materialTheme.onPrimary)
+                ? materialTheme.onPrimary
+                : defaultColors.materialTheme.onPrimary,
+              onSecondary: chroma.valid(materialTheme.onSecondary)
+                ? materialTheme.onSecondary
+                : defaultColors.materialTheme.onSecondary,
+              onBackground: chroma.valid(materialTheme.onBackground)
+                ? materialTheme.onBackground
+                : defaultColors.materialTheme.onBackground,
+              onSurface: chroma.valid(materialTheme.onSurface)
+                ? materialTheme.onSurface
+                : defaultColors.materialTheme.onSurface,
             },
           }
         );
@@ -1115,7 +1326,7 @@ export const generateCarouselPost = async (
         root.render(slideElement);
         console.log(`Slide ${i + 1} Element Mounted`);
 
-        await new Promise((resolve) => setTimeout(resolve, 3000)); // Increased delay for rendering
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         console.log(`Capturing screenshot for slide ${i + 1}`);
         const canvas = await html2canvas(slideContainer, {
@@ -1196,12 +1407,13 @@ export const generateCarouselPost = async (
     throw error;
   } finally {
     if (tempContainer && document.body.contains(tempContainer)) {
-      if (tempRoot) tempRoot;
+      if (tempRoot) {
+        tempRoot;
+      }
       document.body.removeChild(tempContainer);
     }
   }
 };
-
 // export const generateDoYouKnowPost = async (
 //   topic: string,
 //   type: 'doyouknow',

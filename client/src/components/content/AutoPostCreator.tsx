@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import html2canvas from 'html2canvas';
-import { createRoot } from 'react-dom/client';
 import { Loader2, CheckCircle } from 'lucide-react';
 
 import {
@@ -17,7 +15,8 @@ import {
   useCarouselContentMutation,
   useDykContentMutation,
   useLazyGetSavePostsQuery,
-  useUploadCarouselToCloudinaryMutation
+  useUploadCarouselToCloudinaryMutation,
+  useUpdatePostTopicStatusMutation
 } from '../../store/api';
 
 import { useTheme } from '../../context/ThemeContext';
@@ -26,17 +25,11 @@ import { PendingPostCard } from './AutoPost/PendingPostCard';
 import { PostCard } from './AutoPost/PostCard';
 import { LoadingState } from './AutoPost/LoadingState';
 import { ContinueButton } from './AutoPost/ContinueButton';
-import { Post, ImageContent, CarouselContent } from './AutoPost/Types';
-import { imageTemplates } from '../../templetes/ImageTemplate';
-import { carouselTemplates, Slide } from '../../templetes/templetesDesign';
-import { doYouKnowTemplates, DoYouKnowSlide } from '../../templetes/doYouKnowTemplates';
+import { Post } from './AutoPost/Types';
 import { generateImagePost, generateCarouselPost, generateDoYouKnowPost } from '../../Utilities/functions';
 
 import { useAlert } from '../hooks/useAlert';
 import { Alert } from '../ui/Alert';
-
-type BrandStyle = 'Modern' | 'Traditional' | 'Playful' | 'Corporate' | 'Minimal';
-
 
 export const AutoPostCreator: React.FC = () => {
   const navigate = useNavigate();
@@ -55,7 +48,7 @@ export const AutoPostCreator: React.FC = () => {
   const [topicsError, setTopicsError] = useState<string | null>(null);
   const [postsError, setPostsError] = useState<string | null>(null);
   const [userLogo, setUserLogo] = useState<string | null>(null);
-  const { isOpen, config, showAlert, closeAlert, handleConfirm, error: showErrorAlert, confirm: showConfirmAlert } = useAlert()
+  const { isOpen, config, showAlert, closeAlert, handleConfirm, confirm: showConfirmAlert } = useAlert()
 
   // API hooks
   const [getPostContent, { isFetching: isFetchingPostContent }] = useLazyGetPostContentQuery();
@@ -70,6 +63,7 @@ export const AutoPostCreator: React.FC = () => {
   const [carouselContent] = useCarouselContentMutation();
   const [dykContent] = useDykContentMutation();
   const [uploadCarouselToCloudinary] = useUploadCarouselToCloudinaryMutation();
+  const [updatePostTopicStatus] = useUpdatePostTopicStatusMutation();
 
   // References and data
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -196,16 +190,6 @@ export const AutoPostCreator: React.FC = () => {
     }
   }, [location.state, navigate]);
 
-  // const captureAndUploadScreenshot = async (ref: HTMLDivElement | null, topic: string, type: string) => {
-  //   if (!ref) return '';
-  //   await new Promise((resolve) => setTimeout(resolve, 500));
-  //   const canvas = await html2canvas(ref, { useCORS: true, scale: 2, backgroundColor: null });
-  //   const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'));
-  //   const formData = new FormData();
-  //   formData.append('image', blob, `${topic}-${type}.png`);
-  //   const result = await uploadImageToCloudinary(formData).unwrap();
-  //   return result?.data?.secure_url || '';
-  // };
 
   const generatePost = async (topic: string, index: number) => {
 
@@ -261,22 +245,22 @@ export const AutoPostCreator: React.FC = () => {
           console.log('Generated Carousel Post:', newPost);
           break;
 
-        // case 'doyouknow':
-        //   newPost = await generateDoYouKnowPost(
-        //     topic,
-        //     type,
-        //     postContentId,
-        //     {
-        //       generateDoYouKnow,
-        //       dykContent,
-        //       savePosts,
-        //       uploadImageToCloudinary,
-        //     },
-        //     showAlert,
-        //     userLogo || '/images/Logo1.png',
-        //   );
-        //   console.log('Generated Do You Know Post:', newPost);
-        //   break;
+        case 'doyouknow':
+          newPost = await generateDoYouKnowPost(
+            topic,
+            type,
+            postContentId,
+            {
+              generateDoYouKnow,
+              dykContent,
+              savePosts,
+              uploadImageToCloudinary,
+            },
+            showAlert,
+            userLogo || '/images/Logo1.png',
+          );
+          console.log('Generated Do You Know Post:', newPost);
+          break;
         default:
           throw new Error(`Unknown post type: ${type}`);
       }
@@ -324,13 +308,6 @@ export const AutoPostCreator: React.FC = () => {
     setIsGenerating(false);
   };
 
-  // const handleGenerateSinglePost = async (topic: string, index: number) => {
-  //   if (isGenerating || !postContentId || isLoading) return;
-  //   setIsGenerating(true);
-  //   await generatePost(topic, index);
-  //   setIsGenerating(false);
-  // };
-
   const handleEditPost = (post: Post) => {
     const commonState = {
       contentId: post.contentId,
@@ -363,7 +340,17 @@ export const AutoPostCreator: React.FC = () => {
       'Continue to Post',
       'Do you want to continue to Post? If you continue, you won\'t be able to edit these posts again. Please confirm.',
       async () => {
-        navigate('/select-media', { state: { postContentId } });
+        if (postContentId) {
+          console.log(postContentId)
+          let response = await updatePostTopicStatus({ postTopicId: postContentId, status: "success" });
+          if (response.data && response.data.data && response.data.data._id) {
+            navigate('/select-media', { state: { postContentId: response.data.data._id } });
+          } else {
+            showAlert({ type: 'error', title: 'Error', message: 'Failed to update post topic status.' });
+          }
+        } else {
+          showAlert({ type: 'error', title: 'Error', message: 'Post Content ID is missing.' });
+        }
 
       }
     );

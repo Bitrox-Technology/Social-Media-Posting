@@ -1491,8 +1491,8 @@ export const ImageTemplate18: ImageTemplate = {
       title: 'SIMPLICITY',
       description: 'Less is more',
       imageUrl: '/images/background15.jpg',
-      footer: 'minima.design',
-      websiteUrl: 'https://minima.design',
+       footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
@@ -1613,8 +1613,8 @@ export const ImageTemplate19: ImageTemplate = {
       title: 'BOLD VISION',
       description: 'Breaking boundaries with design',
       imageUrl: '/images/background12.jpg',
-      footer: 'geo.studio',
-      websiteUrl: 'https://geo.studio',
+       footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
@@ -1770,8 +1770,8 @@ export const ImageTemplate20: ImageTemplate = {
       title: 'TIMELESS',
       description: 'Inspired by the classics',
       imageUrl: '/images/background8.jpg',
-      footer: 'retro.works',
-      websiteUrl: 'https://retro.works',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
@@ -1780,6 +1780,9 @@ export const ImageTemplate20: ImageTemplate = {
       materialTheme,
       typography,
       graphicStyle,
+      ensureContrast,
+      glowColor,
+      complementaryGlowColor,
     } = colors;
 
     const hasImage = !!slide.imageUrl;
@@ -1790,6 +1793,19 @@ export const ImageTemplate20: ImageTemplate = {
     const secondaryColor = chroma(logoColors.secondary).desaturate(0.3).hex();
     const bgColor = chroma('#f5f2e9').hex(); // Vintage paper color
     const textColor = chroma('#2a2522').hex(); // Vintage dark brown
+
+    const titleColor = ensureContrast(
+      chroma(complementaryGlowColor).luminance(0.8).hex(), 
+      hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
+    );
+    const descriptionColor = ensureContrast(
+      chroma(complementaryGlowColor).luminance(0.7).hex(),
+      hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
+    );
+    const footerColor = ensureContrast(
+      chroma(complementaryGlowColor).set('hsl.s', '*0.5').luminance(0.6).hex(),
+      chroma(materialTheme.surface).alpha(0.2).hex()
+    );
 
     return (
       <div
@@ -1887,10 +1903,11 @@ export const ImageTemplate20: ImageTemplate = {
             
             <p
               className="text-2xl font-normal mx-auto max-w-xl"
-              style={{ 
-                color: chroma(textColor).alpha(0.8).css(),
-                fontStyle: 'italic',
-              }}
+              style={{
+              color: descriptionColor,
+              fontSize: `calc(${typography.fontSize} * 0.6)`,
+              textShadow: `0 2px 4px ${chroma(complementaryGlowColor).alpha(0.3).css()}`,
+            }}
             >
               {slide.description}
             </p>
@@ -1936,8 +1953,8 @@ export const ImageTemplate21: ImageTemplate = {
       title: 'NATURAL HARMONY',
       description: 'In balance with the world around us',
       imageUrl: '/images/background5.jpg',
-      footer: 'organic.life',
-      websiteUrl: 'https://organic.life',
+       footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
@@ -2125,8 +2142,8 @@ export const ImageTemplate22: ImageTemplate = {
       title: 'DIGITAL FRONTIER',
       description: 'Exploring the future of technology',
       imageUrl: '/images/background17.jpg',
-      footer: 'tech.grid',
-      websiteUrl: 'https://tech.grid',
+       footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {

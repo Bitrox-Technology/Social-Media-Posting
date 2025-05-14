@@ -40,7 +40,7 @@ export interface CarouselTemplate {
   coverImageUrl?: string;
 }
 
-const defaultColors: Colors = {
+export const defaultColors: Colors = {
   logoColors: {
     primary: '#4A90E2',
     secondary: '#50E3C2',
@@ -93,6 +93,7 @@ const defaultColors: Colors = {
     onSurface: '#000000',
   },
 };
+
 // Template 1: Modern Overlay (Your Original Design with 5 Slides)
 // const Template1: CarouselTemplate = {
 //   id: 'template1',
@@ -2642,7 +2643,7 @@ const defaultColors: Colors = {
 //       sticker: '/images/heart-purple.png', // Based on the purple heart in the slide
 //       shape: '/images/particle-dots.svg',
 //       headshotUrl: '',
-      
+
 //     },
 //   ],
 //   renderSlide: (slide, addLogo, defaultLogoUrl) => (
@@ -3101,4 +3102,2424 @@ export const Template2: CarouselTemplate = {
   },
 };
 
-export const carouselTemplates: CarouselTemplate[] = [Template2];
+
+// Template 1: Modern Gradient
+export const Template3: CarouselTemplate = {
+  id: 'modern-gradient',
+  name: 'Modern Gradient',
+  coverImageUrl: '/images/carousel-cover/cover1.png',
+  slides: [
+    {
+      title: 'Modern Design Principles',
+      description: 'Clean lines, purposeful color, and thoughtful typography create impactful visual experiences.',
+      imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+      socialHandle: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      title: 'Embrace Minimalism',
+      description: 'Less is more. Focus on essential elements to create clear, uncluttered designs that communicate effectively.',
+      imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+      socialHandle: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      title: 'Purposeful Color Palettes',
+      description: 'Choose colors intentionally to evoke emotions and reinforce brand identity. Use contrast to guide attention.',
+      imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+      socialHandle: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      title: 'Typography Matters',
+      description: 'Select fonts that enhance readability and align with your design’s tone. Pair fonts thoughtfully for hierarchy.',
+      imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+      socialHandle: '',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      title: 'FOLLOW FOR MORE DESIGN TIPS',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+      socialHandle: '@designlabio',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      glowColor,
+      complementaryTextColor,
+      ensureContrast,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+    } = colors;
+
+    // Validate colors with fallbacks
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#4A90E2';
+    const secondaryColor = chroma.valid(logoColors?.secondary) ? logoColors.secondary : '#50E3C2';
+    const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#F5A623';
+    const textColor = ensureContrast(complementaryTextColor, backgroundColor);
+
+    // Responsive layout adjustments
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
+          fontFamily: typography.fontFamily,
+          color: textColor,
+        }}
+      >
+        {/* Abstract Shapes */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute w-96 h-96 rounded-full blur-3xl"
+            style={{
+              backgroundColor: chroma(accentColor).alpha(0.3).css(),
+              top: '10%',
+              right: '5%',
+            }}
+          />
+          <div
+            className="absolute w-64 h-64 rounded-full blur-3xl"
+            style={{
+              backgroundColor: chroma(primaryColor).brighten(1).alpha(0.2).css(),
+              bottom: '15%',
+              left: '10%',
+            }}
+          />
+        </div>
+
+        {/* Logo */}
+        {addLogo && (
+          <div className="relative z-10 p-12">
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="w-40 h-20 object-contain"
+              style={{
+                filter: `drop-shadow(0 4px 6px ${chroma(glowColor).alpha(0.3).css()})`,
+              }}
+            />
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="relative z-10 flex-1 flex flex-col justify-center p-16">
+          {/* Slide Number */}
+          <div
+            className="inline-block mb-6 px-4 py-1 text-sm font-bold"
+            style={{
+              backgroundColor: chroma(accentColor).alpha(0.9).css(),
+              color: ensureContrast('#FFFFFF', accentColor),
+              borderRadius: '999px',
+              alignSelf: 'flex-start',
+            }}
+          >
+            {slide.slideNumber.toString().padStart(2, '0')}
+          </div>
+
+          {/* Title */}
+          <h2
+            className={cn('font-bold mb-8', {
+              'text-6xl': !isLongText,
+              'text-5xl': isLongText,
+            })}
+            style={{
+              color: textColor,
+              maxWidth: '80%',
+              lineHeight: 1.2,
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          {hasDescription && (
+            <p
+              className={cn('leading-relaxed', {
+                'text-2xl': !isLongText,
+                'text-xl': isLongText,
+              })}
+              style={{
+                color: chroma(textColor).alpha(0.9).css(),
+                maxWidth: '70%',
+              }}
+            >
+              {slide.description}
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="relative z-10 p-16 flex justify-between items-center">
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg font-medium"
+            style={{ color: textColor }}
+          >
+            {slide.websiteUrl}
+          </a>
+
+          <span
+            className="text-lg font-medium"
+            style={{ color: textColor }}
+          >
+            {slide.footer}
+          </span>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Template 2: Business Professional
+export const Template4: CarouselTemplate = {
+  id: 'business-professional',
+  name: 'Business Professional',
+  coverImageUrl: '/images/carousel-cover/cover2.png',
+  slides: [
+    {
+      title: 'Strategic Business Growth',
+      description: 'Implement data-driven strategies to scale your business effectively in competitive markets.',
+      imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      title: 'Leverage Market Insights',
+      description: 'Use analytics to understand customer behavior and market trends, enabling smarter decision-making.',
+      imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      title: 'Optimize Operations',
+      description: 'Streamline processes and adopt technology to boost efficiency and reduce costs across your business.',
+      imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      title: 'Build Strong Partnerships',
+      description: 'Collaborate with aligned businesses to expand reach, share resources, and drive mutual growth.',
+      imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      title: 'FOLLOW FOR MORE GROWTH TIPS',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      complementaryTextColor,
+      ensureContrast,
+      backgroundColor,
+      typography,
+      graphicStyle,
+    } = colors;
+
+    // Corporate color palette
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#003366';
+    const accentColor = '#E0A526'; // Gold accent
+    const bgColor = '#FFFFFF';
+    const textColor = '#1A2A3A';
+
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
+    const hasImage = !!slide.imageUrl;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundColor: bgColor,
+          fontFamily: '"Inter", sans-serif',
+          color: textColor,
+        }}
+      >
+        {/* Header Bar */}
+        <div
+          className="w-full h-24 flex items-center px-16"
+          style={{
+            backgroundColor: primaryColor,
+          }}
+        >
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="h-12 object-contain"
+            />
+          )}
+
+          {/* If no logo, show slide number */}
+          {!addLogo && (
+            <span
+              className="text-xl font-bold"
+              style={{ color: '#FFFFFF' }}
+            >
+              {slide.slideNumber.toString().padStart(2, '0')}
+            </span>
+          )}
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex">
+          {/* Left Column - Content */}
+          <div className="w-1/2 p-16 flex flex-col justify-center">
+            {/* Accent Line */}
+            <div
+              className="w-24 h-1 mb-8"
+              style={{ backgroundColor: accentColor }}
+            />
+
+            {/* Title */}
+            <h2
+              className={cn('font-bold mb-8', {
+                'text-5xl': !isLongText,
+                'text-4xl': isLongText,
+              })}
+              style={{ color: textColor }}
+            >
+              {slide.title}
+            </h2>
+
+            {/* Description */}
+            {hasDescription && (
+              <p
+                className={cn('leading-relaxed', {
+                  'text-2xl': !isLongText,
+                  'text-xl': isLongText,
+                })}
+                style={{ color: chroma(textColor).alpha(0.8).css() }}
+              >
+                {slide.description}
+              </p>
+            )}
+
+            {/* Slide Number */}
+            <div className="mt-12 flex items-center">
+              <div
+                className="w-12 h-12 flex items-center justify-center"
+                style={{
+                  backgroundColor: primaryColor,
+                  borderRadius: '50%',
+                }}
+              >
+                <span
+                  className="text-lg font-bold"
+                  style={{ color: '#FFFFFF' }}
+                >
+                  {slide.slideNumber}
+                </span>
+              </div>
+
+              <div
+                className="h-px w-24 ml-4"
+                style={{ backgroundColor: chroma(textColor).alpha(0.2).css() }}
+              />
+            </div>
+          </div>
+
+          {/* Right Column - Image */}
+          {hasImage && (
+            <div className="w-1/2 relative">
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url(${slide.imageUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              />
+
+              {/* Overlay */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(135deg, ${chroma(primaryColor).alpha(0.7).css()} 0%, transparent 100%)`,
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="p-8 flex justify-between items-center"
+          style={{
+            borderTop: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+          }}
+        >
+          <span
+            className="text-lg"
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
+          >
+            {slide.footer}
+          </span>
+
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg"
+            style={{ color: primaryColor }}
+          >
+            {slide.websiteUrl}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Template 3: Creative Portfolio
+export const Template5: CarouselTemplate = {
+  id: 'creative-portfolio',
+  name: 'Creative Portfolio',
+  coverImageUrl: '/images/carousel-cover/cover3.png',
+ slides: [
+  {
+    title: 'Visual Storytelling',
+    description: 'Crafting narratives through compelling imagery and thoughtful design elements.',
+    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 1,
+  },
+  {
+    title: 'Power of Imagery',
+    description: 'Use striking visuals to evoke emotions and convey your story without words.',
+    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 2,
+  },
+  {
+    title: 'Design with Intent',
+    description: 'Choose colors, fonts, and layouts that align with your narrative and enhance impact.',
+    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 3,
+  },
+  {
+    title: 'Engage Your Audience',
+    description: 'Create interactive or dynamic visuals to captivate viewers and deepen their connection.',
+    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 4,
+  },
+  {
+    title: 'FOLLOW FOR MORE CREATIVE TIPS',
+    description: '',
+    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+    footer: 'bitrox.tech',
+    socialHandle: '@bitroxtech',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 5,
+  },
+],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      complementaryTextColor,
+      ensureContrast,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+    } = colors;
+
+    // Creative color palette
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#FF3366';
+    const secondaryColor = chroma.valid(logoColors?.secondary) ? logoColors.secondary : '#6B66FF';
+    const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#FFD166';
+    const bgColor = '#111111';
+    const textColor = '#FFFFFF';
+
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
+    const hasImage = !!slide.imageUrl;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px]', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundColor: bgColor,
+          fontFamily: '"Montserrat", sans-serif',
+          color: textColor,
+        }}
+      >
+        {/* Creative Background Elements */}
+        <div className="absolute inset-0">
+          {/* Diagonal Line */}
+          <div
+            className="absolute w-full h-full"
+            style={{
+              background: `linear-gradient(135deg, transparent 49.9%, ${chroma(primaryColor).alpha(0.2).css()} 50%)`,
+            }}
+          />
+
+          {/* Circle */}
+          <div
+            className="absolute w-96 h-96 rounded-full"
+            style={{
+              border: `2px solid ${chroma(secondaryColor).alpha(0.3).css()}`,
+              top: '10%',
+              right: '10%',
+            }}
+          />
+
+          {/* Small Dots Pattern */}
+          <div className="absolute inset-0">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="smallDots" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <circle cx="2" cy="2" r="1" fill={chroma(accentColor).alpha(0.3).css()} />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#smallDots)" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="relative z-10 flex flex-col h-full p-16">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-16">
+            {/* Logo */}
+            {addLogo && (
+              <img
+                src={defaultLogoUrl}
+                alt="Logo"
+                className="w-40 h-20 object-contain"
+              />
+            )}
+
+            {/* Slide Number */}
+            <div
+              className="px-4 py-2 text-sm font-bold"
+              style={{
+                backgroundColor: primaryColor,
+                color: ensureContrast('#FFFFFF', primaryColor),
+              }}
+            >
+              {slide.slideNumber.toString().padStart(2, '0')}
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 flex">
+            {/* Left Column - Content */}
+            <div className="w-1/2 flex flex-col justify-center pr-12">
+              <h2
+                className={cn('font-bold mb-8 leading-tight', {
+                  'text-6xl': !isLongText,
+                  'text-5xl': isLongText,
+                })}
+                style={{ color: textColor }}
+              >
+                {slide.title}
+              </h2>
+
+              {hasDescription && (
+                <p
+                  className={cn('leading-relaxed', {
+                    'text-2xl': !isLongText,
+                    'text-xl': isLongText,
+                  })}
+                  style={{ color: chroma(textColor).alpha(0.8).css() }}
+                >
+                  {slide.description}
+                </p>
+              )}
+
+              {/* Creative Element */}
+              <div
+                className="mt-12 w-24 h-1"
+                style={{ backgroundColor: accentColor }}
+              />
+            </div>
+
+            {/* Right Column - Image */}
+            {hasImage && (
+              <div className="w-1/2 relative">
+                <div
+                  className={cn('w-full h-full overflow-hidden', {
+                    'rounded-lg': graphicStyle.borderRadius !== '0px',
+                  })}
+                  style={{
+                    border: `1px solid ${chroma(primaryColor).alpha(0.3).css()}`,
+                    transform: 'rotate(2deg)',
+                  }}
+                >
+                  <img
+                    src={slide.imageUrl}
+                    alt="Creative visual"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Decorative Element */}
+                <div
+                  className="absolute -bottom-4 -left-4 w-32 h-32"
+                  style={{
+                    backgroundColor: secondaryColor,
+                    zIndex: -1,
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="mt-16 flex justify-between items-center">
+            <span
+              className="text-lg"
+              style={{ color: chroma(textColor).alpha(0.7).css() }}
+            >
+              {slide.footer}
+            </span>
+
+            <a
+              href={slide.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg"
+              style={{ color: accentColor }}
+            >
+              {slide.websiteUrl}
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Template 4: Educational Series
+export const Template6: CarouselTemplate = {
+  id: 'educational-series',
+  name: 'Educational Series',
+  coverImageUrl: '/images/carousel-cover/cover4.png',
+  slides: [
+  {
+    title: 'The Science of Learning',
+    description: 'Understanding how our brains process and retain information can help us develop more effective study strategies.',
+    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 1,
+  },
+  {
+    title: 'Spaced Repetition',
+    description: 'Review material at increasing intervals to strengthen memory retention and improve long-term recall.',
+    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 2,
+  },
+  {
+    title: 'Active Recall',
+    description: 'Test yourself regularly to reinforce knowledge and identify gaps in understanding.',
+    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 3,
+  },
+  {
+    title: 'Interleaved Practice',
+    description: 'Mix different topics or skills during study sessions to enhance flexibility and problem-solving.',
+    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 4,
+  },
+  {
+    title: 'FOLLOW FOR MORE LEARNING TIPS',
+    description: '',
+    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+    footer: 'bitrox.tech',
+    socialHandle: '@bitroxtech',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 5,
+  },
+],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      complementaryTextColor,
+      ensureContrast,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+    } = colors;
+
+    // Educational color palette
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#4285F4';
+    const secondaryColor = chroma.valid(logoColors?.secondary) ? logoColors.secondary : '#34A853';
+    const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#FBBC05';
+    const bgColor = '#F8F9FA';
+    const textColor = '#202124';
+
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
+    const hasImage = !!slide.imageUrl;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundColor: bgColor,
+          fontFamily: '"Roboto", sans-serif',
+          color: textColor,
+        }}
+      >
+        {/* Header */}
+        <div
+          className="w-full py-8 px-16 flex justify-between items-center"
+          style={{
+            borderBottom: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+          }}
+        >
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="h-16 object-contain"
+            />
+          )}
+
+          {/* Course/Series Title */}
+          <div className="flex items-center">
+            <span
+              className="text-xl font-medium mr-4"
+              style={{ color: primaryColor }}
+            >
+              Educational Series
+            </span>
+
+            <div
+              className="px-3 py-1 text-sm font-bold"
+              style={{
+                backgroundColor: accentColor,
+                color: ensureContrast('#000000', accentColor),
+                borderRadius: '999px',
+              }}
+            >
+              {slide.slideNumber.toString().padStart(2, '0')}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex p-16">
+          {/* Left Column - Content */}
+          <div className="w-1/2 flex flex-col justify-center pr-16">
+            <h2
+              className={cn('font-bold mb-8 leading-tight', {
+                'text-5xl': !isLongText,
+                'text-4xl': isLongText,
+              })}
+              style={{ color: textColor }}
+            >
+              {slide.title}
+            </h2>
+
+            {hasDescription && (
+              <p
+                className={cn('leading-relaxed', {
+                  'text-2xl': !isLongText,
+                  'text-xl': isLongText,
+                })}
+                style={{ color: chroma(textColor).alpha(0.8).css() }}
+              >
+                {slide.description}
+              </p>
+            )}
+
+            {/* Key Points */}
+            <div className="mt-12">
+              <div className="flex items-center mb-4">
+                <div
+                  className="w-4 h-4 mr-4 flex-shrink-0"
+                  style={{
+                    backgroundColor: primaryColor,
+                    borderRadius: '50%',
+                  }}
+                />
+                <span
+                  className="text-lg"
+                  style={{ color: chroma(textColor).alpha(0.8).css() }}
+                >
+                  Key learning point
+                </span>
+              </div>
+
+              <div className="flex items-center">
+                <div
+                  className="w-4 h-4 mr-4 flex-shrink-0"
+                  style={{
+                    backgroundColor: secondaryColor,
+                    borderRadius: '50%',
+                  }}
+                />
+                <span
+                  className="text-lg"
+                  style={{ color: chroma(textColor).alpha(0.8).css() }}
+                >
+                  Important concept
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Image */}
+          {hasImage && (
+            <div className="w-1/2">
+              <div
+                className={cn('w-full h-full overflow-hidden', {
+                  'rounded-lg': graphicStyle.borderRadius !== '0px',
+                })}
+                style={{
+                  boxShadow: `0 8px 24px ${chroma(textColor).alpha(0.1).css()}`,
+                  border: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imageUrl}
+                  alt="Educational visual"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="py-8 px-16 flex justify-between items-center"
+          style={{
+            backgroundColor: chroma(bgColor).darken(0.05).css(),
+            borderTop: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+          }}
+        >
+          <span
+            className="text-lg"
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
+          >
+            {slide.footer}
+          </span>
+
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg"
+            style={{ color: primaryColor }}
+          >
+            {slide.websiteUrl}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Template 5: Product Showcase
+export const Template7: CarouselTemplate = {
+  id: 'product-showcase',
+  name: 'Product Showcase',
+  coverImageUrl: '/images/carousel-cover/cover5.png',
+ slides: [
+  {
+    title: 'Premium Wireless Headphones',
+    description: 'Experience immersive sound with our noise-cancelling technology and premium materials for all-day comfort.',
+    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 1,
+  },
+  {
+    title: 'Crystal-Clear Audio',
+    description: 'Enjoy high-fidelity sound with advanced drivers for crisp highs and deep bass.',
+    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 2,
+  },
+  {
+    title: 'All-Day Comfort',
+    description: 'Designed with soft, breathable materials to ensure comfort during extended listening sessions.',
+    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 3,
+  },
+  {
+    title: 'Seamless Connectivity',
+    description: 'Effortless Bluetooth pairing and long-lasting battery life keep you connected on the go.',
+    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 4,
+  },
+  {
+    title: 'FOLLOW FOR MORE AUDIO INNOVATIONS',
+    description: '',
+    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+    footer: 'bitrox.tech',
+    socialHandle: '@bitroxtech',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 5,
+  },
+],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      complementaryTextColor,
+      ensureContrast,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+    } = colors;
+
+    // E-commerce color palette
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#5D5FEF';
+    const secondaryColor = chroma.valid(logoColors?.secondary) ? logoColors.secondary : '#EF5DA8';
+    const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#FFC107';
+    const bgColor = '#FFFFFF';
+    const textColor = '#212121';
+
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
+    const hasImage = !!slide.imageUrl;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px]', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundColor: bgColor,
+          fontFamily: '"Inter", sans-serif',
+          color: textColor,
+        }}
+      >
+        {/* Background Pattern */}
+        <div className="absolute inset-0">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="productPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+                <circle cx="20" cy="20" r="1" fill={chroma(primaryColor).alpha(0.1).css()} />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#productPattern)" />
+          </svg>
+        </div>
+
+        {/* Header */}
+        <div className="relative z-10 p-16 flex justify-between items-start">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="h-16 object-contain"
+            />
+          )}
+
+          {/* Product Label */}
+          <div
+            className="px-6 py-2 text-sm font-bold"
+            style={{
+              backgroundColor: accentColor,
+              color: ensureContrast('#000000', accentColor),
+              borderRadius: '999px',
+            }}
+          >
+            NEW ARRIVAL
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="relative z-10 flex-1 flex p-16">
+          {/* Left Column - Product Image */}
+          {hasImage && (
+            <div className="w-1/2 flex items-center justify-center">
+              <div
+                className="relative w-full h-full"
+                style={{
+                  background: `radial-gradient(circle, ${chroma(primaryColor).alpha(0.1).css()} 0%, transparent 70%)`,
+                }}
+              >
+                <img
+                  src={slide.imageUrl}
+                  alt="Product"
+                  className="w-full h-full object-contain"
+                  style={{
+                    filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))',
+                  }}
+                />
+
+                {/* Price Tag */}
+                <div
+                  className="absolute top-8 left-8 w-24 h-24 flex items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: secondaryColor,
+                    color: ensureContrast('#FFFFFF', secondaryColor),
+                    boxShadow: `0 4px 12px ${chroma(secondaryColor).alpha(0.3).css()}`,
+                  }}
+                >
+                  <div className="text-center">
+                    <div className="text-sm">From</div>
+                    <div className="text-xl font-bold">$299</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Right Column - Product Details */}
+          <div className="w-1/2 flex flex-col justify-center pl-16">
+            {/* Slide Number */}
+            <div
+              className="mb-4 text-sm font-medium"
+              style={{ color: chroma(textColor).alpha(0.6).css() }}
+            >
+              {slide.slideNumber.toString().padStart(2, '0')} / FEATURED PRODUCT
+            </div>
+
+            {/* Title */}
+            <h2
+              className={cn('font-bold mb-6 leading-tight', {
+                'text-5xl': !isLongText,
+                'text-4xl': isLongText,
+              })}
+              style={{ color: textColor }}
+            >
+              {slide.title}
+            </h2>
+
+            {/* Description */}
+            {hasDescription && (
+              <p
+                className={cn('leading-relaxed mb-8', {
+                  'text-xl': !isLongText,
+                  'text-lg': isLongText,
+                })}
+                style={{ color: chroma(textColor).alpha(0.8).css() }}
+              >
+                {slide.description}
+              </p>
+            )}
+
+            {/* Features */}
+            <div className="mb-8">
+              <div className="flex items-center mb-3">
+                <div
+                  className="w-3 h-3 mr-3 flex-shrink-0"
+                  style={{
+                    backgroundColor: primaryColor,
+                    borderRadius: '50%',
+                  }}
+                />
+                <span className="text-lg">Premium Feature</span>
+              </div>
+
+              <div className="flex items-center mb-3">
+                <div
+                  className="w-3 h-3 mr-3 flex-shrink-0"
+                  style={{
+                    backgroundColor: primaryColor,
+                    borderRadius: '50%',
+                  }}
+                />
+                <span className="text-lg">High Quality</span>
+              </div>
+
+              <div className="flex items-center">
+                <div
+                  className="w-3 h-3 mr-3 flex-shrink-0"
+                  style={{
+                    backgroundColor: primaryColor,
+                    borderRadius: '50%',
+                  }}
+                />
+                <span className="text-lg">Exclusive Design</span>
+              </div>
+            </div>
+
+            {/* CTA Button */}
+            <button
+              className="px-8 py-4 text-lg font-bold self-start"
+              style={{
+                backgroundColor: primaryColor,
+                color: ensureContrast('#FFFFFF', primaryColor),
+                borderRadius: graphicStyle.borderRadius,
+              }}
+            >
+              Shop Now
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 py-8 px-16 flex justify-between items-center"
+          style={{
+            borderTop: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+          }}
+        >
+          <span
+            className="text-lg"
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
+          >
+            {slide.footer}
+          </span>
+
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg"
+            style={{ color: primaryColor }}
+          >
+            {slide.websiteUrl}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Template 6: Minimalist Timeline
+export const Template8: CarouselTemplate = {
+  id: 'minimalist-timeline',
+  name: 'Minimalist Timeline',
+  coverImageUrl: '/images/carousel-cover/cover6.png',
+  slides: [
+  {
+    title: 'The Evolution of Design',
+    description: 'From Bauhaus to Digital: How design principles have evolved while maintaining core fundamentals.',
+    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 1,
+  },
+  {
+    title: 'Bauhaus Beginnings',
+    description: 'Discover how Bauhaus emphasized function, simplicity, and geometric forms, shaping modern design.',
+    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 2,
+  },
+  {
+    title: 'Mid-Century Modern',
+    description: 'Explore the clean lines and organic shapes that defined post-war design and continue to inspire.',
+    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 3,
+  },
+  {
+    title: 'Digital Design Era',
+    description: 'Learn how digital tools and user-centered design revolutionized interfaces and experiences.',
+    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 4,
+  },
+  {
+    title: 'FOLLOW FOR MORE DESIGN HISTORY',
+    description: '',
+    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+    footer: 'bitrox.tech',
+    socialHandle: '@bitroxtech',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 5,
+  },
+],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      complementaryTextColor,
+      ensureContrast,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+    } = colors;
+
+    // Minimalist color palette
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#000000';
+    const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#FF5252';
+    const bgColor = '#FFFFFF';
+    const textColor = '#333333';
+
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
+    const hasImage = !!slide.imageUrl;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundColor: bgColor,
+          fontFamily: '"Helvetica Neue", sans-serif',
+          color: textColor,
+        }}
+      >
+        {/* Timeline Line */}
+        <div
+          className="absolute left-32 top-0 bottom-0 w-px"
+          style={{ backgroundColor: chroma(textColor).alpha(0.1).css() }}
+        />
+
+        {/* Timeline Dot */}
+        <div
+          className="absolute left-32 top-1/2 w-6 h-6 rounded-full -ml-3"
+          style={{
+            backgroundColor: accentColor,
+            transform: 'translateY(-50%)',
+          }}
+        />
+
+        {/* Header */}
+        <div className="relative z-10 pt-16 px-16 flex justify-between items-start">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="h-12 object-contain"
+            />
+          )}
+
+          {/* Slide Number */}
+          <div
+            className="text-6xl font-light"
+            style={{ color: chroma(textColor).alpha(0.1).css() }}
+          >
+            {slide.slideNumber.toString().padStart(2, '0')}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="relative z-10 flex-1 flex flex-col justify-center pl-64 pr-16">
+          {/* Title */}
+          <h2
+            className={cn('font-bold mb-8 leading-tight', {
+              'text-6xl': !isLongText,
+              'text-5xl': isLongText,
+            })}
+            style={{ color: textColor }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          {hasDescription && (
+            <p
+              className={cn('leading-relaxed mb-12 max-w-2xl', {
+                'text-2xl': !isLongText,
+                'text-xl': isLongText,
+              })}
+              style={{ color: chroma(textColor).alpha(0.8).css() }}
+            >
+              {slide.description}
+            </p>
+          )}
+
+          {/* Image */}
+          {hasImage && (
+            <div
+              className={cn('w-3/4 h-64 overflow-hidden', {
+                'rounded-lg': graphicStyle.borderRadius !== '0px',
+              })}
+            >
+              <img
+                src={slide.imageUrl}
+                alt="Timeline visual"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="relative z-10 pb-16 px-16 flex justify-between items-center">
+          <span
+            className="text-lg"
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
+          >
+            {slide.footer}
+          </span>
+
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg"
+            style={{ color: accentColor }}
+          >
+            {slide.websiteUrl}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Template 7: Magazine Style
+export const Template9: CarouselTemplate = {
+  id: 'magazine-style',
+  name: 'Magazine Style',
+  coverImageUrl: '/images/carousel-cover/cover7.png',
+  slides: [
+  {
+    tagline: 'FEATURE STORY',
+    title: 'The Future of Sustainable Fashion',
+    description: 'How innovative designers are reimagining the industry with eco-friendly materials and ethical practices.',
+    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 1,
+  },
+  {
+    tagline: 'ECO INNOVATION',
+    title: 'Recycled Materials in Fashion',
+    description: 'Designers are transforming plastic waste and upcycled fabrics into stunning, sustainable collections.',
+    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 2,
+  },
+  {
+    tagline: 'ETHICAL PRACTICES',
+    title: 'Fair Trade Fashion',
+    description: 'Support brands that prioritize fair wages and safe working conditions for garment workers.',
+    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 3,
+  },
+  {
+    tagline: 'GREEN TRENDS',
+    title: 'Slow Fashion Movement',
+    description: 'Embrace quality over quantity with timeless pieces designed to last, reducing environmental impact.',
+    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 4,
+  },
+  {
+    tagline: 'STAY INSPIRED',
+    title: 'FOLLOW FOR MORE FASHION TIPS',
+    description: '',
+    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+    footer: 'bitrox.tech',
+    socialHandle: '@bitroxtech',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 5,
+  },
+],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      complementaryTextColor,
+      ensureContrast,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+    } = colors;
+
+    // Magazine color palette
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#D32F2F';
+    const secondaryColor = chroma.valid(logoColors?.secondary) ? logoColors.secondary : '#212121';
+    const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#FFC107';
+    const bgColor = '#FFFFFF';
+    const textColor = '#212121';
+
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
+    const hasImage = !!slide.imageUrl;
+    const hasTagline = !!slide.tagline;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px]', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundColor: bgColor,
+          fontFamily: '"Playfair Display", serif',
+          color: textColor,
+        }}
+      >
+        {/* Header */}
+        <div className="p-12 flex justify-between items-center">
+          {/* Logo or Magazine Name */}
+          {addLogo ? (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="h-12 object-contain"
+            />
+          ) : (
+            <h3
+              className="text-2xl font-bold uppercase tracking-widest"
+              style={{ color: primaryColor }}
+            >
+              Magazine
+            </h3>
+          )}
+
+          {/* Issue Number */}
+          <div className="flex items-center">
+            <span
+              className="text-sm font-medium uppercase tracking-wider mr-2"
+              style={{ color: chroma(textColor).alpha(0.6).css() }}
+            >
+              Issue
+            </span>
+            <span
+              className="text-xl font-bold"
+              style={{ color: textColor }}
+            >
+              {slide.slideNumber.toString().padStart(2, '0')}
+            </span>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex">
+          {/* Left Column - Content */}
+          <div className="w-1/2 p-12 flex flex-col justify-center">
+            {/* Tagline */}
+            {hasTagline && (
+              <div className="mb-6">
+                <span
+                  className="text-sm font-bold uppercase tracking-widest"
+                  style={{ color: primaryColor }}
+                >
+                  {slide.tagline}
+                </span>
+                <div
+                  className="w-12 h-1 mt-2"
+                  style={{ backgroundColor: primaryColor }}
+                />
+              </div>
+            )}
+
+            {/* Title */}
+            <h2
+              className={cn('font-bold mb-8 leading-tight', {
+                'text-5xl': !isLongText,
+                'text-4xl': isLongText,
+              })}
+              style={{
+                color: textColor,
+                fontFamily: '"Playfair Display", serif',
+              }}
+            >
+              {slide.title}
+            </h2>
+
+            {/* Description */}
+            {hasDescription && (
+              <p
+                className={cn('leading-relaxed', {
+                  'text-xl': !isLongText,
+                  'text-lg': isLongText,
+                })}
+                style={{
+                  color: chroma(textColor).alpha(0.8).css(),
+                  fontFamily: '"Lora", serif',
+                }}
+              >
+                {slide.description}
+              </p>
+            )}
+
+            {/* Continue Reading */}
+            <div className="mt-12 flex items-center">
+              <span
+                className="text-lg font-medium mr-4"
+                style={{ color: primaryColor }}
+              >
+                Continue Reading
+              </span>
+              <div
+                className="w-12 h-px"
+                style={{ backgroundColor: primaryColor }}
+              />
+            </div>
+          </div>
+
+          {/* Right Column - Image */}
+          {hasImage && (
+            <div className="w-1/2 relative">
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url(${slide.imageUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              />
+
+              {/* Overlay */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(to right, ${bgColor} 0%, transparent 20%)`,
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="absolute bottom-0 left-0 right-0 py-6 px-12 flex justify-between items-center"
+          style={{
+            borderTop: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+          }}
+        >
+          <span
+            className="text-lg"
+            style={{
+              color: chroma(textColor).alpha(0.7).css(),
+              fontFamily: '"Lora", serif',
+            }}
+          >
+            {slide.footer}
+          </span>
+
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg"
+            style={{
+              color: primaryColor,
+              fontFamily: '"Lora", serif',
+            }}
+          >
+            {slide.websiteUrl}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Template 8: Tech Showcase
+export const Template10: CarouselTemplate = {
+  id: 'tech-showcase',
+  name: 'Tech Showcase',
+  coverImageUrl: '/images/carousel-cover/cover8.png',
+  slides: [
+  {
+    title: 'Next-Gen AI Solutions',
+    description: 'Leveraging machine learning algorithms to solve complex business challenges with unprecedented accuracy.',
+    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 1,
+  },
+  {
+    title: 'Automate with Intelligence',
+    description: 'Use AI to streamline workflows, reduce manual tasks, and boost operational efficiency.',
+    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 2,
+  },
+  {
+    title: 'Data-Driven Decisions',
+    description: 'Harness AI analytics to uncover insights and make informed, strategic business choices.',
+    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 3,
+  },
+  {
+    title: 'Scale with AI Innovation',
+    description: 'Adopt cutting-edge AI tools to stay competitive and drive growth in your industry.',
+    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+    footer: 'bitrox.tech',
+    socialHandle: '',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 4,
+  },
+  {
+    title: 'FOLLOW FOR MORE AI INSIGHTS',
+    description: '',
+    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+    footer: 'bitrox.tech',
+    socialHandle: '@bitroxtech',
+    websiteUrl: 'https://bitrox.tech',
+    slideNumber: 5,
+  },
+],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      complementaryTextColor,
+      ensureContrast,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+    } = colors;
+
+    // Tech-inspired colors
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#00BCD4';
+    const secondaryColor = chroma.valid(logoColors?.secondary) ? logoColors.secondary : '#7C4DFF';
+    const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#EEFF41';
+    const bgColor = '#0A1929';
+    const textColor = '#FFFFFF';
+
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
+    const hasImage = !!slide.imageUrl;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundColor: bgColor,
+          fontFamily: '"Roboto", sans-serif',
+          color: textColor,
+        }}
+      >
+        {/* Tech Grid Background */}
+        <div className="absolute inset-0">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="smallGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path
+                  d="M 20 0 L 0 0 0 20"
+                  fill="none"
+                  stroke={chroma('#ffffff').alpha(0.03).css()}
+                  strokeWidth="0.5"
+                />
+              </pattern>
+              <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
+                <rect width="100" height="100" fill="url(#smallGrid)" />
+                <path
+                  d="M 100 0 L 0 0 0 100"
+                  fill="none"
+                  stroke={chroma('#ffffff').alpha(0.05).css()}
+                  strokeWidth="1"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </div>
+
+        {/* Glowing Accent Elements */}
+        <div
+          className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.05).css(),
+          }}
+        />
+
+        <div
+          className="absolute bottom-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl"
+          style={{
+            backgroundColor: chroma(secondaryColor).alpha(0.05).css(),
+          }}
+        />
+
+        {/* Header */}
+        <div className="relative z-10 p-16 flex justify-between items-start">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="h-16 object-contain"
+              style={{
+                filter: 'brightness(1.2) contrast(1.1)',
+              }}
+            />
+          )}
+
+          {/* Tech-inspired Slide Number */}
+          <div className="flex items-center">
+            <div
+              className="w-1 h-12 mr-4"
+              style={{ backgroundColor: accentColor }}
+            />
+            <span
+              className="text-4xl font-light"
+              style={{
+                color: chroma(textColor).alpha(0.9).css(),
+                letterSpacing: '0.1em',
+              }}
+            >
+              {slide.slideNumber.toString().padStart(2, '0')}
+            </span>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="relative z-10 flex-1 flex p-16">
+          {/* Left Column - Content */}
+          <div className="w-1/2 flex flex-col justify-center pr-16">
+            {/* Tech-inspired decorative element */}
+            <div className="flex items-center mb-8">
+              <div
+                className="w-12 h-1"
+                style={{ backgroundColor: primaryColor, boxShadow: `0 0 10px ${primaryColor}` }}
+              />
+              <div
+                className="ml-4 text-sm font-mono opacity-70"
+                style={{ color: primaryColor }}
+              >
+                01 // INNOVATION
+              </div>
+            </div>
+
+            {/* Title */}
+            <h2
+              className={cn('font-bold mb-8 leading-tight', {
+                'text-5xl': !isLongText,
+                'text-4xl': isLongText,
+              })}
+              style={{
+                color: textColor,
+                textShadow: `0 0 10px ${chroma(primaryColor).alpha(0.5).css()}`,
+                letterSpacing: '0.02em',
+              }}
+            >
+              {slide.title}
+            </h2>
+
+            {/* Description */}
+            {hasDescription && (
+              <p
+                className={cn('leading-relaxed mb-12', {
+                  'text-xl': !isLongText,
+                  'text-lg': isLongText,
+                })}
+                style={{ color: chroma(textColor).alpha(0.8).css() }}
+              >
+                {slide.description}
+              </p>
+            )}
+
+            {/* Tech Specs */}
+            <div className="flex flex-wrap">
+              <div
+                className="mr-4 mb-4 px-4 py-2 text-sm font-mono"
+                style={{
+                  backgroundColor: chroma(primaryColor).alpha(0.2).css(),
+                  color: primaryColor,
+                  borderRadius: '4px',
+                }}
+              >
+                #AI
+              </div>
+
+              <div
+                className="mr-4 mb-4 px-4 py-2 text-sm font-mono"
+                style={{
+                  backgroundColor: chroma(secondaryColor).alpha(0.2).css(),
+                  color: secondaryColor,
+                  borderRadius: '4px',
+                }}
+              >
+                #MACHINELEARNING
+              </div>
+
+              <div
+                className="mr-4 mb-4 px-4 py-2 text-sm font-mono"
+                style={{
+                  backgroundColor: chroma(accentColor).alpha(0.2).css(),
+                  color: accentColor,
+                  borderRadius: '4px',
+                }}
+              >
+                #INNOVATION
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Image */}
+          {hasImage && (
+            <div className="w-1/2">
+              <div
+                className={cn('w-full h-full overflow-hidden', {
+                  'rounded-lg': graphicStyle.borderRadius !== '0px',
+                })}
+                style={{
+                  border: `1px solid ${chroma(primaryColor).alpha(0.3).css()}`,
+                  boxShadow: `0 0 30px ${chroma(primaryColor).alpha(0.2).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imageUrl}
+                  alt="Tech visual"
+                  className="w-full h-full object-cover"
+                  style={{
+                    filter: 'brightness(0.8) saturate(1.2)',
+                  }}
+                />
+
+                {/* Tech Overlay */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${chroma(primaryColor).alpha(0.2).css()} 0%, transparent 50%)`,
+                    mixBlendMode: 'overlay',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 p-16 flex justify-between items-center"
+          style={{
+            borderTop: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+          }}
+        >
+          <div className="flex items-center">
+            <div
+              className="w-3 h-3 rounded-full mr-3"
+              style={{
+                backgroundColor: primaryColor,
+                boxShadow: `0 0 10px ${primaryColor}`,
+              }}
+            />
+            <div
+              className="w-3 h-3 rounded-full mr-3"
+              style={{
+                backgroundColor: secondaryColor,
+                boxShadow: `0 0 10px ${secondaryColor}`,
+              }}
+            />
+          </div>
+
+          <div className="flex items-center">
+            <span
+              className="text-lg font-mono mr-8"
+              style={{ color: chroma(textColor).alpha(0.7).css() }}
+            >
+              {slide.footer}
+            </span>
+
+            <a
+              href={slide.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg font-mono"
+              style={{
+                color: primaryColor,
+                textShadow: `0 0 8px ${chroma(primaryColor).alpha(0.5).css()}`,
+              }}
+            >
+              {slide.websiteUrl}
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Template 9: Nature Inspired
+export const Template11: CarouselTemplate = {
+  id: 'nature-inspired',
+  name: 'Nature Inspired',
+  coverImageUrl: '/images/carousel-cover/cover9.png',
+  slides: [
+    {
+      title: 'Sustainable Living',
+      description: 'Embracing eco-friendly practices to create a healthier planet for future generations.',
+      imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      title: 'Reduce, Reuse, Recycle',
+      description: 'Adopt the three Rs to minimize waste and conserve natural resources effectively.',
+      imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      title: 'Choose Renewable Energy',
+      description: 'Switch to solar, wind, or other renewable sources to lower your carbon footprint.',
+      imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      title: 'Support Sustainable Brands',
+      description: 'Shop from companies prioritizing eco-friendly materials and ethical production practices.',
+      imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      title: 'FOLLOW FOR MORE ECO TIPS',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      complementaryTextColor,
+      ensureContrast,
+      vibrantAccentColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+    } = colors;
+
+    // Nature-inspired colors
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#4CAF50';
+    const secondaryColor = chroma.valid(logoColors?.secondary) ? logoColors.secondary : '#8BC34A';
+    const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#FFC107';
+    const bgColor = '#F5F5F5';
+    const textColor = '#33691E';
+
+    const hasDescription = !!slide.description;
+    const isLongText = slide.description && slide.description.length > 100;
+    const hasImage = !!slide.imageUrl;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundColor: bgColor,
+          fontFamily: '"Quicksand", sans-serif',
+          color: textColor,
+        }}
+      >
+        {/* Organic Shapes */}
+        <div className="absolute inset-0">
+          {/* Leaf-like shape */}
+          <svg
+            className="absolute top-0 right-0 w-1/2 h-1/2 opacity-10"
+            viewBox="0 0 200 200"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fill={primaryColor}
+              d="M44.7,-76.4C58.9,-69.8,71.8,-59.2,79.6,-45.3C87.4,-31.3,90.2,-14.1,88.1,2C86,18.2,79,33.3,69.3,46.5C59.7,59.7,47.4,71,33.2,77.7C19,84.3,2.8,86.3,-12.4,83.5C-27.7,80.8,-42,73.3,-54.3,63C-66.7,52.7,-77.1,39.7,-82.6,24.7C-88.1,9.7,-88.7,-7.3,-83.8,-22C-78.9,-36.7,-68.4,-49.2,-55.6,-56.1C-42.7,-63,-27.5,-64.3,-13.2,-70.5C1.1,-76.7,30.5,-83,44.7,-76.4Z"
+              transform="translate(100 100)"
+            />
+          </svg>
+
+          {/* Wave-like shape */}
+          <svg
+            className="absolute bottom-0 left-0 w-full h-1/3 opacity-10"
+            viewBox="0 0 1200 120"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
+              opacity=".25"
+              fill={secondaryColor}
+            />
+            <path
+              d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z"
+              opacity=".5"
+              fill={primaryColor}
+            />
+            <path
+              d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"
+              fill={secondaryColor}
+            />
+          </svg>
+        </div>
+
+        {/* Header */}
+        <div className="relative z-10 p-16 flex justify-between items-start">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="h-16 object-contain"
+            />
+          )}
+
+          {/* Leaf-inspired slide number */}
+          <div
+            className="w-16 h-16 flex items-center justify-center"
+            style={{
+              backgroundColor: accentColor,
+              borderRadius: '50% 0 50% 50%', // Leaf-like shape
+              transform: 'rotate(45deg)',
+            }}
+          >
+            <span
+              className="text-xl font-bold"
+              style={{
+                color: ensureContrast('#FFFFFF', accentColor),
+                transform: 'rotate(-45deg)',
+              }}
+            >
+              {slide.slideNumber}
+            </span>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="relative z-10 flex-1 flex p-16">
+          {/* Left Column - Content */}
+          <div className="w-1/2 flex flex-col justify-center pr-16">
+            {/* Title with Nature-inspired Accent */}
+            <div className="mb-8">
+              <div
+                className="w-24 h-1 mb-6 rounded-full"
+                style={{ backgroundColor: accentColor }}
+              />
+              <h2
+                className={cn('font-semibold leading-tight', {
+                  'text-5xl': !isLongText,
+                  'text-4xl': isLongText,
+                })}
+                style={{ color: textColor }}
+              >
+                {slide.title}
+              </h2>
+            </div>
+
+            {/* Description */}
+            {hasDescription && (
+              <p
+                className={cn('leading-relaxed mb-12', {
+                  'text-2xl': !isLongText,
+                  'text-xl': isLongText,
+                })}
+                style={{ color: chroma(textColor).alpha(0.8).css() }}
+              >
+                {slide.description}
+              </p>
+            )}
+
+            {/* Nature-inspired decorative element */}
+            <div className="flex items-center">
+              <svg
+                className="w-8 h-8 mr-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                  stroke={accentColor}
+                  strokeWidth="2"
+                />
+                <path
+                  d="M12 6V12L16 14"
+                  stroke={accentColor}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span
+                className="text-lg italic"
+                style={{ color: chroma(textColor).alpha(0.7).css() }}
+              >
+                Nature's wisdom
+              </span>
+            </div>
+          </div>
+
+          {/* Right Column - Image */}
+          {hasImage && (
+            <div className="w-1/2">
+              <div
+                className={cn('w-full h-full overflow-hidden', {
+                  'rounded-lg': graphicStyle.borderRadius !== '0px',
+                })}
+                style={{
+                  boxShadow: `0 8px 24px ${chroma(textColor).alpha(0.1).css()}`,
+                  border: `1px solid ${chroma(primaryColor).alpha(0.2).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imageUrl}
+                  alt="Nature visual"
+                  className="w-full h-full object-cover"
+                />
+
+                {/* Natural gradient overlay */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(to bottom, ${chroma(primaryColor).alpha(0.2).css()} 0%, transparent 100%)`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 p-16 flex justify-between items-center"
+          style={{
+            borderTop: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+          }}
+        >
+          <span
+            className="text-lg"
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
+          >
+            {slide.footer}
+          </span>
+
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg inline-flex items-center"
+            style={{ color: primaryColor }}
+          >
+            <span className="mr-2">•</span>
+            {slide.websiteUrl}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Template 10: Quote Collection
+export const Template12: CarouselTemplate = {
+  id: 'quote-collection',
+  name: 'Quote Collection',
+  coverImageUrl: '/images/carousel-cover/cover10.png',
+  slides: [
+    {
+      title: '"The best way to predict the future is to create it."',
+      description: '— Abraham Lincoln',
+      imageUrl: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      title: '"Innovation distinguishes between a leader and a follower."',
+      description: '— Steve Jobs',
+      imageUrl: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      title: '"Success is not final, failure is not fatal."',
+      description: '— Winston Churchill',
+      imageUrl: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      title: '"The only limit to our realization of tomorrow is our doubts of today."',
+      description: '— Franklin D. Roosevelt',
+      imageUrl: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      title: 'FOLLOW FOR MORE INSPIRATION',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const {
+      logoColors,
+      ensureContrast,
+      vibrantAccentColor,
+      graphicStyle,
+    } = colors;
+
+    // Quote-inspired colors
+    const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#673AB7';
+    const secondaryColor = chroma.valid(logoColors?.secondary) ? logoColors.secondary : '#3F51B5';
+    const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#FF9800';
+    const bgColor = '#FFFFFF';
+    const textColor = '#212121';
+
+    const hasDescription = !!slide.description;
+    const hasImage = !!slide.imageUrl;
+
+    return (
+      <div
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
+        style={{
+          backgroundColor: bgColor,
+          fontFamily: '"Merriweather", serif',
+          color: textColor,
+        }}
+      >
+        {/* Background Pattern */}
+        <div className="absolute inset-0">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="quotePattern" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path
+                  d="M10,0 L10,10 L0,10"
+                  fill="none"
+                  stroke={chroma(primaryColor).alpha(0.1).css()}
+                  strokeWidth="1"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#quotePattern)" />
+          </svg>
+        </div>
+
+        {/* Header */}
+        <div className="relative z-10 p-16 flex justify-between items-start">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="h-16 object-contain"
+            />
+          )}
+
+          {/* Quote Number */}
+          <div
+            className="px-4 py-2 text-sm font-bold"
+            style={{
+              backgroundColor: accentColor,
+              color: ensureContrast('#FFFFFF', accentColor),
+              borderRadius: '999px',
+            }}
+          >
+            QUOTE {slide.slideNumber.toString().padStart(2, '0')}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="relative z-10 flex-1 flex">
+          {/* Left Column - Quote */}
+          <div className="w-1/2 flex flex-col justify-center p-16">
+            {/* Large Quote Mark */}
+            <div
+              className="text-9xl font-bold mb-8"
+              style={{ color: chroma(primaryColor).alpha(0.2).css() }}
+            >
+              "
+            </div>
+
+            {/* Quote Text */}
+            <h2
+              className="text-4xl font-bold mb-12 leading-tight"
+              style={{ color: textColor }}
+            >
+              {slide.title.replace(/"/g, '')}
+            </h2>
+
+            {/* Attribution */}
+            {hasDescription && (
+              <p
+                className="text-2xl italic"
+                style={{ color: chroma(textColor).alpha(0.7).css() }}
+              >
+                {slide.description}
+              </p>
+            )}
+          </div>
+
+          {/* Right Column - Image */}
+          {hasImage && (
+            <div className="w-1/2 relative">
+              <div
+                className={cn('w-full h-full overflow-hidden', {
+                  'rounded-lg': graphicStyle.borderRadius !== '0px',
+                })}
+              >
+                <img
+                  src={slide.imageUrl}
+                  alt="Quote visual"
+                  className="w-full h-full object-cover"
+                  style={{
+                    filter: 'grayscale(30%)',
+                  }}
+                />
+
+                {/* Overlay */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(to right, ${bgColor} 0%, transparent 20%)`,
+                  }}
+                />
+              </div>
+
+              {/* Decorative Element */}
+              <div
+                className="absolute bottom-16 right-16 w-32 h-1"
+                style={{ backgroundColor: accentColor }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 p-16 flex justify-between items-center"
+          style={{
+            borderTop: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+          }}
+        >
+          <span
+            className="text-lg"
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
+          >
+            {slide.footer}
+          </span>
+
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg"
+            style={{ color: primaryColor }}
+          >
+            {slide.websiteUrl}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// Export all templates
+export const carouselTemplates: CarouselTemplate[] = [
+  Template2,
+  Template3,
+  Template4,
+  Template5,
+  Template6,
+  Template7,
+  Template8,
+  Template9,
+  Template10,
+  Template11,
+  Template12
+];
