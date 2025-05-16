@@ -218,8 +218,17 @@ const GetUserAllPosts = async(req, res, next) => {
         next(error)
     }
 }
+
+const GetUserPostDetailById = async(req, res, next) => {
+     try {
+        let user = await UserServices.getUserPostDetail(req.params, req.user)
+        return res.status(OK).json(new ApiResponse(OK, user, "Posts fetched Successfully"))
+    } catch (error) {
+        next(error)
+    }
+}
 const UserControllers = {
-    Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus,
+    Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus, GetUserPostDetailById,
     ForgetPassword, Logout, GetPendingTopics, GetUserAllPosts,
     Login, SavePosts, PostContent, GetPostContent, SaveImageContent,
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts,

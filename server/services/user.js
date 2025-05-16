@@ -109,7 +109,7 @@ const forgetPassword = async (inputs) => {
 const login = async (inputs) => {
     let user;
     if (isEmail(inputs.email)) {
-        user = await User.findOne({ email: inputs.email, isDeleted: false }).select("+password")
+        user = await User.findOne({ email: inputs.email, isEmailVerify: true, isDeleted: false }).select("+password")
         if (!user) throw new ApiError(BAD_REQUEST, "Invalid user")
         let compare = await comparePasswordUsingBcrypt(inputs.password, user.password);
         if (!compare) throw new ApiError(BAD_REQUEST, "Invalid password")
@@ -352,12 +352,12 @@ const getSavePosts = async (postContentId, user) => {
         if (Object.keys(contentData).length > 0) {
             results.push({
                 _id: savedPost._id,
-                images: savedPost.images || [], 
+                images: savedPost.images || [],
                 title: contentData.title,
                 description: contentData.description,
                 hashtags: contentData.hashtags,
                 contentType: savedPost.contentType,
-                topic: savedPost.topic || '', 
+                topic: savedPost.topic || '',
                 status: savedPost.status || ''
             });
         }
@@ -367,62 +367,75 @@ const getSavePosts = async (postContentId, user) => {
 }
 
 
-const getUserAllPosts = async(user) => {
+const getUserAllPosts = async (user) => {
     const savedPosts = await SavePosts.find({
         userId: user._id
     });
 
-     const results = [];
+    return savedPosts;
 
-    // Process each saved post
-    for (const savedPost of savedPosts) {
-        let contentData = {};
-        // Fetch content based on contentType
-        if (savedPost.contentType === 'ImageContent') {
-            const content = await ImageContent.findById(savedPost.contentId, 'content hashtags');
-            if (content && content.content && content.hashtags) {
-                contentData = {
-                    title: content.content.title || '',
-                    description: content.content.description || '',
-                    hashtags: content.hashtags || []
-                };
-            }
-        } else if (savedPost.contentType === 'DYKContent') {
-            const content = await DYKContent.findById(savedPost.contentId, 'content hashtags');
-            if (content && content.content && content.hashtags) {
-                contentData = {
-                    title: content.content.title || '',
-                    description: content.content.fact || '', // Use fact as description for DYKContent
-                    hashtags: content.hashtags || []
-                };
-            }
-        } else if (savedPost.contentType === 'CarouselContent') {
-            const content = await CarouselContent.findById(savedPost.contentId, 'content');
-            if (content && content.content && content.content.length >= 6) {
-                contentData = {
-                    title: content.content[5].title || '',
-                    description: content.content[5].description || '',
-                    hashtags: content.content[5].hashtags || []
-                };
-            }
+}
+
+const getUserPostDetail = async (params, user) => {
+
+
+    let post, content;
+    let results = [];
+    let contentData = {};
+
+
+    post = await SavePosts.findById({ _id: params.postid, userId: user._id })
+
+    if (!post) throw new ApiError(400, "Post does not exist");
+
+    if (post.contentType === "ImageContent") {
+        content = await ImageContent.findById(post.contentId, 'content hashtags');
+        if (content && content.content && content.hashtags) {
+            contentData = {
+                title: content.content.title || '',
+                description: content.content.description || '',
+                hashtags: content.hashtags || []
+            };
         }
-
-        if (Object.keys(contentData).length > 0) {
-            results.push({
-                _id: savedPost._id,
-                images: savedPost.images || [], 
-                title: contentData.title,
-                description: contentData.description,
-                hashtags: contentData.hashtags,
-                contentType: savedPost.contentType,
-                topic: savedPost.topic || '', 
-                status: savedPost.status || '',
-                type: savedPost.type || ''
-            });
+    } else if (post.contentType === 'DYKContent') {
+        const content = await DYKContent.findById(post.contentId, 'content hashtags');
+        if (content && content.content && content.hashtags) {
+            contentData = {
+                title: content.content.title || '',
+                description: content.content.fact || '', // Use fact as description for DYKContent
+                hashtags: content.hashtags || []
+            };
+        }
+    } else if (post.contentType === 'CarouselContent') {
+        const content = await CarouselContent.findById(post.contentId, 'content');
+        if (content && content.content && content.content.length >= 6) {
+            // Extract title, description, hashtags from content[5] (sixth position)
+            contentData = {
+                title: content.content[5].title || '',
+                description: content.content[5].description || '',
+                hashtags: content.content[5].hashtags || []
+            };
         }
     }
 
-    return results;
+
+
+    results.push({
+        _id: post._id,
+        images: post.images || [],
+        title: contentData.title,
+        description: contentData.description,
+        hashtags: contentData.hashtags,
+        contentType: post.contentType,
+        topic: post.topic || '',
+        status: post.status || '',
+        type: post.type || '',
+        createdAt: post.createdAt || ''
+    });
+
+    return results
+
+
 
 }
 const getImageContent = async (contentId, user) => {
@@ -434,14 +447,14 @@ const getImageContent = async (contentId, user) => {
 
 const getCarouselContent = async (contentId, user) => {
 
-    let content = await CarouselContent.findOne({ _id: contentId,  userId: user._id  })
+    let content = await CarouselContent.findOne({ _id: contentId, userId: user._id })
     if (!content) throw new ApiError(BAD_REQUEST, "No content found")
     return content;
 }
 
 const getDYKContent = async (contentId, user) => {
 
-    let content = await DYKContent.findOne({ _id: contentId, userId: user._id  })
+    let content = await DYKContent.findOne({ _id: contentId, userId: user._id })
     if (!content) throw new ApiError(BAD_REQUEST, "No content found")
     return content;
 }
@@ -465,6 +478,8 @@ const updatePostTopics = async (postId, user, inputs) => {
 
 }
 
+
+
 const UserServices = {
     signup,
     verifyOTP,
@@ -487,6 +502,7 @@ const UserServices = {
     getUserProfile,
     getPendingTopics,
     updatePostTopics,
-    getUserAllPosts
+    getUserAllPosts,
+    getUserPostDetail
 }
 export default UserServices;

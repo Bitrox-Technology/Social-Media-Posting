@@ -28,6 +28,7 @@ userRouter.get("/get-dyk-content/:contentid", AuthMiddleware, UserControllers.Ge
 userRouter.put("/update-posts/:postid", AuthMiddleware, UserControllers.UpdatePost)
 userRouter.put("/update-post-topic/:posttopicid", AuthMiddleware, UserControllers.UpdatePostTopicsStatus)
 userRouter.get("/get-all-posts", AuthMiddleware, UserControllers.GetUserAllPosts)
+userRouter.get("/get-user-post/:postid", AuthMiddleware, UserControllers.GetUserPostDetailById)
 // userRouter.post("/update-profile", AuthMiddleware, upload.single("avatar"), UserControllers.UpdateProfile)
 // userRouter.get("/get-profile", AuthMiddleware, UserControllers.GetProfile)
 // userRouter.post("/logout", AuthMiddleware, UserControllers.Logout)
