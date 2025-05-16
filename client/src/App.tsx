@@ -33,6 +33,7 @@ import { Pricing } from './pages/PricingPage';
 import CompetitorPostAnalyzer from './components/content/CompetitorPostAnalyzer';
 import CodeGeneratorForm from './components/content/GenerateTemplate';
 import { UserAllPosts } from './components/content/UserAllPosts';
+import { UserPostDetail } from './components/content/UserPostDetail';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -116,6 +117,7 @@ function App() {
                   <Route path="/pricing" element={<Pricing />} />
                   <Route path='/generate-template' element= {<CodeGeneratorForm/>} />
                   <Route path='/user-posts' element={<UserAllPosts/>} />
+                  <Route path='/user-post/:postId' element={<UserPostDetail/>} />
 
                   <Route path='/profile' element={<ProfilePage />} />
                   <Route path="/auto" element={<AutoPostCreator />} />

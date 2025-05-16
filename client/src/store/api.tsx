@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setUser, clearUser } from './appSlice';
 import { backendURL } from '../constants/urls';
+import { string } from 'yup';
 
 interface ContentIdea {
   title: string;
@@ -170,7 +171,7 @@ export const api = createApi({
         body,
       }),
     }),
-    signIn: builder.mutation<ApiResponse<any>, { email: string; password: string; provider: string; uid: string  }>({
+    signIn: builder.mutation<ApiResponse<any>, { email: string; password: string; provider: string; uid: string }>({
       query: (body) => ({
         url: '/user/signin',
         method: 'POST',
@@ -306,26 +307,26 @@ export const api = createApi({
         body,
       }),
     }),
-    updatePostTopicStatus: builder.mutation<ApiResponse<any>, {postTopicId: string; status: string }>({
-      query: ({postTopicId,...body }) => ({
+    updatePostTopicStatus: builder.mutation<ApiResponse<any>, { postTopicId: string; status: string }>({
+      query: ({ postTopicId, ...body }) => ({
         url: `/user/update-post-topic/${postTopicId}`,
         method: 'PUT',
         body,
       }),
     }),
-    
+
     getUserAllPosts: builder.query<ApiResponse<any>, void>({
       query: () => ({
         url: `/user/get-all-posts`,
         method: 'GET',
-      
+
       }),
     }),
-    
-    authLinkedIn: builder.query<ApiResponse<any>, void>({
-      query: () => ({
-        url: '/social/linkedin/auth',
+    getUserPostDetail: builder.query<ApiResponse<any>, { postId: string }>({
+      query: ({ postId }) => ({
+        url: `/user/get-user-post/${postId}`,
         method: 'GET',
+
       }),
     }),
     generateCode: builder.mutation<ApiResponse<any>, FormData>({
@@ -334,9 +335,35 @@ export const api = createApi({
         method: 'POST',
         body: formData
       }),
-    })
+    }),
+    authLinkedIn: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/social/linkedin/auth',
+        method: 'GET',
+      }),
+    }),
+    authFacebook: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/social/facebook/auth',
+        method: 'GET',
+      }),
+    }),
+    authInstagram: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/social/instagram/auth',
+        method: 'GET',
+      }),
+    }),
+    linkedInPost: builder.mutation<ApiResponse<any>, {title: String; description: String, imageUrl: String; scheduleTime: string}>({
+      query: (body) => ({
+        url: '/social/linkedin/post',
+        method: 'POST',
+        body
+      }),
+    }),
 
-   
+
+
   }),
 });
 
@@ -370,8 +397,12 @@ export const {
   useUserDetailsMutation,
   useLazyGetUserProfileQuery,
   useLazyAuthLinkedInQuery,
-  useLazyGetPendingPostsQuery,
   useGenerateCodeMutation,
   useUpdatePostTopicStatusMutation,
-  useLazyGetUserAllPostsQuery
+  useLazyGetUserAllPostsQuery,
+  useLazyGetUserPostDetailQuery,
+  useLazyGetPendingPostsQuery,
+  useLazyAuthFacebookQuery,
+  useLazyAuthInstagramQuery,
+  useLinkedInPostMutation,
 } = api;

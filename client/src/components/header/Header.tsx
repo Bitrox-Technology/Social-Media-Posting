@@ -68,7 +68,7 @@ const Header: React.FC<{ toggleDrawer: (open: boolean) => (event: React.Keyboard
                   theme === 'dark' ? 'text-white' : 'text-gray-900'
                 }`}
               >
-                Bitrox{' '}
+              
                 <span
                   className={`bg-clip-text text-transparent bg-gradient-to-r ${
                     theme === 'dark'
@@ -76,7 +76,7 @@ const Header: React.FC<{ toggleDrawer: (open: boolean) => (event: React.Keyboard
                       : 'from-blue-600 to-purple-600'
                   }`}
                 >
-                  SocialAI
+                  ASocialI
                 </span>
               </span>
             </Link>

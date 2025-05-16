@@ -4,8 +4,23 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
-import { Calendar, Linkedin, Instagram, Facebook, Clock, Share2, CheckCircle } from 'lucide-react';
-import { useLazyGetSavePostsQuery, useLazyAuthLinkedInQuery, useLazyGetUserAllPostsQuery } from '../../store/api';
+import {
+  Grid,
+  List,
+  Search,
+  Filter,
+  Calendar,
+  Share2,
+  Edit,
+  Trash2,
+  MoreVertical,
+  ChevronDown,
+  Tag,
+  Clock,
+  Eye,
+} from 'lucide-react';
+import { useLazyGetUserAllPostsQuery } from '../../store/api';
+import { useTheme } from '../../context/ThemeContext';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -20,106 +35,98 @@ interface Image {
 interface Post {
   _id: string;
   images: Image[];
-  title: string;
-  description: string;
-  hashtags: string[];
-  contentType: string;
   topic: string;
+  contentType: string;
   status: string;
   postContentId: string;
-  type: string; // Added to support normalized type
+  type: string;
+  createdAt: string;
+  updatedAt: string;
 }
-
-interface Schedule {
-  platforms: string[];
-  dateTime: Date | null;
-}
-
-const platformIcons = {
-  linkedin: <Linkedin className="w-4 h-4" />,
-  instagram: <Instagram className="w-4 h-4" />,
-  facebook: <Facebook className="w-4 h-4" />,
-};
 
 export const UserAllPosts: React.FC = () => {
+  const { theme } = useTheme(); // Access theme from ThemeContext
   const navigate = useNavigate();
-  const [schedules, setSchedules] = useState<{ [postId: string]: Schedule }>({});
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('all');
   const [getUserAllPosts, { data: rawPosts, isLoading, isError, error }] = useLazyGetUserAllPostsQuery();
-  const [authLinkedIn] = useLazyAuthLinkedInQuery();
 
-  // Map posts and normalize type
+  // Theme-based styles
+  const themeStyles = {
+    light: {
+      background: 'bg-gradient-to-br from-gray-100 to-gray-200',
+      cardBackground: 'bg-white/80',
+      textPrimary: 'text-gray-900',
+      textSecondary: 'text-gray-600',
+      border: 'border-gray-300',
+      buttonBg: 'bg-blue-600',
+      buttonHover: 'hover:bg-blue-700',
+      inputBg: 'bg-white',
+      inputBorder: 'border-gray-300',
+      filterBg: 'bg-gray-100',
+      filterText: 'text-gray-700',
+      statusBg: 'bg-gray-200',
+    },
+    dark: {
+      background: 'bg-gradient-to-br from-gray-900 to-gray-800',
+      cardBackground: 'bg-gray-800/50',
+      textPrimary: 'text-white',
+      textSecondary: 'text-gray-400',
+      border: 'border-gray-700/50',
+      buttonBg: 'bg-blue-500',
+      buttonHover: 'hover:bg-blue-600',
+      inputBg: 'bg-gray-800',
+      inputBorder: 'border-gray-700',
+      filterBg: 'bg-gray-800',
+      filterText: 'text-gray-400',
+    },
+  };
+
+  const currentTheme = themeStyles[theme as keyof typeof themeStyles] || themeStyles.dark;
+
   const posts = Array.isArray(rawPosts?.data)
     ? rawPosts.data.map((post) => ({
         ...post,
-        type: post.contentType === 'DYKContent' ? 'dyk' : post.contentType === 'CarouselContent' ? 'carousel' : 'image',
+        type: post.contentType === 'DYKContent' ? 'doyouknow' : post.contentType === 'CarouselContent' ? 'carousel' : 'image',
       }))
     : [];
 
-  // Group posts into pairs for grid layout
-  const postPairs = [];
-  for (let i = 0; i < posts.length; i += 2) {
-    postPairs.push(posts.slice(i, i + 2));
-  }
+  const filteredPosts = posts.filter((post) => {
+    if (searchQuery) {
+      return post.topic.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    if (selectedFilter !== 'all') {
+      return post.type === selectedFilter;
+    }
+    return true;
+  });
 
   useEffect(() => {
-    // Fetch all posts for the user (assuming postContentId is optional or fetched differently)
-    getUserAllPosts(); // Modify based on your API; assuming it fetches all posts if postContentId is empty
+    getUserAllPosts();
   }, [getUserAllPosts]);
-
-  const handleScheduleSingle = (postId: string) => {
-    const schedule = schedules[postId];
-    if (!schedule?.platforms.length || !schedule.dateTime) {
-      alert('Please select at least one platform and a date/time');
-      return;
-    }
-    // Simulate scheduling (replace with actual API call)
-    console.log('Scheduling post:', { postId, ...schedule });
-    setSchedules((prev) => ({
-      ...prev,
-      [postId]: { platforms: [], dateTime: null },
-    }));
-    alert('Post scheduled successfully!');
-  };
-
-  const updateSchedule = (postId: string, platform: string, dateTime?: Date | null) => {
-    setSchedules((prev) => {
-      const current = prev[postId] || { platforms: [], dateTime: null };
-      const platforms = platform
-        ? current.platforms.includes(platform)
-          ? current.platforms.filter((p) => p !== platform)
-          : [...current.platforms, platform]
-        : current.platforms;
-      return {
-        ...prev,
-        [postId]: {
-          platforms,
-          dateTime: dateTime !== undefined ? dateTime : current.dateTime,
-        },
-      };
-    });
-  };
 
   const renderImage = (image: Image) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative w-full aspect-square max-w-sm mx-auto rounded-xl overflow-hidden shadow-lg bg-gray-800"
+      className={`relative w-full aspect-square rounded-xl overflow-hidden shadow-lg ${currentTheme.cardBackground}`}
     >
       <img
         src={image.url}
         alt={image.label}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
         loading="lazy"
       />
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-        <p className="text-white text-sm font-medium text-center">{image.label}</p>
+        <p className={`${currentTheme.textPrimary} text-sm font-medium text-center`}>{image.label}</p>
       </div>
     </motion.div>
   );
 
   const renderPost = (post: Post) => {
     if (!post.images || !post.images.length) {
-      return <div className="text-center text-gray-400">No images available for this post.</div>;
+      return <div className={`text-center ${currentTheme.textSecondary}`}>No images available</div>;
     }
 
     if (post.type === 'carousel') {
@@ -144,18 +151,9 @@ export const UserAllPosts: React.FC = () => {
     return renderImage(post.images[0]);
   };
 
-  const handleAuthLinkedIn = async () => {
-    try {
-      const response = await authLinkedIn().unwrap();
-      window.location.href = response.data;
-    } catch (error) {
-      console.error('Error during LinkedIn authentication:', error);
-    }
-  };
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+      <div className={`min-h-screen ${currentTheme.background} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -163,121 +161,163 @@ export const UserAllPosts: React.FC = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-6">
+      <div className={`min-h-screen ${currentTheme.background} p-6`}>
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl font-bold text-red-400 mb-4">Error Loading Posts</h1>
-          <p className="text-gray-400">{JSON.stringify(error)}</p>
+          <h1 className={`text-3xl font-bold text-red-400 mb-ometer4`}>Error Loading Posts</h1>
+          <p className={currentTheme.textSecondary}>{JSON.stringify(error)}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4 sm:p-6">
+    <div className={`min-h-screen ${currentTheme.background} p-4 sm:p-6`}>
       <div className="max-w-7xl mx-auto">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-12 text-center"
-        >
-          Your Generated Posts
-        </motion.h1>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+          <h1
+            className={`text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400`}
+          >
+            Content Library
+          </h1>
 
-        {posts.length === 0 && (
-          <div className="text-center text-gray-400">No posts found.</div>
-        )}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Search */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search posts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`pl-10 pr-4 py-2 ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg border ${currentTheme.inputBorder} focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64`}
+              />
+              <Search className={`absolute left-3 top-2.5 w-5 h-5 ${currentTheme.textSecondary}`} />
+            </div>
 
-        <AnimatePresence>
-          <div className="space-y-8">
-            {postPairs.map((pair, pairIndex) => (
-              <motion.div
-                key={pairIndex}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: pairIndex * 0.1 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+            {/* View Toggle */}
+            <div className={`flex items-center ${currentTheme.inputBg} rounded-lg p-1`}>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded ${viewMode === 'grid' ? `${currentTheme.buttonBg} ${currentTheme.textPrimary}` : currentTheme.textSecondary}`}
               >
-                {pair.map((post) => (
-                  <motion.div
-                    key={post._id}
-                    className="bg-gray-800/50 backdrop-blur-sm rounded-xl overflow-hidden"
-                  >
-                    <div className="p-6">
-                      <h2 className="text-2xl font-semibold text-white mb-4 text-center">
-                        {post.topic}
-                      </h2>
-                      <h3 className="text-xl font-medium text-gray-200 mb-2 text-center">
-                        {post.title}
-                      </h3>
-                      <p className="text-gray-400 text-sm mb-4 text-center">
-                        {post.description}
-                      </p>
-                      <div className="flex flex-wrap justify-center gap-2 mb-4">
-                        {post.hashtags.map((hashtag: string, index: number) => (
-                            <span
-                                key={index}
-                                className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full"
-                            >
-                                {hashtag}
-                            </span>
-                        ))}
-                      </div>
-                      <p className="text-gray-500 text-sm mb-4 text-center">
-                        Content Type: {post.contentType} | Status: {post.status}
-                      </p>
-                      {renderPost(post)}
-                    </div>
+                <Grid className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded ${viewMode === 'list' ? `${currentTheme.buttonBg} ${currentTheme.textPrimary}` : currentTheme.textSecondary}`}
+              >
+                <List className="w-5 h-5" />
+              </button>
+            </div>
 
-                    <div className="bg-gray-900/50 p-6 space-y-4">
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {Object.entries(platformIcons).map(([platform, icon]) => (
-                          <button
-                            key={platform}
-                            onClick={() => {
-                              if (platform === 'linkedin') {
-                                handleAuthLinkedIn();
-                              }
-                              updateSchedule(post._id, platform);
-                            }}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
-                              schedules[post._id]?.platforms.includes(platform)
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                            }`}
-                          >
-                            {icon}
-                            <span className="capitalize text-sm">{platform}</span>
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-center gap-4">
-                        <Calendar className="w-5 h-5 text-gray-400" />
-                        <DatePicker
-                          selected={schedules[post._id]?.dateTime}
-                          onChange={(date: Date | null) => updateSchedule(post._id, '', date)}
-                          showTimeSelect
-                          dateFormat="Pp"
-                          className="bg-gray-700 text-white rounded-lg px-4 py-2 w-full max-w-xs text-center"
-                          placeholderText="Select date and time"
-                          minDate={new Date()}
-                        />
-                        <Clock className="w-5 h-5 text-gray-400" />
-                      </div>
-
-                      <button
-                        onClick={() => handleScheduleSingle(post._id)}
-                        className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300"
-                      >
-                        Schedule Post
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            ))}
+            {/* Filter */}
+            <div className="relative">
+              <button
+                className={`flex items-center gap-2 px-4 py-2 ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg border ${currentTheme.inputBorder}`}
+              >
+                <Filter className="w-5 h-5" />
+                <span>Filter</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </AnimatePresence>
+        </div>
+
+        {/* Content Type Filters */}
+        <div className="flex flex-wrap gap-2 mb-8">
+          {['all', 'image', 'carousel', 'doyouknow'].map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setSelectedFilter(filter)}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                selectedFilter === filter
+                  ? `${currentTheme.buttonBg} ${currentTheme.textPrimary}`
+                  : `${currentTheme.filterBg} ${currentTheme.filterText} hover:bg-gray-700`
+              }`}
+            >
+              {filter.charAt(0).toUpperCase() + filter.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Posts Grid/List */}
+        <div
+          className={`grid gap-6 ${
+            viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+          }`}
+        >
+          {filteredPosts.map((post) => (
+            <motion.div
+              key={post._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl overflow-hidden ${currentTheme.border} hover:border-gray-600/50 transition-all`}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs ${
+                      post.type === 'carousel'
+                        ? 'bg-purple-500/20 text-purple-400'
+                        : post.type === 'doyouknow'
+                        ? 'bg-yellow-500/20 text-yellow-400'
+                        : 'bg-blue-500/20 text-blue-400'
+                    }`}
+                  >
+                    {post.type.toUpperCase()}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
+                      <Edit className={`w-4 h-4 ${currentTheme.textSecondary}`} />
+                    </button>
+                    <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
+                      <Share2 className={`w-4 h-4 ${currentTheme.textSecondary}`} />
+                    </button>
+                    <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
+                      <MoreVertical className={`w-4 h-4 ${currentTheme.textSecondary}`} />
+                    </button>
+                  </div>
+                </div>
+
+                <h2 className={`text-xl font-semibold ${currentTheme.textPrimary} mb-2`}>{post.topic}</h2>
+
+                <div className={`flex items-center gap-2 text-sm ${currentTheme.textSecondary} mb-4`}>
+                  <Clock className="w-4 h-4" />
+                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                </div>
+
+                {renderPost(post)}
+
+                <div className="mt-6 flex items-center justify-between">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      post.status === 'published'
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-yellow-500/20 text-yellow-400'
+                    }`}
+                  >
+                    {post.status}
+                  </span>
+
+                  <button
+                    onClick={() => navigate(`/user-post/${post._id}`)}
+                    className={`flex items-center gap-2 px-4 py-2 ${currentTheme.buttonBg} ${currentTheme.textPrimary} rounded-lg ${currentTheme.buttonHover} transition-colors`}
+                  >
+                    <Eye className="w-4 h-4" />
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {filteredPosts.length === 0 && (
+          <div className={`text-center ${currentTheme.textSecondary} mt-12`}>
+            <p className="text-xl">No posts found</p>
+            <p className="text-sm mt-2">Try adjusting your search or filters</p>
+          </div>
+        )}
       </div>
     </div>
   );
