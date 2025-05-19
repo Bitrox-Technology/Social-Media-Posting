@@ -4,9 +4,7 @@ import { BAD_REQUEST } from "../utils/apiResponseCode.js";
 import querystring from "querystring";
 import { downloadImage } from "../utils/postUtils.js";
 import { createReadStream } from "fs";
-import { promises as fs } from 'fs';
-import cron from "node-cron"
-import { convertToCron } from "../utils/utilities.js";
+import { promises as fs } from 'fs';  
 
 const linkedInAuthentication = () => {
     const authUrl = `https://www.linkedin.com/oauth/v2/authorization?` +
@@ -14,7 +12,7 @@ const linkedInAuthentication = () => {
             response_type: 'code',
             client_id: process.env.LINKEDIN_CLIENT_ID,
             redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
-            scope: 'openid profile email w_member_social',
+            scope: 'openid profile email w_member_social w_organization_social r_organization_admin',
         });
     return authUrl;
 }
@@ -74,6 +72,139 @@ const linkedInCallback = async (query) => {
 
     return { profileData, accessToken };
 }
+
+const fetchAdministeredPages = async (accessToken) => {
+    try {
+        const response = await axios.get(
+            'https://api.linkedin.com/rest/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&projection=(elements*(organizationalTarget~(vanityName,localizedName)))',
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'X-Restli-Protocol-Version': '2.0.0',
+                    'Content-Type': 'application/json',
+                    'LinkedIn-Version': '202301', // Use latest version
+                },
+            }
+        );
+
+        const pages = response.data.elements.map(element => ({
+            urn: element.organizationalTarget,
+            name: element['organizationalTarget~'].localizedName,
+            vanityName: element['organizationalTarget~'].vanityName,
+        }));
+
+        return pages;
+    } catch (error) {
+        throw new ApiError(
+            error.response?.status || BAD_REQUEST,
+            `Failed to fetch administered pages: ${error.response?.data?.message || error.message}`
+        );
+    }
+};
+
+const linkedInPagePost = async (inputs, accessToken, organizationUrn) => {
+    let post;
+
+    if (!organizationUrn) {
+        throw new ApiError(BAD_REQUEST, "Organization URN is required");
+    }
+
+    const TEMP_IMAGE_PATH = `./Uploads/temp_image_${Date.now()}.png`;
+    await downloadImage(inputs.imageUrl, TEMP_IMAGE_PATH);
+
+    const registerPayload = {
+        registerUploadRequest: {
+            recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+            owner: organizationUrn, // Use organization URN instead of person URN
+            serviceRelationships: [
+                { relationshipType: 'OWNER', identifier: 'urn:li:userGeneratedContent' },
+            ],
+        },
+    };
+
+    let response;
+
+    try {
+        response = await axios.post(
+            'https://api.linkedin.com/v2/assets?action=registerUpload',
+            registerPayload,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'X-Restli-Protocol-Version': '2.0.0',
+                    'Content-Type': 'application/json',
+                    'LinkedIn-Version': '202301', // Use latest version
+                },
+            }
+        );
+    } catch (error) {
+        throw new ApiError(
+            error.response?.status || BAD_REQUEST,
+            `Failed to register upload: ${error.response?.data?.message || error.message}`
+        );
+    }
+
+    let uploadUrl = response.data.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl;
+    let asset = response.data.value.asset;
+
+    try {
+        const fileStream = createReadStream(TEMP_IMAGE_PATH);
+        await axios.put(uploadUrl, fileStream, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'image/png',
+            },
+        });
+        console.log('Image uploaded successfully');
+    } catch (error) {
+        throw new ApiError(
+            error.response?.status || BAD_REQUEST,
+            `Failed to upload image: ${error.response?.data?.message || error.message}`
+        );
+    }
+
+    const sharePayload = {
+        author: organizationUrn, // Use organization URN
+        lifecycleState: 'PUBLISHED',
+        specificContent: {
+            'com.linkedin.ugc.ShareContent': {
+                shareCommentary: { text: inputs.title + "\n" + inputs.description },
+                shareMediaCategory: 'IMAGE',
+                media: [
+                    {
+                        status: 'READY',
+                        description: { text: inputs.description },
+                        media: asset,
+                        title: { text: inputs.title },
+                    },
+                ],
+            },
+        },
+        visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
+    };
+
+    try {
+        response = await axios.post('https://api.linkedin.com/v2/ugcPosts', sharePayload, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'X-Restli-Protocol-Version': '2.0.0',
+                'Content-Type': 'application/json',
+                'LinkedIn-Version': '202301',
+            },
+        });
+    } catch (error) {
+        throw new ApiError(
+            error.response?.status || BAD_REQUEST,
+            `Failed to create page post: ${error.response?.data?.message || error.message}`
+        );
+    }
+
+    post = response.headers['x-restli-id'];
+
+    await fs.unlink(TEMP_IMAGE_PATH).catch(() => { });
+
+    return post;
+};
 
 
 
@@ -188,47 +319,47 @@ const linkedInPost = async (inputs) => {
 
 }
 
-const scheduledLinkedPosts = async (inputs) => {
-    let cronExpression;
+// const scheduledLinkedPosts = async (inputs) => {
+//     let cronExpression;
 
-   if (scheduleTime && scheduleTime !== ''){
-        cronExpression = convertToCron(inputs.scheduleTime);
+//    if (scheduleTime && scheduleTime !== ''){
+//         cronExpression = convertToCron(inputs.scheduleTime);
 
-        console.log('Generated cron expression:', cronExpression);
+//         console.log('Generated cron expression:', cronExpression);
 
-        const scheduledDate = new Date(inputs.scheduleTime);
-        const now = new Date();
-        if (scheduledDate <= now) {
-            throw new ApiError(BAD_REQUEST, 'Scheduled time must be in the future');
-        }
+//         const scheduledDate = new Date(inputs.scheduleTime);
+//         const now = new Date();
+//         if (scheduledDate <= now) {
+//             throw new ApiError(BAD_REQUEST, 'Scheduled time must be in the future');
+//         }
 
-        let task = cron.schedule(
-            cronExpression,
-            async () => {
-                try {
+//         let task = cron.schedule(
+//             cronExpression,
+//             async () => {
+//                 try {
 
-                    const postResult = await linkedInPost(inputs);
-                    console.log(`Scheduled post executed successfully with post ID: ${postResult}`);
-
-                    
-                } catch (error) {
-                    console.error('Scheduled LinkedIn post failed:', error.message);
-                }
-            },
-            {
-                scheduled: true,
-                timezone: 'Asia/Kolkata',
-            }
-        );
-
-        
-    }
+//                     const postResult = await linkedInPost(inputs);
+//                     console.log(`Scheduled post executed successfully with post ID: ${postResult}`);
 
 
+//                 } catch (error) {
+//                     console.error('Scheduled LinkedIn post failed:', error.message);
+//                 }
+//             },
+//             {
+//                 scheduled: true,
+//                 timezone: 'Asia/Kolkata',
+//             }
+//         );
+
+
+//     }
 
 
 
-}
+
+
+// }
 
 
 const facebookAuthentication = () => {

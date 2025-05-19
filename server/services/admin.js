@@ -196,10 +196,13 @@ const getUserById = async (param) => {
             from: 'saveposts', 
             localField: '_id',
             foreignField: 'userId',
+            // let : { userId : "$_id"},
+            // pipeline : [
+
+            // ],
             as: 'posts',
           },
-        },
-        
+        },      
         {
           $project: {
             userName: 1,

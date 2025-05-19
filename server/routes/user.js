@@ -2,9 +2,10 @@ import { Router } from "express"
 import UserControllers from "../controllers/user.js"
 import { AuthMiddleware } from "../middlewares/auth.js"
 import { upload } from "../middlewares/multer.js"
+import { otpGeneratorRateLimiter } from "../middlewares/rateLimiter.js"
 
 const userRouter = Router()
-userRouter.post("/signup", UserControllers.Signup)
+userRouter.post("/signup", otpGeneratorRateLimiter, UserControllers.Signup)
 userRouter.post("/verify-otp", UserControllers.VerifyOTP)
 userRouter.post("/resend", UserControllers.ResendOTP)
 userRouter.post("/forget-password", UserControllers.ForgetPassword)
@@ -34,6 +35,4 @@ userRouter.get("/get-user-post/:postid", AuthMiddleware, UserControllers.GetUser
 // userRouter.post("/logout", AuthMiddleware, UserControllers.Logout)
 // userRouter.post("/reset-password", AuthMiddleware, UserControllers.ResetPassword)
 
-export {
-    userRouter
-}
+export default userRouter;

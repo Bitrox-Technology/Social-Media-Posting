@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { POST_STATUS_ENUM } from "../config/constant.js";
 
 const carouselContentSchema = new mongoose.Schema({
     postContentId: {
@@ -24,11 +25,23 @@ const carouselContentSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ["pending", "error", "success"],
+        enum: POST_STATUS_ENUM,
         default: "pending",
     },
-}, { timestamp: true });
+}, { timestamps: true });
 
+
+carouselContentSchema.index({ postContentId: 1 }); 
+carouselContentSchema.index({ templateId: 1 }); 
+carouselContentSchema.index({ status: 1 }); 
+carouselContentSchema.index({ topic: 1 }); 
+carouselContentSchema.index({ "content.hashtags": 1 }); 
+carouselContentSchema.index({ createdAt: 1 }); 
+carouselContentSchema.index({ updatedAt: 1 }); 
+
+// Compound indexes
+carouselContentSchema.index({ status: 1, postContentId: 1 }); 
+carouselContentSchema.index({ topic: 1, createdAt: 1 });
 
 const CarouselContent = mongoose.model("CarouselContent", carouselContentSchema);
 export default CarouselContent;

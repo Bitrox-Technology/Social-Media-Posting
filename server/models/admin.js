@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ROLE_ENUM } from "../config/constant.js";
 
 const adminSchema = new mongoose.Schema(
     {
@@ -18,7 +19,7 @@ const adminSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ["ADMIN", "USER", ""],
+            enum: ROLE_ENUM,
             default: "ADMIN",
         },
         password: {
@@ -38,6 +39,16 @@ const adminSchema = new mongoose.Schema(
         toObject: { virtuals: true },
     }
 )
+
+adminSchema.index({ role: 1 }); 
+adminSchema.index({ isDeleted: 1 });
+adminSchema.index({ isEmailVerify: 1 }); 
+adminSchema.index({ totalUsers: 1 }); 
+adminSchema.index({ createdAt: 1 }); 
+adminSchema.index({ updatedAt: 1 }); 
+
+// Compound indexes
+adminSchema.index({ role: 1, isDeleted: 1 });
 
 const Admin = mongoose.model("Admin", adminSchema)
 export default Admin;

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { CONTENT_TYPE_ENUM, POST_STATUS_ENUM, POST_TYPE_ENUM } from '../config/constant.js';
 
 const savePostsSchema = new mongoose.Schema({
     userId: {
@@ -11,7 +12,7 @@ const savePostsSchema = new mongoose.Schema({
     },
     contentType: {
         type: String,
-        enum: ['ImageContent', 'CarouselContent', 'DYKContent'],
+        enum: CONTENT_TYPE_ENUM,
     },
     postContentId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -23,11 +24,11 @@ const savePostsSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['image', 'carousel', 'doyouknow'],
+        enum: POST_TYPE_ENUM,
     },
     status: {
         type: String,
-        enum: ['pending', 'error', 'success'],
+        enum: POST_STATUS_ENUM,
         default: 'success',
     },
     images: [
@@ -37,6 +38,22 @@ const savePostsSchema = new mongoose.Schema({
         },
     ],
 }, { timestamps: true });
-const SavePosts = mongoose.model('SavePosts', savePostsSchema);
 
+
+savePostsSchema.index({ userId: 1 }); 
+savePostsSchema.index({ contentId: 1 }); 
+savePostsSchema.index({ contentType: 1 }); 
+savePostsSchema.index({ postContentId: 1 }); 
+savePostsSchema.index({ status: 1 }); 
+savePostsSchema.index({ topic: 1 });
+savePostsSchema.index({ type: 1 }); 
+savePostsSchema.index({ createdAt: 1 }); 
+savePostsSchema.index({ updatedAt: 1 });
+
+// Compound indexes
+savePostsSchema.index({ userId: 1, status: 1 }); 
+savePostsSchema.index({ contentType: 1, contentId: 1 }); 
+savePostsSchema.index({ topic: 1, createdAt: 1 });
+
+const SavePosts = mongoose.model('SavePosts', savePostsSchema);
 export default SavePosts;

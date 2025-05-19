@@ -1,20 +1,20 @@
-import { ApiError } from "../utils/ApiError.js";
-import { BAD_REQUEST } from "../utils/apiResponseCode.js"
 import joi from "joi"
+import VALIDATE_SCHEMA from "./validateSchema.js";
+import { CONTENT_TYPE_ENUM, POST_STATUS_ENUM, POST_TYPE_ENUM, PROVIDER_ENUM } from "../config/constant.js";
 
 const validateSignup = async (inputs) => {
     let schema = {};
 
     if (inputs.provider === 'google' || inputs.provider === 'apple') {
         schema = joi.object().keys({
-            email: joi.string().email().required(),
+            email: joi.string().email().lowercase().required(),
             password: joi.string().optional().allow('').default(''),
             provider: joi.string().valid('google', 'apple').required(),
             uid: joi.string().trim().required(),
         });
     } else {
         schema = joi.object().keys({
-            email: joi.string().email().required(),
+            email: joi.string().email().lowercase().required(),
             password: joi.string()
                 .min(6)
                 .pattern(new RegExp('^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])'))
@@ -24,52 +24,32 @@ const validateSignup = async (inputs) => {
         });
     }
 
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : "Invalid input";
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 }
 const validateOTP = async (inputs) => {
     let schema = {}
     schema = joi.object().keys({
-        email: joi.string().email().required(),
+        email: joi.string().email().lowercase().required(),
         otp: joi.string().required(),
     })
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : i18n.__('INVALID_CREDENTIALS');
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 }
 
 const validateResendOTP = async (inputs) => {
     let schema = {}
     schema = joi.object().keys({
-        email: joi.string().email().required(),
+        email: joi.string().email().lowercase().required(),
     })
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : i18n.__('INVALID_CREDENTIALS');
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 }
 
 const validateforgetPassword = async (inputs) => {
     let schema = {}
     schema = joi.object().keys({
-        email: joi.string().email().required(),
+        email: joi.string().email().lowercase().required(),
         newPassword: joi.string().min(6).pattern(new RegExp('^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])')).required(),
     })
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : i18n.__('INVALID_CREDENTIALS');
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 }
 
 const validateUserProfile = async (inputs) => {
@@ -96,28 +76,21 @@ const validateUserProfile = async (inputs) => {
         bio: joi.string().trim().optional(),
     });
 
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details
-            ? validationError.details.map((detail) => detail.message).join(', ')
-            : 'Invalid input';
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 };
 
 const validateLogin = async (inputs) => {
     let schema = {}
-     if (inputs.provider === 'google' || inputs.provider === 'apple') {
+    if (inputs.provider === 'google' || inputs.provider === 'apple') {
         schema = joi.object().keys({
-            email: joi.string().email().required(),
+            email: joi.string().email().lowercase().required(),
             password: joi.string().optional().allow('').default(''),
-            provider: joi.string().valid('google', 'apple').required(),
+            provider: joi.string().valid(...PROVIDER_ENUM).required(),
             uid: joi.string().trim().required(),
         });
     } else {
         schema = joi.object().keys({
-            email: joi.string().email().required(),
+            email: joi.string().email().lowercase().required(),
             password: joi.string()
                 .min(6)
                 .pattern(new RegExp('^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])'))
@@ -127,12 +100,7 @@ const validateLogin = async (inputs) => {
         });
     }
 
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details ? validationError.details.map(detail => detail.message).join(', ') : "Invalid input";
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 }
 
 const validatePostContent = async (inputs) => {
@@ -141,14 +109,7 @@ const validatePostContent = async (inputs) => {
         topics: joi.array().items(joi.string().trim().min(7).required()).required()
     });
 
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details
-            ? validationError.details.map((detail) => detail.message).join(', ')
-            : 'Invalid input';
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 };
 
 const validateImageContent = async (inputs) => {
@@ -165,17 +126,10 @@ const validateImageContent = async (inputs) => {
             imageUrl: joi.string().trim().uri().required(),
         }),
         hashtags: joi.array().items(joi.string().trim()).optional(),
-        status: joi.string().valid("pending", "error", "success").default("pending")
+        status: joi.string().valid(...POST_STATUS_ENUM).default("pending")
     });
 
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details
-            ? validationError.details.map((detail) => detail.message).join(', ')
-            : 'Invalid input';
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 };
 
 const validateCarouselContent = async (inputs) => {
@@ -191,17 +145,10 @@ const validateCarouselContent = async (inputs) => {
         topic: joi.string().trim().min(1).required(),
         templateId: joi.string().trim().min(1).required(),
         content: joi.array().items(contentSchema).optional(),
-        status: joi.string().valid("pending", "error", "success").default("pending")
+        status: joi.string().valid(...POST_STATUS_ENUM).default("pending")
     });
 
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details
-            ? validationError.details.map((detail) => detail.message).join(', ')
-            : 'Invalid input';
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 };
 
 const validateDYKContent = async (inputs) => {
@@ -215,17 +162,10 @@ const validateDYKContent = async (inputs) => {
             fact: joi.string().trim().optional(),
         }),
         hashtags: joi.array().items(joi.string().trim()).optional(),
-        status: joi.string().valid("pending", "error", "success").default("pending")
+        status: joi.string().valid(...POST_STATUS_ENUM).default("pending")
     });
 
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details
-            ? validationError.details.map((detail) => detail.message).join(', ')
-            : 'Invalid input';
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 };
 
 const validateSavePost = async (inputs) => {
@@ -233,10 +173,10 @@ const validateSavePost = async (inputs) => {
     schema = joi.object({
         postContentId: joi.string().required(),
         contentId: joi.string().required(),
-        contentType: joi.string().valid('ImageContent', 'CarouselContent', 'DYKContent').required(),
+        contentType: joi.string().valid(...CONTENT_TYPE_ENUM).required(),
         topic: joi.string().trim().min(1).optional(),
-        type: joi.string().valid('image', 'carousel', 'doyouknow').optional(),
-        status: joi.string().valid('pending', 'error', 'success').default('success'),
+        type: joi.string().valid(...POST_TYPE_ENUM).optional(),
+        status: joi.string().valid(...POST_STATUS_ENUM).default('success'),
         images: joi.array()
             .items(
                 joi.object({
@@ -247,20 +187,13 @@ const validateSavePost = async (inputs) => {
             .optional(),
     });
 
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details
-            ? validationError.details.map((detail) => detail.message).join(', ')
-            : 'Invalid input';
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 };
 
 const validateUpdatePost = async (inputs) => {
     let schema = {}
     schema = joi.object({
-        contentType: joi.string().valid('ImageContent', 'CarouselContent', 'DYKContent').required(),
+        contentType: joi.string().valid(...CONTENT_TYPE_ENUM).required(),
         images: joi.array()
             .items(
                 joi.object({
@@ -271,14 +204,7 @@ const validateUpdatePost = async (inputs) => {
             .optional(),
     });
 
-    try {
-        await schema.validateAsync(inputs, { abortEarly: false });
-    } catch (validationError) {
-        const errorMessage = validationError.details
-            ? validationError.details.map((detail) => detail.message).join(', ')
-            : 'Invalid input';
-        throw new ApiError(BAD_REQUEST, errorMessage);
-    }
+    VALIDATE_SCHEMA(schema, inputs);
 };
 
 

@@ -22,10 +22,13 @@ const signup = async (inputs) => {
             isDeleted: false,
             isEmailVerify: true
         })
+
+        // if(!user) throw new ApiError(BAD_REQUEST, "Invalid user");
+        // if(User?.isEmailVerify) throw new ApiError(BAD_REQUEST, "Email already exists");
         if (!user) {
             user = await User.findOne({
                 email: inputs.email, isDeleted: false
-            })
+            }) // comment it 
             if (user) {
                 await User.deleteMany({
                     email: inputs.email,
@@ -460,11 +463,11 @@ const getDYKContent = async (contentId, user) => {
 }
 
 const updatePost = async (postId, user, inputs) => {
-    let update;
-    update = await SavePosts.findByIdAndUpdate({ contentId: postId, userId: user._id, contentType: inputs.contentType }, { images: inputs.images }, { new: true })
+    // let update;
+    const update = await SavePosts.findByIdAndUpdate({ contentId: postId, userId: user._id, contentType: inputs.contentType }, { images: inputs.images }, { new: true })
     if (!update) throw new ApiError(BAD_REQUEST, "Unable to update posts")
 
-    update = await SavePosts.findById({ _id: update._id })
+    // update = await SavePosts.findById({ _id: update._id })
     return update;
 }
 

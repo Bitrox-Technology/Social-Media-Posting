@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { POST_STATUS_ENUM } from "../config/constant.js";
 
 const postTopicsSchema = new mongoose.Schema({
     userId: {
@@ -10,10 +11,20 @@ const postTopicsSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["pending", "error", "success"],
+        enum: POST_STATUS_ENUM,
         default: "pending",
     },
-}, {timestamp: true });
+}, {timestamps: true });
+
+postTopicsSchema.index({ userId: 1 }); 
+postTopicsSchema.index({ status: 1 }); 
+postTopicsSchema.index({ topics: 1 });
+postTopicsSchema.index({ createdAt: 1 }); 
+postTopicsSchema.index({ updatedAt: 1 }); 
+
+// Compound indexes
+postTopicsSchema.index({ status: 1, userId: 1 }); 
+postTopicsSchema.index({ topics: 1, createdAt: 1 });
 
 const PostTopic = mongoose.model("PostTopic", postTopicsSchema);
 export default PostTopic;

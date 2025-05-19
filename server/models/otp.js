@@ -23,4 +23,12 @@ const otpSchema = new mongoose.Schema(
 
 const OTP = mongoose.model("OTP", otpSchema);
 
+otpSchema.index({ email: 1 }); 
+otpSchema.index({ otp: 1 }); 
+
+// Compound index
+otpSchema.index({ email: 1, otp: 1 }); 
+// TTL index on expiredAt to delete documents immediately after expiration (0 seconds delay)
+otpSchema.index({ expiredAt: 1 }, { expireAfterSeconds: 0 });
+
 export default OTP

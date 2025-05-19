@@ -1,0 +1,37 @@
+{
+  "INVALID_CREDENTIALS": "Invalid Credentials",
+  "OTP_SEND_SUCCESS": "OTP send successfully",
+  "USER_VERFIED_SUCCESS": "User verified successfully",
+  "OTP_RESENT_SUCCESS": "OTP resent successfully",
+  "PASSWORD_RESET_SUCCESS": "Password reset successfully",
+  "USER_LOGOUT_SUCCESS": "User Logout Successfully",
+  "USER_PROFILE_UPDATED_SUCCESS": "User details updated successfully",
+  "PROFILE_FETECHED_SUCCESS": "User profile fetched successfully",
+  "USER_LOGIN_SECCESS": "User login successfully",
+  "TOPIC_SAVED_SUCCESS": "Topics saved successfully",
+  "TOPIC_FETCHED_SUCEESS": "Topics fetched successfully",
+  "IMAGE_CONTENT_SUCEESS": "Image content saved successfully",
+  "CAROUSEL_CONTENT_SUCEESS": "Carousel content saved successfully",
+  "DYK_CONTENT_SUCEESS": "Do-You-Know content saved successfully",
+  "POST_SAVED_SUCEESS": "Post saved successfully",
+  "POSTS_FETCHED_SUCEESS": "Posts fetched successfully",
+  "IMAGE_CONTENT_FETCHED_SUCEESS": "Image Content fetched successfully",
+  "CAROUSEL_CONTENT_FETCHED_SUCEESS": "Carousel Content fetched successfully",
+  "DYK_CONTENT_FETCHED_SUCEESS": "Do-You-Know Content fetched successfully",
+  "UPDATE_POST_SUCEESS": "Update post successfully",
+  "USER_POST_SUCCESS": "User posts fetched successfully",
+  "USER_POST_DETAIL_SUCCESS": "User post details fetched successfully",
+
+  "ADMIN_VERFIED_SUCCESS": "Admin verified successfully",
+  "ADMIN_LOGOUT_SUCCESS": "Admin Logout Successfully",
+  "ADMIN_PROFILE_UPDATED_SUCCESS": "Admin profile updated successfully",
+  "ADMIN_PROFILE_FETCHED_SUCCESS": "Admin profile fetched successfully",
+  "ADMIN_LOGIN_SUCCESS": "Admin login successfully",
+  "USERS_FETCHED_SUCCESS": "User fetched successfully",
+  "USER_FETCHED_SUCCESS": "User fetched successfully",
+
+  "LINKEDIN_AUTHENTICATION": "LinkedIn Authentication URL generated successfully",
+  "LINKEDIN_CALLBACK": "LinkedIn Callback URL generated successfully",
+  "LINKED_POST_SUCCESS": "Post is posted on LinkedIn Successfully"
+
+}

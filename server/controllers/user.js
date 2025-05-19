@@ -1,13 +1,13 @@
 import UserServices from "../services/user.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
-import { OK } from "../utils/apiResponseCode.js"
+import { OK, CREATED } from "../utils/apiResponseCode.js"
 import UserValidation from "../validations/user.js"
-
+import i18n from "../utils/i18n.js"
 const Signup = async (req, res, next) => {
     try {
         await UserValidation.validateSignup(req.body)
         let user = await UserServices.signup(req.body)
-        return res.status(OK).json(new ApiResponse(OK, {email: user.email}, "OTP send successfully"))
+        return res.status(CREATED).json(new ApiResponse(CREATED, {email: user.email}, i18n.__("OTP_SEND_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -18,7 +18,7 @@ const VerifyOTP = async (req, res, next) => {
     try {
         await UserValidation.validateOTP(req.body)
         let user = await UserServices.verifyOTP(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "User verified successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n._("USER_VERFIED_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -29,7 +29,7 @@ const ResendOTP = async (req, res, next) => {
     try {
         await UserValidation.validateResendOTP(req.body);
         let user = await UserServices.resendOTP(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "OTP resent successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("OTP_RESENT_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -39,7 +39,7 @@ const ForgetPassword = async (req, res, next) => {
     try {
         await UserValidation.validateforgetPassword(req.body)
         let user = await UserServices.forgetPassword(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "Password reset successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("PASSWORD_RESET_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -49,18 +49,17 @@ const ForgetPassword = async (req, res, next) => {
 const Logout = async (req, res, next) => {
     try {
         let user = await UserServices.logout(req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "User Logout Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_LOGOUT_SUCCESS")))
     } catch (error) {
         next(error)
     }
 }
 
 const UserDetails = async (req, res, next) => {
-    console.log("UserDetails", req.body, req.user, req.files)
     try {
         await UserValidation.validateUserProfile(req.body)
         let user = await UserServices.userDetails(req.body, req.user, req.files)
-        return res.status(OK).json(new ApiResponse(OK, user, "User details saved successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_PROFILE_UPDATED_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -70,7 +69,7 @@ const UserDetails = async (req, res, next) => {
 const GetUserProfile = async (req, res, next) => {
     try {
         let user = await UserServices.getUserProfile(req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "User profile fetched successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("PROFILE_FETECHED_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -81,7 +80,7 @@ const Login = async (req, res, next) => {
     try {
         await UserValidation.validateLogin(req.body)
         let user = await UserServices.login(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "User Login Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_LOGIN_SECCESS")))
     } catch (error) {
         next(error)
     }
@@ -91,7 +90,7 @@ const PostContent = async (req, res, next) => {
     try {
         await UserValidation.validatePostContent(req.body)
         let user = await UserServices.postContent(req.body, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Topics saved Successfully"))
+        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("TOPIC_SAVED_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -100,7 +99,7 @@ const PostContent = async (req, res, next) => {
 const GetPostContent = async (req, res, next) => {
     try {
         let user = await UserServices.getPostContent(req.user, req.params.postcontentid)
-        return res.status(OK).json(new ApiResponse(OK, user, "Topics fetched Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("TOPIC_FETCHED_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -110,7 +109,7 @@ const SaveImageContent = async (req, res, next) => {
     try {
         await UserValidation.validateImageContent(req.body)
         let user = await UserServices.saveImageContent(req.body, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Image content saved Successfully"))
+        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("IMAGE_CONTENT_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -120,7 +119,7 @@ const SaveCarouselContent = async (req, res, next) => {
     try {
         await UserValidation.validateCarouselContent(req.body)
         let user = await UserServices.saveCarouselContent(req.body, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Image content saved Successfully"))
+        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("CAROUSEL_CONTENT_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -130,7 +129,7 @@ const SaveDYKContent = async (req, res, next) => {
     try {
         await UserValidation.validateDYKContent(req.body)
         let user = await UserServices.saveDYKContent(req.body, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Do you Know content saved Successfully"))
+        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("DYK_CONTENT_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -140,7 +139,7 @@ const SavePosts = async (req, res, next) => {
     try {
         await UserValidation.validateSavePost(req.body)
         let user = await UserServices.savePosts(req.body, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Post saved Successfully"))
+        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("POST_SAVED_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -149,7 +148,7 @@ const SavePosts = async (req, res, next) => {
 const GetSavePosts = async (req, res, next) => {
     try {
         let user = await UserServices.getSavePosts(req.params.postcontentid, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Posts fetched Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("POSTS_FETCHED_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -158,7 +157,7 @@ const GetSavePosts = async (req, res, next) => {
 const GetImageContent = async (req, res, next) => {
     try {
         let user = await UserServices.getImageContent(req.params.contentid, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Content fetched Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("IMAGE_CONTENT_FETCHED_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -167,7 +166,7 @@ const GetImageContent = async (req, res, next) => {
 const GetCarouselContent = async (req, res, next) => {
     try {
         let user = await UserServices.getCarouselContent(req.params.contentid, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Content fetched Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("CAROUSEL_CONTENT_FETCHED_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -176,7 +175,7 @@ const GetCarouselContent = async (req, res, next) => {
 const GetDYKContent = async (req, res, next) => {
     try {
         let user = await UserServices.getDYKContent(req.params.contentid, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Content fetched Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("DYK_CONTENT_FETCHED_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -186,7 +185,7 @@ const UpdatePost = async (req, res, next) => {
     try {
         await UserValidation.validateUpdatePost(req.body)
         let user = await UserServices.updatePost(req.params.postid, req.user, req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "Content fetched Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("UPDATE_POST_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -195,7 +194,7 @@ const UpdatePost = async (req, res, next) => {
 const GetPendingTopics = async (req, res, next) => {
     try {
         let user = await UserServices.getPendingTopics(req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Topics fetched Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("TOPIC_FETCHED_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -204,7 +203,7 @@ const GetPendingTopics = async (req, res, next) => {
 const UpdatePostTopicsStatus = async (req, res, next) => {
     try {
         let user = await UserServices.updatePostTopics(req.params.posttopicid, req.user, req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, "Status Update Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("UPDATE_POST_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -213,7 +212,7 @@ const UpdatePostTopicsStatus = async (req, res, next) => {
 const GetUserAllPosts = async(req, res, next) => {
      try {
         let user = await UserServices.getUserAllPosts(req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Posts fetched Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_POST_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -222,7 +221,7 @@ const GetUserAllPosts = async(req, res, next) => {
 const GetUserPostDetailById = async(req, res, next) => {
      try {
         let user = await UserServices.getUserPostDetail(req.params, req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, "Posts fetched Successfully"))
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_POST_DETAIL_SUCCESS")))
     } catch (error) {
         next(error)
     }
