@@ -31,7 +31,6 @@ const adminSchema = new mongoose.Schema(
         isDeleted: { type: Boolean, default: false },
         totalUsers: { type: Number, default: 0 },
 
-        refreshToken: { type: String, select: false }
     },
     {
         timestamps: true,

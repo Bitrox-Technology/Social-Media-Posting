@@ -3,22 +3,55 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { OK, CREATED } from "../utils/apiResponseCode.js"
 import UserValidation from "../validations/user.js"
 import i18n from "../utils/i18n.js"
+import { RevokeToken } from "../utils/csrf.js"
+import { MAX_AGE } from "../config/constant.js"
+
+
 const Signup = async (req, res, next) => {
     try {
         await UserValidation.validateSignup(req.body)
         let user = await UserServices.signup(req.body)
-        return res.status(CREATED).json(new ApiResponse(CREATED, {email: user.email}, i18n.__("OTP_SEND_SUCCESS")))
+
+        const newCsrfToken = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { email: user.email, csrfToken: newCsrfToken }, i18n.__("OTP_SEND_SUCCESS")))
     } catch (error) {
         next(error)
     }
 
 }
 
+const SignupSigninByProvider = async (req, res, next) => {
+    try {
+        await UserValidation.validateSignupSigninByProvider(req.body)
+        let user = await UserServices.signupSigninByProvider(req.body)
+        res.cookie('accessToken', user.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
+            maxAge: MAX_AGE,
+        });
+        const { accessToken, type, ...userData } = user;
+        const newCsrfToken = RevokeToken(req);
+        return user.login === true ? res.status(OK).json(new ApiResponse(OK, { user: userData, csrfToken: newCsrfToken }, i18n.__("USER_LOGIN_SUCCESS"))) :
+            res.status(CREATED).json(new ApiResponse(CREATED, { user: userData, csrfToken: newCsrfToken }, i18n.__("USER_CREATED_SUCCESS")))
+    } catch (error) {
+        next(error)
+    }
+}
+
 const VerifyOTP = async (req, res, next) => {
     try {
         await UserValidation.validateOTP(req.body)
         let user = await UserServices.verifyOTP(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, i18n._("USER_VERFIED_SUCCESS")))
+        res.cookie('accessToken', user.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
+            maxAge: MAX_AGE,
+        });
+        const { accessToken, type, ...userData } = user;
+        const newCsrfToken = RevokeToken(req);
+        return res.status(OK).json(new ApiResponse(OK, { user: userData, csrfToken: newCsrfToken }, i18n.__("USER_VERFIED_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -28,8 +61,9 @@ const VerifyOTP = async (req, res, next) => {
 const ResendOTP = async (req, res, next) => {
     try {
         await UserValidation.validateResendOTP(req.body);
-        let user = await UserServices.resendOTP(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("OTP_RESENT_SUCCESS")))
+        await UserServices.resendOTP(req.body);
+        const newCsrfToken = RevokeToken(req);
+        return res.status(OK).json(new ApiResponse(OK, { csrfToken: newCsrfToken }, i18n.__("OTP_RESENT_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -39,7 +73,8 @@ const ForgetPassword = async (req, res, next) => {
     try {
         await UserValidation.validateforgetPassword(req.body)
         let user = await UserServices.forgetPassword(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("PASSWORD_RESET_SUCCESS")))
+        const newCsrfToken = RevokeToken(req);
+        return res.status(OK).json(new ApiResponse(OK, { user, csrfToken: newCsrfToken }, i18n.__("PASSWORD_RESET_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -48,8 +83,8 @@ const ForgetPassword = async (req, res, next) => {
 
 const Logout = async (req, res, next) => {
     try {
-        let user = await UserServices.logout(req.user)
-        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_LOGOUT_SUCCESS")))
+        await UserServices.logout(req, res)
+        return res.status(OK).json(new ApiResponse(OK, {}, i18n.__("USER_LOGOUT_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -59,7 +94,8 @@ const UserDetails = async (req, res, next) => {
     try {
         await UserValidation.validateUserProfile(req.body)
         let user = await UserServices.userDetails(req.body, req.user, req.files)
-        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_PROFILE_UPDATED_SUCCESS")))
+        const newCsrfToken = RevokeToken(req);
+        return res.status(OK).json(new ApiResponse(OK, { user, csrfToken: newCsrfToken }, i18n.__("USER_PROFILE_UPDATED_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -80,7 +116,15 @@ const Login = async (req, res, next) => {
     try {
         await UserValidation.validateLogin(req.body)
         let user = await UserServices.login(req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_LOGIN_SECCESS")))
+        res.cookie('accessToken', user.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
+            maxAge: MAX_AGE,
+        });
+        const { accessToken, type, password, provider, uid, __v, ...userData } = user;
+        const newCsrfToken = RevokeToken(req);
+        return res.status(OK).json(new ApiResponse(OK, { user: userData, csrfToken: newCsrfToken }, i18n.__("USER_LOGIN_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -90,7 +134,8 @@ const PostContent = async (req, res, next) => {
     try {
         await UserValidation.validatePostContent(req.body)
         let user = await UserServices.postContent(req.body, req.user)
-        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("TOPIC_SAVED_SUCCESS")))
+        const newCsrfToken = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { user, csrfToken: newCsrfToken }, i18n.__("TOPIC_SAVED_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -109,7 +154,8 @@ const SaveImageContent = async (req, res, next) => {
     try {
         await UserValidation.validateImageContent(req.body)
         let user = await UserServices.saveImageContent(req.body, req.user)
-        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("IMAGE_CONTENT_SUCEESS")))
+        const newCsrfToken = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { user, csrfToken: newCsrfToken }, i18n.__("IMAGE_CONTENT_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -119,7 +165,8 @@ const SaveCarouselContent = async (req, res, next) => {
     try {
         await UserValidation.validateCarouselContent(req.body)
         let user = await UserServices.saveCarouselContent(req.body, req.user)
-        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("CAROUSEL_CONTENT_SUCEESS")))
+        const newCsrfToken = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { user, csrfToken: newCsrfToken }, i18n.__("CAROUSEL_CONTENT_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -129,7 +176,8 @@ const SaveDYKContent = async (req, res, next) => {
     try {
         await UserValidation.validateDYKContent(req.body)
         let user = await UserServices.saveDYKContent(req.body, req.user)
-        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("DYK_CONTENT_SUCEESS")))
+        const newCsrfToken = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { user, csrfToken: newCsrfToken }, i18n.__("DYK_CONTENT_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -139,7 +187,8 @@ const SavePosts = async (req, res, next) => {
     try {
         await UserValidation.validateSavePost(req.body)
         let user = await UserServices.savePosts(req.body, req.user)
-        return res.status(CREATED).json(new ApiResponse(CREATED, user, i18n.__("POST_SAVED_SUCEESS")))
+        const newCsrfToken = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { user, csrfToken: newCsrfToken }, i18n.__("POST_SAVED_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -185,7 +234,8 @@ const UpdatePost = async (req, res, next) => {
     try {
         await UserValidation.validateUpdatePost(req.body)
         let user = await UserServices.updatePost(req.params.postid, req.user, req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("UPDATE_POST_SUCEESS")))
+        const newCsrfToken = RevokeToken(req);
+        return res.status(OK).json(new ApiResponse(OK, { user, csrfToken: newCsrfToken }, i18n.__("UPDATE_POST_SUCEESS")))
     } catch (error) {
         next(error)
     }
@@ -203,14 +253,15 @@ const GetPendingTopics = async (req, res, next) => {
 const UpdatePostTopicsStatus = async (req, res, next) => {
     try {
         let user = await UserServices.updatePostTopics(req.params.posttopicid, req.user, req.body)
-        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("UPDATE_POST_SUCEESS")))
+        const newCsrfToken = RevokeToken(req);
+        return res.status(OK).json(new ApiResponse(OK, { user, csrfToken: newCsrfToken }, i18n.__("UPDATE_POST_SUCEESS")))
     } catch (error) {
         next(error)
     }
 }
 
-const GetUserAllPosts = async(req, res, next) => {
-     try {
+const GetUserAllPosts = async (req, res, next) => {
+    try {
         let user = await UserServices.getUserAllPosts(req.user)
         return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_POST_SUCCESS")))
     } catch (error) {
@@ -218,8 +269,8 @@ const GetUserAllPosts = async(req, res, next) => {
     }
 }
 
-const GetUserPostDetailById = async(req, res, next) => {
-     try {
+const GetUserPostDetailById = async (req, res, next) => {
+    try {
         let user = await UserServices.getUserPostDetail(req.params, req.user)
         return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_POST_DETAIL_SUCCESS")))
     } catch (error) {
@@ -228,7 +279,7 @@ const GetUserPostDetailById = async(req, res, next) => {
 }
 const UserControllers = {
     Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus, GetUserPostDetailById,
-    ForgetPassword, Logout, GetPendingTopics, GetUserAllPosts,
+    ForgetPassword, Logout, GetPendingTopics, GetUserAllPosts, SignupSigninByProvider,
     Login, SavePosts, PostContent, GetPostContent, SaveImageContent,
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts,
     GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile

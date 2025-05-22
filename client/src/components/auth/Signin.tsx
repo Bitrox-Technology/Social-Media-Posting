@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSignInMutation } from '../../store/api';
+import { useSignInMutation, useSignUpAndSigninByProviderMutation } from '../../store/api';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Eye, EyeOff, LogIn, Apple, Mail } from 'lucide-react';
@@ -16,6 +16,7 @@ export const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [signIn] = useSignInMutation();
+  const [signUpAndSigninByProvider] = useSignUpAndSigninByProviderMutation()
   const navigate = useNavigate();
 
   const initialValues = {
@@ -30,7 +31,7 @@ export const SignIn = () => {
 
   const handleSubmit = async (values: typeof initialValues, { setSubmitting, setErrors }: any) => {
     try {
-      const response = await signIn({email: values.email, password: values.password, provider: "", uid: ""}).unwrap();
+      const response = await signIn({email: values.email, password: values.password}).unwrap();
       if (response.success) {
         toast.success('Signed in successfully!', {
           position: 'bottom-right',
@@ -63,9 +64,8 @@ export const SignIn = () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-      const response = await signIn({
+      const response = await signUpAndSigninByProvider({
         email: user.email ?? "",
-        password: '',
         provider: 'google',
         uid: user.uid,
       }).unwrap();
@@ -104,9 +104,8 @@ export const SignIn = () => {
     try {
       const result = await signInWithPopup(auth, appleProvider);
       const user = result.user;
-      const response = await signIn({
+      const response = await signUpAndSigninByProvider({
         email: user.email ?? "",
-        password: '',
         provider: 'apple',
         uid: user.uid,
       }).unwrap();

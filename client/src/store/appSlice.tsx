@@ -49,6 +49,8 @@ interface AppState {
   posts: Post[];
   apiTopics: string[];
   customTopics: string[];
+  csrfToken?: string | null;
+  csrfTokenExpiresAt: number | null;
 }
 
 const initialState: AppState = {
@@ -64,6 +66,8 @@ const initialState: AppState = {
   posts: [],
   apiTopics: [],
   customTopics: [],
+  csrfToken: null,
+  csrfTokenExpiresAt: null,
 };
 
 const appSlice = createSlice({
@@ -117,9 +121,25 @@ const appSlice = createSlice({
     },
     clearUser(state) {
       state.user = null;
+      state.csrfToken = null;
+      state.csrfTokenExpiresAt = null;
     },
     logout(state) {
       state.user = null;
+      state.csrfToken = null;
+      state.csrfTokenExpiresAt = null;
+    },
+
+    setCsrfToken: (
+      state,
+      action: PayloadAction<{ token: string; expiresAt: number }>
+    ) => {
+      state.csrfToken = action.payload.token;
+      state.csrfTokenExpiresAt = action.payload.expiresAt;
+    },
+    clearCsrfToken: (state) => {
+      state.csrfToken = null;
+      state.csrfTokenExpiresAt = null;
     },
     setPosts: (state, action: PayloadAction<Post[]>) => {
       state.posts = action.payload;
@@ -156,6 +176,8 @@ export const {
   setApiTopics,
   addCustomTopic,
   clearCustomTopics,
+  setCsrfToken,
+  clearCsrfToken
 } = appSlice.actions;
 
 export default appSlice.reducer;

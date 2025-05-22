@@ -6,7 +6,7 @@ import { BAD_REQUEST } from "./apiResponseCode.js";
 import moment from "moment";
 
 const generateOTPForEmail = async (email, role) => {
-    let otpCode = 1234;
+    let otpCode = 123456;
     otpCode = generateOTP();
     try {
         await OTP.deleteMany({ email: email });
@@ -16,9 +16,9 @@ const generateOTPForEmail = async (email, role) => {
             expiredAt: moment().add(10, "minutes").toDate()
         }
         if (role == "ADMIN") {
-             sendOtpForAdmin(email, otpCode)
+            sendOtpForAdmin(email, otpCode)
         } else {
-             sendOtp(email, otpCode)
+            sendOtp(email, otpCode)
         }
         let otp = await OTP.create(data)
         return otp
@@ -31,7 +31,7 @@ const verifyEmailOTP = async (email, otp) => {
     try {
         const storedOTP = await OTP.findOne({
             $or: [
-                { email, otp }
+                { email, otp, expiredAt: { $gt: new Date() } }
             ]
         })
         if (storedOTP) {
@@ -43,7 +43,6 @@ const verifyEmailOTP = async (email, otp) => {
             return true;
         }
     } catch (err) {
-        console.log(err)
         return false
     }
 

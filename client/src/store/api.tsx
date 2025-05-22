@@ -1,7 +1,8 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { setUser, clearUser } from './appSlice';
+import { createApi, fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
+import Cookies from 'js-cookie';
+import { jwtDecode } from 'jwt-decode';
+import { setUser, clearUser, setCsrfToken, clearCsrfToken } from './appSlice';
 import { backendURL } from '../constants/urls';
-import { string } from 'yup';
 
 interface ContentIdea {
   title: string;
@@ -40,43 +41,144 @@ interface SavePostRequest {
   contentId?: string;
   contentType?: 'ImageContent' | 'CarouselContent' | 'DYKContent';
 }
-
-export const api = createApi({
-  reducerPath: 'api',
-  baseQuery: fetchBaseQuery({
+interface JwtPayload {
+  _id: string;
+  email: string;
+  role: string;
+  iat: number;
+  exp: number;
+}
+const baseQueryWithDispatch: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  const { dispatch, getState } = api;
+  const baseQuery = fetchBaseQuery({
     baseUrl: backendURL,
-    prepareHeaders: (headers, { getState }: { getState: () => unknown }) => {
-      const dispatch = (action: any) => { };
-      const state = getState() as { app?: { user?: { token?: string; expiresAt?: number; email?: string } } };
+    credentials: 'include', // Ensure cookies (e.g., accessToken, connect.sid) are sent
+    prepareHeaders: async (headers, { getState, endpoint }) => {
+      const state = getState() as {
+        app?: {
+          user?: { token?: string; expiresAt?: number; email?: string };
+          csrfToken?: string;
+          csrfTokenExpiresAt?: number;
+        };
+      };
       let token = state.app?.user?.token;
+      let csrfToken = state.app?.csrfToken;
+      let csrfTokenExpiresAt = state.app?.csrfTokenExpiresAt;
 
-      if (!token) {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          token = user.token;
-          const expiresAt = user.expiresAt;
+      console.log("TOken-----------",token, csrfToken, csrfTokenExpiresAt)
 
-          if (expiresAt && Date.now() > expiresAt) {
+      // Retrieve accessToken from cookie
+      if (token === undefined) {
+        const cookieToken = Cookies.get('accessToken');
+
+        if (cookieToken) {
+          const decoded: JwtPayload = jwtDecode(cookieToken);
+          const expiresAt = decoded.exp * 1000; // Convert seconds to milliseconds
+          const email = decoded.email;
+          console.log("COokie Token", decoded, expiresAt,cookieToken )
+
+          if (Date.now() > expiresAt) {
             dispatch(clearUser());
-            localStorage.removeItem('user');
+            dispatch(clearCsrfToken());
+            Cookies.remove('accessToken');
+            Cookies.remove('accessTokenExpiresAt');
             window.location.href = '/signin';
             return headers;
           }
 
-          dispatch(setUser(user));
+          token = cookieToken;
+          dispatch(setUser({ email, token, expiresAt }));
         }
       }
 
+      // Set Authorization header
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
 
+      // Skip CSRF token for safe methods
+      const ignoredMethods = ['GET', 'HEAD', 'OPTIONS'];
+      const method = typeof args === 'string' ? 'GET' : args.method || 'GET';
+      if (ignoredMethods.includes(method)) {
+        return headers;
+      }
+
+      // Check if CSRF token is expired or missing
+      if (csrfToken === undefined || csrfTokenExpiresAt === undefined || Date.now() > csrfTokenExpiresAt) {
+        try {
+          const response = await fetch(`${backendURL}/csrf/csrf-token`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch CSRF token');
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            csrfToken = data.data.csrfToken;
+            const expiresAt = data.data.expiresAt || Date.now() + 24 * 60 * 60 * 1000;
+            if (typeof csrfToken === 'string') {
+              dispatch(setCsrfToken({ token: csrfToken, expiresAt }));
+            } else {
+              throw new Error('CSRF token is undefined');
+            }
+          } else {
+            throw new Error('CSRF token fetch failed');
+          }
+        } catch (error) {
+          console.error('Error fetching CSRF token:', error);
+          throw error;
+        }
+      }
+
+      // Set CSRF token header
+      if (csrfToken) {
+        headers.set('X-CSRF-Token', csrfToken);
+      }
+
+      console.log('Request headers:', {
+        method,
+        url: typeof args === 'string' ? args : args.url,
+        headers: Object.fromEntries(headers),
+        sessionId: Cookies.get('connect.sid'),
+      });
       return headers;
     },
-  }),
+  });
+
+
+  return baseQuery(args, api, extraOptions);
+};
+
+export const api = createApi({
+  reducerPath: 'api',
+  baseQuery: baseQueryWithDispatch,
   tagTypes: ['Auth'],
   endpoints: (builder) => ({
+    getCsrfToken: builder.query<ApiResponse<{ csrfToken: string; expiresAt: number }>, void>({
+      query: () => ({
+        url: '/csrf/csrf-token',
+        method: 'GET',
+      }),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const { csrfToken } = data.data;
+          dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
+        } catch (error) {
+          console.error('Failed to fetch CSRF token:', error);
+        }
+      },
+    }),
     generateIdeas: builder.mutation<ApiResponse<ContentIdea[]>, { topic: string }>({
       query: (body) => ({
         url: '/ideas',
@@ -126,12 +228,47 @@ export const api = createApi({
         body,
       }),
     }),
-    signUp: builder.mutation<ApiResponse<any>, { email: string; password: string; provider: string; uid: string }>({
+    signUp: builder.mutation<ApiResponse<any>, { email: string; password: string; }>({
       query: (body) => ({
         url: '/user/signup',
         method: 'POST',
         body,
       }),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const { csrfToken } = data.data;
+          dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
+        } catch (error) {
+          console.error('Failed to fetch CSRF token:', error);
+        }
+      },
+    }),
+    signUpAndSigninByProvider: builder.mutation<ApiResponse<any>, { email: string; provider: string; uid: string }>({
+      query: (body) => ({
+        url: '/user/provider',
+        method: 'POST',
+        body,
+      }),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const { csrfToken } = data.data;
+          const cookieToken = Cookies.get('accessToken');
+          if (cookieToken) {
+            const decoded: JwtPayload = jwtDecode(cookieToken);
+            const expiresAt = decoded.exp * 1000;
+            const email = decoded.email;
+            dispatch(setUser({ email, token: cookieToken, expiresAt }));
+
+            console.log(csrfToken)
+            dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
+          }
+        } catch (error) {
+         console.error('Failed to fetch CSRF token:', error);
+        }
+      },
+      invalidatesTags: ['Auth'],
     }),
     verifyOTP: builder.mutation<ApiResponse<any>, { email: string; otp: string }>({
       query: (body) => ({
@@ -142,17 +279,17 @@ export const api = createApi({
       async onQueryStarted(_args, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          const { accessToken, email } = data.data;
-          const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
-
-          // Store in Redux
-          const userData = { email, token: accessToken, expiresAt };
-          dispatch(setUser(userData));
-
-          // Store in localStorage
-          localStorage.setItem('user', JSON.stringify(userData));
+          const { csrfToken } = data.data;
+          const cookieToken = Cookies.get('accessToken');
+          if (cookieToken) {
+            const decoded: JwtPayload = jwtDecode(cookieToken);
+            const expiresAt = decoded.exp * 1000;
+            const email = decoded.email;
+            dispatch(setUser({ email, token: cookieToken, expiresAt }));
+            dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
+          }
         } catch (error) {
-          alert(`OTP verify failed:, ${error}`);
+         console.error('Failed to fetch CSRF token:', error);
         }
       },
       invalidatesTags: ['Auth'],
@@ -171,7 +308,7 @@ export const api = createApi({
         body,
       }),
     }),
-    signIn: builder.mutation<ApiResponse<any>, { email: string; password: string; provider: string; uid: string }>({
+    signIn: builder.mutation<ApiResponse<any>, { email: string; password: string; }>({
       query: (body) => ({
         url: '/user/signin',
         method: 'POST',
@@ -180,17 +317,17 @@ export const api = createApi({
       async onQueryStarted(_args, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          const { accessToken, email } = data.data;
-          const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
-
-          // Store in Redux
-          const userData = { email, token: accessToken, expiresAt };
-          dispatch(setUser(userData));
-
-          // Store in localStorage
-          localStorage.setItem('user', JSON.stringify(userData));
+          const { csrfToken } = data.data;
+          const cookieToken = Cookies.get('accessToken');
+          if (cookieToken) {
+            const decoded: JwtPayload = jwtDecode(cookieToken);
+            const expiresAt = decoded.exp * 1000;
+            const email = decoded.email;
+            dispatch(setUser({ email, token: cookieToken, expiresAt }));
+            dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
+          }
         } catch (error) {
-          alert(`Sign-in failed:, ${error}`);
+         console.error('Failed to fetch CSRF token:', error);
         }
       },
       invalidatesTags: ['Auth'],
@@ -314,7 +451,6 @@ export const api = createApi({
         body,
       }),
     }),
-
     getUserAllPosts: builder.query<ApiResponse<any>, void>({
       query: () => ({
         url: `/user/get-all-posts`,
@@ -354,7 +490,7 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
-    linkedInPost: builder.mutation<ApiResponse<any>, {title: String; description: String, imageUrl: String; scheduleTime: string}>({
+    linkedInPost: builder.mutation<ApiResponse<any>, { title: String; description: String, imageUrl: String; scheduleTime: string }>({
       query: (body) => ({
         url: '/social/linkedin/post',
         method: 'POST',
@@ -368,6 +504,7 @@ export const api = createApi({
 });
 
 export const {
+  useLazyGetCsrfTokenQuery,
   useGenerateIdeasMutation,
   useGenerateImageMutation,
   usePostContentMutation,
@@ -377,6 +514,7 @@ export const {
   useGenerateDoYouKnowMutation,
   useSignUpMutation,
   useSignInMutation,
+  useSignUpAndSigninByProviderMutation,
   useVerifyOTPMutation,
   useGenerateTopicsMutation,
   useGenerateImageContentMutation,

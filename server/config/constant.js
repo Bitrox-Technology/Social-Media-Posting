@@ -1,3 +1,4 @@
+
 const subscriptionTypes = Object.freeze({
   free: 'FREE',
   premium: 'PREMIUM',
@@ -70,24 +71,26 @@ export const POST_TYPE_ENUM = Object.values(postTypeTypes);
 export const CONTENT_TYPE_ENUM = Object.values(contentTypeTypes);
 
 export const config = {
-    port: process.env.PORT || 3000,
-    //   redis: {
-    //     url: process.env.REDIS_URL || 'redis://localhost:6379',
-    //     prefix: process.env.REDIS_PREFIX || 'rate:',
-    //   },
+  port: process.env.PORT || 3000,
+  //   redis: {
+  //     url: process.env.REDIS_URL || 'redis://localhost:6379',
+  //     prefix: process.env.REDIS_PREFIX || 'rate:',
+  //   },
 
-    rateLimit: {
-        global: {
-            max: parseInt(process.env.GLOBAL_RATE_LIMIT_MAX, 10) || 100,
-            windowMs: parseInt(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
-        },
-        otp: {
-            max: parseInt(process.env.OTP_RATE_LIMIT_MAX, 10) || 5,
-            windowMs: parseInt(process.env.OTP_RATE_LIMIT_WINDOW_MS, 10) || 10 * 60 * 1000,
-        },
+  rateLimit: {
+    global: {
+      max: parseInt(process.env.GLOBAL_RATE_LIMIT_MAX, 10) || 100,
+      windowMs: parseInt(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
     },
-    logLevel: process.env.LOG_LEVEL || 'info',
+    otp: {
+      max: parseInt(process.env.OTP_RATE_LIMIT_MAX, 10) || 5,
+      windowMs: parseInt(process.env.OTP_RATE_LIMIT_WINDOW_MS, 10) || 10 * 60 * 1000,
+    },
+  },
+  logLevel: process.env.LOG_LEVEL || 'info',
 };
+
+export const MAX_AGE = 24 * 60 * 60 * 1000
 
 
 

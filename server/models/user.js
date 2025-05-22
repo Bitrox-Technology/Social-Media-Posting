@@ -59,7 +59,6 @@ const userSchema = new mongoose.Schema(
     isEmailVerify: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
-    refreshToken: { type: String, select: false },
   },
   {
     timestamps: true,

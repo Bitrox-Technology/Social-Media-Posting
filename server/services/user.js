@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import User from "../models/user.js";
 import { ApiError } from "../utils/ApiError.js";
 import { generateAccessAndRefreshTokenForUser } from "../utils/generateToken.js";
-import { BAD_REQUEST } from "../utils/apiResponseCode.js";
+import { BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR } from "../utils/apiResponseCode.js";
 import { comparePasswordUsingBcrypt, Hashed_Password, isEmail } from "../utils/utilities.js";
 import PostTopic from "../models/postTopics.js";
 import ImageContent from "../models/imageContent.js";
@@ -11,40 +11,65 @@ import DYKContent from "../models/dykContent.js";
 import SavePosts from "../models/savePosts.js";
 import { generateOTPForEmail, verifyEmailOTP } from "../utils/functions.js";
 import { uploadOnClodinary } from "../utils/cloudinary.js";
+import i18n from "../utils/i18n.js";
 
 const signup = async (inputs) => {
     let user;
     if (isEmail(inputs.email)) {
-        if (inputs.provider === "" && !inputs.password) throw new ApiError(BAD_REQUEST, "Password is required")
+        if (!inputs.password) throw new ApiError(BAD_REQUEST, "Password is required")
         inputs.password = await Hashed_Password(inputs.password)
         user = await User.findOne({
             email: inputs.email,
             isDeleted: false,
-            isEmailVerify: true
         })
 
-        // if(!user) throw new ApiError(BAD_REQUEST, "Invalid user");
-        // if(User?.isEmailVerify) throw new ApiError(BAD_REQUEST, "Email already exists");
-        if (!user) {
-            user = await User.findOne({
-                email: inputs.email, isDeleted: false
-            }) // comment it 
-            if (user) {
-                await User.deleteMany({
-                    email: inputs.email,
-                    isDeleted: false,
-                    isEmailVerify: false,
-                });
-            }
+        if (user?.isEmailVerify) throw new ApiError(CONFLICT, i18n.__("EMAIL_EXISTS"));
 
-            user = await User.create(inputs);
-            await generateOTPForEmail(inputs.email, user.role)
-            return user
-        } else {
-            throw new ApiError(BAD_REQUEST, "Email already exists")
+        if (user) {
+            await User.deleteMany({
+                email: inputs.email,
+                isDeleted: false,
+                isEmailVerify: false,
+            });
         }
+
+        if (!user) {
+            user = await User.create(inputs);
+            generateOTPForEmail(inputs.email, user.role)
+        }
+        return user
+    } else {
+        throw new ApiError(CONFLICT, i18n.__("EMAIL_EXISTS"))
     }
 }
+
+const signupSigninByProvider = async (inputs) => {
+    let user;
+    let accessToken;
+    let login = false
+    if (isEmail(inputs.email)) {
+        user = await User.findOne({
+            email: inputs.email,
+            isDeleted: false,
+            provider: inputs.provider,
+            uid: inputs.uid
+        })
+
+        if (user) {
+            accessToken = await generateAccessAndRefreshTokenForUser(user);
+            login = true
+        } else {
+            user = await User.create(inputs);
+            accessToken = await generateAccessAndRefreshTokenForUser(user)
+        }
+
+        user.accessToken = accessToken;
+        user.type = "Bearer";
+        user.login = login;
+        return user;
+    }
+}
+
 
 const verifyOTP = async (inputs) => {
     let user;
@@ -55,56 +80,46 @@ const verifyOTP = async (inputs) => {
             email: inputs.email,
             isDeleted: false
         })
-        if (!user) throw new ApiError(BAD_REQUEST, "Invalid email")
+        if (!user) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_EMAIL"))
         let otp = await verifyEmailOTP(inputs.email, inputs.otp)
 
-        if (otp === false) throw new ApiError(BAD_REQUEST, "Invalid OTP")
+        if (otp === false) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_OTP"))
         subObj.isEmailVerify = true
     }
 
-    const { accessToken, refreshToken } = await generateAccessAndRefreshTokenForUser(user._id)
-    subObj.refreshToken = refreshToken
-    user = await User.findByIdAndUpdate({ _id: user._id }, subObj).lean()
+    user = await User.findByIdAndUpdate({ _id: user._id }, subObj, { new: true }).lean()
 
-    user = await User.findById({ _id: user._id }).lean()
+    const accessToken = await generateAccessAndRefreshTokenForUser(user)
 
     user.accessToken = accessToken;
     user.type = "Bearer";
-    user.refreshToken = refreshToken;
-
     return user;
 }
 
 const resendOTP = async (inputs) => {
     let user;
-    if (Utils.isEmail(inputs.email)) {
+    if (isEmail(inputs.email)) {
         user = await User.findOne({ email: inputs.email, isDeleted: false })
-
         if (user) {
-            await generateOTPForEmail(inputs.email)
+            generateOTPForEmail(inputs.email)
         } else {
-            throw new ApiError(BAD_REQUEST, "Invalid email")
+            throw new ApiError(BAD_REQUEST, i18n.__("INVALID_EMAIL"))
         }
-
     }
 }
 
 const forgetPassword = async (inputs) => {
     let user;
-    if (Utils.isEmail(inputs.email)) {
-
+    if (isEmail(inputs.email)) {
         user = await User.findOne({
             email: inputs.email,
             isDeleted: false,
             isEmailVerify: true
         });
-        if (!user) throw new ApiError(BAD_REQUEST, "Invalid email")
-
-        inputs.newPassword = await Utils.Hashed_Password(inputs.newPassword)
-
-        user = await User.findByIdAndUpdate({ _id: user._id }, { password: inputs.newPassword })
-
-        await generateOTPForEmail(user.email);
+        if (!user) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_EMAIL"))
+        inputs.newPassword = await Hashed_Password(inputs.newPassword)
+        user = await User.findByIdAndUpdate({ _id: user._id }, { password: inputs.newPassword }, { new: true }).lean()
+        generateOTPForEmail(user.email);
     }
 }
 
@@ -112,42 +127,52 @@ const forgetPassword = async (inputs) => {
 const login = async (inputs) => {
     let user;
     if (isEmail(inputs.email)) {
-        user = await User.findOne({ email: inputs.email, isEmailVerify: true, isDeleted: false }).select("+password")
-        if (!user) throw new ApiError(BAD_REQUEST, "Invalid user")
+        const user = await User.findOne({
+            email: inputs.email,
+            isEmailVerify: true,
+            isDeleted: false,
+        }).select('+password').lean();
+        if (!user) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_USER"))
         let compare = await comparePasswordUsingBcrypt(inputs.password, user.password);
-        if (!compare) throw new ApiError(BAD_REQUEST, "Invalid password")
-
-        const { accessToken, refreshToken } = await generateAccessAndRefreshTokenForUser(user._id)
-        user = await User.findByIdAndUpdate({ _id: user._id }, { refreshToken: refreshToken }).lean()
-        user = await User.findById({ _id: user._id }).lean()
-
-        user.accessToken = accessToken;
-        user.type = "Bearer";
-        user.refreshToken = refreshToken;
-        return user
+        if (!compare) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_PASSWORD"))
+        const accessToken = await generateAccessAndRefreshTokenForUser(user)
+        return {
+            ...user,
+            accessToken,
+            type: 'Bearer',
+        }
     }
 }
 
 
-const logout = async (user) => {
-    return await User.findByIdAndUpdate({
-        _id: user._id,
-        isDeleted: false
-    }, {
-        $set: { refreshToken: "" }
-    }, {
-        new: true
-    }).select("+refreshToken")
+const logout = async (req, res) => {
+    return new Promise((resolve, reject) => {
+        // Clear the accessToken cookie
+        res.clearCookie('accessToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
+        });
+
+        // Destroy the session
+        req.session.destroy((err) => {
+            if (err) {
+                logger.error('Session destruction failed', {
+                    error: err.message,
+                    sessionID: req.sessionID || 'unknown',
+                });
+                return reject(new ApiError(INTERNAL_SERVER_ERROR, i18n.__('SESSION_DESTROY_FAILED')));
+            }
+            resolve();
+        });
+    });
 
 }
 
 const userDetails = async (inputs, user, files) => {
-
-
     if (files && files.length > 0) {
         for (const file of files) {
             if (file.fieldname === 'logo') {
-                // Upload logo to Cloudinary
                 const result = await uploadOnClodinary(file.path, 'logo');
                 if (!result || !result.secure_url) throw new ApiError(BAD_REQUEST, 'Unable to upload logo');
                 inputs.logo = result.secure_url;
@@ -485,6 +510,7 @@ const updatePostTopics = async (postId, user, inputs) => {
 
 const UserServices = {
     signup,
+    signupSigninByProvider,
     verifyOTP,
     resendOTP,
     forgetPassword,

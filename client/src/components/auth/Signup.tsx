@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSignUpMutation } from '../../store/api';
+import { useSignUpAndSigninByProviderMutation, useSignUpMutation } from '../../store/api';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Eye, EyeOff, UserPlus, Apple, Mail } from 'lucide-react';
@@ -9,13 +9,14 @@ import { useTheme } from '../../context/ThemeContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import {auth, googleProvider, appleProvider } from "../../Utilities/firebase"
-import {signInWithPopup  } from "firebase/auth"
+import { auth, googleProvider, appleProvider } from "../../Utilities/firebase"
+import { signInWithPopup } from "firebase/auth"
 
 export const SignUp = () => {
   const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [signUp] = useSignUpMutation();
+  const [signUpAndSigninByProvider] = useSignUpAndSigninByProviderMutation()
   const navigate = useNavigate();
 
   const initialValues = {
@@ -40,7 +41,7 @@ export const SignUp = () => {
 
   const handleSubmit = async (values: typeof initialValues, { setSubmitting, setErrors }: any) => {
     try {
-      const response = await signUp({ email: values.email, password: values.password, provider: "", uid: "" }).unwrap();
+      const response = await signUp({ email: values.email, password: values.password }).unwrap();
       if (response.success) {
         toast.success('Signup successful! Please verify your OTP.', {
           position: 'bottom-right',
@@ -51,12 +52,17 @@ export const SignUp = () => {
           draggable: true,
         });
 
-        setTimeout (() => {navigate('/otp-verification', { state: { email: response.data.email } });}, 2000); 
-  
+        setTimeout(() => { navigate('/otp-verification', { state: { email: response.data.email } }); }, 2000);
+
       }
     } catch (err: any) {
       const errorMessage = err?.data?.message || 'Signup failed. Please try again.';
-      setErrors({ email: errorMessage });
+      if (errorMessage.includes('CSRF')) {
+        setErrors({ email: 'Security token error. Please refresh the page and try again.' });
+      } else {
+        setErrors({ email: errorMessage });
+      }
+
       toast.error(errorMessage, {
         position: 'bottom-right',
         autoClose: 3000,
@@ -68,7 +74,7 @@ export const SignUp = () => {
     }
     setSubmitting(false);
   };
-  
+
 
   const handleGoogleSignUp = async () => {
     try {
@@ -78,10 +84,9 @@ export const SignUp = () => {
 
       console.log(result)
       // Optionally, send user data to your backend
-      const response = await signUp({
+      const response = await signUpAndSigninByProvider({
         email: user.email ?? "",
         provider: 'google',
-        password: "" ,
         uid: user.uid,
       }).unwrap();
 
@@ -90,7 +95,7 @@ export const SignUp = () => {
           position: 'bottom-right',
           autoClose: 3000,
         });
-       setTimeout (() => {navigate('/otp-verification', { state: { email: response.data.email } });}, 2000); 
+        setTimeout(() => { navigate('/user-details', { state: { email: response.data.email } }); }, 2000);
       }
     } catch (error) {
       const errorMessage = (error as any)?.message || 'Google sign-up failed.';
@@ -107,10 +112,9 @@ export const SignUp = () => {
       const result = await signInWithPopup(auth, appleProvider);
       const user = result.user;
       // Optionally, send user data to your backend
-      const response = await signUp({
+      const response = await signUpAndSigninByProvider({
         email: user.email ?? "",
         provider: 'apple',
-        password: "",
         uid: user.uid,
       }).unwrap();
 
@@ -119,10 +123,10 @@ export const SignUp = () => {
           position: 'bottom-right',
           autoClose: 3000,
         });
-       setTimeout (() => {navigate('/otp-verification', { state: { email: response.data.email } });}, 2000); 
+        setTimeout(() => { navigate('/user-details', { state: { email: response.data.email } }); }, 2000);
       }
     } catch (error) {
-      const errorMessage =  (error as any)?.message  || 'Apple sign-up failed.';
+      const errorMessage = (error as any)?.message || 'Apple sign-up failed.';
       toast.error(errorMessage, {
         position: 'bottom-right',
         autoClose: 3000,
@@ -131,16 +135,14 @@ export const SignUp = () => {
   };
   return (
     <div
-      className={`min-h-screen flex items-center justify-center p-4 ${
-        theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
-      }`}
+      className={`min-h-screen flex items-center justify-center p-4 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
+        }`}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`max-w-md w-full space-y-8 p-8 rounded-2xl shadow-lg ${
-          theme === 'dark' ? 'bg-gray-800/80 text-white' : 'bg-white text-gray-900'
-        } border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
+        className={`max-w-md w-full space-y-8 p-8 rounded-2xl shadow-lg ${theme === 'dark' ? 'bg-gray-800/80 text-white' : 'bg-white text-gray-900'
+          } border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
       >
         <div className="text-center">
           <h2 className="text-3xl font-bold">Create Account</h2>
@@ -148,24 +150,22 @@ export const SignUp = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-         <button
+          <button
             onClick={handleAppleSignUp}
-            className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${
-              theme === 'dark'
+            className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${theme === 'dark'
                 ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-white'
                 : 'border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-900'
-            }`}
+              }`}
           >
             <Apple className="w-5 h-5 mr-2" />
             Apple
           </button>
           <button
             onClick={handleGoogleSignUp}
-            className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${
-              theme === 'dark'
+            className={`flex items-center justify-center px-4 py-2 border rounded-lg transition-colors ${theme === 'dark'
                 ? 'border-gray-600 bg-gray-700 hover:bg-gray-600 text-white '
                 : 'border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-900'
-            }`}
+              }`}
           >
             <Mail className="w-5 h-5 mr-2" />
             Google
@@ -198,11 +198,10 @@ export const SignUp = () => {
                   <Field
                     type="email"
                     name="email"
-                    className={`mt-1 block w-full px-4 py-3 rounded-lg transition-colors ${
-                      theme === 'dark'
+                    className={`mt-1 block w-full px-4 py-3 rounded-lg transition-colors ${theme === 'dark'
                         ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                         : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'
-                    } focus:ring-2 focus:ring-primary focus:border-transparent`}
+                      } focus:ring-2 focus:ring-primary focus:border-transparent`}
                     placeholder="you@example.com"
                   />
                   <ErrorMessage name="email" component="p" className="mt-1 text-sm text-red-400" />
@@ -216,11 +215,10 @@ export const SignUp = () => {
                     <Field
                       type={showPassword ? 'text' : 'password'}
                       name="password"
-                      className={`block w-full px-4 py-3 rounded-lg transition-colors ${
-                        theme === 'dark'
+                      className={`block w-full px-4 py-3 rounded-lg transition-colors ${theme === 'dark'
                           ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                           : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'
-                      } focus:ring-2 focus:ring-primary focus:border-transparent`}
+                        } focus:ring-2 focus:ring-primary focus:border-transparent`}
                       placeholder="••••••••"
                     />
                     <button
@@ -239,9 +237,8 @@ export const SignUp = () => {
                     <Field
                       type="checkbox"
                       name="acceptTerms"
-                      className={`h-4 w-4 rounded focus:ring-primary ${
-                        theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'
-                      }`}
+                      className={`h-4 w-4 rounded focus:ring-primary ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'
+                        }`}
                     />
                   </div>
                   <div className="ml-3">
@@ -263,11 +260,10 @@ export const SignUp = () => {
               <motion.button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full flex justify-center items-center px-4 py-3 font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                  theme === 'dark'
+                className={`w-full flex justify-center items-center px-4 py-3 font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${theme === 'dark'
                     ? 'bg-gray-700 border border-primary hover:bg-gray-600 text-white focus:ring-offset-gray-800'
                     : 'bg-gray-100 border border-primary hover:bg-gray-200 text-gray-900 focus:ring-offset-gray-100'
-                } disabled:opacity-50`}
+                  } disabled:opacity-50`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

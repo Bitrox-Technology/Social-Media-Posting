@@ -5,22 +5,36 @@ import { CONTENT_TYPE_ENUM, POST_STATUS_ENUM, POST_TYPE_ENUM, PROVIDER_ENUM } fr
 const validateSignup = async (inputs) => {
     let schema = {};
 
+    // if (inputs.provider === 'google' || inputs.provider === 'apple') {
+    //     schema = joi.object().keys({
+    //         email: joi.string().email().lowercase().required(),
+    //         password: joi.string().optional().allow('').default(''),
+    //         provider: joi.string().valid('google', 'apple').required(),
+    //         uid: joi.string().trim().required(),
+    //     });
+    // } else {
+    schema = joi.object().keys({
+        email: joi.string().email().lowercase().required(),
+        password: joi.string()
+            .min(6)
+            .pattern(new RegExp('^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])'))
+            .required(),
+        // provider: joi.string().valid('').default('').optional(),
+        // uid: joi.string().trim().allow('').optional(),
+    });
+    // }
+
+    VALIDATE_SCHEMA(schema, inputs);
+}
+
+const validateSignupSigninByProvider = async (inputs) => {
+    let schema = {};
+
     if (inputs.provider === 'google' || inputs.provider === 'apple') {
         schema = joi.object().keys({
             email: joi.string().email().lowercase().required(),
-            password: joi.string().optional().allow('').default(''),
             provider: joi.string().valid('google', 'apple').required(),
             uid: joi.string().trim().required(),
-        });
-    } else {
-        schema = joi.object().keys({
-            email: joi.string().email().lowercase().required(),
-            password: joi.string()
-                .min(6)
-                .pattern(new RegExp('^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])'))
-                .required(),
-            provider: joi.string().valid('').default('').optional(),
-            uid: joi.string().trim().allow('').optional(),
         });
     }
 
@@ -81,24 +95,13 @@ const validateUserProfile = async (inputs) => {
 
 const validateLogin = async (inputs) => {
     let schema = {}
-    if (inputs.provider === 'google' || inputs.provider === 'apple') {
-        schema = joi.object().keys({
-            email: joi.string().email().lowercase().required(),
-            password: joi.string().optional().allow('').default(''),
-            provider: joi.string().valid(...PROVIDER_ENUM).required(),
-            uid: joi.string().trim().required(),
-        });
-    } else {
-        schema = joi.object().keys({
-            email: joi.string().email().lowercase().required(),
-            password: joi.string()
-                .min(6)
-                .pattern(new RegExp('^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])'))
-                .required(),
-            provider: joi.string().valid('').default('').optional(),
-            uid: joi.string().trim().allow('').optional(),
-        });
-    }
+    schema = joi.object().keys({
+        email: joi.string().email().lowercase().required(),
+        password: joi.string()
+            .min(6)
+            .pattern(new RegExp('^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])'))
+            .required(),
+    });
 
     VALIDATE_SCHEMA(schema, inputs);
 }
@@ -220,7 +223,8 @@ const UserValidation = {
     validateDYKContent,
     validateSavePost,
     validateUpdatePost,
-    validateUserProfile
+    validateUserProfile,
+    validateSignupSigninByProvider
 }
 
 export default UserValidation;

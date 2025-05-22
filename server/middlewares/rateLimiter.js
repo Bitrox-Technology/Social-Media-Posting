@@ -2,6 +2,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from '../config/constant.js';
 import getClientIp from '../utils/getClientIp.js';
 import logger from './logger.js';
+import {ApiError} from "../utils/ApiError.js"
 
 const globalRateLimiter = rateLimit({
   windowMs: config.rateLimit.global.windowMs,
@@ -38,7 +39,7 @@ const otpGeneratorRateLimiter = rateLimit({
     const email = req.body.email?.toLowerCase();
     if (!email) {
       logger.warn('Email missing for OTP rate limiting', { body: req.body });
-      throw new Error('Email is required for OTP rate limiting');
+      throw new ApiError('Email is required for OTP rate limiting');
     }
     logger.info('OTP rate limit check', { email });
     return `otp:${email}`;

@@ -12,6 +12,11 @@ import i18n from "./utils/i18n.js";
 import { globalRateLimiter } from "./middlewares/rateLimiter.js";
 import logger from "./middlewares/logger.js";
 import mongoose from "mongoose";
+import cookieParser from "cookie-parser";
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
+import { csrfSynchronisedProtection, generateToken } from './utils/csrf.js';
+
 
 // Get the equivalent of __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -22,24 +27,93 @@ configDotenv();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// Enable trust proxy for proper IP extraction
-app.set('trust proxy', 1); // Trust the first proxy (adjust based on your setup)
-
-// Middleware
-app.use(express.json());
-
-// Initialize i18n
-app.use(i18n.init);
-
-// CORS configuration
 app.use(
   cors({
     origin: ['http://localhost:5173', 'http://localhost:5174'],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", 'OPTIONS'],
     allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
     credentials: true,
+    exposedHeaders: ['Set-Cookie'],
   })
 );
+// Enable trust proxy for proper IP extraction
+app.set('trust proxy', 1); // Trust the first proxy (adjust based on your setup)
+
+app.use(express.json());
+app.use(cookieParser());
+
+// Session middleware
+app.use(
+  session({
+    secret: process.env.CSRF_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: `${process.env.MONGODB_URL}/${process.env.DB_NAME}`,
+      collectionName: 'sessions',
+      ttl: 24 * 60 * 60,
+    }).on('error', (error) => {
+      logger.error('MongoStore error', { message: error.message, stack: error.stack });
+    }),
+    cookie: {
+      httpOnly: true,
+      secure: false, // secure: true setting requires HTTPS
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  }), (req, res, next) => {
+    logger.info('Session details', {
+      sessionID: req.sessionID,
+      csrfToken: req.session.csrfToken,
+      headers: req.headers,
+    });
+    next()
+  });
+
+app.use(csrfSynchronisedProtection, (req, res, next) => {
+  logger.info('CSRF Validation', {
+    receivedToken: req.get('X-CSRF-Token'),
+    expectedToken: req.session.csrfToken,
+    sessionID: req.sessionID,
+  });
+  next();
+});
+
+// Provide CSRF token to the client in responses
+app.use((req, res, next) => {
+  try {
+    if (!req.session.csrfToken) {
+      res.locals.csrfToken = generateToken(req);
+      req.session.modified = true;
+      logger.info('Session modified - CSRF token generated', {
+        sessionID: req.sessionID,
+        csrfToken: req.session.csrfToken,
+      });
+    } else {
+      res.locals.csrfToken = req.session.csrfToken;
+    }
+    logger.info('CSRF token state', {
+      sessionID: req.sessionID,
+      storedCsrfToken: req.session.csrfToken,
+      responseCsrfToken: res.locals.csrfToken,
+      method: req.method,
+      path: req.path,
+    });
+  } catch (error) {
+    logger.error('Failed to generate CSRF token', { message: error.message, stack: error.stack });
+    return res.status(500).json({
+      status: 500,
+      success: false,
+      message: 'Failed to generate CSRF token',
+      details: null,
+    });
+  }
+  next();
+});
+
+
+// Initialize i18n
+app.use(i18n.init);
 
 // Morgan logging with custom format
 morgan.format("custom", ":method :url :status :res[content-length] - :response-time ms");
@@ -101,16 +175,6 @@ app.use(function (err, req, res, next) {
     message: '',
     details: null,
   };
-
-  // if (err instanceof ApiError) {
-  //   return res.status(err.statusCode).json({
-  //     status: err.statusCode,
-  //     message: err.message,
-  //     data: err.data,
-  //     success: err.success,
-  //     errors: err.errors,
-  //   });
-  // }
 
   // Handle specific error types
   if (err.message === "jwt expired" || err.message === "Authentication error") {

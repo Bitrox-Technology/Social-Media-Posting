@@ -13,7 +13,7 @@ userRouter.post('/user-details', AuthMiddleware, upload.any(), UserControllers.U
 userRouter.get("/get-user-profile", AuthMiddleware, UserControllers.GetUserProfile)
 userRouter.post("/signin", UserControllers.Login)
 userRouter.post("/logout", AuthMiddleware, UserControllers.Logout)
-
+userRouter.post("/provider", UserControllers.SignupSigninByProvider)
 
 userRouter.post("/save-topics", AuthMiddleware, UserControllers.PostContent)
 userRouter.get("/get-pending-topics", AuthMiddleware, UserControllers.GetPendingTopics)

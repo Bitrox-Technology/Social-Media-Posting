@@ -4,7 +4,15 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, EffectFade } from 'swiper/modules';
 import { motion } from 'framer-motion';
 import DatePicker from 'react-datepicker';
-import { useLazyAuthFacebookQuery, useLazyAuthInstagramQuery, useLazyAuthLinkedInQuery, useLazyGetUserPostDetailQuery, useLinkedInPostMutation } from '../../store/api';
+import {
+  useLazyAuthFacebookQuery,
+  useLazyAuthInstagramQuery,
+  useLazyAuthLinkedInQuery,
+  useLazyGetUserPostDetailQuery,
+  useLinkedInPostMutation,
+  // useFacebookPostMutation,
+  // useInstagramPostMutation,
+} from '../../store/api';
 import { useTheme } from '../../context/ThemeContext';
 import {
   ArrowLeft,
@@ -49,7 +57,7 @@ interface Post {
 }
 
 interface Schedule {
-  platforms: string[];
+  platform: string | null;
   dateTime: Date | null;
 }
 
@@ -58,15 +66,22 @@ export const UserPostDetail: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const [getUserPostDetail, { data, isLoading, isError, error }] = useLazyGetUserPostDetailQuery();
-  const [authFacebook] = useLazyAuthFacebookQuery()
-  const [authLinkdIn] = useLazyAuthLinkedInQuery()
-  const [authInstagram] = useLazyAuthInstagramQuery()
+  const [authFacebook] = useLazyAuthFacebookQuery();
+  const [authLinkedIn] = useLazyAuthLinkedInQuery();
+  const [authInstagram] = useLazyAuthInstagramQuery();
+  const [linkedInPost] = useLinkedInPostMutation();
+  // const [facebookPost] = useFacebookPostMutation();
+  // const [instagramPost] = useInstagramPostMutation();
 
-  const [linkedInPost] = useLinkedInPostMutation()
+  const [isSocialOptionsOpen, setIsSocialOptionsOpen] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
-  const [schedule, setSchedule] = useState<Schedule>({ platforms: [], dateTime: null });
-
-  console.log(schedule)
+  const [schedule, setSchedule] = useState<Schedule>({ platform: null, dateTime: null });
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authStatus, setAuthStatus] = useState({
+    linkedin: !!localStorage.getItem('linkedin_access_token'),
+    facebook: !!localStorage.getItem('facebook_access_token'),
+    instagram: !!localStorage.getItem('instagram_access_token'),
+  });
 
   // Theme-based styles
   const themeStyles = {
@@ -79,7 +94,7 @@ export const UserPostDetail: React.FC = () => {
       buttonBg: 'bg-blue-600',
       buttonHover: 'hover:bg-blue-700',
       inputBg: 'bg-white',
-      inputBorder: 'border-gray-300',
+      inputBorder: 'border-bg-gray-300',
     },
     dark: {
       background: 'bg-gradient-to-br from-gray-900 to-gray-800',
@@ -102,65 +117,133 @@ export const UserPostDetail: React.FC = () => {
     }
   }, [postId, getUserPostDetail]);
 
+  // Handle authentication redirect callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const platform = urlParams.get('platform'); // Assume backend includes platform in redirect URL
+
+    if (code && platform) {
+      handleAuthCallback(code, platform);
+    }
+  }, []);
+
   const post: Post | undefined = data?.data?.[0];
 
   const platformIcons = {
-    linkedin: <Linkedin className="w-4 h-4" />,
-    instagram: <Instagram className="w-4 h-4" />,
-    facebook: <Facebook className="w-4 h-4" />,
+    linkedin: <Linkedin className="w-6 h-6" />,
+    instagram: <Instagram className="w-6 h-6" />,
+    facebook: <Facebook className="w-6 h-6" />,
   };
 
-  const updateSchedule = (platform?: string, dateTime?: Date | null) => {
-    setSchedule((prev) => {
-      let platforms = prev.platforms;
-      if (platform) {
-        platforms = prev.platforms.includes(platform)
-          ? prev.platforms.filter((p) => p !== platform)
-          : [...prev.platforms, platform];
+  const socialPlatforms = [
+    { name: 'facebook', label: 'Facebook Page', icon: platformIcons.facebook },
+    { name: 'linkedin', label: 'LinkedIn Profile', icon: platformIcons.linkedin },
+    { name: 'instagram', label: 'Instagram', icon: platformIcons.instagram },
+  ];
+
+  const updateSchedule = (platform?: string | null, dateTime?: Date | null) => {
+    setSchedule((prev) => ({
+      platform: platform !== undefined ? platform : prev.platform,
+      dateTime: dateTime !== undefined ? dateTime : prev.dateTime,
+    }));
+  };
+
+  const handleAuthCallback = async (code: string, platform: string) => {
+    try {
+      let response;
+      if (platform === 'linkedin') {
+        response = await authLinkedIn().unwrap();
+      } else if (platform === 'facebook') {
+        response = await authFacebook().unwrap();
+      } else if (platform === 'instagram') {
+        response = await authInstagram().unwrap();
       }
-      return {
-        platforms,
-        dateTime: dateTime !== undefined ? dateTime : prev.dateTime,
-      };
-    });
+
+      if (response?.data?.accessToken) {
+        localStorage.setItem(`${platform}_access_token`, response.data.accessToken);
+        setAuthStatus((prev) => ({ ...prev, [platform]: true }));
+        // Clear URL params
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // Proceed to scheduling after successful authentication
+        setIsSocialOptionsOpen(false);
+        setIsScheduling(true);
+      }
+    } catch (err) {
+      console.error(`Error in ${platform} auth callback:`, err);
+      alert(`Failed to authenticate with ${platform}`);
+      setIsAuthenticating(false);
+    }
   };
 
-  const handleSchedulePost = async() => {
-    if (!schedule.platforms.length) {
-      alert('Please select at least one platform and a date/time');
+  const initiateAuth = async (platform: string) => {
+    try {
+      setIsAuthenticating(true);
+      let response;
+      if (platform === 'linkedin') {
+        response = await authLinkedIn().unwrap();
+      } else if (platform === 'facebook') {
+        response = await authFacebook().unwrap();
+      } else if (platform === 'instagram') {
+        response = await authInstagram().unwrap();
+      }
+      if (response && response.data) {
+        window.location.href = response.data; // Redirect to auth URL
+      } else {
+        throw new Error('Authentication URL not received');
+      }
+    } catch (err) {
+      console.error(`Error initiating ${platform} auth:`, err);
+      alert(`Failed to initiate ${platform} authentication`);
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handlePlatformSelect = (platform: string) => {
+    setSchedule((prev) => ({ ...prev, platform }));
+    if (!authStatus[platform as keyof typeof authStatus]) {
+      initiateAuth(platform);
+    } else {
+      setIsSocialOptionsOpen(false);
+      setIsScheduling(true);
+    }
+  };
+
+  const handleSchedulePost = async () => {
+    if (!schedule.platform) {
+      alert('Please select a platform');
       return;
     }
 
-    console.log(schedule)
+    if (!post) {
+      alert('Post data not available');
+      return;
+    }
+
+    const payload = {
+      imageUrl: post.images[0]?.url || '',
+      title: post.title,
+      description: post.description,
+      scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : "",
+    };
 
     try {
-       if (schedule.platforms.includes("linkedin")){
-          
-       } else if(schedule.platforms.includes("instagram")){
+      let response;
+      if (schedule.platform === 'linkedin') {
+        response = await linkedInPost(payload).unwrap();
+      } else if (schedule.platform === 'facebook') {
+        // response = await facebookPost(payload).unwrap();
+      } else if (schedule.platform === 'instagram') {
+        // response = await instagramPost(payload).unwrap();
+      }
 
-       }else if (schedule.platforms.includes("facebook")){
-
-       }
-
-
-      // let response = await authLinkdIn().unwrap()
-      // console.log("Response Auth: ", response.data)
-      // window.location.href= response.data
-      // return;
-      
-      // let response = await authFacebook().unwrap()
-      // console.log("Response Auth: ", response.data)
-      // window.location.href= response.data
-
-      //  let response = await authInstagram().unwrap()
-      // console.log("Response Auth: ", response.data)
-      // window.location.href= response.data
-    } catch (error) {
-       console.log("Error", error)
+      alert(`Post ${schedule.dateTime ? 'scheduled' : 'published'} successfully on ${schedule.platform}`);
+      setSchedule({ platform: null, dateTime: null });
+      setIsScheduling(false);
+    } catch (err) {
+      console.error(`Error posting to ${schedule.platform}:`, err);
+      alert(`Failed to post to ${schedule.platform}`);
     }
-    
-    setSchedule({ platforms: [], dateTime: null });
-    setIsScheduling(false);
   };
 
   const renderImage = (image: Image) => (
@@ -274,8 +357,9 @@ export const UserPostDetail: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsScheduling(true)}
+              onClick={() => setIsSocialOptionsOpen(true)}
               className={`p-2 ${currentTheme.cardBackground} rounded-lg hover:bg-gray-700/50 transition-all`}
+              disabled={isAuthenticating}
             >
               <Share2 className="w-5 h-5 text-blue-400" />
             </button>
@@ -288,6 +372,41 @@ export const UserPostDetail: React.FC = () => {
           </div>
         </motion.div>
 
+        {/* Social Media Options Modal */}
+        {isSocialOptionsOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className={`fixed inset-0 flex items-center justify-center bg-black/50 z-50`}
+          >
+            <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 w-full max-w-md border ${currentTheme.border}`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`text-xl font-semibold ${currentTheme.textPrimary}`}>Social</h3>
+                <button
+                  onClick={() => setIsSocialOptionsOpen(false)}
+                  className={`text-${currentTheme.textSecondary}`}
+                >
+                  <span className="text-sm">See less</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-4 mb-4">
+                {socialPlatforms.map((platform) => (
+                  <button
+                    key={platform.name}
+                    onClick={() => handlePlatformSelect(platform.name)}
+                    className={`flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all`}
+                    disabled={isAuthenticating}
+                  >
+                    {platform.icon}
+                    <span className={`text-xs mt-2 ${currentTheme.textPrimary}`}>{platform.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Scheduling Modal */}
         {isScheduling && (
           <motion.div
@@ -297,23 +416,7 @@ export const UserPostDetail: React.FC = () => {
             className={`fixed inset-0 flex items-center justify-center bg-black/50 z-50`}
           >
             <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 w-full max-w-md border ${currentTheme.border}`}>
-              <h3 className={`text-xl font-semibold ${currentTheme.textPrimary} mb-4`}>Schedule Post</h3>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {Object.entries(platformIcons).map(([platform, icon]) => (
-                  <button
-                    key={platform}
-                    onClick={() => updateSchedule(platform)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
-                      schedule.platforms.includes(platform)
-                        ? `${currentTheme.buttonBg} ${currentTheme.textPrimary}`
-                        : `${currentTheme.inputBg} ${currentTheme.textSecondary} hover:bg-gray-700`
-                    }`}
-                  >
-                    {icon}
-                    <span className="capitalize text-sm">{platform}</span>
-                  </button>
-                ))}
-              </div>
+              <h3 className={`text-xl font-semibold ${currentTheme.textPrimary} mb-4`}>Schedule Post to {schedule.platform}</h3>
               <div className="flex items-center gap-4 mb-4">
                 <Calendar className={`w-5 h-5 ${currentTheme.textSecondary}`} />
                 <DatePicker
@@ -330,8 +433,9 @@ export const UserPostDetail: React.FC = () => {
                 <button
                   onClick={handleSchedulePost}
                   className={`flex-1 px-4 py-2 ${currentTheme.buttonBg} ${currentTheme.textPrimary} rounded-lg ${currentTheme.buttonHover}`}
+                  disabled={!schedule.platform}
                 >
-                  Schedule
+                  {schedule.dateTime ? 'Schedule' : 'Post Now'}
                 </button>
                 <button
                   onClick={() => setIsScheduling(false)}
