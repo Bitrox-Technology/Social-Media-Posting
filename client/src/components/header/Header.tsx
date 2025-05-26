@@ -5,8 +5,7 @@ import { logout, setUser } from '../../store/appSlice';
 import { Menu, X, Bot, User } from 'lucide-react';
 import ThemeToggle from '../features/ThemeToggle';
 import { useTheme } from '../../context/ThemeContext';
-import Cookies from 'js-cookie'
-import { jwtDecode } from 'jwt-decode';
+
 
 const Header: React.FC<{ toggleDrawer: (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => void }> = ({ toggleDrawer }) => {
   const { theme } = useTheme();
@@ -16,30 +15,22 @@ const Header: React.FC<{ toggleDrawer: (open: boolean) => (event: React.Keyboard
   const navigate = useNavigate();
   console.log("User", user)
   // Ensure user state is restored from localStorage on mount
-  useEffect(() => {
-    if (!user) {
-      console.log('All Cookies:', Cookies.get());
-      const cookieToken = Cookies.get("accessToken");
-      console.log("CookieTOken Header", cookieToken)
-      if (cookieToken) {
-        const decoded = jwtDecode<{ exp?: number; email?: string }>(cookieToken);
-        if (typeof decoded.exp === 'number' && decoded.email) {
-          const expiresAt = decoded.exp * 1000;
-          const email = decoded.email;
-          dispatch(setUser({ email, token: cookieToken, expiresAt }));
-          if (expiresAt && Date.now() < expiresAt) {
-            dispatch(setUser({ email, token: cookieToken, expiresAt }));
-          } else {
-            dispatch(logout());
-            navigate('/signin');
-          }
-        } else {
-          dispatch(logout());
-          navigate('/signin');
-        }
-      }
-    }
-  }, [user, dispatch, navigate]);
+  // useEffect(() => {
+  //   if (user) {
+  //     console.log('Header: Checking expiresAt=', user.expiresAt, 'vs Date.now()=', Date.now());
+  //     if (user.authenticate ) {
+  //       console.log('Header: Session expired, redirecting to /signin');
+  //       dispatch(logout()); // Clear user state
+  //       navigate('/signin', { replace: true });
+  //     } else {
+  //       console.log('Header: Session valid, redirecting to /dashboard');
+  //       navigate('/dashboard', { replace: true });
+  //     }
+  //   } else {
+  //     console.log('Header: No user, redirecting to /signin');
+  //     navigate('/signin', { replace: true });
+  //   }
+  // }, [user, dispatch, navigate]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);

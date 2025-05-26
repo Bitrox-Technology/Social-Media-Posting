@@ -4,6 +4,10 @@ import cors from "cors";
 import router from "./routes/index.js";
 import morgan from "morgan";
 import helmet from "helmet";
+import mongoSanitize from 'express-mongo-sanitize';
+import sanitizeHtml from 'sanitize-html';
+import hpp from 'hpp';
+import compression from 'compression';
 import { ApiError } from "./utils/ApiError.js";
 import path from "path";
 import { fileURLToPath } from 'url';
@@ -16,6 +20,8 @@ import cookieParser from "cookie-parser";
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import { csrfSynchronisedProtection, generateToken } from './utils/csrf.js';
+import { INTERNAL_SERVER_ERROR } from "./utils/apiResponseCode.js";
+import { ApiResponse } from "./utils/ApiResponse.js";
 
 
 // Get the equivalent of __dirname in ESM
@@ -27,97 +33,209 @@ configDotenv();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Enable trust proxy for proper IP extraction
+app.set('trust proxy', 1);
+
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:", "blob:"],
+        connectSrc: ["'self'", process.env.FRONTEND_URL || 'https://yourdomain.com'],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
+
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: [process.env.FRONTEND_CLIENT_URL || 'http://localhost:5173', process.env.FRONTEND_ADMIN_URL || 'http://localhost:5174'],
     methods: ["GET", "POST", "PUT", "DELETE", 'OPTIONS'],
-    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", 'X-Requested-With'],
     credentials: true,
     exposedHeaders: ['Set-Cookie'],
   })
 );
-// Enable trust proxy for proper IP extraction
-app.set('trust proxy', 1); // Trust the first proxy (adjust based on your setup)
-
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Session middleware
-app.use(
-  session({
-    secret: process.env.CSRF_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: `${process.env.MONGODB_URL}/${process.env.DB_NAME}`,
-      collectionName: 'sessions',
-      ttl: 24 * 60 * 60,
-    }).on('error', (error) => {
-      logger.error('MongoStore error', { message: error.message, stack: error.stack });
-    }),
-    cookie: {
-      httpOnly: true,
-      secure: false, // secure: true setting requires HTTPS
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
-    },
-  }), (req, res, next) => {
-    logger.info('Session details', {
-      sessionID: req.sessionID,
-      csrfToken: req.session.csrfToken,
-      headers: req.headers,
-    });
-    next()
-  });
 
-app.use(csrfSynchronisedProtection, (req, res, next) => {
-  logger.info('CSRF Validation', {
-    receivedToken: req.get('X-CSRF-Token'),
-    expectedToken: req.session.csrfToken,
-    sessionID: req.sessionID,
-  });
+// Data sanitization against NoSQL injection
+app.use(mongoSanitize());
+
+
+// Data sanitization against XSS using sanitize-html
+app.use((req, res, next) => {
+  const sanitizeObject = (obj) => {
+    if (!obj || typeof obj !== 'object') return obj;
+    Object.keys(obj).forEach((key) => {
+      if (typeof obj[key] === 'string') {
+        obj[key] = sanitizeHtml(obj[key], {
+          allowedTags: [], // Disallow all HTML tags
+          allowedAttributes: {}, // Disallow all attributes
+        });
+      } else if (typeof obj[key] === 'object') {
+        sanitizeObject(obj[key]);
+      }
+    });
+    return obj;
+  };
+
+  // Sanitize request body, query, and params
+  if (req.body) req.body = sanitizeObject(req.body);
+  if (req.query) req.query = sanitizeObject(req.query);
+  if (req.params) req.params = sanitizeObject(req.params);
+
   next();
 });
 
-// Provide CSRF token to the client in responses
+// Prevent parameter pollution
+app.use(hpp());
+
+// Compression
+app.use(compression());
+
+// Morgan logging
+morgan.format('custom', ':method :url :status :res[content-length] - :response-time ms');
+app.use(morgan('custom'));
+
+
+app.use((req, res, next) => {
+  logger.info('Incoming request', {
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+    headers: req.headers,
+  });
+  next();
+});
+// Session middleware
+app.use(session({
+  secret: process.env.CSRF_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: `${process.env.MONGODB_URL}/${process.env.DB_NAME}`,
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60,
+    autoRemove: 'native',
+  }).on('error', (error) => {
+    logger.error('MongoStore error', { message: error.message, stack: error.stack });
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 24 * 60 * 60 * 1000,
+    domain: process.env.DOMAIN,
+    path: '/',
+  },
+}), (req, res, next) => {
+  logger.info('Session details', {
+    sessionID: req.sessionID,
+    csrfToken: req.session.csrfToken,
+    headers: req.headers,
+  });
+  next()
+});
+
+app.use((req, res, next) => {
+  try {
+    logger.info('Incoming request', {
+      method: req.method,
+      path: req.path,
+      ip: req.getClientIp ? req.getClientIp(req) : 'unknown',
+      headers: req.headers || {},
+      sessionID: req.sessionID,
+    });
+  } catch (error) {
+    logger.error('Logging middleware error', { message: error.message, stack: error.stack });
+  }
+  next();
+});
+
 app.use((req, res, next) => {
   try {
     if (!req.session.csrfToken) {
-      res.locals.csrfToken = generateToken(req);
+      req.session.csrfToken = generateToken(req);
+      req.session.csrfTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
       req.session.modified = true;
-      logger.info('Session modified - CSRF token generated', {
+      logger.info('CSRF token generated', {
         sessionID: req.sessionID,
         csrfToken: req.session.csrfToken,
+        expiresAt: req.session.csrfTokenExpiresAt,
       });
-    } else {
-      res.locals.csrfToken = req.session.csrfToken;
     }
+    res.locals.csrfToken = req.session.csrfToken;
     logger.info('CSRF token state', {
       sessionID: req.sessionID,
-      storedCsrfToken: req.session.csrfToken,
-      responseCsrfToken: res.locals.csrfToken,
+      csrfToken: req.session.csrfToken,
       method: req.method,
       path: req.path,
     });
   } catch (error) {
     logger.error('Failed to generate CSRF token', { message: error.message, stack: error.stack });
-    return res.status(500).json({
-      status: 500,
-      success: false,
-      message: 'Failed to generate CSRF token',
-      details: null,
-    });
+    return res.status(INTERNAL_SERVER_ERROR).json(new ApiResponse(INTERNAL_SERVER_ERROR, null, i18n.__("FAILED_GENERATE_CSRF")));
   }
   next();
 });
 
+app.use('/api/v1', (req, res, next) => {
+  if (req.path === '/csrf/csrf-token') {
+    return next(); // Skip CSRF protection for token fetch
+  }
+  csrfSynchronisedProtection(req, res, (err) => {
+    if (err) {
+      logger.error('CSRF validation failed', {
+        message: err.message,
+        sessionID: req.sessionID,
+        receivedToken: req.get('X-CSRF-Token') || 'none',
+        expectedToken: req.session.csrfToken || 'none',
+      });
+      return res.status(403).json(new ApiResponse(403, null, i18n.__("INVALID_CSRF_TOKEN")));
+    }
+    logger.info('CSRF validation passed', {
+      sessionID: req.sessionID,
+      receivedToken: req.get('X-CSRF-Token') || 'none',
+      expectedToken: req.session.csrfToken || 'none',
+      method: req.method,
+      path: req.path,
+    });
+    next();
+  });
+});
+
+app.use(globalRateLimiter);
 
 // Initialize i18n
 app.use(i18n.init);
 
-// Morgan logging with custom format
-morgan.format("custom", ":method :url :status :res[content-length] - :response-time ms");
-app.use(morgan("custom"));
+app.use(function (req, res, next) {
+  if (req.headers && req.headers.lang && req.headers.lang == 'ar') {
+    i18n.setLocale(req.headers.lang);
+  } else if (req.headers && req.headers.lang && req.headers.lang == 'sp') {
+    i18n.setLocale(req.headers.lang);
+  } else {
+    i18n.setLocale('en');
+  }
+  next();
+});
 
 // Request logging with Winston (in addition to Morgan)
 app.use((req, res, next) => {
@@ -130,29 +248,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Apply global rate limiter to all routes
-app.use(globalRateLimiter);
-
-// Security headers with Helmet
-app.use(helmet());
-
-// Parse URL-encoded bodies
-app.use(express.urlencoded({ extended: true }));
-
 // Serve static files
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
-
-// Set i18n locale based on request headers
-app.use(function (req, res, next) {
-  if (req.headers && req.headers.lang && req.headers.lang == 'ar') {
-    i18n.setLocale(req.headers.lang);
-  } else if (req.headers && req.headers.lang && req.headers.lang == 'sp') {
-    i18n.setLocale(req.headers.lang);
-  } else {
-    i18n.setLocale('en');
-  }
-  next();
-});
 
 // Routes
 app.use("/api/v1", router);

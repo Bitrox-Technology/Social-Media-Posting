@@ -1,8 +1,15 @@
-import { createApi, fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
+import {
+  createApi,
+  fetchBaseQuery,
+  BaseQueryFn,
+  FetchArgs,
+  FetchBaseQueryError,
+} from '@reduxjs/toolkit/query/react';
 import Cookies from 'js-cookie';
-import { jwtDecode } from 'jwt-decode';
-import { setUser, clearUser, setCsrfToken, clearCsrfToken } from './appSlice';
+import { setUser, clearUser, setCsrfToken, clearCsrfToken, setSessionWarning } from './appSlice';
 import { backendURL } from '../constants/urls';
+import logger from '../Utilities/logger';
+import { store } from "./index"
 
 interface ContentIdea {
   title: string;
@@ -41,122 +48,186 @@ interface SavePostRequest {
   contentId?: string;
   contentType?: 'ImageContent' | 'CarouselContent' | 'DYKContent';
 }
-interface JwtPayload {
-  _id: string;
+
+interface UserState {
   email: string;
+  expiresAt: number;
   role: string;
-  iat: number;
-  exp: number;
+  login?: boolean;
 }
-const baseQueryWithDispatch: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
-> = async (args, api, extraOptions) => {
+
+interface CsrfState {
+  token: string;
+  expiresAt: number;
+}
+
+const throttle = <T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): ((...args: Parameters<T>) => Promise<ReturnType<T>>) => {
+  let lastCall = 0;
+  return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    const now = Date.now();
+    if (now - lastCall >= limit) {
+      lastCall = now;
+      return func(...args);
+    }
+    throw new Error('Rate limit exceeded');
+  };
+};
+
+// Cross-tab communication
+const authChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('auth_channel') : null;
+
+const fetchCsrfToken = async (dispatch: any): Promise<string | null> => {
+  try {
+    const response = await fetch(`${backendURL}/csrf/csrf-token`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch CSRF token: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.success) {
+      dispatch(setCsrfToken({ token: data.data.csrfToken, expiresAt: data.data.expiresAt }));
+      if (authChannel) {
+        authChannel.postMessage({ type: 'CSRF_UPDATE', payload: data.data });
+      }
+      return data.data.csrfToken;
+    }
+    throw new Error('CSRF token fetch failed');
+  } catch (error) {
+    logger.error('Error fetching CSRF token', { error });
+    return null;
+  }
+};
+
+const baseQueryWithDispatch: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
+  args,
+  api,
+  extraOptions
+) => {
   const { dispatch, getState } = api;
+  const state = getState() as {
+    app?: { user?: UserState; csrfToken?: string; csrfTokenExpiresAt?: number };
+  };
+  let csrfToken = state.app?.csrfToken;
+  const method = typeof args === 'string' ? 'GET' : args.method || 'GET';
+  const endpoint = typeof args === 'string' ? args : args.url;
+
+  // Fetch CSRF token if needed
+  if (
+    !csrfToken ||
+    (state.app?.csrfTokenExpiresAt && Date.now() >= state.app.csrfTokenExpiresAt) ||
+    ['POST', 'PUT', 'DELETE'].includes(method)
+  ) {
+    const fetchedToken = await fetchCsrfToken(dispatch);
+    console.log('Fetched CSRF Token:', fetchedToken);
+    csrfToken = fetchedToken === null ? undefined : fetchedToken;
+  }
+
   const baseQuery = fetchBaseQuery({
     baseUrl: backendURL,
-    credentials: 'include', // Ensure cookies (e.g., accessToken, connect.sid) are sent
-    prepareHeaders: async (headers, { getState, endpoint }) => {
+    credentials: 'include',
+    prepareHeaders: (headers, { getState }) => {
       const state = getState() as {
-        app?: {
-          user?: { token?: string; expiresAt?: number; email?: string };
-          csrfToken?: string;
-          csrfTokenExpiresAt?: number;
-        };
+        app?: { user?: UserState; csrfToken?: string; csrfTokenExpiresAt?: number };
       };
-      let token = state.app?.user?.token;
-      let csrfToken = state.app?.csrfToken;
-      let csrfTokenExpiresAt = state.app?.csrfTokenExpiresAt;
+      const user = state.app?.user;
 
-      console.log("TOken-----------",token, csrfToken, csrfTokenExpiresAt)
+      logger.info('Session state', { user, csrfToken, endpoint });
 
-      // Retrieve accessToken from cookie
-      if (token === undefined) {
-        const cookieToken = Cookies.get('accessToken');
-
-        if (cookieToken) {
-          const decoded: JwtPayload = jwtDecode(cookieToken);
-          const expiresAt = decoded.exp * 1000; // Convert seconds to milliseconds
-          const email = decoded.email;
-          console.log("COokie Token", decoded, expiresAt,cookieToken )
-
-          if (Date.now() > expiresAt) {
-            dispatch(clearUser());
-            dispatch(clearCsrfToken());
-            Cookies.remove('accessToken');
-            Cookies.remove('accessTokenExpiresAt');
-            window.location.href = '/signin';
-            return headers;
-          }
-
-          token = cookieToken;
-          dispatch(setUser({ email, token, expiresAt }));
-        }
+      // Session warning
+      if (user?.expiresAt && user.expiresAt - Date.now() <= 5 * 60 * 1000) {
+        dispatch(setSessionWarning(true));
       }
 
-      // Set Authorization header
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-
-      // Skip CSRF token for safe methods
-      const ignoredMethods = ['GET', 'HEAD', 'OPTIONS'];
-      const method = typeof args === 'string' ? 'GET' : args.method || 'GET';
-      if (ignoredMethods.includes(method)) {
-        return headers;
-      }
-
-      // Check if CSRF token is expired or missing
-      if (csrfToken === undefined || csrfTokenExpiresAt === undefined || Date.now() > csrfTokenExpiresAt) {
-        try {
-          const response = await fetch(`${backendURL}/csrf/csrf-token`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-              Accept: 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch CSRF token');
-          }
-
-          const data = await response.json();
-          if (data.success) {
-            csrfToken = data.data.csrfToken;
-            const expiresAt = data.data.expiresAt || Date.now() + 24 * 60 * 60 * 1000;
-            if (typeof csrfToken === 'string') {
-              dispatch(setCsrfToken({ token: csrfToken, expiresAt }));
-            } else {
-              throw new Error('CSRF token is undefined');
-            }
-          } else {
-            throw new Error('CSRF token fetch failed');
-          }
-        } catch (error) {
-          console.error('Error fetching CSRF token:', error);
-          throw error;
-        }
-      }
-
-      // Set CSRF token header
-      if (csrfToken) {
+      // Set CSRF token for non-safe methods
+      if (['POST', 'PUT', 'DELETE'].includes(method) && csrfToken) {
         headers.set('X-CSRF-Token', csrfToken);
       }
 
-      console.log('Request headers:', {
-        method,
-        url: typeof args === 'string' ? args : args.url,
-        headers: Object.fromEntries(headers),
-        sessionId: Cookies.get('connect.sid'),
-      });
+      headers.set('Accept', 'application/json');
       return headers;
     },
   });
 
+  let result = await baseQuery(args, api, extraOptions);
 
-  return baseQuery(args, api, extraOptions);
+  // Check for 401 Unauthorized (or whatever status you want to handle)
+  if (result.error && result.error.status === 401) {
+    logger.warn('Unauthorized request', { endpoint });
+    try {
+      // Use existing CSRF token or fetch a new one
+      if (!csrfToken || (state.app?.csrfTokenExpiresAt && Date.now() >= state.app.csrfTokenExpiresAt)) {
+        const fetchedToken = await fetchCsrfToken(dispatch);
+        console.log('CSRF Token fetched for refresh:', fetchedToken);
+        csrfToken = fetchedToken === null ? undefined : fetchedToken;
+      }
+
+      if (!csrfToken) {
+        // Return the original result if we can't get a CSRF token
+        return result;
+      }
+
+      const refreshResult = await baseQuery(
+        {
+          url: '/auth/refresh-token',
+          method: 'POST',
+          headers: { 'CSRF-Token': csrfToken },
+        },
+        api,
+        extraOptions
+      );
+
+      if (refreshResult.data && (refreshResult.data as ApiResponse<any>).success) {
+        const { email, role, sessionExpiry, csrfToken: newCsrfToken, csrfExpiresAt } = (
+          refreshResult.data as ApiResponse<any>
+        ).data;
+        dispatch(
+          setUser({
+            email,
+            expiresAt: sessionExpiry,
+            role,
+            authenticate: true,
+          })
+        );
+        dispatch(
+          setCsrfToken({
+            token: newCsrfToken,
+            expiresAt: csrfExpiresAt,
+          })
+        );
+        if (authChannel) {
+          authChannel.postMessage({ type: 'AUTH_REFRESH', payload: { email, role, expiresAt: sessionExpiry } });
+        }
+        // Retry the original request
+        result = await baseQuery(args, api, extraOptions);
+      } else {
+        // Return the original result if refresh failed
+        return result;
+      }
+    } catch (error) {
+      logger.error('Token refresh failed:', { error });
+      dispatch(clearUser());
+      dispatch(clearCsrfToken());
+      dispatch(setSessionWarning(false));
+      Cookies.remove('accessToken');
+      Cookies.remove('refreshToken');
+      // Return the original result on error
+      return result;
+    }
+  }
+
+  // Refetch CSRF token after non-safe methods
+  if (typeof args !== 'string' && ['POST', 'PUT', 'DELETE'].includes(args.method || '')) {
+    await fetchCsrfToken(dispatch);
+  }
+
+  // Always return a QueryReturnValue
+  return result;
 };
 
 export const api = createApi({
@@ -164,20 +235,33 @@ export const api = createApi({
   baseQuery: baseQueryWithDispatch,
   tagTypes: ['Auth'],
   endpoints: (builder) => ({
+    checkAuthStatus: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/auth/auth-status',
+        method: 'GET',
+      }),
+      providesTags: ['Auth'],
+      keepUnusedDataFor: 300,
+    }),
+    validateSession: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/auth/validate-session',
+        method: 'GET',
+      }),
+      providesTags: ['Auth'],
+    }),
+    refreshAuth: builder.mutation<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/auth/refresh-token',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Auth'],
+    }),
     getCsrfToken: builder.query<ApiResponse<{ csrfToken: string; expiresAt: number }>, void>({
       query: () => ({
         url: '/csrf/csrf-token',
         method: 'GET',
       }),
-      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled;
-          const { csrfToken } = data.data;
-          dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
-        } catch (error) {
-          console.error('Failed to fetch CSRF token:', error);
-        }
-      },
     }),
     generateIdeas: builder.mutation<ApiResponse<ContentIdea[]>, { topic: string }>({
       query: (body) => ({
@@ -234,15 +318,6 @@ export const api = createApi({
         method: 'POST',
         body,
       }),
-      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled;
-          const { csrfToken } = data.data;
-          dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
-        } catch (error) {
-          console.error('Failed to fetch CSRF token:', error);
-        }
-      },
     }),
     signUpAndSigninByProvider: builder.mutation<ApiResponse<any>, { email: string; provider: string; uid: string }>({
       query: (body) => ({
@@ -250,25 +325,6 @@ export const api = createApi({
         method: 'POST',
         body,
       }),
-      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled;
-          const { csrfToken } = data.data;
-          const cookieToken = Cookies.get('accessToken');
-          if (cookieToken) {
-            const decoded: JwtPayload = jwtDecode(cookieToken);
-            const expiresAt = decoded.exp * 1000;
-            const email = decoded.email;
-            dispatch(setUser({ email, token: cookieToken, expiresAt }));
-
-            console.log(csrfToken)
-            dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
-          }
-        } catch (error) {
-         console.error('Failed to fetch CSRF token:', error);
-        }
-      },
-      invalidatesTags: ['Auth'],
     }),
     verifyOTP: builder.mutation<ApiResponse<any>, { email: string; otp: string }>({
       query: (body) => ({
@@ -276,23 +332,6 @@ export const api = createApi({
         method: 'POST',
         body,
       }),
-      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled;
-          const { csrfToken } = data.data;
-          const cookieToken = Cookies.get('accessToken');
-          if (cookieToken) {
-            const decoded: JwtPayload = jwtDecode(cookieToken);
-            const expiresAt = decoded.exp * 1000;
-            const email = decoded.email;
-            dispatch(setUser({ email, token: cookieToken, expiresAt }));
-            dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
-          }
-        } catch (error) {
-         console.error('Failed to fetch CSRF token:', error);
-        }
-      },
-      invalidatesTags: ['Auth'],
     }),
     resendOTP: builder.mutation<ApiResponse<any>, { email: string; }>({
       query: (body) => ({
@@ -314,23 +353,6 @@ export const api = createApi({
         method: 'POST',
         body,
       }),
-      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled;
-          const { csrfToken } = data.data;
-          const cookieToken = Cookies.get('accessToken');
-          if (cookieToken) {
-            const decoded: JwtPayload = jwtDecode(cookieToken);
-            const expiresAt = decoded.exp * 1000;
-            const email = decoded.email;
-            dispatch(setUser({ email, token: cookieToken, expiresAt }));
-            dispatch(setCsrfToken({ token: csrfToken, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
-          }
-        } catch (error) {
-         console.error('Failed to fetch CSRF token:', error);
-        }
-      },
-      invalidatesTags: ['Auth'],
     }),
     userDetails: builder.mutation<ApiResponse<any>, FormData>({
       query: (formData) => ({
@@ -503,7 +525,35 @@ export const api = createApi({
   }),
 });
 
+
+
+if (authChannel) {
+  authChannel.onmessage = (event) => {
+    const { type, payload } = event.data;
+    if (type === 'AUTH_UPDATE' || type === 'AUTH_REFRESH') {
+      // Avoid redundant updates by checking current state
+      const currentUser = store.getState().app.user;
+      if (currentUser?.email !== payload.email || currentUser?.expiresAt !== payload.expiresAt) {
+        store.dispatch(setUser(payload));
+        logger.info('Cross-tab auth update', { email: payload.email });
+      }
+    } else if (type === 'CSRF_UPDATE') {
+      const currentCsrfToken = store.getState().app.csrfToken;
+      if (currentCsrfToken !== payload.token) {
+        store.dispatch(setCsrfToken(payload));
+        logger.info('Cross-tab CSRF update', { token: payload.token });
+      }
+    }
+  };
+}
+
 export const {
+  useCheckAuthStatusQuery,
+  useGetCsrfTokenQuery,
+  useLazyCheckAuthStatusQuery,
+  useRefreshAuthMutation,
+  useLazyValidateSessionQuery,
+  useValidateSessionQuery,
   useLazyGetCsrfTokenQuery,
   useGenerateIdeasMutation,
   useGenerateImageMutation,

@@ -45,7 +45,6 @@ const signup = async (inputs) => {
 
 const signupSigninByProvider = async (inputs) => {
     let user;
-    let accessToken;
     let login = false
     if (isEmail(inputs.email)) {
         user = await User.findOne({
@@ -56,15 +55,15 @@ const signupSigninByProvider = async (inputs) => {
         })
 
         if (user) {
-            accessToken = await generateAccessAndRefreshTokenForUser(user);
             login = true
         } else {
             user = await User.create(inputs);
-            accessToken = await generateAccessAndRefreshTokenForUser(user)
         }
-
+        const { accessToken, refreshToken } = generateAccessAndRefreshTokenForUser(user)
+        const sessionExpiry = Date.now() + parseInt(process.env.ACCESS_TOKEN_EXPIRY) * 1000;
+        user = await User.findByIdAndUpdate({_id: user._id}, {refreshToken: refreshToken, sessionExpiry: sessionExpiry}, {new: true})
         user.accessToken = accessToken;
-        user.type = "Bearer";
+        user.refreshToken = refreshToken;
         user.login = login;
         return user;
     }
@@ -86,13 +85,13 @@ const verifyOTP = async (inputs) => {
         if (otp === false) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_OTP"))
         subObj.isEmailVerify = true
     }
-
+    
+    const {accessToken, refreshToken} = await generateAccessAndRefreshTokenForUser(user)
+    subObj.refreshToken = refreshToken
+    subObj.sessionExpiry = Date.now() + parseInt(process.env.ACCESS_TOKEN_EXPIRY) * 1000;
     user = await User.findByIdAndUpdate({ _id: user._id }, subObj, { new: true }).lean()
-
-    const accessToken = await generateAccessAndRefreshTokenForUser(user)
-
     user.accessToken = accessToken;
-    user.type = "Bearer";
+    user.refreshToken = refreshToken; 
     return user;
 }
 
@@ -127,7 +126,7 @@ const forgetPassword = async (inputs) => {
 const login = async (inputs) => {
     let user;
     if (isEmail(inputs.email)) {
-        const user = await User.findOne({
+        user = await User.findOne({
             email: inputs.email,
             isEmailVerify: true,
             isDeleted: false,
@@ -135,12 +134,13 @@ const login = async (inputs) => {
         if (!user) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_USER"))
         let compare = await comparePasswordUsingBcrypt(inputs.password, user.password);
         if (!compare) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_PASSWORD"))
-        const accessToken = await generateAccessAndRefreshTokenForUser(user)
-        return {
-            ...user,
-            accessToken,
-            type: 'Bearer',
-        }
+        const {accessToken, refreshToken} = await generateAccessAndRefreshTokenForUser(user)
+        let sessionExpiry = Date.now() + parseInt(process.env.ACCESS_TOKEN_EXPIRY) * 1000;
+        user = await User.findByIdAndUpdate({ _id: user._id }, {refreshToken: refreshToken, sessionExpiry: sessionExpiry}, { new: true }).lean()
+        
+        user.accessToken = accessToken;
+        user.refreshToken = refreshToken;
+        return user
     }
 }
 
@@ -213,6 +213,7 @@ const getUserProfile = async (user) => {
     }
     return userProfile;
 }
+
 
 const postContent = async (inputs, user) => {
 

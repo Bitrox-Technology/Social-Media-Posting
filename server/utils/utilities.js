@@ -65,12 +65,47 @@ const generateAccessToken = async (user, role) => {
   }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY })
 }
 
-const generateRefershToken = async(user) => {
+const generateRefershToken = async(user, role) => {
   return jwt.sign({
       _id: user._id,
+      role: role
   }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY })
 }
 
+const setSecureCookies = (res, accessToken, refreshToken) => {
+  res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours
+      path: '/',
+    });
+    
+    // Refresh token in separate httpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      path: '/',
+    });
+}
+
+const clearAuthCookies = (res) => {
+  res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+    
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+}
 
 const jwtVerify = async(token) => {
   return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
@@ -94,4 +129,6 @@ const getPagination = (query, total) => {
   };
 };
 
-export { convertToCron, Hashed_Password, isEmail, generateAccessToken, generateRefershToken, jwtVerify, jwtVerifyForRefreshToken, comparePasswordUsingBcrypt, generateOTP, getPagination  };
+export { convertToCron, Hashed_Password, isEmail, generateAccessToken, 
+  generateRefershToken, jwtVerify, jwtVerifyForRefreshToken, comparePasswordUsingBcrypt, 
+  generateOTP, getPagination, setSecureCookies, clearAuthCookies,   };

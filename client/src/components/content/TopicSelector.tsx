@@ -110,7 +110,10 @@ export const TopicSelector: React.FC = () => {
       const response = await getPendingPosts().unwrap();
       if (response.data === null || response.data.status === 'success') {
         const saveResponse = await savePostContent({ topics: selectedTopics }).unwrap();
+        console.log('Post saved successfully:', saveResponse);
         dispatch(setSelectedTopic(selectedTopics.join(', ')));
+
+        console.log('Navigating to /auto with postContentId:', saveResponse.data._id);
         navigate('/auto', { state: { postContentId: saveResponse.data._id, fromTopicSelector: true } });
       }
 

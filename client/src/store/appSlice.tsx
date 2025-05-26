@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
+import { RootState } from './index';
 
 interface ContentIdea {
   title: string;
@@ -31,9 +32,15 @@ interface Post {
 }
 
 interface User {
-  email: string | null;
-  token: string | null;
-  expiresAt: number | null;
+  email?: string;
+  expiresAt?: number;
+  role?: string;
+  authenticate?: boolean;
+}
+
+interface CsrfState {
+  token?: string;
+  expiresAt?: number;
 }
 
 interface AppState {
@@ -44,13 +51,15 @@ interface AppState {
   posted: string[];
   ideas: ContentIdea[];
   selectedDoYouKnowTemplate: string | null;
-  user: User | null;
   selectedBusiness: string | null;
   posts: Post[];
   apiTopics: string[];
   customTopics: string[];
-  csrfToken?: string | null;
-  csrfTokenExpiresAt: number | null;
+  user?: User;
+  csrfToken?: string;
+  csrfTokenExpiresAt?: number;
+  isAuthenticated: boolean;
+  sessionWarning: boolean;
 }
 
 const initialState: AppState = {
@@ -61,13 +70,15 @@ const initialState: AppState = {
   posted: [],
   ideas: [],
   selectedDoYouKnowTemplate: null,
-  user: null,
   selectedBusiness: null,
   posts: [],
   apiTopics: [],
   customTopics: [],
-  csrfToken: null,
-  csrfTokenExpiresAt: null,
+  user: undefined,
+  csrfToken: undefined,
+  csrfTokenExpiresAt: undefined,
+  isAuthenticated: false,
+  sessionWarning: false,
 };
 
 const appSlice = createSlice({
@@ -109,37 +120,32 @@ const appSlice = createSlice({
     setSelectedDoYouKnowTemplate(state, action: PayloadAction<string | null>) {
       state.selectedDoYouKnowTemplate = action.payload;
     },
-    setUser: (
-      state,
-      action: PayloadAction<{ email: string; token: string; expiresAt: number }>
-    ) => {
-      state.user = {
-        email: action.payload.email,
-        token: action.payload.token,
-        expiresAt: action.payload.expiresAt,
-      };
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+      state.sessionWarning = false;
     },
-    clearUser(state) {
-      state.user = null;
-      state.csrfToken = null;
-      state.csrfTokenExpiresAt = null;
+    clearUser: (state) => {
+      state.user = undefined;
+      state.isAuthenticated = false;
+      state.sessionWarning = false;
     },
     logout(state) {
-      state.user = null;
-      state.csrfToken = null;
-      state.csrfTokenExpiresAt = null;
+      state.user = undefined;
+      state.isAuthenticated = false;
+      state.sessionWarning = false;
     },
 
-    setCsrfToken: (
-      state,
-      action: PayloadAction<{ token: string; expiresAt: number }>
-    ) => {
+    setCsrfToken: (state, action: PayloadAction<CsrfState>) => {
       state.csrfToken = action.payload.token;
       state.csrfTokenExpiresAt = action.payload.expiresAt;
     },
     clearCsrfToken: (state) => {
-      state.csrfToken = null;
-      state.csrfTokenExpiresAt = null;
+      state.csrfToken = undefined;
+      state.csrfTokenExpiresAt = undefined;
+    },
+    setSessionWarning: (state, action: PayloadAction<boolean>) => {
+      state.sessionWarning = action.payload;
     },
     setPosts: (state, action: PayloadAction<Post[]>) => {
       state.posts = action.payload;
@@ -177,7 +183,10 @@ export const {
   addCustomTopic,
   clearCustomTopics,
   setCsrfToken,
-  clearCsrfToken
+  clearCsrfToken,
+  setSessionWarning,
 } = appSlice.actions;
-
+export const selectUser = (state: RootState) => state.app.user;
+export const selectIsAuthenticated = (state: RootState) => !!state.app.user?.authenticate;
+export const selectSessionWarning = (state: RootState) => state.app.sessionWarning;
 export default appSlice.reducer;

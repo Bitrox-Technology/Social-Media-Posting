@@ -8,8 +8,27 @@
 	"SESSION_DESTROY_FAILED": "Session failed to destroy",
 	"SESSION_NOT_INITIALIZED": "Session is not initialized",
 	"SESSION_REGENERATION_FAILED": "Session generation failed",
+	"UNAUTHORIZED": "Unauthorized",
+	"ACCOUNT_DEACTIVATED": "Account is deactivated",
+	"INVALID_TOKEN":"Token is Invalid",
+	"REFRESH_TOKEN": "Refresh token required",
+	"INVALID_REFRESH_TOKEN": "Invalid refresh token",
+	"TOKEN_REFRESH_FAILED": "Token Refresh failed",
+	"TOKEN_REFRESHED": "Token refreshed successfully",
+	"USER_NOT_FOUND": "User not found",
+
+	"AUTH_STATUS_SUCCESS": "Auth status successful",
+	"AUTH_STATUS_FAILED": "Auth status failed",
+
+	"SESSION_INVALID": "Session is Invalid",
+	"SESSION_VALID": "Session is valid",
+	"SESSION_EXPIRED": "Session expired",
+	"SESSION_VALIDATION_FAILED": "Session validation failed",
 
 	"CSRF_TOKEN": "CSRF token retrieved successfully",
+	"INVALID_CSRF_TOKEN": "CSRF Token Invalid",
+	"FAILED_GENERATE_CSRF": "Failed to generate CSRF Token",
+	"CSRF_EXPIRED": "CSRF token Expired",
 
 	"USER_CREATED_SUCCESS": "User created successfully",
 	"OTP_SEND_SUCCESS": "OTP send successfully",

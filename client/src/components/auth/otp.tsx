@@ -7,6 +7,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { useResendOTPMutation, useVerifyOTPMutation } from '../../store/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useDispatch } from 'react-redux';
+import { setUser, setCsrfToken } from '../../store/appSlice';
 
 export const OtpVerification = () => {
   const { theme } = useTheme();
@@ -14,6 +16,7 @@ export const OtpVerification = () => {
   const location = useLocation();
   const [verifyOTP] = useVerifyOTPMutation();
   const [resendOTP] = useResendOTPMutation();
+  const dispatch = useDispatch();
   const email = location.state?.email;
 
   // Redirect to sign-in if email is not provided in location.state
@@ -36,6 +39,16 @@ export const OtpVerification = () => {
     try {
       const response = await verifyOTP({ email: email, otp: values.otp }).unwrap();
       if (response.success) {
+        dispatch(setUser({
+          email: response.data.user.email,
+          expiresAt: response.data.user.sessionExpiry,
+          role: response.data.user.role,
+          authenticate: true,
+        }));
+        dispatch(setCsrfToken({
+          token: response.data.csrfToken,
+          expiresAt: response.data.expiresAt,
+        }));
         toast.success('OTP verified successfully!', {
           position: 'bottom-right',
           autoClose: 3000,
@@ -44,8 +57,8 @@ export const OtpVerification = () => {
           pauseOnHover: true,
           draggable: true,
         });
-        setTimeout(() => {navigate('/user-details', { state: { email: response.data.email } });}, 2000);
-        
+        setTimeout(() => { navigate('/user-details', { state: { email: response.data.email } }); }, 2000);
+
       }
     } catch (err: any) {
       const errorMessage = err?.data?.message || 'Invalid OTP. Please try again.';
@@ -90,22 +103,19 @@ export const OtpVerification = () => {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center p-4 ${
-        theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
-      }`}
+      className={`min-h-screen flex items-center justify-center p-4 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
+        }`}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`max-w-md w-full space-y-8 p-8 rounded-2xl shadow-lg ${
-          theme === 'dark' ? 'bg-gray-800/80 text-white' : 'bg-white text-gray-900'
-        } backdrop-blur-lg border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
+        className={`max-w-md w-full space-y-8 p-8 rounded-2xl shadow-lg ${theme === 'dark' ? 'bg-gray-800/80 text-white' : 'bg-white text-gray-900'
+          } backdrop-blur-lg border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
       >
         <div className="text-center space-y-4">
           <div
-            className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${
-              theme === 'dark' ? 'bg-primary/20' : 'bg-primary/10'
-            }`}
+            className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-primary/20' : 'bg-primary/10'
+              }`}
           >
             <Shield className="h-8 w-8 text-primary" />
           </div>
@@ -129,11 +139,10 @@ export const OtpVerification = () => {
                   type="text"
                   name="otp"
                   maxLength={6}
-                  className={`mt-1 block w-full px-4 py-3 rounded-lg transition-colors text-center tracking-widest text-2xl ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                      : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'
-                  } focus:ring-2 focus:ring-primary focus:border-transparent`}
+                  className={`mt-1 block w-full px-4 py-3 rounded-lg transition-colors text-center tracking-widest text-2xl ${theme === 'dark'
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                    : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-primary focus:border-transparent`}
                   placeholder="••••••"
                 />
                 <ErrorMessage name="otp" component="p" className="mt-1 text-sm text-red-400" />
@@ -142,11 +151,10 @@ export const OtpVerification = () => {
               <motion.button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full flex justify-center items-center px-4 py-3 font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                  theme === 'dark'
-                    ? 'bg-gray-700 border border-primary hover:bg-gray-600 text-white focus:ring-offset-gray-800'
-                    : 'bg-gray-100 border border-primary hover:bg-gray-200 text-gray-900 focus:ring-offset-gray-100'
-                } disabled:opacity-50`}
+                className={`w-full flex justify-center items-center px-4 py-3 font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${theme === 'dark'
+                  ? 'bg-gray-700 border border-primary hover:bg-gray-600 text-white focus:ring-offset-gray-800'
+                  : 'bg-gray-100 border border-primary hover:bg-gray-200 text-gray-900 focus:ring-offset-gray-100'
+                  } disabled:opacity-50`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

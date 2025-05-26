@@ -4,6 +4,7 @@ import getClientIp from '../utils/getClientIp.js';
 import logger from './logger.js';
 import {ApiError} from "../utils/ApiError.js"
 
+
 const globalRateLimiter = rateLimit({
   windowMs: config.rateLimit.global.windowMs,
   max: config.rateLimit.global.max,

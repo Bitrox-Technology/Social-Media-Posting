@@ -8,12 +8,16 @@ import { useTheme } from '../../context/ThemeContext';
 import { toast, ToastContainer } from 'react-toastify';
 import { useForgetPasswordMutation } from '../../store/api'; // Adjust the import based on your API slice
 import 'react-toastify/dist/ReactToastify.css';
+import { useDispatch } from 'react-redux';
+import { setCsrfToken } from '../../store/appSlice';
 
 export const ForgotPassword = () => {
   const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const [forgetPassword] = useForgetPasswordMutation(); // Assuming you have a mutation for forgot password
+   const dispatch = useDispatch();
+   
 
   const initialValues = {
     email: '',
@@ -37,6 +41,10 @@ export const ForgotPassword = () => {
     try {
       const response = await forgetPassword(values).unwrap();
       if (response.success) {
+        dispatch(setCsrfToken({
+                  token: response.data.csrfToken,
+                  expiresAt: response.data.expiresAt,
+                }));
         toast.success(`OTP is sent to ${values.email}. Please verify to forget the password`, {
           position: 'bottom-right',
           autoClose: 3000,

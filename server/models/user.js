@@ -59,6 +59,8 @@ const userSchema = new mongoose.Schema(
     isEmailVerify: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
+    refreshToken: { type: String, default: ""},
+    sessionExpiry: { type: Number, default: null }, 
   },
   {
     timestamps: true,

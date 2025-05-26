@@ -1,4 +1,7 @@
 import { csrfSync } from 'csrf-sync';
+import { ApiError } from './ApiError.js';
+import { FORBIDDEN } from './apiResponseCode.js';
+import i18n from './i18n.js';
 
 const { csrfSynchronisedProtection, generateToken, revokeToken } = csrfSync({
   ignoredMethods: ["GET", "HEAD", "OPTIONS"],
@@ -14,19 +17,18 @@ const { csrfSynchronisedProtection, generateToken, revokeToken } = csrfSync({
       path: req.path,
       headers: req.headers,
     });
-    return res.status(403).json({
-      status: 403,
-      success: false,
-      message: "Invalid CSRF token",
-      details: null,
-    });
+    throw new ApiError(FORBIDDEN, i18n.__("INVALID_CSRF_TOKEN"))
   },
 });
 
 const RevokeToken = (req) => {
   revokeToken(req);
   const newCsrfToken = generateToken(req);
-  return newCsrfToken
+  const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+
+  req.session.csrfToken = newCsrfToken;
+  req.session.csrfTokenExpiresAt = expiresAt;
+  return {newCsrfToken, expiresAt}
 }
 
 export { csrfSynchronisedProtection, generateToken, revokeToken, RevokeToken };

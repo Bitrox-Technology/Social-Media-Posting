@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { PersistGate } from 'redux-persist/integration/react';
+import { persistor } from './store';
+import { useAppSelector } from './store/hooks';
+import { selectUser, selectIsAuthenticated } from './store/appSlice';
 import Header from './components/header/Header';
 import Dashboard from './components/layout/Slidebar';
 import Footer from './components/layout/Footer';
@@ -12,7 +16,6 @@ import { ImageGenerator } from './components/content/ImageGenerator';
 import { PostingPanel } from './components/content/PostingPanel';
 import { Carousel } from './components/ui/Carousel';
 import { DoYouKnow } from './components/ui/DoYouKnow';
-import { useAppSelector } from './store/hooks';
 import { SignUp } from './components/auth/Signup';
 import { SignIn } from './components/auth/Signin';
 import { AutoPostCreator } from './components/content/AutoPostCreator';
@@ -34,12 +37,16 @@ import CompetitorPostAnalyzer from './components/content/CompetitorPostAnalyzer'
 import CodeGeneratorForm from './components/content/GenerateTemplate';
 import { UserAllPosts } from './components/content/UserAllPosts';
 import { UserPostDetail } from './components/content/UserPostDetail';
+import SessionWarning from './components/providers/SessionWarning';
+import AuthProvider from './components/providers/AuthProvider';
+import ProtectedRoute from './components/providers/ProtectedRoute';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
   const selectedTopic = useAppSelector((state) => state.app.selectedTopic);
   const selectedIdea = useAppSelector((state) => state.app.selectedIdea);
-  const user = useAppSelector((state) => state.app.user);
+  const user = useAppSelector(selectUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -54,83 +61,151 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-300">
-          <Header toggleDrawer={toggleDrawer} />
-          <div className="flex flex-1">
-            {user && <Dashboard isOpen={isDrawerOpen} toggleDrawer={toggleDrawer} />}
-            <div className={`flex-1 ${user ? 'md:ml-0' : ''} transition-all duration-300`}>
-              {/* Color Scheme Selector - Fixed Position */}
-              <div className="fixed bottom-4 right-4 z-50">
-                <ColorSchemeSelector />
-              </div>
+      <PersistGate loading={null} persistor={persistor}>
+        <Router>
+          <AuthProvider>
 
-              {/* Overlay for mobile when drawer is open */}
-              {isDrawerOpen && user && (
-                <div
-                  className="fixed inset-0 bg-black/50 z-30 md:hidden"
-                  onClick={toggleDrawer(false)}
-                  onKeyDown={toggleDrawer(false)}
-                  aria-hidden="true"
-                />
-              )}
-
-              <main className={`flex-grow ${user && isDrawerOpen ? 'md:ml-64' : ''} transition-all duration-300`}>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/topic" element={ <TopicSelector />} />
-                  <Route path="/ideas" element={selectedTopic ? <ContentIdeas /> : <Navigate to="/topic" />} />
-                  <Route path="/images"
-                    element={
-                      selectedIdea && contentType ? (
-                        <ImageGenerator contentType={contentType} />
-                      ) : (
-                        <Navigate to="/ideas" />
-                      )
-                    }
-                  />
-                  <Route path="/post" element={<PostingPanel />} />
-                  <Route
-                    path="/carousel"
-                    element={
-                      <Carousel
-                        initialTopic="defaultTopic"
-                        template="defaultTemplate"
-                        slides={[]}
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-300">
+              <Header toggleDrawer={toggleDrawer} />
+              <div className="flex flex-1">
+                {(user || isAuthenticated) && <Dashboard isOpen={isDrawerOpen} toggleDrawer={toggleDrawer} />}
+                <div className={`flex-1 ${(user || isAuthenticated) ? 'md:ml-0' : ''} transition-all duration-300`}>
+                  <div className="fixed bottom-4 right-4 z-50">
+                    <ColorSchemeSelector />
+                  </div>
+                  {isDrawerOpen && (user || isAuthenticated) && (
+                    <div
+                      className="fixed inset-0 bg-black/50 z-30 md:hidden"
+                      onClick={toggleDrawer(false)}
+                      onKeyDown={toggleDrawer(false)}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <main className={`flex-grow ${(user || isAuthenticated) && isDrawerOpen ? 'md:ml-64' : ''} transition-all duration-300`}>
+                    <Routes>
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/features" element={<Features />} />
+                      <Route path="/pricing" element={<Pricing />} />
+                      <Route
+                        path="/signup"
+                        element={<SignUp />}
                       />
-                    }
-                  />
-                  <Route path="/image-generator" element={<ImageGeneration />} />
-                  <Route path="/tmcarousel" element={<TemplateCarousel initialTopic="defaultTopic" />} />
-                  <Route path="/tmimagegeneration" element={<ImageGenerationTemplate />} />
-                  <Route path="/tmdoyouknow" element={<DoYouKnowTemplateSelector />} />
-                  <Route path='/post-analyzer' element={<CompetitorPostAnalyzer />} />
-                  <Route path="/content-type" element={<ContentTypeSelector />} />
-                  <Route path="/blog" element={<Blog />} />
-                  <Route path="/doyouknow" element={<DoYouKnow />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/signin" element={<SignIn />} />
-                  <Route path="/otp-verification" element={<OtpVerification />} />
-                  <Route path='/forgot-password' element={<ForgotPassword/>} />
-                  <Route path="/features" element={<Features />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  <Route path='/generate-template' element= {<CodeGeneratorForm/>} />
-                  <Route path='/user-posts' element={<UserAllPosts/>} />
-                  <Route path='/user-post/:postId' element={<UserPostDetail/>} />
+                      <Route
+                        path="/signin"
+                        element={<SignIn />}
+                      />
+                      <Route
+                        path="/otp-verification"
+                        element={<OtpVerification />}
+                      />
+                      <Route
+                        path="/forgot-password"
+                        element={<ForgotPassword />}
+                      />
+                      <Route element={<ProtectedRoute />}>
+                        <Route
+                          path="/dashboard"
+                          element={<DashboardPage />}
+                        />
+                        </Route>
+                      <Route
+                        path="/topic"
+                        element={<TopicSelector />}
+                      />
+                      <Route
+                        path="/ideas"
+                        element={selectedTopic ? <ContentIdeas /> : <Navigate to="/topic" />}
+                      />
+                      <Route
+                        path="/images"
+                        element={selectedIdea && contentType ? (<ImageGenerator contentType={contentType} />) : (<Navigate to="/ideas" />)} />
+                      <Route
+                        path="/post"
+                        element={<PostingPanel />}
+                      />
+                      <Route
+                        path="/carousel"
+                        element={
 
-                  <Route path='/profile' element={<ProfilePage />} />
-                  <Route path="/auto" element={<AutoPostCreator />} />
-                  <Route path="/select-media" element={<SelectSocialMedia />} />
-                  <Route path="/user-details" element={<UserDetail />} />
-                  <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
-              </main>
+                          <Carousel initialTopic="defaultTopic" template="defaultTemplate" slides={[]} />
+
+                        }
+                      />
+                      <Route
+                        path="/image-generator"
+                        element={<ImageGeneration />}
+                      />
+                      <Route
+                        path="/tmcarousel"
+                        element={
+
+                          <TemplateCarousel initialTopic="defaultTopic" />
+
+                        }
+                      />
+                      <Route
+                        path="/tmimagegeneration"
+                        element={<ImageGenerationTemplate />}
+                      />
+                      <Route
+                        path="/tmdoyouknow"
+                        element={<DoYouKnowTemplateSelector />}
+                      />
+                      <Route
+                        path="/post-analyzer"
+                        element={<CompetitorPostAnalyzer />}
+                      />
+                      <Route
+                        path="/content-type"
+                        element={<ContentTypeSelector />}
+                      />
+                      <Route
+                        path="/blog"
+                        element={<Blog />}
+                      />
+                      <Route
+                        path="/doyouknow"
+                        element={<DoYouKnow />}
+                      />
+                      <Route
+                        path="/generate-template"
+                        element={<CodeGeneratorForm />}
+                      />
+                      <Route
+                        path="/user-posts"
+                        element={<UserAllPosts />}
+                      />
+                      <Route
+                        path="/user-post/:postId"
+                        element={<UserPostDetail />}
+                      />
+                      <Route
+                        path="/profile"
+                        element={<ProfilePage />}
+                      />
+                      <Route
+                        path="/auto"
+                        element={<AutoPostCreator />}
+                      />
+                      <Route
+                        path="/select-media"
+                        element={<SelectSocialMedia />}
+                      />
+                      <Route
+                        path="/user-details"
+                        element={<UserDetail />}
+                      />
+                      <Route path="*" element={<Navigate to="/" />} />
+                    </Routes>
+                    <SessionWarning />
+                  </main>
+                </div>
+              </div>
+              <Footer />
             </div>
-          </div>
-          <Footer />
-        </div>
-      </Router>
+          </AuthProvider>
+        </Router>
+      </PersistGate>
     </ThemeProvider>
   );
 }

@@ -5,8 +5,9 @@ import Admin from "../models/admin.js";
 
 const generateAccessAndRefreshTokenForUser = async (user) => {
     try {
-        const accessToken = await generateAccessToken(user, "USER")
-        return accessToken
+        const accessToken = await generateAccessToken(user, user.role)
+        const refreshToken = await generateRefershToken(user, user.role)
+        return {accessToken, refreshToken}
     } catch (err) {
         throw new ApiError(INTERNAL_SERVER_ERROR, err.message)
     }
