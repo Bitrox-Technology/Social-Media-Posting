@@ -1,19 +1,20 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, IconButton, Divider, Tooltip, Avatar } from '@mui/material';
-import { 
-  Close as CloseIcon, 
+import {
+  Close as CloseIcon,
   Home as HomeIcon,
-  Lightbulb as LightbulbIcon, 
+  Lightbulb as LightbulbIcon,
   Collections as CollectionsIcon,
   AutoAwesome as AutoAwesomeIcon,
-  QuestionMark as QuestionMarkIcon, 
-  Article as ArticleIcon, 
+  QuestionMark as QuestionMarkIcon,
+  Article as ArticleIcon,
   Analytics as AnalyticsIcon,
   LibraryBooks as LibraryBooksIcon,
-  Person as PersonIcon, 
+  Person as PersonIcon,
   Logout as LogoutIcon,
-  KeyboardArrowRight as ArrowIcon
+  KeyboardArrowRight as ArrowIcon,
+  Festival
 } from '@mui/icons-material';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { logout } from '../../store/appSlice';
@@ -55,6 +56,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
         { path: '/tmcarousel', label: 'Carousels', icon: <CollectionsIcon /> },
         { path: '/tmimagegeneration', label: 'Image Generation', icon: <AutoAwesomeIcon /> },
         { path: '/tmdoyouknow', label: 'Do You Know', icon: <QuestionMarkIcon /> },
+        { path: '/tmfestival', label: 'Festival', icon: <Festival /> },
         { path: '/blog', label: 'Blog Posts', icon: <ArticleIcon /> },
       ]
     },
@@ -73,7 +75,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
   };
 
   const drawerList = (
-    <motion.div 
+    <motion.div
       className="h-full flex flex-col bg-white dark:bg-gray-900"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -83,31 +85,28 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
       <div className="p-5 flex justify-between items-center border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center space-x-2 group">
-              <Bot
-                className={`h-8 w-8 transition-transform group-hover:scale-110 ${
-                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+            <Bot
+              className={`h-8 w-8 transition-transform group-hover:scale-110 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
                 }`}
-              />
+            />
+            <span
+              className={`font-bold text-xl ${theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}
+            >
+              Bitrox{' '}
               <span
-                className={`font-bold text-xl ${
-                  theme === 'dark' ? 'text-white' : 'text-gray-900'
-                }`}
-              >
-                Bitrox{' '}
-                <span
-                  className={`bg-clip-text text-transparent bg-gradient-to-r ${
-                    theme === 'dark'
-                      ? 'from-blue-400 to-purple-400'
-                      : 'from-blue-600 to-purple-600'
+                className={`bg-clip-text text-transparent bg-gradient-to-r ${theme === 'dark'
+                    ? 'from-blue-400 to-purple-400'
+                    : 'from-blue-600 to-purple-600'
                   }`}
-                >
-                  SocialAI
-                </span>
+              >
+                SocialAI
               </span>
-            </Link>
+            </span>
+          </Link>
         </div>
-        <IconButton 
-          onClick={toggleDrawer(false)} 
+        <IconButton
+          onClick={toggleDrawer(false)}
           className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           size="small"
         >
@@ -118,15 +117,15 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
       {/* User Profile Section */}
       <div className="p-5 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <Avatar 
+          <Avatar
             className="bg-indigo-100 text-indigo-600 dark:bg-indigo-900"
             alt={'User'}
           >
-            { user?.email?.charAt(0) || 'U'}
+            {user?.email?.charAt(0) || 'U'}
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-gray-900 dark:text-white truncate">
-              { 'User'}
+              {'User'}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
               {user?.email || 'guest@example.com'}
@@ -148,33 +147,31 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
               {section.items.map((item) => {
                 const active = isActive(item.path);
                 return (
-                  <ListItem 
+                  <ListItem
                     key={item.path}
-                    component={Link} 
-                    to={item.path} 
+                    component={Link}
+                    to={item.path}
                     onClick={toggleDrawer(false)}
-                    className={`px-3 mx-2 rounded-lg transition-all duration-200 ${
-                      active 
-                        ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' 
+                    className={`px-3 mx-2 rounded-lg transition-all duration-200 ${active
+                        ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                         : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                    }`}
+                      }`}
                     disableGutters
                     disablePadding
                   >
-                    <motion.div 
+                    <motion.div
                       className="flex items-center w-full py-2 px-3"
                       whileHover={{ x: 4 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <ListItemIcon className={`min-w-[40px] ${
-                        active 
-                          ? 'text-indigo-600 dark:text-indigo-400' 
+                      <ListItemIcon className={`min-w-[40px] ${active
+                          ? 'text-indigo-600 dark:text-indigo-400'
                           : 'text-gray-500 dark:text-gray-400'
-                      }`}>
+                        }`}>
                         {item.icon}
                       </ListItemIcon>
-                      <ListItemText 
-                        primary={item.label} 
+                      <ListItemText
+                        primary={item.label}
                         className={active ? 'font-medium' : ''}
                       />
                       {active && (
@@ -199,8 +196,8 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
       {/* Footer Actions */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <List className="py-0">
-          <ListItem 
-            component={Link} 
+          <ListItem
+            component={Link}
             to="/profile"
             onClick={toggleDrawer(false)}
             className="px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors"
@@ -215,9 +212,9 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
               <ArrowIcon className="text-gray-400 dark:text-gray-600" fontSize="small" />
             </div>
           </ListItem>
-          
-          <ListItem 
-            onClick={handleLogout} 
+
+          <ListItem
+            onClick={handleLogout}
             className="px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 cursor-pointer transition-colors mt-2"
             disableGutters
             disablePadding
@@ -230,7 +227,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
             </div>
           </ListItem>
         </List>
-        
+
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Bitrox Tech © {new Date().getFullYear()}

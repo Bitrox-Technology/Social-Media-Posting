@@ -1,3 +1,4 @@
+// UserPostDetail.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -10,8 +11,6 @@ import {
   useLazyAuthLinkedInQuery,
   useLazyGetUserPostDetailQuery,
   useLinkedInPostMutation,
-  // useFacebookPostMutation,
-  // useInstagramPostMutation,
 } from '../../store/api';
 import { useTheme } from '../../context/ThemeContext';
 import {
@@ -36,6 +35,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useSocialAuth } from '../providers/useSocialAuth';
 
 interface Image {
   url: string;
@@ -70,8 +70,6 @@ export const UserPostDetail: React.FC = () => {
   const [authLinkedIn] = useLazyAuthLinkedInQuery();
   const [authInstagram] = useLazyAuthInstagramQuery();
   const [linkedInPost] = useLinkedInPostMutation();
-  // const [facebookPost] = useFacebookPostMutation();
-  // const [instagramPost] = useInstagramPostMutation();
 
   const [isSocialOptionsOpen, setIsSocialOptionsOpen] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
@@ -81,6 +79,44 @@ export const UserPostDetail: React.FC = () => {
     linkedin: !!localStorage.getItem('linkedin_access_token'),
     facebook: !!localStorage.getItem('facebook_access_token'),
     instagram: !!localStorage.getItem('instagram_access_token'),
+  });
+
+  // Wrap RTK Query lazy triggers to match AuthFunction signature
+  const authLinkedInFn = async () => {
+    const result = await authLinkedIn().unwrap();
+    return {
+      statusCode: result.statusCode ?? 200,
+      data: {
+        authUrl: result.data?.authUrl ?? (typeof result.data === 'string' ? result.data : ''),
+      },
+    };
+  };
+  const authFacebookFn = async () => {
+    const result = await authFacebook().unwrap();
+    return {
+      statusCode: result.statusCode ?? 200,
+      data: {
+        authUrl: result.data?.authUrl ?? (typeof result.data === 'string' ? result.data : ''),
+      },
+    };
+  };
+  const authInstagramFn = async () => {
+    const result = await authInstagram().unwrap();
+    return {
+      statusCode: result.statusCode ?? 200,
+      data: {
+        authUrl: result.data?.authUrl ?? (typeof result.data === 'string' ? result.data : ''),
+      },
+    };
+  };
+
+  // Initialize the useSocialAuth hook
+  const { initiateAuth } = useSocialAuth({
+    authLinkedIn: authLinkedInFn,
+    authFacebook: authFacebookFn,
+    authInstagram: authInstagramFn,
+    setAuthStatus,
+    setIsAuthenticating,
   });
 
   // Theme-based styles
@@ -117,16 +153,15 @@ export const UserPostDetail: React.FC = () => {
     }
   }, [postId, getUserPostDetail]);
 
-  // Handle authentication redirect callback
+  // Watch for authStatus changes to proceed to scheduling
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const platform = urlParams.get('platform'); // Assume backend includes platform in redirect URL
-
-    if (code && platform) {
-      handleAuthCallback(code, platform);
+    if (isAuthenticating && schedule.platform && authStatus[schedule.platform as keyof typeof authStatus]) {
+      console.log(`Auth status updated for ${schedule.platform}, proceeding to scheduling`);
+      setIsSocialOptionsOpen(false);
+      setIsScheduling(true);
+      setIsAuthenticating(false);
     }
-  }, []);
+  }, [authStatus, isAuthenticating, schedule.platform]);
 
   const post: Post | undefined = data?.data?.[0];
 
@@ -149,63 +184,21 @@ export const UserPostDetail: React.FC = () => {
     }));
   };
 
-  const handleAuthCallback = async (code: string, platform: string) => {
-    try {
-      let response;
-      if (platform === 'linkedin') {
-        response = await authLinkedIn().unwrap();
-      } else if (platform === 'facebook') {
-        response = await authFacebook().unwrap();
-      } else if (platform === 'instagram') {
-        response = await authInstagram().unwrap();
-      }
-
-      if (response?.data?.accessToken) {
-        localStorage.setItem(`${platform}_access_token`, response.data.accessToken);
-        setAuthStatus((prev) => ({ ...prev, [platform]: true }));
-        // Clear URL params
-        window.history.replaceState({}, document.title, window.location.pathname);
-        // Proceed to scheduling after successful authentication
-        setIsSocialOptionsOpen(false);
-        setIsScheduling(true);
-      }
-    } catch (err) {
-      console.error(`Error in ${platform} auth callback:`, err);
-      alert(`Failed to authenticate with ${platform}`);
-      setIsAuthenticating(false);
-    }
-  };
-
-  const initiateAuth = async (platform: string) => {
-    try {
-      setIsAuthenticating(true);
-      let response;
-      if (platform === 'linkedin') {
-        response = await authLinkedIn().unwrap();
-      } else if (platform === 'facebook') {
-        response = await authFacebook().unwrap();
-      } else if (platform === 'instagram') {
-        response = await authInstagram().unwrap();
-      }
-      if (response && response.data) {
-        window.location.href = response.data; // Redirect to auth URL
-      } else {
-        throw new Error('Authentication URL not received');
-      }
-    } catch (err) {
-      console.error(`Error initiating ${platform} auth:`, err);
-      alert(`Failed to initiate ${platform} authentication`);
-      setIsAuthenticating(false);
-    }
-  };
-
   const handlePlatformSelect = (platform: string) => {
-    setSchedule((prev) => ({ ...prev, platform }));
+    console.log(`Platform selected: ${platform}`);
+    console.log(`Auth status for ${platform}:`, authStatus[platform as keyof typeof authStatus]);
+    
+    updateSchedule(platform);
+    setIsAuthenticating(true);
+    
     if (!authStatus[platform as keyof typeof authStatus]) {
-      initiateAuth(platform);
+      console.log(`Initiating authentication for ${platform}`);
+      initiateAuth(platform as keyof typeof authStatus);
     } else {
+      console.log(`Already authenticated for ${platform}, proceeding to scheduling`);
       setIsSocialOptionsOpen(false);
       setIsScheduling(true);
+      setIsAuthenticating(false);
     }
   };
 
@@ -220,11 +213,18 @@ export const UserPostDetail: React.FC = () => {
       return;
     }
 
+    const accessToken = localStorage.getItem(`${schedule.platform}_access_token`);
+    if (!accessToken) {
+      alert(`Please authenticate with ${schedule.platform} first`);
+      return;
+    }
+
     const payload = {
       imageUrl: post.images[0]?.url || '',
       title: post.title,
       description: post.description,
-      scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : "",
+      scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
+      accessToken,
     };
 
     try {
@@ -372,6 +372,16 @@ export const UserPostDetail: React.FC = () => {
           </div>
         </motion.div>
 
+        {/* Loading overlay */}
+        {isAuthenticating && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className={`${currentTheme.cardBackground} rounded-xl p-6 flex flex-col items-center gap-4`}>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              <p className={currentTheme.textPrimary}>Authenticating...</p>
+            </div>
+          </div>
+        )}
+
         {/* Social Media Options Modal */}
         {isSocialOptionsOpen && (
           <motion.div
@@ -382,24 +392,30 @@ export const UserPostDetail: React.FC = () => {
           >
             <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 w-full max-w-md border ${currentTheme.border}`}>
               <div className="flex justify-between items-center mb-4">
-                <h3 className={`text-xl font-semibold ${currentTheme.textPrimary}`}>Social</h3>
+                <h3 className={`text-xl font-semibold ${currentTheme.textPrimary}`}>Share to Social Media</h3>
                 <button
                   onClick={() => setIsSocialOptionsOpen(false)}
                   className={`text-${currentTheme.textSecondary}`}
+                  disabled={isAuthenticating}
                 >
-                  <span className="text-sm">See less</span>
+                  <span className="text-sm">Close</span>
                 </button>
               </div>
-              <div className="grid grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-3 gap-4 mb-4">
                 {socialPlatforms.map((platform) => (
                   <button
                     key={platform.name}
                     onClick={() => handlePlatformSelect(platform.name)}
-                    className={`flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all`}
+                    className={`flex flex-col items-center justify-center p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ${
+                      authStatus[platform.name as keyof typeof authStatus] ? 'bg-green-500/20' : ''
+                    }`}
                     disabled={isAuthenticating}
                   >
                     {platform.icon}
-                    <span className={`text-xs mt-2 ${currentTheme.textPrimary}`}>{platform.label}</span>
+                    <span className={`text-xs mt-2 ${currentTheme.textPrimary}`}>
+                      {platform.label}
+                      {authStatus[platform.name as keyof typeof authStatus] && ' (Connected)'}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -416,7 +432,9 @@ export const UserPostDetail: React.FC = () => {
             className={`fixed inset-0 flex items-center justify-center bg-black/50 z-50`}
           >
             <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 w-full max-w-md border ${currentTheme.border}`}>
-              <h3 className={`text-xl font-semibold ${currentTheme.textPrimary} mb-4`}>Schedule Post to {schedule.platform}</h3>
+              <h3 className={`text-xl font-semibold ${currentTheme.textPrimary} mb-4`}>
+                {schedule.platform ? `Schedule Post to ${schedule.platform.charAt(0).toUpperCase() + schedule.platform.slice(1)}` : 'Select Platform'}
+              </h3>
               <div className="flex items-center gap-4 mb-4">
                 <Calendar className={`w-5 h-5 ${currentTheme.textSecondary}`} />
                 <DatePicker
@@ -425,7 +443,7 @@ export const UserPostDetail: React.FC = () => {
                   showTimeSelect
                   dateFormat="Pp"
                   className={`w-full ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}
-                  placeholderText="Select date and time"
+                  placeholderText="Select date and time (optional)"
                   minDate={new Date()}
                 />
               </div>
@@ -433,7 +451,7 @@ export const UserPostDetail: React.FC = () => {
                 <button
                   onClick={handleSchedulePost}
                   className={`flex-1 px-4 py-2 ${currentTheme.buttonBg} ${currentTheme.textPrimary} rounded-lg ${currentTheme.buttonHover}`}
-                  disabled={!schedule.platform}
+                  disabled={!schedule.platform || isAuthenticating}
                 >
                   {schedule.dateTime ? 'Schedule' : 'Post Now'}
                 </button>
@@ -472,8 +490,8 @@ export const UserPostDetail: React.FC = () => {
                     post.type === 'carousel'
                       ? 'bg-purple-500/20 text-purple-400'
                       : post.type === 'doyouknow'
-                      ? 'bg-yellow-500/20 text-yellow-400'
-                      : 'bg-blue-500/20 text-blue-400'
+                        ? 'bg-yellow-500/20 text-yellow-400'
+                        : 'bg-blue-500/20 text-blue-400'
                   }`}
                 >
                   {post.type.toUpperCase()}

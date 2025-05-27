@@ -18,148 +18,104 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     const navigate = useNavigate();
     const location = useLocation();
     const isAuthenticated = useSelector((state: RootState) => !!state.app.user?.authenticate);
-    const user = useSelector((state: RootState) => state.app.user);
     const [refreshAuth] = useRefreshAuthMutation();
 
-    // Define public routes that don’t require authentication
-    const publicRoutes = [
-        '/',
-        '/home',
-        '/about',
-        '/services',
-        '/pricing',
-        '/features',
-    ];
+    const publicRoutes = ['/', '/home', '/about', '/services', '/pricing', '/features', '/auto', '/content-type'];
     const isPublicRoute = publicRoutes.includes(location.pathname);
 
-    // Only check auth status for non-public routes
-    const { data: authData, error: authError, isLoading } = useCheckAuthStatusQuery(undefined, {
+    const { data: authData, error: authError, isLoading: authLoading } = useCheckAuthStatusQuery(undefined, {
         skip: isPublicRoute,
-        pollingInterval: 10 * 60 * 1000, // Every 10 minutes
+        pollingInterval: 10 * 60 * 1000,
     });
 
-    // Fetch CSRF token for all routes
-    const { data: csrfData, error: csrfError } = useGetCsrfTokenQuery(undefined);
+    const { data: csrfData, error: csrfError } = useGetCsrfTokenQuery();
 
-    const {data: sessionData, error: sessionError} = useValidateSessionQuery(undefined, {
+    const { data: sessionData, error: sessionError } = useValidateSessionQuery(undefined, {
         skip: isPublicRoute,
-        pollingInterval: 10 * 60 * 1000, // Every 10 minutes
+        pollingInterval: 10 * 60 * 1000,
     });
 
     useEffect(() => {
-        if (authError && !isPublicRoute && !isLoading) {
-            console.log('Auth error detected, clearing state and redirecting to /signin');
+        if (authError && !authLoading && !isPublicRoute) {
             dispatch(clearUser());
-            dispatch(clearCsrfToken());
-            Cookies.remove('accessToken');
-            Cookies.remove('refreshToken');
             navigate('/signin', { replace: true, state: { from: location.pathname } });
         } else if (authData?.success && authData.data.isAuthenticated) {
-            console.log('Setting user in Redux:', authData.data.user);
-            dispatch(
-                setUser({
-                    email: authData.data.user.email,
-                    expiresAt: authData.data.user.expiresAt,
-                    role: authData.data.user.role,
-                    authenticate: authData.data.isAuthenticated,
-                })
-            );
+            dispatch(setUser({
+                email: authData.data.user.email,
+                expiresAt: authData.data.user.expiresAt,
+                role: authData.data.user.role,
+                authenticate: true,
+            }));
         }
-    }, [authData, authError, isLoading, dispatch, navigate, isPublicRoute, location.pathname]);
+    }, [authData, authError, authLoading, dispatch, navigate, location.pathname, isPublicRoute]);
 
     useEffect(() => {
         if (csrfError) {
-            console.error('CSRF token fetch failed:', csrfError);
             dispatch(clearCsrfToken());
         } else if (csrfData?.success) {
-            console.log('Setting CSRF token in Redux:', csrfData.data);
-            dispatch(
-                setCsrfToken({
-                    token: csrfData.data.csrfToken,
-                    expiresAt: csrfData.data.expiresAt,
-                })
-            );
+            dispatch(setCsrfToken({
+                token: csrfData.data.csrfToken,
+                expiresAt: csrfData.data.expiresAt,
+            }));
         }
     }, [csrfData, csrfError, dispatch]);
 
-    
     useEffect(() => {
-        if (sessionError) {
-            console.error('Session validation failed:', sessionError);
-        } else if (sessionData?.success && sessionData.data.isValid) {
-            console.log('Session is valid:', sessionData.data);
+        if (sessionError && !isPublicRoute) {
+            dispatch(clearUser());
+            navigate('/signin', { replace: true });
+        } else if (sessionData?.success) {
+            dispatch(setUser({
+                email: sessionData.data.user.email,
+                expiresAt: sessionData.data.user.expiresAt,
+                role: sessionData.data.user.role,
+                authenticate: true,
+            }));
+            
         }
-    }, [sessionData, sessionError, dispatch, navigate, isPublicRoute, location.pathname]);
-
+    }, [sessionData, sessionError, dispatch, navigate, isPublicRoute]);
 
     useEffect(() => {
         const authChannel = new BroadcastChannel('auth_channel');
         authChannel.onmessage = (event) => {
-            console.log('BroadcastChannel event:', event.data);
             if (event.data.type === 'CSRF_UPDATE') {
-                dispatch(
-                    setCsrfToken({
-                        token: event.data.payload.csrfToken,
-                        expiresAt: event.data.payload.expiresAt,
-                    })
-                );
+                dispatch(setCsrfToken(event.data.payload));
             } else if (event.data.type === 'AUTH_REFRESH') {
-                dispatch(
-                    setUser({
-                        email: event.data.payload.email,
-                        expiresAt: event.data.payload.expiresAt,
-                        role: event.data.payload.role,
-                        authenticate: true,
-                    })
-                );
+                dispatch(setUser({ ...event.data.payload, authenticate: true }));
             } else if (event.data.type === 'LOGOUT') {
                 dispatch(clearUser());
                 dispatch(clearCsrfToken());
                 Cookies.remove('userInfo');
                 Cookies.remove('accessToken');
                 Cookies.remove('refreshToken');
-                if (!isPublicRoute) {
-                    console.log('Redirecting to /signin due to logout event');
-                    navigate('/signin', { replace: true, state: { from: location.pathname } });
-                }
+                if (!isPublicRoute) navigate('/signin', { replace: true });
             }
         };
         return () => authChannel.close();
     }, [dispatch, navigate, isPublicRoute]);
 
     const refreshSession = useCallback(async () => {
-        console.log('Attempting to refresh session');
         try {
             const response = await refreshAuth().unwrap();
-            console.log('Refresh session response:', response);
             if (response.success) {
-                dispatch(
-                    setUser({
-                        email: response.data.email,
-                        expiresAt: response.data.sessionExpiry,
-                        role: response.data.role,
-                        authenticate: true,
-                    })
-                );
-                dispatch(
-                    setCsrfToken({
-                        token: response.data.csrfToken,
-                        expiresAt: response.data.csrfExpiresAt,
-                    })
-                );
+                dispatch(setUser({
+                    email: response.data.email,
+                    expiresAt: response.data.sessionExpiry,
+                    role: response.data.role,
+                    authenticate: true,
+                }));
+                dispatch(setCsrfToken({
+                    token: response.data.csrfToken,
+                    expiresAt: response.data.csrfExpiresAt,
+                }));
             }
-        } catch (error) {
-            console.error('Refresh session failed:', error);
+        } catch (err) {
             dispatch(clearUser());
             dispatch(clearCsrfToken());
-            Cookies.remove('accessToken');
-            Cookies.remove('refreshToken');
-            if (!isPublicRoute) {
-                console.log('Redirecting to /signin due to refresh failure');
-                navigate('/signin', { replace: true, state: { from: location.pathname } });
-            }
+            navigate('/signin', { replace: true });
         }
-    }, [refreshAuth, dispatch, navigate, isPublicRoute, location.pathname]);
+    }, [refreshAuth, dispatch, navigate]);
+
     return (
         <AuthContext.Provider value={{ isAuthenticated, refreshSession }}>
             {children}

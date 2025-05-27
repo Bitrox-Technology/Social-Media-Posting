@@ -1,13 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, ArrowLeft, Sparkles, Building2, Hash } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setSelectedTopic, setSelectedBusiness, setApiTopics, addCustomTopic, clearCustomTopics } from '../../store/appSlice';
+import {
+  setSelectedTopic,
+  setSelectedBusiness,
+  setApiTopics,
+  addCustomTopic,
+  clearCustomTopics,
+  setCsrfToken,
+} from '../../store/appSlice';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGenerateTopicsMutation, useLazyGetPendingPostsQuery, useSavePostContentMutation } from '../../store/api';
+import {
+  useGenerateTopicsMutation,
+  useLazyGetPendingPostsQuery,
+  useSavePostContentMutation,
+} from '../../store/api';
 import { useTheme } from '../../context/ThemeContext';
-import { useAlert } from '../hooks/useAlert'; 
-import { Alert } from '../ui/Alert'; 
+import { useAlert } from '../hooks/useAlert';
+import { Alert } from '../ui/Alert';
 
 export const TopicSelector: React.FC = () => {
   const navigate = useNavigate();
@@ -17,7 +28,13 @@ export const TopicSelector: React.FC = () => {
   const { selectedTopic, selectedBusiness, apiTopics: reduxApiTopics, customTopics } = useAppSelector(
     (state) => state.app
   );
-  const [businesses, setBusinesses] = useState<string[]>(['E-commerce', 'Healthcare', 'Technology', 'Finance', 'Education']);
+  const [businesses, setBusinesses] = useState<string[]>([
+    'E-commerce',
+    'Healthcare',
+    'Technology',
+    'Finance',
+    'Education',
+  ]);
   const [customBusiness, setCustomBusiness] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [customTopic, setCustomTopic] = useState('');
@@ -32,6 +49,8 @@ export const TopicSelector: React.FC = () => {
     if (selectedTopic) {
       const topicsArray = selectedTopic.split(', ').filter(Boolean);
       setSelectedTopics(topicsArray);
+    } else {
+      setSelectedTopics([]);
     }
   }, [selectedTopic]);
 
@@ -42,7 +61,7 @@ export const TopicSelector: React.FC = () => {
     }
   }, [location.state, selectedBusiness, reduxApiTopics.length]);
 
-  const fetchTopics = async (business: string) => {
+  const fetchTopics = useCallback(async (business: string) => {
     if (fetchingTopics || reduxApiTopics.length > 0) return;
     setFetchingTopics(true);
     try {
@@ -55,39 +74,42 @@ export const TopicSelector: React.FC = () => {
     } finally {
       setFetchingTopics(false);
     }
-  };
+  }, [dispatch, fetchingTopics, generateTopics, reduxApiTopics.length]);
 
-  const handleBusinessSelect = (business: string) => {
+  const handleBusinessSelect = useCallback((business: string) => {
     if (business !== selectedBusiness) {
       dispatch(setSelectedBusiness(business));
       setSelectedTopics([]);
       dispatch(setSelectedTopic(''));
       dispatch(setApiTopics([]));
       dispatch(clearCustomTopics());
+      fetchTopics(business); // Fetch topics for new business
     }
-  };
+  }, [dispatch, selectedBusiness, fetchTopics]);
 
-  const handleAddCustomBusiness = () => {
+  const handleAddCustomBusiness = useCallback(() => {
     if (customBusiness && !businesses.includes(customBusiness)) {
       setBusinesses((prev) => [...prev, customBusiness]);
       setCustomBusiness('');
     }
-  };
+  }, [customBusiness, businesses]);
 
-  const handleTopicToggle = (topic: string) => {
+  const handleTopicToggle = useCallback((topic: string) => {
     setSelectedTopics((prevSelectedTopics) => {
       const newSelectedTopics = prevSelectedTopics.includes(topic)
         ? prevSelectedTopics.filter((t) => t !== topic)
         : prevSelectedTopics.length < 7
           ? [...prevSelectedTopics, topic]
           : prevSelectedTopics;
-
-      dispatch(setSelectedTopic(newSelectedTopics.join(', ')));
       return newSelectedTopics;
     });
-  };
+    // Dispatch after state update to avoid render-time dispatch
+    setTimeout(() => {
+      dispatch(setSelectedTopic(selectedTopics.join(', ')));
+    }, 0);
+  }, [dispatch, selectedTopics]);
 
-  const handleCustomTopic = () => {
+  const handleCustomTopic = useCallback(() => {
     if (
       customTopic &&
       selectedTopics.length < 7 &&
@@ -95,67 +117,83 @@ export const TopicSelector: React.FC = () => {
       !customTopics.includes(customTopic)
     ) {
       dispatch(addCustomTopic(customTopic));
+      setSelectedTopics((prev) => [...prev, customTopic].slice(0, 7));
       setCustomTopic('');
     }
-  };
+  }, [customTopic, selectedTopics, customTopics, dispatch]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (selectedTopics.length === 0) {
       showErrorAlert('No Topics Selected', 'Please select at least one topic to continue.');
       return;
     }
 
+    console.log('handleSubmit: selectedTopics=', selectedTopics); // Debug
+
     try {
       // Check for pending posts
       const response = await getPendingPosts().unwrap();
-      if (response.data === null || response.data.status === 'success') {
-        const saveResponse = await savePostContent({ topics: selectedTopics }).unwrap();
-        console.log('Post saved successfully:', saveResponse);
-        dispatch(setSelectedTopic(selectedTopics.join(', ')));
+      console.log('getPendingPosts response:', response); // Debug
 
-        console.log('Navigating to /auto with postContentId:', saveResponse.data._id);
+      // Handle no pending posts or completed posts
+      if (!response.data || response.data.status === 'success') {
+        const saveResponse = await savePostContent({ topics: selectedTopics }).unwrap();
+        dispatch(setCsrfToken({
+          token: saveResponse.data.csrfToken,
+          expiresAt: saveResponse.data.csrfExpiresAt,
+        }))
+        console.log('Post saved successfully:', saveResponse);
         navigate('/auto', { state: { postContentId: saveResponse.data._id, fromTopicSelector: true } });
+        return;
       }
 
+      // Handle pending posts
       if (response.data.status === 'pending') {
+        // Define a handler for the confirm dialog
+        const handlePendingPostConfirm = async (confirmed: boolean) => {
+          if (confirmed) {
+            const saveResponse = await savePostContent({ topics: selectedTopics }).unwrap();
+            dispatch(setCsrfToken({
+              token: saveResponse.data.csrfToken,
+              expiresAt: saveResponse.data.csrfExpiresAt,
+            }))
+            console.log('Pending post saved:', saveResponse);
+            navigate('/auto', { state: { postContentId: saveResponse.data._id, fromTopicSelector: true } });
+          } else {
+            showErrorAlert('Failed to Save Post', 'Please try again.');
+
+          }
+        };
+
         showConfirmAlert(
           'Pending Post Found',
           'You have a pending post. Do you want to continue with it?',
-          async () => {
-            // On confirm, navigate to /auto with pending postContentId
-            const saveResponse = await savePostContent({ topics: selectedTopics }).unwrap();
-            dispatch(setSelectedTopic(selectedTopics.join(', ')));
-            navigate('/auto', { state: { postContentId: saveResponse.data._id, fromTopicSelector: true } });
-          }
+          async () => await handlePendingPostConfirm(true)
         );
         return;
-      } else {
-        showErrorAlert('Invalid Post Data', 'No valid postContentId found in pending posts.');
-        return;
       }
+
+      // Unexpected response
+      showErrorAlert('Invalid Post Data', 'Unexpected response from server.');
     } catch (err) {
       console.error('Failed to process topics:', err);
       const errorMessage = (err as { data?: { message?: string } })?.data?.message || 'Unknown error';
       showErrorAlert('Failed to Process Topics', `Please try again: ${errorMessage}`);
     }
-  };
+  }, [getPendingPosts, savePostContent, selectedTopics, navigate, showConfirmAlert, showErrorAlert]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     navigate('/content-type');
-  };
+  }, [navigate]);
 
-  // New function to handle continuing with pending posts
-  const handleContinueWithPendingPosts = async () => {
+  const handleContinueWithPendingPosts = useCallback(async () => {
     try {
       const response = await getPendingPosts().unwrap();
-      if (response.data === null) {
+      if (!response.data) {
         showErrorAlert('No Pending Posts', 'There are no pending posts to continue with.');
         return;
       }
-
-      const pendingPosts = response.data.status
-
-      if (pendingPosts === 'pending') {
+      if (response.data.status === 'pending') {
         navigate('/auto', { state: { postContentId: response.data._id, fromTopicSelector: true } });
       } else {
         showErrorAlert('No Pending Posts', 'There are no pending posts to continue with.');
@@ -165,14 +203,13 @@ export const TopicSelector: React.FC = () => {
       const errorMessage = (err as { data?: { message?: string } })?.data?.message || 'Unknown error';
       showErrorAlert('Failed to Fetch Pending Posts', `Please try again: ${errorMessage}`);
     }
-  };
+  }, [getPendingPosts, navigate, showErrorAlert]);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'dark' : ''}`}>
       <div className="container mx-auto px-4 py-12 max-w-6xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
           <div className="flex items-center justify-between mb-6 px-4">
-            {/* Left: Back Button */}
             <motion.button
               onClick={handleBack}
               className="p-2 rounded-full bg-gray-800 dark:bg-gray-700 text-gray-200 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -182,14 +219,10 @@ export const TopicSelector: React.FC = () => {
             >
               <ArrowLeft className="w-5 h-5" />
             </motion.button>
-
-            {/* Center: Title with Sparkles Icon */}
             <div className="flex items-center space-x-2">
               <Sparkles className="w-6 h-6 text-blue-500" />
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Content Creation Hub</h2>
             </div>
-
-            {/* Right: Continue with Pending Posts Button */}
             <motion.button
               onClick={handleContinueWithPendingPosts}
               disabled={isLoading || fetchingTopics || isFetchingPendingPosts}
@@ -208,7 +241,6 @@ export const TopicSelector: React.FC = () => {
                 <Building2 className="w-5 h-5 text-blue-500" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Select Your Business</h3>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {businesses.map((business) => (
                   <motion.button
@@ -225,7 +257,6 @@ export const TopicSelector: React.FC = () => {
                   </motion.button>
                 ))}
               </div>
-
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
                   <input
@@ -265,19 +296,16 @@ export const TopicSelector: React.FC = () => {
                       Select Topics for {selectedBusiness} ({selectedTopics.length}/7)
                     </h3>
                   </div>
-
                   {(isLoading || fetchingTopics || isFetchingPendingPosts) && (
                     <div className="flex items-center justify-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
                     </div>
                   )}
-
                   {error && (
                     <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl">
                       Failed to load topics. Click "Generate Topics" to retry.
                     </div>
                   )}
-
                   {!reduxApiTopics.length && !customTopics.length && !isLoading && !fetchingTopics && (
                     <motion.button
                       onClick={() => fetchTopics(selectedBusiness)}
@@ -288,7 +316,6 @@ export const TopicSelector: React.FC = () => {
                       Generate Topics
                     </motion.button>
                   )}
-
                   {(reduxApiTopics.length > 0 || customTopics.length > 0) && (
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -311,13 +338,11 @@ export const TopicSelector: React.FC = () => {
                           );
                         })}
                       </div>
-
                       <div className="space-y-4">
                         <div className="flex items-center space-x-2">
                           <Hash className="w-5 h-5 text-purple-500" />
                           <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Add Custom Topic</h4>
                         </div>
-
                         <div className="flex flex-col sm:flex-row gap-4">
                           <div className="flex-1 relative">
                             <input
@@ -340,7 +365,6 @@ export const TopicSelector: React.FC = () => {
                           </motion.button>
                         </div>
                       </div>
-
                       <div className="flex flex-col sm:flex-row gap-4">
                         <motion.button
                           onClick={handleSubmit}
@@ -358,8 +382,6 @@ export const TopicSelector: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Alert Component */}
           <Alert
             type={config.type}
             title={config.title}

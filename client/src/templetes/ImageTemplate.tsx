@@ -1554,7 +1554,7 @@ export const ImageTemplate18: ImageTemplate = {
               <img
                 src={defaultLogoUrl}
                 alt="Logo"
-                className="w-32 h-16 object-contain"
+                className="w-48 h-24 object-contain"
               />
             </div>
           )}
@@ -1592,7 +1592,7 @@ export const ImageTemplate18: ImageTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg"
-              style={{ color: accentColor }}
+               style={{ color: chroma(accentColor).alpha(0.8).css() }}
             >
               {slide.footer}
             </a>
@@ -1741,7 +1741,7 @@ export const ImageTemplate19: ImageTemplate = {
           <div className="mt-auto flex justify-between items-center">
             <div 
               className="h-2 w-32"
-              style={{ backgroundColor: primaryColor }}
+              style={{ color: chroma(primaryColor).alpha(0.8).css() }}
             />
             
             <a
@@ -1749,7 +1749,7 @@ export const ImageTemplate19: ImageTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-xl font-bold"
-              style={{ color: primaryColor }}
+               style={{ color: chroma(primaryColor).alpha(0.8).css() }}
             >
               {slide.footer}
             </a>
@@ -1769,7 +1769,7 @@ export const ImageTemplate20: ImageTemplate = {
     {
       title: 'TIMELESS',
       description: 'Inspired by the classics',
-      imageUrl: '/images/background8.jpg',
+      imageUrl: '/images/',
       footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
@@ -1929,10 +1929,9 @@ export const ImageTemplate20: ImageTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg"
-              style={{ 
-                color: secondaryColor,
-                letterSpacing: '0.1em',
-              }}
+              style={{ color: chroma(primaryColor).alpha(0.8).css(),
+                letterSpacing: '0.1em', }}
+              
             >
               {slide.footer}
             </a>
@@ -2117,10 +2116,8 @@ export const ImageTemplate21: ImageTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg inline-flex items-center"
-              style={{ 
-                color: hasImage ? '#fff' : accentColor,
-                textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
-              }}
+              style={{ color: hasImage ? chroma('#fff').alpha(0.8).css():  chroma(accentColor).alpha(0.8).css(), textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.3)' : 'none', }}
+             
             >
               <span className="mr-2">•</span>
               {slide.footer}
@@ -2327,7 +2324,7 @@ export const ImageTemplate22: ImageTemplate = {
               rel="noopener noreferrer"
               className="text-lg font-mono"
               style={{ 
-                color: primaryColor,
+                color: chroma(primaryColor).alpha(0.8).css(),
                 textShadow: `0 0 8px ${chroma(primaryColor).alpha(0.5).css()}`,
               }}
             >

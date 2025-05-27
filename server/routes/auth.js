@@ -45,7 +45,6 @@ authRouter.get('/validate-session', AuthMiddleware, async (req, res) => {
         logger.error('Session validation error', {
             message: error.message,
             stack: error.stack,
-            ip: req.getClientIp(),
         });
         throw error instanceof ApiError ? error : new ApiError(INTERNAL_SERVER_ERROR, i18n.__('SESSION_VALIDATION_FAILED'));
     }

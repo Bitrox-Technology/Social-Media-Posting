@@ -205,7 +205,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   }
   return shuffled;
 };
-const validatedImageTemplates=  imageTemplates ;
+const validatedImageTemplates = imageTemplates;
 
 // Initialize shuffled templates
 let shuffledTemplates = shuffleArray(validatedImageTemplates);
@@ -224,6 +224,8 @@ export const generateImagePost = async (
     savePosts: ReturnType<typeof useSavePostsMutation>[0];
     uploadImageToCloudinary: ReturnType<typeof useUploadImageToCloudinaryMutation>[0];
   },
+  dispatch: React.Dispatch<any>,
+  setCsrfToken: (token: { token: string; expiresAt: string }) => void,
   userLogo?: string,
   brandStyle: BrandStyle = 'Modern',
   showAlert?: ReturnType<typeof useAlert>['showAlert']
@@ -254,7 +256,7 @@ export const generateImagePost = async (
     const generatedContent = contentRes.data;
     console.log('Generated content:', generatedContent);
 
-    const imageUrl = await mutations.generateImage({prompt: topic}).unwrap();
+    const imageUrl = await mutations.generateImage({ prompt: topic }).unwrap();
     console.log("Generated Image: ", imageUrl.data)
 
     // const imageUrl = 'https://res.cloudinary.com/deuvfylc5/image/upload/v1747125324/hdwulgzqmmmqtpxzsuoh.png';
@@ -277,6 +279,11 @@ export const generateImagePost = async (
       status: 'success',
     }).unwrap();
     console.log('Image content saved:', imageResult);
+
+    dispatch(setCsrfToken({
+      token: imageResult.data.csrfToken,
+      expiresAt: imageResult.data.expiresAt,
+    }));
 
     newPost = {
       topic,
@@ -443,7 +450,7 @@ export const generateImagePost = async (
       slide.websiteUrl = slide.websiteUrl || 'https://bitrox.tech';
     }
 
-     console.log('Slide Data:', slide);
+    console.log('Slide Data:', slide);
 
     const defaultLogoUrl = userLogo || '/images/Logo1.png';
 
@@ -520,10 +527,14 @@ export const generateImagePost = async (
         type: 'image',
         status: 'success',
         images: [{ url: screenshotUrl, label: 'Image Post' }],
-        contentId: imageResult.data._id,
+        contentId: imageResult.data.user._id,
         contentType: 'ImageContent',
       }).unwrap();
       console.log('Post saved:', savePostResult);
+      dispatch(setCsrfToken({
+      token: savePostResult.data.csrfToken,
+      expiresAt: savePostResult.data.expiresAt,
+    }));
       newPost.images = [{ url: screenshotUrl, label: 'Image Post' }];
     } else {
       console.warn('No screenshot URL generated, skipping savePosts');
@@ -556,6 +567,8 @@ export const generateDoYouKnowPost = async (
     savePosts: ReturnType<typeof useSavePostsMutation>[0];
     uploadImageToCloudinary: ReturnType<typeof useUploadImageToCloudinaryMutation>[0];
   },
+  dispatch: React.Dispatch<any>,
+  setCsrfToken: (token: { token: string; expiresAt: string }) => void,
   showAlert: ReturnType<typeof useAlert>['showAlert'],
   userLogo?: string,
   brandStyle: BrandStyle = 'Modern'
@@ -603,6 +616,11 @@ export const generateDoYouKnowPost = async (
       hashtags: generatedDoYouKnowContent?.hashtags || [],
       status: 'success',
     }).unwrap();
+
+    dispatch(setCsrfToken({
+      token: dykResult.data.csrfToken,
+      expiresAt: dykResult.data.expiresAt,
+    }));
     console.log('DYK Content Saved:', dykResult);
 
     // Create new post object
@@ -892,9 +910,13 @@ export const generateDoYouKnowPost = async (
         type: 'doyouknow',
         status: 'success',
         images: [{ url: screenshotUrl, label: 'Did You Know?' }],
-        contentId: dykResult.data._id,
+        contentId: dykResult.data.user._id,
         contentType: 'DYKContent',
       }).unwrap();
+      dispatch(setCsrfToken({
+        token: savePostResult.data.csrfToken,
+        expiresAt: savePostResult.data.expiresAt,
+      }));
       console.log('Post saved:', savePostResult);
       newPost.images = [{ url: screenshotUrl, label: 'Did You Know?' }];
     } else {
@@ -939,6 +961,8 @@ export const generateCarouselPost = async (
     savePosts: ReturnType<typeof useSavePostsMutation>[0];
     uploadCarouselToCloudinary: ReturnType<typeof useUploadCarouselToCloudinaryMutation>[0];
   },
+  dispatch: React.Dispatch<any>,
+  setCsrfToken: (token: { token: string; expiresAt: string }) => void,
   showAlert: ReturnType<typeof useAlert>['showAlert'],
   userLogo?: string,
   brandStyle: BrandStyle = 'Modern'
@@ -1008,7 +1032,10 @@ export const generateCarouselPost = async (
       status: 'success',
     }).unwrap();
     console.log('Carousel Content Upload:', carouselResult);
-
+    dispatch(setCsrfToken({
+      token: carouselResult.data.csrfToken,
+      expiresAt: carouselResult.data.expiresAt,
+    }));
     // Create new post object
     newPost = {
       topic,
@@ -1187,8 +1214,8 @@ export const generateCarouselPost = async (
         secondary: chroma.valid(colors.logoColors.secondary) ? colors.logoColors.secondary : defaultColors.logoColors.secondary,
         accent:
           colors.logoColors.accent &&
-          colors.logoColors.accent.length > 0 &&
-          colors.logoColors.accent.every((c) => chroma.valid(c))
+            colors.logoColors.accent.length > 0 &&
+            colors.logoColors.accent.every((c) => chroma.valid(c))
             ? colors.logoColors.accent
             : defaultColors.logoColors.accent,
       },
@@ -1380,15 +1407,19 @@ export const generateCarouselPost = async (
     // Save post with images
     if (images.length > 0) {
       console.log('Saving post with images...');
-      await mutations.savePosts({
+      let savePosts = await mutations.savePosts({
         postContentId,
         topic,
         type: 'carousel',
         status: 'success',
         images,
-        contentId: carouselResult.data._id,
+        contentId: carouselResult.data.user._id,
         contentType: 'CarouselContent',
       }).unwrap();
+      dispatch(setCsrfToken({
+      token: savePosts.data.csrfToken,
+      expiresAt: savePosts.data.expiresAt,
+    }));
       newPost.images = images;
     } else {
       throw new Error('No images were uploaded to Cloudinary');
@@ -1662,8 +1693,8 @@ function mapCompetitorPalette(
       sorted.length > 2
         ? sorted.slice(2)
         : logoColors.accent.length
-        ? logoColors.accent
-        : [logoColors.primary, logoColors.secondary],
+          ? logoColors.accent
+          : [logoColors.primary, logoColors.secondary],
   };
 }
 

@@ -1,4 +1,4 @@
-export const userTemplate = (code) => { 
+export const userTemplate = (code) => {
   return `
     <div style="font-family: 'Poppins', 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f4f7fa; padding: 20px;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);">
@@ -48,7 +48,7 @@ export const userTemplate = (code) => {
   `
 }
 
-export const adminTemplate =  (code) => { 
+export const adminTemplate = (code) => {
   return `
     <div style="font-family: 'Poppins', Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f7fa; padding: 20px;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);">
@@ -95,4 +95,67 @@ export const adminTemplate =  (code) => {
       </div>
     </div>
   `
+}
+
+
+export const linkedinAuthTemplate = () => {
+  return ` <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedIn Authentication Redirect</title>
+</head>
+<body>
+  <p>Authentication in progress. This window should close automatically. If not, please close it manually.</p>
+  <button onclick="window.close()">Close Window</button>
+  <script>
+    (function () {
+      console.log('Redirect script loaded');
+      
+      // Extract parameters from the URL
+      const params = new URLSearchParams(window.location.search);
+      const accessToken = params.get('access_token');
+      const error = params.get('error');
+
+      // Prepare the message
+      const message = {
+        platform: 'linkedin',
+        success: !!accessToken,
+        accessToken: accessToken || null,
+        error: error || (accessToken ? null : 'Authentication failed'),
+        details: error ? params.get('error_description') || 'Unknown error' : null
+      };
+
+      // Send message to the main window
+      if (!window.opener) {
+        console.error('window.opener is null - popup may not have been opened correctly');
+        document.body.innerText = 'Authentication complete. Please close this window.';
+      } else {
+        try {
+          console.log('Sending postMessage from popup:', message);
+          window.opener.postMessage(message, 'http://localhost:5173');
+          setTimeout(() => {
+            console.log('Closing popup...');
+            window.close();
+          }, 4000);
+        } catch (err) {
+          console.error('Error in popup script:', err);
+          const errorMessage = {
+            platform: 'linkedin',
+            success: false,
+            error: 'Error in popup script',
+            details: err.message
+          };
+          window.opener.postMessage(errorMessage, 'http://localhost:5173');
+          setTimeout(() => {
+            console.log('Closing popup after error...');
+            window.close();
+          }, 4000);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>`
 }

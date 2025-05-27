@@ -40,6 +40,7 @@ import { UserPostDetail } from './components/content/UserPostDetail';
 import SessionWarning from './components/providers/SessionWarning';
 import AuthProvider from './components/providers/AuthProvider';
 import ProtectedRoute from './components/providers/ProtectedRoute';
+import { FestivalTemplates } from './components/ui/festivalTemplates';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -126,9 +127,7 @@ function App() {
                       <Route
                         path="/carousel"
                         element={
-
                           <Carousel initialTopic="defaultTopic" template="defaultTemplate" slides={[]} />
-
                         }
                       />
                       <Route
@@ -138,14 +137,16 @@ function App() {
                       <Route
                         path="/tmcarousel"
                         element={
-
                           <TemplateCarousel initialTopic="defaultTopic" />
-
                         }
                       />
                       <Route
                         path="/tmimagegeneration"
                         element={<ImageGenerationTemplate />}
+                      />
+                      <Route
+                        path="/tmfestival"
+                        element={<FestivalTemplates />}
                       />
                       <Route
                         path="/tmdoyouknow"

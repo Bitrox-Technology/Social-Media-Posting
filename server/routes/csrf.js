@@ -4,6 +4,7 @@ import { INTERNAL_SERVER_ERROR, OK } from "../utils/apiResponseCode.js";
 import i18n from "../utils/i18n.js";
 import { generateToken } from "../utils/csrf.js";
 import logger from "../middlewares/logger.js";
+import { ApiError } from "../utils/ApiError.js";
 const csrfRouter = Router()
 
 csrfRouter.get('/csrf-token', (req, res) => {
@@ -33,7 +34,7 @@ csrfRouter.get('/csrf-token', (req, res) => {
       sessionID: req.sessionID,
       ip: req.getClientIp ? req.getClientIp() : 'unknown',
     });
-    res.status(INTERNAL_SERVER_ERROR).json(new ApiResponse(500, null, i18n.__('FAILED_GENERATE_CSRF')));
+    throw new ApiError(INTERNAL_SERVER_ERROR, i18n.__('FAILED_GENERATE_CSRF'));
  }
 })
 

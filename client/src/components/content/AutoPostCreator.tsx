@@ -30,11 +30,14 @@ import { generateImagePost, generateCarouselPost, generateDoYouKnowPost } from '
 
 import { useAlert } from '../hooks/useAlert';
 import { Alert } from '../ui/Alert';
+import { useDispatch } from 'react-redux';
+import { setUser, setCsrfToken } from '../../store/appSlice';
 
 export const AutoPostCreator: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme } = useTheme();
+  const dispatch = useDispatch()
 
   // State management
   const [posts, setLocalPosts] = useState<Post[]>([]);
@@ -221,9 +224,13 @@ export const AutoPostCreator: React.FC = () => {
               savePosts,
               uploadImageToCloudinary,
             },
+            dispatch,
+            (token: { token: string; expiresAt: string }) =>
+              dispatch(setCsrfToken({ token: token.token, expiresAt: Number(token.expiresAt) })),
             userLogo || '/images/Logo1.png',
             'Modern',
             showAlert
+
           );
           console.log('Generated Image Post:', newPost);
           break;
@@ -239,6 +246,9 @@ export const AutoPostCreator: React.FC = () => {
               savePosts,
               uploadCarouselToCloudinary, // Pass the new mutation
             },
+            dispatch,
+            (token: { token: string; expiresAt: string }) =>
+              dispatch(setCsrfToken({ token: token.token, expiresAt: Number(token.expiresAt) })),
             showAlert,
             userLogo || '/images/Logo1.png',
           );
@@ -256,8 +266,11 @@ export const AutoPostCreator: React.FC = () => {
               savePosts,
               uploadImageToCloudinary,
             },
+            dispatch,
+            (token: { token: string; expiresAt: string }) =>
+              dispatch(setCsrfToken({ token: token.token, expiresAt: Number(token.expiresAt) })),
             showAlert,
-            userLogo || '/images/Logo1.png',
+            userLogo || '/images/Logo1.png'
           );
           console.log('Generated Do You Know Post:', newPost);
           break;

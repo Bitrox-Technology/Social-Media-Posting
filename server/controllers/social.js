@@ -14,14 +14,116 @@ const LinkedInAuthentication = async (req, res, next) => {
 }
 
 const LinkedInCallback = async (req, res, next) => {
-    try {
-        let result = await SocialServices.linkedInCallback(req.query)
-        return res.status(OK).json(new ApiResponse(OK, result,  i18n.__("LINKEDIN_CALLBACK")))
-    } catch (error) {
-        next(error)
-    }
+  try {
+    const { profileData, accessToken } = await SocialServices.linkedInCallback(req.query);
 
-}
+    const script = `
+      <html>
+        <body>
+          <p>Authentication successful. This window should close automatically. If not, please close it manually.</p>
+          <button onclick="window.close()">Close Window</button>
+          <script>
+            (function() {
+              const message = {
+                platform: 'linkedin',
+                success: true,
+                accessToken: '${accessToken}',
+                profileData: ${JSON.stringify(profileData)}
+              };
+              
+              console.log('Sending success message to parent window:', message);
+              
+              try {
+                if (window.opener && !window.opener.closed) {
+                  console.log('Posting message to opener...');
+                  // Use specific origin in production instead of '*'
+                  window.opener.postMessage(message, 'http://localhost:5173');
+                  
+                  // Also dispatch a custom event as a fallback
+                  const event = new CustomEvent('socialAuthComplete', { 
+                    detail: message 
+                  });
+                  window.opener.document.dispatchEvent(event);
+                  
+                  console.log('Message sent successfully');
+                } else {
+                  console.warn('No valid opener found. Cannot post message.');
+                }
+              } catch (err) {
+                console.error('Error posting message:', err);
+              }
+              
+              // Close the popup after a short delay
+              setTimeout(() => {
+                console.log('Closing popup window...');
+                try {
+                  window.close();
+                } catch (closeErr) {
+                  console.error('Error closing window:', closeErr);
+                }
+              }, 10000);
+            })();
+          </script>
+        </body>
+      </html>
+    `;
+
+    res.set('Content-Type', 'text/html');
+    return res.status(200).send(script);
+
+  } catch (error) {
+    console.error('LinkedIn authentication error:', error);
+    
+    const errorScript = `
+      <html>
+        <body>
+          <p>Authentication failed. This window should close automatically. If not, please close it manually.</p>
+          <button onclick="window.close()">Close Window</button>
+          <script>
+            (function() {
+              const message = {
+                platform: 'linkedin',
+                success: false,
+                error: 'Authentication failed',
+                details: '${error.message || 'Unknown error'}'
+              };
+              
+              console.log('Sending error message to parent window:', message);
+              
+              try {
+                if (window.opener && !window.opener.closed) {
+                  // Use specific origin in production instead of '*'
+                  window.opener.postMessage(message, 'http://localhost:5173');
+                  
+                  // Also dispatch a custom event as a fallback
+                  const event = new CustomEvent('socialAuthComplete', { 
+                    detail: message 
+                  });
+                  window.opener.document.dispatchEvent(event);
+                } else {
+                  console.warn('No valid opener found for error message.');
+                }
+              } catch (err) {
+                console.error('Error posting error message:', err);
+              }
+              
+              setTimeout(() => {
+                try {
+                  window.close();
+                } catch (closeErr) {
+                  console.error('Error closing error window:', closeErr);
+                }
+              }, 3000);
+            })();
+          </script>
+        </body>
+      </html>
+    `;
+
+    res.set('Content-Type', 'text/html');
+    return res.status(500).send(errorScript);
+  }
+};
 
 
 const LinkedInPost = async (req, res, next) => {
@@ -30,9 +132,9 @@ const LinkedInPost = async (req, res, next) => {
         if (req.body.scheduleTime) {
             result = await schedulePost(SocialServices.linkedInPost(req.body), req.body, scheduleTime);
         } else {
-           result =  await SocialServices.linkedInPost(req.body)
+            result = await SocialServices.linkedInPost(req.body)
         }
-        return res.status(OK).json(new ApiResponse(OK, result,  i18n.__("LINKED_POST_SUCCESS")))
+        return res.status(OK).json(new ApiResponse(OK, result, i18n.__("LINKED_POST_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -41,7 +143,7 @@ const LinkedInPost = async (req, res, next) => {
 
 const FacebookAuthentication = async (req, res, next) => {
     try {
-        let result =  SocialServices.facebookAuthentication()
+        let result = SocialServices.facebookAuthentication()
         return res.status(200).json(new ApiResponse(OK, result, "Facebook Authentication URL generated successfully"))
     } catch (error) {
         next(error)

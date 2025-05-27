@@ -12,7 +12,7 @@ const linkedInAuthentication = () => {
             response_type: 'code',
             client_id: process.env.LINKEDIN_CLIENT_ID,
             redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
-            scope: 'openid profile email w_member_social w_organization_social r_organization_admin',
+            scope: 'openid profile email w_member_social',
         });
     return authUrl;
 }
