@@ -44,7 +44,7 @@ interface CsrfState {
 }
 
 interface AppState {
-  contentType: 'post' | 'blog' | 'carousel' | 'doyouknow' | null;
+  contentType: 'topic' | 'blog' | 'carousel' | 'doyouknow' | 'promotional' | 'informative' | 'engagement' | 'brand' | 'event' | 'testimonial' | 'festivals' |null;
   selectedTopic: string;
   selectedIdea: ContentIdea | null;
   selectedFile: SelectedFileData | null;
@@ -87,7 +87,7 @@ const appSlice = createSlice({
   reducers: {
     setContentType(
       state,
-      action: PayloadAction<'post' | 'blog' | 'carousel' | 'doyouknow' | null>
+      action: PayloadAction<'topic' | 'blog' | 'carousel' | 'doyouknow' | 'promotional' | 'informative' | 'engagement' | 'brand' | 'event' | 'testimonial' | 'festivals' | null>
     ) {
       state.contentType = action.payload;
     },

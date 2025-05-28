@@ -1,5 +1,8 @@
 {
     "editor.scrollbar.horizontal": "hidden",
-    "editor.scrollbar.ignoreHorizontalScrollbarInContentHeight": true,
-    "editor.scrollbar.scrollByPage": true
+    "editor.scrollbar.ignoreHorizontalScrollbarInContentHeight": false,
+    "editor.scrollbar.scrollByPage": true,
+    "editor.guides.bracketPairsHorizontal": true,
+    "editor.stickyScroll.scrollWithEditor": false,
+    "editor.scrollPredominantAxis": false
 }

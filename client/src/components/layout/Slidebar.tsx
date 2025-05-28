@@ -14,7 +14,8 @@ import {
   Person as PersonIcon,
   Logout as LogoutIcon,
   KeyboardArrowRight as ArrowIcon,
-  Festival
+  Festival,
+  Schedule
 } from '@mui/icons-material';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { logout } from '../../store/appSlice';
@@ -65,6 +66,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
       items: [
         { path: '/post-analyzer', label: 'Post Analyzer', icon: <AnalyticsIcon /> },
         { path: '/user-posts', label: 'Content Library', icon: <LibraryBooksIcon /> },
+        { path: '/scheduled-posts', label: 'Scheduled Posts', icon: <Schedule /> },
       ]
     }
   ];

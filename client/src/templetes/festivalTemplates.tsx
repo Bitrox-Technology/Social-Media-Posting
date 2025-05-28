@@ -42,86 +42,121 @@ export interface ImageTemplate {
   coverImageUrl?: string;
 }
 
+const ensureContrast = (color1: string, color2: string) => {
+  const c1 = chroma(color1);
+  const c2 = chroma(color2);
+  if (chroma.contrast(c1, c2) < 4.5) { // WCAG AA standard
+    return c1.luminance() > c2.luminance() ? c1.darken(0.5).hex() : c1.brighten(0.5).hex();
+  }
+  return c1.hex();
+};
+
 // 1. Updated Diwali Template - Aligned with New Aesthetic
 export const DiwaliTemplate: ImageTemplate = {
-  id: 'diwali-mandala',
-  name: 'Diwali Celebration',
-  coverImageUrl: '/images/festivals/diwali-cover.png',
+  id: 'diwali-happy-ludhiana',
+  name: 'Diwali - Happy Ludhiana',
+  coverImageUrl: '/images/festival-covers/diwali-cover.png',
   slides: [
     {
-      title: 'HAPPY DIWALI',
-      description: 'May the festival of lights bring joy and prosperity',
-      imageUrl: '/images/festivals/diwali-bg.jpg',
-      footer: 'bitrox.tech',
+      title: 'Happy Diwali',
+      description: 'May your life be filled with endless light!',
+      imageUrl: '/images/festival-backgrounds/diwali-bg.jpg', // Example: a bokeh light background
+      footer: 'Ludhiana Celebrates',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-    
-    const titleColor = ensureContrast('#FFD700', materialTheme.background); // Gold
-    const descriptionColor = ensureContrast('#FFFFFF', materialTheme.background); // White
-    const footerColor = ensureContrast('#8B4513', materialTheme.surface); // Brown
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#FFD700'; // Gold
+    const secondaryColor = '#FF4500'; // Orange-Red
+    const bgColor = '#1A1A1A'; // Deep Dark
+    const textColor = '#FFFFFF'; // White
+    const accentColor = '#FFC107'; // Amber
 
     return (
       <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center bg-cover bg-center overflow-hidden"
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col items-center justify-center bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
         style={{
-          background: 'linear-gradient(135deg, #FF6B35 0%, #FFD700 50%, #8B4513 100%)', // Orange to gold to brown
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
           fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
+          boxShadow: `0 0 40px ${chroma(primaryColor).alpha(0.7).css()}`,
         }}
       >
-        {/* Decorative Border */}
-        <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-r from-orange-500 to-yellow-500 opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-r from-yellow-500 to-orange-500 opacity-60" />
+        {/* Subtle overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+        <div className="absolute inset-0" style={{ backgroundColor: chroma(bgColor).alpha(0.4).css() }} />
 
-        {/* Diya (Oil Lamp) Element */}
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2">
-          <div className="w-12 h-6 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full opacity-80" />
-          <div className="w-4 h-4 bg-yellow-300 rounded-full mx-auto -mt-2 animate-pulse" />
-        </div>
+        {/* Decorative Light Glows (layered) */}
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-50" style={{ backgroundColor: primaryColor }} />
+        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full blur-3xl opacity-40" style={{ backgroundColor: secondaryColor }} />
+        <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] rounded-full blur-3xl opacity-60" style={{ backgroundColor: accentColor }} />
 
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: `drop-shadow(0 0 10px ${chroma('#FFD700').alpha(0.6).css()})`,
-            }}
-          />
-        )}
+        {/* Central Content */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: 'brightness(1.5)', boxShadow: `0 0 20px ${chroma(primaryColor).alpha(0.8).css()}` }}
+            />
+          )}
 
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-6">
+          {/* Title with extra glow */}
           <h2
-            className="text-8xl font-bold uppercase tracking-wider"
+            className="text-8xl font-black uppercase mb-6 tracking-wide"
             style={{
-              color: titleColor,
-              textShadow: `0 4px 8px ${chroma('#8B4513').alpha(0.4).css()}`,
+              color: ensureContrast(textColor, bgColor),
+              textShadow: `0 0 20px ${chroma(accentColor).alpha(0.8).css()}, 0 0 30px ${chroma(primaryColor).alpha(0.6).css()}`,
             }}
           >
             {slide.title}
           </h2>
-          
+
+          {/* Description */}
           <p
-            className="text-3xl font-medium italic"
+            className="text-4xl font-light max-w-3xl mb-12"
             style={{
-              color: descriptionColor,
-              textShadow: `0 2px 4px ${chroma('#8B4513').alpha(0.3).css()}`,
-              background: 'rgba(139,69,19,0.3)', // Subtle brown background
-              padding: '12px 24px',
-              borderRadius: '20px',
+              color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor),
+              textShadow: `0 0 10px ${chroma(primaryColor).alpha(0.4).css()}`,
             }}
           >
             {slide.description}
           </p>
+
+          {/* Decorative Diya Line */}
+          <div className="flex items-center space-x-4 mb-12">
+            <div className="w-20 h-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+            <span className="text-5xl" style={{ color: accentColor }}>🪔</span> {/* Diya unicode character */}
+            <div className="w-20 h-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+          </div>
         </div>
 
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-orange-800/20 to-yellow-800/20 backdrop-blur-sm">
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-right"
+          style={{
+            backgroundColor: chroma(bgColor).alpha(0.6).css(),
+            borderTop: `1px solid ${chroma(primaryColor).alpha(0.3).css()}`,
+          }}
+        >
           <a
             href={slide.websiteUrl}
-            className="text-xl font-semibold px-6 py-2 rounded-full bg-yellow-500/20 backdrop-blur-sm"
-            style={{ color: footerColor }}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-medium tracking-wider"
+            style={{
+              color: ensureContrast(accentColor, bgColor),
+              textShadow: `0 0 8px ${chroma(accentColor).alpha(0.5).css()}`,
+            }}
           >
             @{slide.footer}
           </a>
@@ -131,97 +166,101 @@ export const DiwaliTemplate: ImageTemplate = {
   },
 };
 
-// 2. Updated Christmas Template - Aligned with New Aesthetic
-export const ChristmasTemplate: ImageTemplate = {
-  id: 'christmas-snow',
-  name: 'Christmas Magic',
-  coverImageUrl: '/images/festivals/christmas-cover.png',
+// 2. Baisakhi: Harvest Hues
+export const BaisakhiTemplate: ImageTemplate = {
+  id: 'baisakhi-harvest-hues',
+  name: 'Baisakhi - Harvest Hues',
+  coverImageUrl: '/images/festival-covers/baisakhi-cover.png',
   slides: [
     {
-      title: 'MERRY CHRISTMAS',
-      description: 'Wishing you a season of joy and love',
-      imageUrl: '/images/festivals/christmas-bg.jpg',
-      footer: 'bitrox.tech',
+      title: 'Happy Baisakhi',
+      description: 'Celebrating the golden harvest and new beginnings!',
+      imageUrl: '/images/festival-backgrounds/baisakhi-bg.jpg', // Example: fields of wheat
+      footer: 'Ludhiana Celebrates',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-    
-    const titleColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFD700', materialTheme.background);
-    const footerColor = ensureContrast('#228B22', materialTheme.surface);
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#FFD700'; // Gold (for wheat/sun)
+    const secondaryColor = '#4CAF50'; // Green (for fields)
+    const accentColor = '#FF9800'; // Amber (for warmth)
+    const bgColor = '#F5F5DC'; // Khaki / Light Beige
+    const textColor = '#3E2723'; // Dark Brown
 
     return (
       <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
         style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #0D4F0F 100%)', // Blue to green
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
           fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
         }}
       >
-        {/* Snowflakes */}
-        <div className="absolute inset-0">
-          {[...Array(10)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute text-white opacity-60 animate-pulse"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                fontSize: `${Math.random() * 20 + 10}px`,
-              }}
-            >
-              ❄
+        {/* Dynamic gradient overlay based on image presence */}
+        <div className="absolute inset-0" style={{
+            background: `linear-gradient(180deg, ${chroma(secondaryColor).alpha(0.3).css()} 0%, ${chroma(primaryColor).alpha(0.2).css()} 100%)`,
+            mixBlendMode: 'multiply',
+            opacity: 0.8
+        }} />
+        <div className="absolute inset-0" style={{ backgroundColor: chroma(bgColor).alpha(0.3).css() }} />
+
+        {/* Abstract Wheat/Folk elements */}
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-yellow-400 rounded-full opacity-30 blur-2xl" />
+        <div className="absolute -top-20 -right-20 w-60 h-60 bg-green-500 rounded-full opacity-30 blur-2xl" />
+        <div className="absolute bottom-10 right-10 w-24 h-24 transform rotate-45" style={{ backgroundColor: primaryColor, opacity: 0.4, borderRadius: graphicStyle.borderRadius }} />
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col flex-1 p-16 justify-between items-center text-center">
+          {/* Logo */}
+          {addLogo && (
+            <div className="w-full flex justify-end">
+              <img
+                src={defaultLogoUrl}
+                alt="Logo"
+                className="w-48 h-24 object-contain mb-12"
+                style={{ filter: 'grayscale(0.3)' }}
+              />
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Decorative Border */}
-        <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-r from-red-600 to-green-600 opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-r from-green-600 to-red-600 opacity-60" />
+          {/* Main Title & Description */}
+          <div className="flex-1 flex flex-col justify-center items-center">
+            <h2
+              className="text-8xl font-extrabold uppercase mb-6 tracking-tight"
+              style={{ color: ensureContrast(textColor, bgColor), textShadow: `2px 2px 4px ${chroma(primaryColor).alpha(0.4).css()}` }}
+            >
+              {slide.title}
+            </h2>
+            <p
+              className="text-3xl font-medium max-w-3xl leading-relaxed"
+              style={{ color: ensureContrast(chroma(textColor).alpha(0.9).hex(), bgColor) }}
+            >
+              {slide.description}
+            </p>
+          </div>
 
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 left-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.5))',
-            }}
-          />
-        )}
+          {/* Decorative Harvest Line */}
+          <div className="flex items-center space-x-6 mt-16">
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
+            <span className="text-4xl" style={{ color: secondaryColor }}>🌾</span> {/* Wheat ear unicode */}
+            <span className="text-4xl" style={{ color: accentColor }}>💃</span> {/* Dancing person unicode */}
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
+          </div>
 
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-6">
-          <h2
-            className="text-8xl font-bold tracking-wide"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 8px rgba(0,0,0,0.3)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-3xl font-medium italic"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              background: 'rgba(34,139,34,0.3)', // Subtle green background
-              padding: '12px 24px',
-              borderRadius: '20px',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-red-800/30 to-green-800/30 backdrop-blur-sm">
+          {/* Footer */}
           <a
             href={slide.websiteUrl}
-            className="text-xl font-semibold px-6 py-2 rounded-full bg-red-600/80 backdrop-blur-sm"
-            style={{ color: footerColor }}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider mt-12"
+            style={{ color: ensureContrast(secondaryColor, bgColor) }}
           >
             @{slide.footer}
           </a>
@@ -231,900 +270,215 @@ export const ChristmasTemplate: ImageTemplate = {
   },
 };
 
-// 3. Updated Holi Template - Aligned with New Aesthetic
+// 3. Lohri: Bonfire Glow
+export const LohriTemplate: ImageTemplate = {
+  id: 'lohri-bonfire-glow',
+  name: 'Lohri - Bonfire Glow',
+  coverImageUrl: '/images/festival-covers/lohri-cover.png',
+  slides: [
+    {
+      title: 'Happy Lohri',
+      description: 'May the bonfire of Lohri burn all your sorrows and bring warmth, joy, and prosperity!',
+      imageUrl: '/images/festival-backgrounds/lohri-bg.jpg', // Example: a blurred bonfire background
+      footer: 'Ludhiana Celebrates',
+      websiteUrl: 'https://bitrox.tech',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#FF4500'; // OrangeRed
+    const secondaryColor = '#FFA500'; // DarkOrange
+    const accentColor = '#8B4513'; // SaddleBrown
+    const bgColor = '#2C0F05'; // Very Dark Brown
+    const textColor = '#FFD700'; // Gold
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-end bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+          fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* Top gradient for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-transparent opacity-70" />
+
+        {/* Abstract fire/ember elements */}
+        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-red-800 via-orange-700 to-transparent opacity-70" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-60" style={{ backgroundColor: primaryColor }} />
+        <div className="absolute bottom-10 left-10 w-80 h-80 rounded-full blur-3xl opacity-50" style={{ backgroundColor: secondaryColor }} />
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col p-16 pt-32 text-center items-center">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="absolute top-16 right-16 w-40 h-20 object-contain"
+              style={{ filter: 'brightness(1.8)' }}
+            />
+          )}
+
+          {/* Main Title & Description */}
+          <h2
+            className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
+            style={{ color: ensureContrast(textColor, bgColor), textShadow: `0 0 20px ${chroma(primaryColor).alpha(0.7).css()}` }}
+          >
+            {slide.title}
+          </h2>
+          <p
+            className="text-3xl font-normal max-w-3xl leading-relaxed mb-12"
+            style={{ color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor) }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Festive Icons (Peanuts, Rewari, Gur) */}
+          <div className="flex space-x-8 text-5xl mb-16">
+            <span style={{ color: secondaryColor }}>🥜</span>
+            <span style={{ color: primaryColor }}>🍬</span>
+            <span style={{ color: accentColor }}>🍯</span>
+          </div>
+        </div>
+
+        {/* Footer at the very bottom, close to the fire */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(bgColor).alpha(0.4).css(),
+            borderTop: `2px solid ${chroma(primaryColor).alpha(0.6).css()}`,
+          }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(textColor, bgColor) }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// 4. Holi: Chromatic Splash
 export const HoliTemplate: ImageTemplate = {
-  id: 'holi-colors',
-  name: 'Holi Festival',
-  coverImageUrl: '/images/festivals/holi-cover.png',
+  id: 'holi-chromatic-splash',
+  name: 'Holi - Chromatic Splash',
+  coverImageUrl: '/images/festival-covers/holi-cover.png',
   slides: [
     {
-      title: 'HAPPY HOLI',
-      description: 'May the colors of Holi fill your life with joy',
-      imageUrl: '/images/festivals/holi-bg.jpg',
-      footer: 'bitrox.tech',
+      title: 'Happy Holi',
+      description: 'May your life be painted with colors of joy and happiness!',
+      imageUrl: '/images/festival-backgrounds/holi-bg.jpg', // Example: abstract color splash background
+      footer: 'Ludhiana Celebrates',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
+    const { typography, graphicStyle } = colors;
 
-    const titleColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const footerColor = ensureContrast('#FF69B4', materialTheme.surface);
+    const primaryColor = '#FF4081'; // Pink A400
+    const secondaryColor = '#81C784'; // Green 300
+    const accentColor = '#64B5F6'; // Blue 300
+    const bgColor = '#FFFFFF'; // White background for maximum color contrast
+    const textColor = '#212121'; // Dark Grey
+
+    const splashColors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
 
     return (
       <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
         style={{
-          background: 'linear-gradient(135deg, #FF69B4 0%, #FFD700 50%, #00CED1 100%)', // Pink to yellow to cyan
           fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       >
-        {/* Color Splashes */}
-        <div className="absolute inset-0">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-pink-400 rounded-full opacity-60 blur-xl" />
-          <div className="absolute top-32 right-20 w-28 h-28 bg-yellow-400 rounded-full opacity-60 blur-xl" />
-          <div className="absolute bottom-40 left-32 w-36 h-36 bg-blue-400 rounded-full opacity-60 blur-xl" />
-        </div>
-
-        {/* Decorative Border */}
-        <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-r from-pink-500 to-yellow-500 opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-r from-yellow-500 to-pink-500 opacity-60" />
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
+        {/* Dynamic Color Splashes/Blobs */}
+        {splashColors.map((color, index) => (
+          <div
+            key={index}
+            className="absolute rounded-full blur-3xl opacity-70 animate-pulse"
             style={{
-              filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.8))',
+              backgroundColor: color,
+              width: `${100 + index * 20}px`,
+              height: `${100 + index * 20}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              transform: `translate(-50%, -50%) rotate(${Math.random() * 360}deg)`,
+              animationDelay: `${Math.random() * 2}s`,
+              zIndex: 0,
             }}
           />
-        )}
+        ))}
 
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-6">
-          <h2
-            className="text-8xl font-bold uppercase tracking-wider"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 8px rgba(0,0,0,0.5)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-3xl font-medium italic"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              background: 'rgba(255,105,180,0.3)', // Subtle pink background
-              padding: '12px 24px',
-              borderRadius: '20px',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
+        {/* Semi-transparent Overlay */}
+        <div className="absolute inset-0" style={{ backgroundColor: chroma(bgColor).alpha(0.5).css() }} />
 
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-purple-600/40 to-pink-600/40 backdrop-blur-sm">
-          <a
-            href={slide.websiteUrl}
-            className="text-xl font-semibold px-6 py-2 rounded-full bg-purple-600/80 backdrop-blur-sm"
-            style={{ color: footerColor }}
-          >
-            @{slide.footer}
-          </a>
-        </div>
-      </div>
-    );
-  },
-};
-
-// 4. Updated Lunar New Year Template - Aligned with New Aesthetic
-export const LunarNewYearTemplate: ImageTemplate = {
-  id: 'lunar-new-year',
-  name: 'Lunar New Year',
-  coverImageUrl: '/images/festivals/lunar-cover.png',
-  slides: [
-    {
-      title: '新年快乐',
-      description: 'Wishing you prosperity and good fortune',
-      imageUrl: '/images/festivals/lunar-bg.jpg',
-      footer: 'bitrox.tech',
-      websiteUrl: 'https://bitrox.tech',
-    },
-  ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-
-    const titleColor = ensureContrast('#FFD700', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const footerColor = ensureContrast('#DC143C', materialTheme.surface);
-
-    return (
-      <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #DC143C 0%, #FFD700 100%)', // Red to gold
-          fontFamily: typography.fontFamily,
-        }}
-      >
-        {/* Decorative Border */}
-        <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-r from-red-600 to-yellow-500 opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-r from-yellow-500 to-red-600 opacity-60" />
-
-        {/* Lantern Elements */}
-        <div className="absolute top-12 left-12 w-16 h-24 bg-red-600 rounded-full opacity-80 border-2 border-yellow-500" />
-        <div className="absolute top-12 right-12 w-16 h-24 bg-red-600 rounded-full opacity-80 border-2 border-yellow-500" />
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 left-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 15px rgba(255,215,0,0.6))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-6">
-          <h2
-            className="text-8xl font-bold"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 8px rgba(220,20,60,0.5)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-3xl font-medium italic"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              background: 'rgba(220,20,60,0.3)', // Subtle red background
-              padding: '12px 24px',
-              borderRadius: '20px',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-red-800/50 to-yellow-600/50 backdrop-blur-sm">
-          <a
-            href={slide.websiteUrl}
-            className="text-xl font-semibold px-6 py-2 rounded-full bg-yellow-500/80 backdrop-blur-sm"
-            style={{ color: footerColor }}
-          >
-            @{slide.footer}
-          </a>
-        </div>
-      </div>
-    );
-  },
-};
-
-// 5. Updated Oktoberfest Template - Aligned with New Aesthetic
-export const OktoberfestTemplate: ImageTemplate = {
-  id: 'oktoberfest-bavarian',
-  name: 'Oktoberfest',
-  coverImageUrl: '/images/festivals/oktoberfest-cover.png',
-  slides: [
-    {
-      title: 'OKTOBERFEST',
-      description: 'Prost! Celebrate Bavarian traditions with us',
-      imageUrl: '/images/festivals/oktoberfest-bg.jpg',
-      footer: 'bitrox.tech',
-      websiteUrl: 'https://bitrox.tech',
-    },
-  ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-
-    const titleColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFD700', materialTheme.background);
-    const footerColor = ensureContrast('#0F4C75', materialTheme.surface);
-
-    return (
-      <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #0F4C75 0%, #BBE1FA 100%)', // Blue to light blue
-          fontFamily: typography.fontFamily,
-        }}
-      >
-        {/* Decorative Border */}
-        <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-r from-blue-600 to-white opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-r from-white to-blue-600 opacity-60" />
-
-        {/* Beer Mug Icon */}
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 text-6xl opacity-70">🍺</div>
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.6))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-6">
-          <h2
-            className="text-8xl font-bold tracking-wider"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 8px rgba(15,76,117,0.5)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-3xl font-medium italic"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              background: 'rgba(15,76,117,0.3)', // Subtle blue background
-              padding: '12px 24px',
-              borderRadius: '20px',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-blue-800/60 to-blue-600/60 backdrop-blur-sm">
-          <a
-            href={slide.websiteUrl}
-            className="text-xl font-semibold px-6 py-2 rounded-full bg-blue-600/80 backdrop-blur-sm"
-            style={{ color: footerColor }}
-          >
-            @{slide.footer}
-          </a>
-        </div>
-      </div>
-    );
-  },
-};
-
-// 6. Updated Día de los Muertos Template - Aligned with New Aesthetic
-export const DiaDeLosMuertosTemplate: ImageTemplate = {
-  id: 'dia-de-los-muertos',
-  name: 'Día de los Muertos',
-  coverImageUrl: '/images/festivals/dia-cover.png',
-  slides: [
-    {
-      title: 'DÍA DE LOS MUERTOS',
-      description: 'Honoring our loved ones with love and celebration',
-      imageUrl: '/images/festivals/dia-bg.jpg',
-      footer: 'bitrox.tech',
-      websiteUrl: 'https://bitrox.tech',
-    },
-  ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-
-    const titleColor = ensureContrast('#FFD700', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const footerColor = ensureContrast('#FF4500', materialTheme.surface);
-
-    return (
-      <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #2D1B69 0%, #FF4500 100%)', // Purple to orange
-          fontFamily: typography.fontFamily,
-        }}
-      >
-        {/* Decorative Border */}
-        <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-r from-purple-600 to-orange-500 opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-r from-orange-500 to-purple-600 opacity-60" />
-
-        {/* Floral Patterns */}
-        <div className="absolute top-12 left-12 text-4xl text-orange-400 opacity-70">🌺</div>
-        <div className="absolute bottom-12 right-12 text-4xl text-red-400 opacity-70">🌹</div>
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 left-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 15px rgba(255,69,0,0.6))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-6">
-          <h2
-            className="text-8xl font-bold uppercase tracking-wide"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 8px rgba(45,27,105,0.5)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-3xl font-medium italic"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              background: 'rgba(45,27,105,0.3)', // Subtle purple background
-              padding: '12px 24px',
-              borderRadius: '20px',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-purple-800/50 to-orange-800/50 backdrop-blur-sm">
-          <a
-            href={slide.websiteUrl}
-            className="text-xl font-semibold px-6 py-2 rounded-full bg-orange-600/80 backdrop-blur-sm"
-            style={{ color: footerColor }}
-          >
-            @{slide.footer}
-          </a>
-        </div>
-      </div>
-    );
-  },
-};
-
-// 7. Updated Eid al-Fitr Template - Aligned with New Aesthetic
-export const EidAlFitrTemplate: ImageTemplate = {
-  id: 'eid-al-fitr',
-  name: 'Eid al-Fitr Celebration',
-  coverImageUrl: '/images/festivals/eid-cover.png',
-  slides: [
-    {
-      title: 'EID MUBARAK',
-      description: 'Wishing you joy, peace, and prosperity',
-      imageUrl: '/images/festivals/eid-bg.jpg',
-      footer: 'bitrox.tech',
-      websiteUrl: 'https://bitrox.tech',
-    },
-  ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-
-    const titleColor = ensureContrast('#FFD700', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const footerColor = ensureContrast('#2E8B57', materialTheme.surface);
-
-    return (
-      <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #2E8B57 0%, #FFD700 100%)', // Green to gold
-          fontFamily: typography.fontFamily,
-        }}
-      >
-        {/* Decorative Border */}
-        <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-r from-green-600 to-yellow-500 opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-r from-yellow-500 to-green-600 opacity-60" />
-
-        {/* Crescent Moon and Star */}
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 text-6xl text-yellow-300 opacity-70">🌙</div>
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 15px rgba(255,215,0,0.6))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-6">
-          <h2
-            className="text-8xl font-bold uppercase tracking-wide"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 8px rgba(46,139,87,0.5)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-3xl font-medium italic"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              background: 'rgba(46,139,87,0.3)', // Subtle green background
-              padding: '12px 24px',
-              borderRadius: '20px',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-green-800/50 to-yellow-600/50 backdrop-blur-sm">
-          <a
-            href={slide.websiteUrl}
-            className="text-xl font-semibold px-6 py-2 rounded-full bg-green-600/80 backdrop-blur-sm"
-            style={{ color: footerColor }}
-          >
-            @{slide.footer}
-          </a>
-        </div>
-      </div>
-    );
-  },
-};
-
-// 8. New Ramadan Template
-export const RamadanTemplate: ImageTemplate = {
-  id: 'ramadan',
-  name: 'Ramadan Kareem',
-  coverImageUrl: '/images/festivals/ramadan-cover.png',
-  slides: [
-    {
-      title: 'RAMADAN KAREEM',
-      description: 'Wishing you a blessed month of fasting and reflection',
-      imageUrl: '/images/festivals/ramadan-bg.jpg',
-      footer: 'bitrox.tech',
-      websiteUrl: 'https://bitrox.tech',
-    },
-  ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-
-    const titleColor = ensureContrast('#FFD700', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const footerColor = ensureContrast('#4682B4', materialTheme.surface);
-
-    return (
-      <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #4682B4 0%, #FFD700 100%)', // Blue to gold
-          fontFamily: typography.fontFamily,
-        }}
-      >
-        {/* Decorative Border */}
-        <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-r from-blue-600 to-yellow-500 opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-r from-yellow-500 to-blue-600 opacity-60" />
-
-        {/* Crescent Moon and Lantern */}
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 text-6xl text-yellow-300 opacity-70">🌙</div>
-        <div className="absolute top-12 left-12 w-16 h-24 bg-yellow-500 rounded-t-full rounded-b-md opacity-70 border-2 border-blue-600" />
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 15px rgba(255,215,0,0.6))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-6">
-          <h2
-            className="text-8xl font-bold uppercase tracking-wide"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 8px rgba(70,130,180,0.5)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-3xl font-medium italic"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              background: 'rgba(70,130,180,0.3)', // Subtle blue background
-              padding: '12px 24px',
-              borderRadius: '20px',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-blue-800/50 to-yellow-600/50 backdrop-blur-sm">
-          <a
-            href={slide.websiteUrl}
-            className="text-xl font-semibold px-6 py-2 rounded-full bg-blue-600/80 backdrop-blur-sm"
-            style={{ color: footerColor }}
-          >
-            @{slide.footer}
-          </a>
-        </div>
-      </div>
-    );
-  },
-};
-
-// 9. New Hanukkah Template
-export const HanukkahTemplate: ImageTemplate = {
-  id: 'hanukkah',
-  name: 'Hanukkah Celebration',
-  coverImageUrl: '/images/festivals/hanukkah-cover.png',
-  slides: [
-    {
-      title: 'HAPPY HANUKKAH',
-      description: 'Wishing you light, love, and miracles',
-      imageUrl: '/images/festivals/hanukkah-bg.jpg',
-      footer: 'bitrox.tech',
-      websiteUrl: 'https://bitrox.tech',
-    },
-  ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-
-    const titleColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFD700', materialTheme.background);
-    const footerColor = ensureContrast('#1E90FF', materialTheme.surface);
-
-    return (
-      <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #1E90FF 0%, #FFFFFF 100%)', // Blue to white
-          fontFamily: typography.fontFamily,
-        }}
-      >
-        {/* Decorative Border */}
-        <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-r from-blue-600 to-white opacity-60" />
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-r from-white to-blue-600 opacity-60" />
-
-        {/* Menorah and Stars */}
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 text-6xl text-yellow-300 opacity-70">🕎</div>
-        <div className="absolute top-12 left-12 text-4xl text-yellow-300 opacity-70">✡️</div>
-        <div className="absolute top-12 right-12 text-4xl text-yellow-300 opacity-70">✡️</div>
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 15px rgba(255,215,0,0.6))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-6">
-          <h2
-            className="text-8xl font-bold uppercase tracking-wide"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 8px rgba(30,144,255,0.5)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-3xl font-medium italic"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              background: 'rgba(30,144,255,0.3)', // Subtle blue background
-              padding: '12px 24px',
-              borderRadius: '20px',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-blue-800/50 to-white/50 backdrop-blur-sm">
-          <a
-            href={slide.websiteUrl}
-            className="text-xl font-semibold px-6 py-2 rounded-full bg-blue-600/80 backdrop-blur-sm"
-            style={{ color: footerColor }}
-          >
-            @{slide.footer}
-          </a>
-        </div>
-      </div>
-    );
-  },
-};
-
-export const MahaShivratriTemplate: ImageTemplate = {
-  id: 'maha-shivratri-divine',
-  name: 'Maha Shivratri',
-  coverImageUrl: '/images/festivals/shivratri-cover.png',
-  slides: [
-    {
-      title: 'MAHA SHIVRATRI',
-      description: 'Discover your hidden potential and inner strength',
-      imageUrl: '/images/festivals/shivratri-bg.jpg',
-      footer: 'bitrox.tech',
-      websiteUrl: 'https://bitrox.tech',
-    },
-  ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-    
-    const titleColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const descriptionColor = ensureContrast('#87CEEB', materialTheme.background);
-    const footerColor = ensureContrast('#4169E1', materialTheme.surface);
-
-    return (
-      <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #191970 0%, #483D8B 50%, #6A5ACD 100%)', // Deep blue to slate blue
-          fontFamily: typography.fontFamily,
-        }}
-      >
-        {/* Cosmic Elements */}
-        <div className="absolute inset-0">
-          <div className="absolute top-20 right-20 w-4 h-4 bg-white rounded-full opacity-80 animate-pulse" />
-          <div className="absolute top-40 left-32 w-2 h-2 bg-cyan-300 rounded-full opacity-60 animate-pulse" />
-          <div className="absolute bottom-32 right-40 w-3 h-3 bg-white rounded-full opacity-70 animate-pulse" />
-        </div>
-
-        {/* Trident Symbol */}
-        <div className="absolute top-12 left-1/2 transform -translate-x-1/2">
-          <div className="w-1 h-16 bg-gradient-to-b from-cyan-300 to-blue-400 mx-auto" />
-          <div className="flex justify-center -mt-12">
-            <div className="w-8 h-8 border-t-2 border-l-2 border-cyan-300 transform rotate-45" />
-            <div className="w-8 h-8 border-t-2 border-r-2 border-cyan-300 transform -rotate-45" />
-          </div>
-        </div>
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 15px rgba(135,206,235,0.6))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-8">
-          <h2
-            className="text-7xl font-bold uppercase tracking-wide"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 12px rgba(65,105,225,0.5)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-2xl font-medium leading-relaxed max-w-2xl"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 6px rgba(0,0,0,0.4)',
-              background: 'rgba(72,61,139,0.4)',
-              padding: '16px 28px',
-              borderRadius: '25px',
-              border: '1px solid rgba(135,206,235,0.3)',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-indigo-900/40 to-purple-900/40 backdrop-blur-sm">
-          <a
-            href={slide.websiteUrl}
-            className="text-lg font-semibold px-6 py-3 rounded-full bg-blue-600/80 backdrop-blur-sm border border-cyan-400/30"
-            style={{ color: '#FFFFFF' }}
-          >
-            @{slide.footer}
-          </a>
-        </div>
-      </div>
-    );
-  },
-};
-
-// 7. Ram Navami Template - Inspired by the orange devotional theme
-export const RamNavamiTemplate: ImageTemplate = {
-  id: 'ram-navami-devotion',
-  name: 'Ram Navami',
-  coverImageUrl: '/images/festivals/ramnavami-cover.png',
-  slides: [
-    {
-      title: 'JAI SHRI RAM',
-      description: 'May Lord Rama bless you with strength and righteousness',
-      imageUrl: '/images/festivals/ramnavami-bg.jpg',
-      footer: 'bitrox.tech',
-      websiteUrl: 'https://bitrox.tech',
-    },
-  ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-    
-    const titleColor = ensureContrast('#FFD700', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const footerColor = ensureContrast('#8B0000', materialTheme.surface);
-
-    return (
-      <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #FF4500 0%, #FF6347 50%, #CD853F 100%)', // Orange red to tomato to tan
-          fontFamily: typography.fontFamily,
-        }}
-      >
-        {/* Decorative Mandala Pattern */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 border-4 border-yellow-400 rounded-full" />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 border-2 border-yellow-300 rounded-full" />
-        </div>
-
-        {/* Om Symbol */}
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2">
-          <div 
-            className="text-4xl font-bold text-yellow-300 opacity-80"
-            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
-          >
-            ॐ
-          </div>
-        </div>
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 left-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 12px rgba(255,215,0,0.7))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-8">
-          <h2
-            className="text-8xl font-bold uppercase tracking-wider"
-            style={{
-              color: titleColor,
-              textShadow: '0 6px 12px rgba(139,0,0,0.6)',
-              fontWeight: 900,
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-2xl font-medium leading-relaxed max-w-3xl"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 6px rgba(0,0,0,0.5)',
-              background: 'rgba(139,0,0,0.3)',
-              padding: '16px 28px',
-              borderRadius: '25px',
-              border: '2px solid rgba(255,215,0,0.4)',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-red-900/40 to-orange-900/40 backdrop-blur-sm">
-          <a
-            href={slide.websiteUrl}
-            className="text-lg font-semibold px-6 py-3 rounded-full bg-red-700/80 backdrop-blur-sm border border-yellow-400/40"
-            style={{ color: '#FFD700' }}
-          >
-            @{slide.footer}
-          </a>
-        </div>
-      </div>
-    );
-  },
-};
-
-// 8. Ganesh Chaturthi Template - Elegant purple and gold
-export const GaneshChaturthiTemplate: ImageTemplate = {
-  id: 'ganesh-chaturthi-elegant',
-  name: 'Ganesh Chaturthi',
-  coverImageUrl: '/images/festivals/ganesh-cover.png',
-  slides: [
-    {
-      title: 'GANPATI BAPPA MORYA',
-      description: 'May Lord Ganesha remove all obstacles from your path',
-      imageUrl: '/images/festivals/ganesh-bg.jpg',
-      footer: 'bitrox.tech',
-      websiteUrl: 'https://bitrox.tech',
-    },
-  ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-    
-    const titleColor = ensureContrast('#FFD700', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const footerColor = ensureContrast('#800080', materialTheme.surface);
-
-    return (
-      <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #4B0082 0%, #8A2BE2 50%, #DA70D6 100%)', // Indigo to blue violet to orchid
-          fontFamily: typography.fontFamily,
-        }}
-      >
-        {/* Lotus Petals */}
-        <div className="absolute inset-0 opacity-30">
-          {[...Array(8)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-16 h-32 bg-gradient-to-t from-pink-400 to-transparent rounded-full"
-              style={{
-                left: '50%',
-                top: '50%',
-                transformOrigin: '50% 100%',
-                transform: `translate(-50%, -50%) rotate(${i * 45}deg)`,
-              }}
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${accentColor})` }}
             />
-          ))}
-        </div>
+          )}
 
-        {/* Modak Elements */}
-        <div className="absolute top-20 left-20 w-8 h-8 bg-yellow-400 transform rotate-45 opacity-70" />
-        <div className="absolute top-20 right-20 w-8 h-8 bg-yellow-400 transform rotate-45 opacity-70" />
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 15px rgba(255,215,0,0.8))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-6 text-center space-y-6">
+          {/* Title */}
           <h2
-            className="text-6xl font-bold uppercase tracking-wide leading-tight"
-            style={{
-              color: titleColor,
-              textShadow: '0 4px 10px rgba(128,0,128,0.6)',
-            }}
+            className="text-8xl font-black uppercase mb-6 tracking-wide"
+            style={{ color: ensureContrast(textColor, bgColor), textShadow: `3px 3px 0px ${primaryColor}` }}
           >
             {slide.title}
           </h2>
-          
+
+          {/* Description */}
           <p
-            className="text-2xl font-medium leading-relaxed max-w-2xl"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 6px rgba(0,0,0,0.4)',
-              background: 'rgba(128,0,128,0.4)',
-              padding: '16px 28px',
-              borderRadius: '30px',
-              border: '2px solid rgba(255,215,0,0.3)',
-            }}
+            className="text-4xl font-semibold max-w-3xl leading-relaxed"
+            style={{ color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor) }}
           >
             {slide.description}
           </p>
+
+          {/* Gulal/Color Hand Icon */}
+          <span className="text-9xl mt-12 mb-16" style={{ color: chroma('#FFC107').hex() }}>🖐️</span>
         </div>
 
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-purple-900/50 to-pink-900/50 backdrop-blur-sm">
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.2).css(),
+            borderTop: `2px solid ${chroma(secondaryColor).alpha(0.5).css()}`,
+          }}
+        >
           <a
             href={slide.websiteUrl}
-            className="text-lg font-semibold px-6 py-3 rounded-full bg-purple-700/80 backdrop-blur-sm border border-gold/40"
-            style={{ color: '#FFD700' }}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(textColor, chroma(primaryColor).alpha(0.2).hex()) }}
           >
             @{slide.footer}
           </a>
@@ -1134,93 +488,313 @@ export const GaneshChaturthiTemplate: ImageTemplate = {
   },
 };
 
-// 9. Eid Mubarak Template - Elegant green and gold
-export const EidTemplate: ImageTemplate = {
-  id: 'eid-mubarak-crescent',
-  name: 'Eid Mubarak',
-  coverImageUrl: '/images/festivals/eid-cover.png',
+// 5. Dussehra: Triumphant Arch
+export const DussehraTemplate: ImageTemplate = {
+  id: 'dussehra-triumphant-arch',
+  name: 'Dussehra - Triumphant Arch',
+  coverImageUrl: '/images/festival-covers/dussehra-cover.png',
   slides: [
     {
-      title: 'EID MUBARAK',
-      description: 'May this blessed day bring peace and happiness',
-      imageUrl: '/images/festivals/eid-bg.jpg',
-      footer: 'bitrox.tech',
+      title: 'Happy Dussehra',
+      description: 'Celebrate the victory of good over evil!',
+      imageUrl: '/images/festival-backgrounds/dussehra-bg.jpg', // Example: abstract fire/smoke or traditional arch
+      footer: 'Ludhiana Celebrates',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-    
-    const titleColor = ensureContrast('#FFD700', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const footerColor = ensureContrast('#228B22', materialTheme.surface);
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#B71C1C'; // Dark Red (for valor)
+    const secondaryColor = '#FF9800'; // Amber (for energy/fire)
+    const accentColor = '#FFD700'; // Gold (for triumph)
+    const bgColor = '#1A0A0A'; // Very Dark Red/Brown
+    const textColor = '#FFFFFF'; // White
 
     return (
       <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-end bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
         style={{
-          background: 'linear-gradient(135deg, #006400 0%, #228B22 50%, #32CD32 100%)', // Dark green to forest green to lime green
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
           fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
         }}
       >
-        {/* Islamic Pattern */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-1/4 left-1/4 w-32 h-32 border-4 border-gold rotate-45" />
-          <div className="absolute top-1/4 right-1/4 w-32 h-32 border-4 border-gold rotate-45" />
-          <div className="absolute bottom-1/4 left-1/4 w-32 h-32 border-4 border-gold rotate-45" />
-          <div className="absolute bottom-1/4 right-1/4 w-32 h-32 border-4 border-gold rotate-45" />
+        {/* Dynamic Arches / Geometric Overlays */}
+        <div className="absolute inset-0 flex items-end justify-center">
+          <div className="w-full h-1/2 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+        </div>
+        <div
+          className="absolute bottom-0 w-full h-3/4"
+          style={{
+            background: `linear-gradient(to right, ${chroma(primaryColor).alpha(0.5).css()} 0%, transparent 20%, transparent 80%, ${chroma(primaryColor).alpha(0.5).css()} 100%)`,
+            maskImage: `radial-gradient(ellipse at center, transparent 0%, transparent 60%, black 100%)`,
+            maskMode: 'alpha',
+            opacity: 0.7,
+            transform: 'scaleY(1.2) translateY(20%)',
+          }}
+        />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 transform rotate-45" style={{ backgroundColor: secondaryColor, opacity: 0.2, borderRadius: graphicStyle.borderRadius }} />
+        <div className="absolute top-0 right-0 w-80 h-80 rounded-full blur-2xl opacity-30" style={{ backgroundColor: accentColor }} />
+
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col p-16 pt-32 text-center items-center">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="absolute top-16 right-16 w-40 h-20 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${accentColor})` }}
+            />
+          )}
+
+          {/* Main Title & Description */}
+          <h2
+            className="text-8xl font-black uppercase mb-6 tracking-wide"
+            style={{ color: ensureContrast(textColor, bgColor), textShadow: `0 0 15px ${accentColor}, 0 0 25px ${primaryColor}` }}
+          >
+            {slide.title}
+          </h2>
+          <p
+            className="text-3xl font-normal max-w-3xl leading-relaxed mb-12"
+            style={{ color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor) }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Bow and Arrow Icon */}
+          <span className="text-9xl mt-12 mb-16" style={{ color: accentColor }}>🏹</span>
         </div>
 
-        {/* Crescent and Star */}
-        <div className="absolute top-16 left-1/2 transform -translate-x-1/2">
-          <div className="relative">
-            <div className="w-12 h-12 border-4 border-yellow-300 rounded-full border-r-transparent transform rotate-45" />
-            <div className="absolute -top-1 -right-2 text-yellow-300 text-sm">★</div>
+        {/* Footer at the bottom */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.4).css(),
+            borderTop: `2px solid ${chroma(secondaryColor).alpha(0.6).css()}`,
+          }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(textColor, chroma(primaryColor).alpha(0.4).hex()) }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// 6. Raksha Bandhan: Threaded Affection
+export const RakshaBandhanTemplate: ImageTemplate = {
+  id: 'raksha-bandhan-threaded-affection',
+  name: 'Raksha Bandhan - Threaded Affection',
+  coverImageUrl: '/images/festival-covers/rakhi-cover.png',
+  slides: [
+    {
+      title: 'Happy Raksha Bandhan',
+      description: 'Celebrating the unbreakable bond of siblings',
+      imageUrl: '/images/festival-backgrounds/rakhi-bg.jpg', // Example: soft focus background with traditional elements
+      footer: 'Ludhiana Celebrates',
+      websiteUrl: 'https://bitrox.tech',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#E91E63'; // Pink (for affection)
+    const secondaryColor = '#81C784'; // Light Green (for harmony)
+    const accentColor = '#FFC107'; // Amber (for warmth)
+    const bgColor = '#FFF8E1'; // Very Light Yellow/Cream
+    const textColor = '#3E2723'; // Dark Brown
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+          fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* Soft, swirling patterns reminiscent of threads */}
+        <div className="absolute inset-0 opacity-50" style={{
+            background: `radial-gradient(circle at top left, ${chroma(primaryColor).alpha(0.2).css()}, transparent 50%),
+                         radial-gradient(circle at bottom right, ${chroma(secondaryColor).alpha(0.2).css()}, transparent 50%)`
+        }} />
+        <div className="absolute inset-0" style={{ backgroundColor: chroma(bgColor).alpha(0.3).css() }} />
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${accentColor})` }}
+            />
+          )}
+
+          {/* Title */}
+          <h2
+            className="text-7xl font-bold uppercase mb-6 tracking-wide"
+            style={{ color: ensureContrast(textColor, bgColor) }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-3xl font-light max-w-3xl leading-relaxed mb-12"
+            style={{ color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor) }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Rakhi/Bracelet Icon */}
+          <span className="text-9xl mt-12 mb-16" style={{ color: primaryColor }}>🎗️</span>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.1).css(),
+            borderTop: `1px solid ${chroma(secondaryColor).alpha(0.3).css()}`,
+          }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xl font-medium tracking-wider"
+            style={{ color: ensureContrast(textColor, chroma(primaryColor).alpha(0.1).hex()) }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+// 7. Karwa Chauth: Lunar Grace
+export const KarwaChauthTemplate: ImageTemplate = {
+  id: 'karwa-chauth-lunar-grace',
+  name: 'Karwa Chauth - Lunar Grace',
+  coverImageUrl: '/images/festival-covers/karwa-chauth-cover.png',
+  slides: [
+    {
+      title: 'Happy Karwa Chauth',
+      description: 'Fasting with devotion for a blessed bond',
+      imageUrl: '/images/festival-backgrounds/moon-bg.jpg', // Example: subtle night sky/moon background
+      footer: 'Ludhiana Celebrates',
+      websiteUrl: 'https://bitrox.tech',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#880E4F'; // Deep Pink/Maroon
+    const secondaryColor = '#4A148C'; // Deep Purple
+    const accentColor = '#FFD700'; // Gold (for moon/stars)
+    const bgColor = '#0F0F2A'; // Very Dark Blue
+    const textColor = '#FFFAF0'; // Floral White
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+          fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* Celestial elements */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80" />
+        <div className="absolute top-1/4 left-1/4 w-60 h-60 rounded-full blur-3xl opacity-50" style={{ backgroundColor: accentColor }} />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-40" style={{ backgroundColor: primaryColor }} />
+
+        {/* Traditional Patterns (subtle) */}
+        <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: `url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="none" stroke="${chroma(primaryColor).alpha(0.5).hex()}" stroke-width="2"/><path d="M50 10 L60 20 L50 30 L40 20 Z" fill="${chroma(secondaryColor).alpha(0.5).hex()}"/></svg>')`,
+            backgroundSize: '200px 200px',
+            mixBlendMode: 'overlay',
+            opacity: 0.1
+        }}/>
+
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${accentColor})` }}
+            />
+          )}
+
+          {/* Title */}
+          <h2
+            className="text-7xl font-bold uppercase mb-6 tracking-wide"
+            style={{ color: ensureContrast(textColor, bgColor), textShadow: `0 0 15px ${accentColor}, 0 0 25px ${primaryColor}` }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-3xl font-light max-w-3xl leading-relaxed mb-12"
+            style={{ color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor) }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Moon and Sieve Icons */}
+          <div className="flex space-x-8 text-7xl mt-12 mb-16">
+            <span style={{ color: accentColor }}>🌕</span>
+            <span style={{ color: primaryColor }}>🧺</span> {/* Sieve emoji, if available, otherwise just use a subtle pattern */}
           </div>
         </div>
 
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 left-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 12px rgba(255,215,0,0.7))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-8">
-          <h2
-            className="text-8xl font-bold uppercase tracking-wider"
-            style={{
-              color: titleColor,
-              textShadow: '0 6px 12px rgba(34,139,34,0.6)',
-            }}
-          >
-            {slide.title}
-          </h2>
-          
-          <p
-            className="text-2xl font-medium leading-relaxed max-w-2xl"
-            style={{
-              color: descriptionColor,
-              textShadow: '0 2px 6px rgba(0,0,0,0.5)',
-              background: 'rgba(34,139,34,0.4)',
-              padding: '16px 28px',
-              borderRadius: '25px',
-              border: '2px solid rgba(255,215,0,0.4)',
-            }}
-          >
-            {slide.description}
-          </p>
-        </div>
-
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-green-900/50 to-emerald-900/50 backdrop-blur-sm">
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.3).css(),
+            borderTop: `2px solid ${chroma(secondaryColor).alpha(0.5).css()}`,
+          }}
+        >
           <a
             href={slide.websiteUrl}
-            className="text-lg font-semibold px-6 py-3 rounded-full bg-green-700/80 backdrop-blur-sm border border-yellow-400/40"
-            style={{ color: '#FFD700' }}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xl font-medium tracking-wider"
+            style={{ color: ensureContrast(textColor, chroma(primaryColor).alpha(0.3).hex()) }}
           >
             @{slide.footer}
           </a>
@@ -1230,103 +804,672 @@ export const EidTemplate: ImageTemplate = {
   },
 };
 
-// 10. Birthday Celebration Template - Modern and vibrant
-export const BirthdayTemplate: ImageTemplate = {
-  id: 'birthday-celebration',
-  name: 'Birthday Celebration',
-  coverImageUrl: '/images/celebrations/birthday-cover.png',
+// 8. Punjabi Spirit (Broader Cultural Theme)
+export const PunjabiSpiritTemplate: ImageTemplate = {
+  id: 'punjabi-spirit',
+  name: 'Punjabi Spirit - Cultural',
+  coverImageUrl: '/images/festival-covers/punjabi-cover.png',
   slides: [
     {
-      title: 'HAPPY BIRTHDAY',
-      description: 'Celebrating another year of amazing memories',
-      imageUrl: '/images/celebrations/birthday-bg.jpg',
-      footer: 'bitrox.tech',
+      title: 'Colours of Punjab',
+      description: 'Celebrating the vibrant culture and rich heritage of Punjab',
+      imageUrl: '/images/festival-backgrounds/punjabi-bg.jpg', // Example: traditional Punjabi pattern or folk art
+      footer: 'Ludhiana Celebrates',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, ensureContrast, materialTheme } = colors;
-    
-    const titleColor = ensureContrast('#FFFFFF', materialTheme.background);
-    const descriptionColor = ensureContrast('#FFD700', materialTheme.background);
-    const footerColor = ensureContrast('#FF1493', materialTheme.surface);
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#FFC107'; // Amber (Gold)
+    const secondaryColor = '#8BC34A'; // Light Green
+    const accentColor = '#673AB7'; // Deep Purple (for intricate details)
+    const bgColor = '#F5F5DC'; // Khaki / Light Beige
+    const textColor = '#3E2723'; // Dark Brown
 
     return (
       <div
-        className="relative w-[1080px] h-[1080px] flex flex-col justify-center overflow-hidden"
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
         style={{
-          background: 'linear-gradient(135deg, #FF1493 0%, #FF69B4 25%, #FFD700 50%, #FF4500 75%, #8A2BE2 100%)',
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
           fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
         }}
       >
-        {/* Confetti Effect */}
-        <div className="absolute inset-0">
-          {[...Array(15)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-2 h-2 opacity-80 animate-pulse"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                backgroundColor: ['#FFD700', '#FF69B4', '#00CED1', '#32CD32', '#FF4500'][Math.floor(Math.random() * 5)],
-                transform: `rotate(${Math.random() * 360}deg)`,
-              }}
+        {/* Traditional Phulkari-like patterns or abstract geometric shapes */}
+        <div className="absolute inset-0 opacity-40" style={{
+            backgroundImage: `url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="20" height="20" fill="${chroma(primaryColor).alpha(0.5).hex()}"/><rect x="20" y="20" width="20" height="20" fill="${chroma(secondaryColor).alpha(0.5).hex()}"/><rect x="40" y="40" width="20" height="20" fill="${chroma(accentColor).alpha(0.5).hex()}"/></svg>')`,
+            backgroundSize: '150px 150px',
+            mixBlendMode: 'multiply',
+            opacity: 0.2
+        }}/>
+        <div className="absolute inset-0" style={{ backgroundColor: chroma(bgColor).alpha(0.3).css() }} />
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${primaryColor})` }}
             />
-          ))}
-        </div>
+          )}
 
-        {/* Balloon Elements */}
-        <div className="absolute top-12 left-12">
-          <div className="w-8 h-12 bg-red-400 rounded-full opacity-80" />
-          <div className="w-1 h-8 bg-gray-600 mx-auto" />
-        </div>
-        <div className="absolute top-16 left-24">
-          <div className="w-8 h-12 bg-blue-400 rounded-full opacity-80" />
-          <div className="w-1 h-8 bg-gray-600 mx-auto" />
-        </div>
-
-        {addLogo && (
-          <img
-            src={defaultLogoUrl}
-            alt="Logo"
-            className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.8))',
-            }}
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 text-center space-y-8">
+          {/* Title */}
           <h2
-            className="text-8xl font-bold uppercase tracking-wider"
+            className="text-7xl font-extrabold uppercase mb-6 tracking-wide"
+            style={{ color: ensureContrast(textColor, bgColor), textShadow: `2px 2px 0px ${primaryColor}` }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-3xl font-medium max-w-3xl leading-relaxed mb-12"
+            style={{ color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor) }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Cultural Icons (Bhangra/Gidda dancers) */}
+          <div className="flex space-x-12 text-8xl mt-12 mb-16">
+            <span style={{ color: primaryColor }}>🕺</span>
+            <span style={{ color: secondaryColor }}>💃</span>
+          </div>
+        </div>
+
+        {/* Footer with a traditional pattern line */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.1).css(),
+            borderTop: `2px solid ${chroma(secondaryColor).alpha(0.4).css()}`,
+          }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(textColor, chroma(primaryColor).alpha(0.1).hex()) }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+export const BusinessEventTemplate: ImageTemplate = {
+  id: 'business-event-announcement',
+  name: 'Business Event Announcement',
+  coverImageUrl: '/images/business-covers/event-announcement-cover.png',
+  slides: [
+    {
+      title: 'Annual Business Summit',
+      description: 'Join us for a day of networking and insights!',
+      imageUrl: '/images/business-backgrounds/event-bg.jpg', // Abstract geometric background
+      footer: 'Your Business Name',
+      websiteUrl: 'https://yourbusiness.com',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#FFD700'; // Gold
+    const secondaryColor = '#1E3A8A'; // Deep Navy
+    const accentColor = '#F59E0B'; // Amber
+    const bgColor = '#1E1E2F'; // Dark Slate
+    const textColor = '#FFFFFF'; // White
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col items-center justify-center bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+          fontFamily: 'Montserrat, sans-serif',
+          fontWeight: 700,
+          backgroundColor: bgColor,
+          boxShadow: `0 0 40px ${chroma(primaryColor).alpha(0.7).css()}`,
+        }}
+      >
+        {/* Subtle overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+        <div className="absolute inset-0" style={{ backgroundColor: chroma(bgColor).alpha(0.4).css() }} />
+
+        {/* Abstract Light Bursts */}
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-50" style={{ backgroundColor: primaryColor }} />
+        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full blur-3xl opacity-40" style={{ backgroundColor: accentColor }} />
+
+        {/* Central Content */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: 'brightness(1.5)', boxShadow: `0 0 20px ${chroma(primaryColor).alpha(0.8).css()}` }}
+            />
+          )}
+
+          {/* Title */}
+          <h2
+            className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
             style={{
-              color: titleColor,
-              textShadow: '0 6px 12px rgba(255,20,147,0.6)',
+              color: ensureContrast(textColor, bgColor),
+              textShadow: `0 0 20px ${chroma(accentColor).alpha(0.8).css()}`,
+              fontFamily: 'Montserrat, sans-serif',
             }}
           >
             {slide.title}
           </h2>
-          
+
+          {/* Description */}
           <p
-            className="text-2xl font-medium leading-relaxed max-w-2xl"
+            className="text-4xl font-light max-w-3xl mb-12"
             style={{
-              color: descriptionColor,
-              textShadow: '0 2px 6px rgba(0,0,0,0.5)',
-              background: 'rgba(255,20,147,0.3)',
-              padding: '16px 28px',
-              borderRadius: '25px',
-              border: '2px solid rgba(255,215,0,0.5)',
+              color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor),
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
             }}
           >
             {slide.description}
           </p>
+
+          {/* Decorative Line */}
+          <div className="flex items-center space-x-4 mb-12">
+            <div className="w-20 h-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+            <div className="w-20 h-1 rounded-full" style={{ backgroundColor: primaryColor }} />
+          </div>
         </div>
 
-        <div className="relative z-10 flex justify-center p-6 bg-gradient-to-r from-pink-900/50 to-purple-900/50 backdrop-blur-sm">
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-right"
+          style={{
+            backgroundColor: chroma(bgColor).alpha(0.6).css(),
+            borderTop: `1px solid ${chroma(primaryColor).alpha(0.3).css()}`,
+          }}
+        >
           <a
             href={slide.websiteUrl}
-            className="text-lg font-semibold px-6 py-3 rounded-full bg-pink-600/80 backdrop-blur-sm border border-yellow-400/40"
-            style={{ color: '#FFFFFF' }}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-medium tracking-wider"
+            style={{
+              color: ensureContrast(accentColor, bgColor),
+              fontFamily: 'Poppins, sans-serif',
+            }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+export const ProductLaunchTemplate: ImageTemplate = {
+  id: 'product-launch-promotion',
+  name: 'Product Launch Promotion',
+  coverImageUrl: '/images/business-covers/product-launch-cover.png',
+  slides: [
+    {
+      title: 'New Product Launch',
+      description: 'Discover our latest innovation!',
+      imageUrl: '/images/business-backgrounds/product-bg.jpg',
+      footer: 'Your Business Name',
+      websiteUrl: 'https://yourbusiness.com',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#FF4081'; // Pink
+    const secondaryColor = '#64B5F6'; // Blue
+    const accentColor = '#FFD700'; // Yellow
+    const bgColor = '#FFFFFF'; // White
+    const textColor = '#212121'; // Dark Grey
+
+    const splashColors = ['#F44336', '#E91E63', '#2196F3', '#FFEB3B'];
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          fontFamily: 'Poppins, sans-serif',
+          fontWeight: 700,
+          backgroundColor: bgColor,
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+        }}
+      >
+        {/* Abstract Geometric Shapes */}
+        {splashColors.map((color, index) => (
+          <div
+            key={index}
+            className="absolute rounded-full blur-2xl opacity-60 animate-pulse"
+            style={{
+              backgroundColor: color,
+              width: `${150 + index * 30}px`,
+              height: `${150 + index * 30}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              transform: `translate(-50%, -50%)`,
+              animationDelay: `${Math.random() * 1.5}s`,
+              zIndex: 0,
+            }}
+          />
+        ))}
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${accentColor})` }}
+            />
+          )}
+
+          {/* Title */}
+          <h2
+            className="text-8xl font-bold uppercase mb-6 tracking-wide"
+            style={{
+              color: ensureContrast(textColor, bgColor),
+              textShadow: `3px 3px 0px ${primaryColor}`,
+              fontFamily: 'Poppins, sans-serif',
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-4xl font-medium max-w-3xl leading-relaxed"
+            style={{
+              color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor),
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
+            }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Call to Action Button */}
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-12 px-8 py-4 rounded-full text-2xl font-semibold"
+            style={{
+              backgroundColor: primaryColor,
+              color: ensureContrast(bgColor, primaryColor),
+            }}
+          >
+            Learn More
+          </a>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.2).css(),
+            borderTop: `2px solid ${chroma(secondaryColor).alpha(0.5).css()}`,
+          }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(textColor, chroma(primaryColor).alpha(0.2).hex()) }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+export const WebinarInviteTemplate: ImageTemplate = {
+  id: 'webinar-invite',
+  name: 'Webinar Invitation',
+  coverImageUrl: '/images/business-covers/webinar-cover.png',
+  slides: [
+    {
+      title: 'Exclusive Webinar',
+      description: 'Join us to learn the latest industry trends!',
+      imageUrl: '/images/business-backgrounds/webinar-bg.jpg',
+      footer: 'Your Business Name',
+      websiteUrl: 'https://yourbusiness.com',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#B71C1C'; // Dark Red
+    const secondaryColor = '#FFD700'; // Gold
+    const accentColor = '#FFFFFF'; // White
+    const bgColor = '#1A0A0A'; // Very Dark Red/Brown
+    const textColor = '#FFFFFF'; // White
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-end bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+          fontFamily: 'Roboto, sans-serif',
+          fontWeight: 700,
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-transparent opacity-70" />
+
+        {/* Abstract Elements */}
+        <div className="absolute top-0 right-0 w-80 h-80 rounded-full blur-2xl opacity-30" style={{ backgroundColor: secondaryColor }} />
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col p-16 pt-32 text-center items-center">
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="absolute top-16 right-16 w-40 h-20 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${secondaryColor})` }}
+            />
+          )}
+
+          {/* Title */}
+          <h2
+            className="text-8xl font-bold uppercase mb-6 tracking-wide"
+            style={{
+              color: ensureContrast(textColor, bgColor),
+              textShadow: `0 0 15px ${secondaryColor}`,
+              fontFamily: 'Roboto, sans-serif',
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+ argumentation <p
+            className="text-3xl font-normal max-w-3xl leading-relaxed mb-12"
+            style={{
+              color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor),
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+            }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Calendar Icon */}
+          <span className="text-9xl mt-12 mb-16" style={{ color: secondaryColor }}>📅</span>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.4).css(),
+            borderTop: `2px solid ${chroma(secondaryColor).alpha(0.6).css()}`,
+          }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(textColor, chroma(primaryColor).alpha(0.4).hex()) }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+export const SalesPromotionTemplate: ImageTemplate = {
+  id: 'sales-promotion',
+  name: 'Sales Promotion',
+  coverImageUrl: '/images/business-covers/sales-cover.png',
+  slides: [
+    {
+      title: 'Big Sale Event',
+      description: 'Up to 50% off on all products!',
+      imageUrl: '/images/business-backgrounds/sales-bg.jpg',
+      footer: 'Your Business Name',
+      websiteUrl: 'https://yourbusiness.com',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#FF1493'; // Deep Pink
+    const secondaryColor = '#FFD700'; // Yellow
+    const accentColor = '#FFFFFF'; // White
+    const bgColor = '#F5F5F5'; // Light Grey
+    const textColor = '#000000'; // Black
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          fontFamily: 'Montserrat, sans-serif',
+          fontWeight: 700,
+          backgroundColor: bgColor,
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+        }}
+      >
+        {/* Kite-like Background Shape */}
+        <div
+          className="absolute w-[600px] h-[600px] transform rotate-45"
+          style={{
+            backgroundColor: primaryColor,
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%) rotate(45deg)',
+            opacity: 0.8,
+          }}
+        />
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${secondaryColor})` }}
+            />
+          )}
+
+          {/* Title */}
+          <h2
+            className="text-8xl font-bold uppercase mb-6 tracking-wide"
+            style={{
+              color: ensureContrast(accentColor, primaryColor),
+              fontFamily: 'Montserrat, sans-serif',
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-4xl font-medium max-w-3xl leading-relaxed"
+            style={{
+              color: ensureContrast(chroma(textColor).alpha(0.8).hex(), primaryColor),
+              fontFamily: 'Montserrat, sans-serif',
+              fontWeight: 400,
+            }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Call to Action Button */}
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-12 px-8 py-4 rounded-full text-2xl font-semibold"
+            style={{
+              backgroundColor: secondaryColor,
+              color: ensureContrast(textColor, secondaryColor),
+            }}
+          >
+            Shop Now
+          </a>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.2).css(),
+            borderTop: `2px solid ${chroma(secondaryColor).alpha(0.5).css()}`,
+          }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(textColor, chroma(primaryColor).alpha(0.2).hex()) }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+export const NetworkingEventTemplate: ImageTemplate = {
+  id: 'networking-event',
+  name: 'Networking Event',
+  coverImageUrl: '/images/business-covers/networking-cover.png',
+  slides: [
+    {
+      title: 'Networking Night',
+      description: 'Connect with industry leaders!',
+      imageUrl: '/images/business-backgrounds/networking-bg.jpg',
+      footer: 'Your Business Name',
+      websiteUrl: 'https://yourbusiness.com',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#00FFFF'; // Cyan
+    const secondaryColor = '#FF00FF'; // Magenta
+    const accentColor = '#FFFFFF'; // White
+    const bgColor = '#1C2526'; // Dark Teal
+    const textColor = '#FFFFFF'; // White
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          fontFamily: 'Poppins, sans-serif',
+          fontWeight: 700,
+          backgroundColor: bgColor,
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+        }}
+      >
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-70" />
+
+        {/* Neon Glows */}
+        <div className="absolute top-1/4 left-1/4 w-60 h-60 rounded-full blur-3xl opacity-50" style={{ backgroundColor: primaryColor }} />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-40" style={{ backgroundColor: secondaryColor }} />
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: `drop-shadow(0 0 10px ${primaryColor})` }}
+            />
+          )}
+
+          {/* Title */}
+          <h2
+            className="text-8xl font-bold uppercase mb-6 tracking-wide"
+            style={{
+              color: primaryColor,
+              textShadow: `0 0 15px ${secondaryColor}`,
+              fontFamily: 'Poppins, sans-serif',
+            }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-4xl font-light max-w-3xl leading-relaxed mb-12"
+            style={{
+              color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor),
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
+            }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Handshake Icon */}
+          <span className="text-9xl mt-12 mb-16" style={{ color: accentColor }}>🤝</span>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{
+            backgroundColor: chroma(primaryColor).alpha(0.3).css(),
+            borderTop: `2px solid ${chroma(secondaryColor).alpha(0.5).css()}`,
+          }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(accentColor, chroma(primaryColor).alpha(0.3).hex()) }}
           >
             @{slide.footer}
           </a>
@@ -1337,24 +1480,26 @@ export const BirthdayTemplate: ImageTemplate = {
 };
 
 
-// Export all templates
 export const festivalTemplates: ImageTemplate[] = [
   DiwaliTemplate,
-  ChristmasTemplate,
+  // ChristmasTemplate,
   HoliTemplate,
-  LunarNewYearTemplate,
-  OktoberfestTemplate,
-  DiaDeLosMuertosTemplate,
-  EidAlFitrTemplate,
-  RamadanTemplate, // New
-  HanukkahTemplate, // New
-   DiwaliTemplate,
-  ChristmasTemplate,
-  HoliTemplate,
-  LunarNewYearTemplate,
-  MahaShivratriTemplate,
-  RamNavamiTemplate,
-  GaneshChaturthiTemplate,
-  EidTemplate,
-  BirthdayTemplate,
+  BaisakhiTemplate,
+  LohriTemplate,
+  DussehraTemplate,
+  RakshaBandhanTemplate,
+  KarwaChauthTemplate,
+  PunjabiSpiritTemplate,
+  BusinessEventTemplate,
+  ProductLaunchTemplate,
+  WebinarInviteTemplate,
+  SalesPromotionTemplate,
+  NetworkingEventTemplate,
+  // EidTemplate,
+  // LunarNewYearTemplate,
+  // GradientGlowTemplate,
+  // TypographicFocusTemplate,
+  // NaturesHarmonyTemplate,
+  // ModernAbstractTemplate,
+  // BoldStatementTemplate,
 ];

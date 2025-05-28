@@ -2,7 +2,7 @@ import { ApiError } from "./ApiError.js";
 import bcrypt from "bcrypt"
 import otpGenerator from "otp-generator";
 import jwt from "jsonwebtoken"
-
+import CryptoJS from "crypto-js";
 
 const convertToCron = (scheduleTime) => {
   const date = new Date(scheduleTime);
@@ -129,6 +129,17 @@ const getPagination = (query, total) => {
   };
 };
 
+
+const encryptToken = (token) => {
+ const ciphertext = CryptoJS.AES.encrypt(token, process.env.CRYPTO_SECRET_KEY).toString();
+  return ciphertext;
+}
+
+const decryptToken = (ciphertext) => {
+  const bytes = CryptoJS.AES.decrypt(ciphertext, process.env.CRYPTO_SECRET_KEY);
+  const originalText = bytes.toString(CryptoJS.enc.Utf8);
+  return originalText;
+}
 export { convertToCron, Hashed_Password, isEmail, generateAccessToken, 
   generateRefershToken, jwtVerify, jwtVerifyForRefreshToken, comparePasswordUsingBcrypt, 
-  generateOTP, getPagination, setSecureCookies, clearAuthCookies,   };
+  generateOTP, getPagination, setSecureCookies, clearAuthCookies, encryptToken, decryptToken,  };

@@ -16,7 +16,6 @@ interface UseSocialAuthProps {
   authLinkedIn: AuthFunction;
   authFacebook: AuthFunction;
   authInstagram: AuthFunction;
-  setAuthStatus: React.Dispatch<React.SetStateAction<AuthStatus>>;
   setIsAuthenticating: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -24,39 +23,8 @@ export const useSocialAuth = ({
   authLinkedIn,
   authFacebook,
   authInstagram,
-  setAuthStatus,
   setIsAuthenticating,
 }: UseSocialAuthProps) => {
- useEffect(() => {
-  const handleMessage = (event: MessageEvent) => {
-    console.log('Message received', event);
-
-    const allowedOrigins = ['http://localhost:5173', 'http://localhost:5000'];
-    if (!allowedOrigins.includes(event.origin)) {
-      console.warn('Blocked origin:', event.origin);
-      return;
-    }
-
-    const data = event.data;
-    if (!data || !data.platform) return;
-
-    if (data.platform === 'linkedin') {
-      if (data.success) {
-        console.log('LinkedIn auth success:', data);
-        setAuthStatus((prev) => ({ ...prev, linkedin: true }));
-        localStorage.setItem('linkedin_access_token', data.accessToken);
-        if (data.profileData) localStorage.setItem('linkedin_user_data', JSON.stringify(data.profileData));
-      } else {
-        console.error('LinkedIn auth failed:', data.error);
-      }
-      setIsAuthenticating(false);
-    }
-  };
-
-  window.addEventListener('message', handleMessage);
-  return () => window.removeEventListener('message', handleMessage);
-}, [setAuthStatus, setIsAuthenticating]);
-
 
   const initiateAuth = async (platform: keyof AuthStatus) => {
     try {

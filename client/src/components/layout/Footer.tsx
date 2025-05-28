@@ -40,7 +40,7 @@ const Footer: React.FC = () => {
                 <a href="/blog" className="text-gray-400 hover:text-white transition-colors duration-200">Blog</a>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">FAQ</a>
+                <a href="/faq" className="text-gray-400 hover:text-white transition-colors duration-200">FAQ</a>
               </li>
             </ul>
           </div>
@@ -69,13 +69,13 @@ const Footer: React.FC = () => {
             <span className="text-sm text-gray-400">© 2025 Bitrox SocialAI. All rights reserved.</span>
           </div>
           <div className="flex space-x-6">
-            <a href="#" className="text-sm text-secondary-400 hover:text-secondary-300 transition-colors duration-200">
+            <a href="/privacy-policy" className="text-sm text-secondary-400 hover:text-secondary-300 transition-colors duration-200">
               Privacy Policy
             </a>
-            <a href="#" className="text-sm text-secondary-400 hover:text-secondary-300 transition-colors duration-200">
+            <a href="/terms-service" className="text-sm text-secondary-400 hover:text-secondary-300 transition-colors duration-200">
               Terms of Service
             </a>
-            <a href="#" className="text-sm text-secondary-400 hover:text-secondary-300 transition-colors duration-200">
+            <a href="cookies-policy" className="text-sm text-secondary-400 hover:text-secondary-300 transition-colors duration-200">
               Cookie Policy
             </a>
           </div>

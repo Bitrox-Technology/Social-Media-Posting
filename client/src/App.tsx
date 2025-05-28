@@ -41,6 +41,11 @@ import SessionWarning from './components/providers/SessionWarning';
 import AuthProvider from './components/providers/AuthProvider';
 import ProtectedRoute from './components/providers/ProtectedRoute';
 import { FestivalTemplates } from './components/ui/festivalTemplates';
+import { ScheduledPosts } from './components/content/ScheduledPosts';
+import { FAQ } from './pages/FAQPage';
+import { PrivacyPolicy } from './pages/PrivacyPolicyPage';
+import { TermsOfService } from './pages/TermOfService';
+import { CookiePolicy } from './pages/CookiePolicy';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -108,7 +113,7 @@ function App() {
                           path="/dashboard"
                           element={<DashboardPage />}
                         />
-                        </Route>
+                      </Route>
                       <Route
                         path="/topic"
                         element={<TopicSelector />}
@@ -118,12 +123,22 @@ function App() {
                         element={selectedTopic ? <ContentIdeas /> : <Navigate to="/topic" />}
                       />
                       <Route
-                        path="/images"
-                        element={selectedIdea && contentType ? (<ImageGenerator contentType={contentType} />) : (<Navigate to="/ideas" />)} />
-                      <Route
-                        path="/post"
-                        element={<PostingPanel />}
+                        path="/faq"
+                        element={<FAQ />}
                       />
+                      <Route
+                        path="/privacy-policy"
+                        element={<PrivacyPolicy />}
+                      />
+                      <Route
+                        path="/terms-service"
+                        element={<TermsOfService />}
+                      />
+                      <Route
+                        path="/cookies-policy"
+                        element={<CookiePolicy />}
+                      />
+
                       <Route
                         path="/carousel"
                         element={
@@ -151,6 +166,10 @@ function App() {
                       <Route
                         path="/tmdoyouknow"
                         element={<DoYouKnowTemplateSelector />}
+                      />
+                      <Route
+                        path="/scheduled-posts"
+                        element={<ScheduledPosts />}
                       />
                       <Route
                         path="/post-analyzer"

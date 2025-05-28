@@ -264,12 +264,21 @@ const GetUserPostDetailById = async (req, res, next) => {
         next(error)
     }
 }
+
+const GetUserScheduledPosts = async (req, res, next) => {
+    try {
+        let user = await UserServices.getUserScheduledPosts(req.user)
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("USER_SCHEDULED_POST_SUCCESS")))
+    } catch (error) {
+        next(error)
+    }
+}
 const UserControllers = {
     Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus, GetUserPostDetailById,
     ForgetPassword, Logout, GetPendingTopics, GetUserAllPosts, SignupSigninByProvider,
     Login, SavePosts, PostContent, GetPostContent, SaveImageContent, 
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts,
-    GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile
+    GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile, GetUserScheduledPosts
 }
 
 export default UserControllers

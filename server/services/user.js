@@ -12,6 +12,7 @@ import SavePosts from "../models/savePosts.js";
 import { generateOTPForEmail, verifyEmailOTP } from "../utils/functions.js";
 import { uploadOnClodinary } from "../utils/cloudinary.js";
 import i18n from "../utils/i18n.js";
+import UserScheduledTask from "../models/userSchesuledTask.js";
 
 const signup = async (inputs) => {
     let user;
@@ -507,6 +508,10 @@ const updatePostTopics = async (postId, user, inputs) => {
 
 }
 
+const getUserScheduledPosts = async (user) => {
+    const scheduledPosts = await UserScheduledTask.find({ userId: user._id }).lean();
+    return scheduledPosts;
+}
 
 
 const UserServices = {
@@ -533,6 +538,7 @@ const UserServices = {
     getPendingTopics,
     updatePostTopics,
     getUserAllPosts,
-    getUserPostDetail
+    getUserPostDetail,
+    getUserScheduledPosts
 }
 export default UserServices;

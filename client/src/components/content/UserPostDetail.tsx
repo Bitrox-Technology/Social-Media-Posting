@@ -1,4 +1,3 @@
-// UserPostDetail.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -9,6 +8,7 @@ import {
   useLazyAuthFacebookQuery,
   useLazyAuthInstagramQuery,
   useLazyAuthLinkedInQuery,
+  useLazyGetSocialAuthQuery,
   useLazyGetUserPostDetailQuery,
   useLinkedInPostMutation,
 } from '../../store/api';
@@ -36,6 +36,9 @@ import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useSocialAuth } from '../providers/useSocialAuth';
+import { has } from 'lodash';
+
+type AuthFunction = (...args: any[]) => Promise<{ statusCode: number; data: { authUrl: string } }>;
 
 interface Image {
   url: string;
@@ -58,8 +61,14 @@ interface Post {
 
 interface Schedule {
   platform: string | null;
+  subPlatform: string | null; // For LinkedIn: 'profile' or 'page'
   dateTime: Date | null;
+  userDetails?: {
+    name: string;
+    profilePage: string;
+  };
 }
+
 
 export const UserPostDetail: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -70,19 +79,19 @@ export const UserPostDetail: React.FC = () => {
   const [authLinkedIn] = useLazyAuthLinkedInQuery();
   const [authInstagram] = useLazyAuthInstagramQuery();
   const [linkedInPost] = useLinkedInPostMutation();
+  const [getSocialAuth, { data: socialAuthData }] = useLazyGetSocialAuthQuery();
 
   const [isSocialOptionsOpen, setIsSocialOptionsOpen] = useState(false);
-  const [isScheduling, setIsScheduling] = useState(false);
-  const [schedule, setSchedule] = useState<Schedule>({ platform: null, dateTime: null });
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authStatus, setAuthStatus] = useState({
-    linkedin: !!localStorage.getItem('linkedin_access_token'),
-    facebook: !!localStorage.getItem('facebook_access_token'),
-    instagram: !!localStorage.getItem('instagram_access_token'),
-  });
+  const [schedule, setSchedule] = useState<Schedule>({ platform: null, subPlatform: null, dateTime: null });
+  const [isAuthenticating, setIsAuthenticating] = useState(false);;
+  const [showUserDetails, setShowUserDetails] = useState(false);
+  // State to store access token and profile page
+  const [platformTokens, setPlatformTokens] = useState<{
+    [key: string]: { accessToken: string; profilePage: string };
+  }>({});
 
   // Wrap RTK Query lazy triggers to match AuthFunction signature
-  const authLinkedInFn = async () => {
+  const authLinkedInFn: AuthFunction = async (_subPlatform: string) => {
     const result = await authLinkedIn().unwrap();
     return {
       statusCode: result.statusCode ?? 200,
@@ -110,12 +119,10 @@ export const UserPostDetail: React.FC = () => {
     };
   };
 
-  // Initialize the useSocialAuth hook
   const { initiateAuth } = useSocialAuth({
     authLinkedIn: authLinkedInFn,
     authFacebook: authFacebookFn,
     authInstagram: authInstagramFn,
-    setAuthStatus,
     setIsAuthenticating,
   });
 
@@ -130,7 +137,7 @@ export const UserPostDetail: React.FC = () => {
       buttonBg: 'bg-blue-600',
       buttonHover: 'hover:bg-blue-700',
       inputBg: 'bg-white',
-      inputBorder: 'border-bg-gray-300',
+      inputBorder: 'border-gray-300',
     },
     dark: {
       background: 'bg-gradient-to-br from-gray-900 to-gray-800',
@@ -150,59 +157,124 @@ export const UserPostDetail: React.FC = () => {
   useEffect(() => {
     if (postId) {
       getUserPostDetail({ postId });
+      getSocialAuth(); // Fetch social auth status on component mount
     }
-  }, [postId, getUserPostDetail]);
+  }, [postId, getUserPostDetail, getSocialAuth]);
 
-  // Watch for authStatus changes to proceed to scheduling
+  // Compute authentication status for each platform
+  const authStatus = {
+    linkedin: !!(
+      socialAuthData?.data?.linkedin?.isAuthenticated &&
+      socialAuthData?.data?.linkedin?.accessToken?.expiresAt &&
+      new Date(socialAuthData.data.linkedin.accessToken.expiresAt) >= new Date()
+    ),
+    linkedinPage: !!(
+      socialAuthData?.data?.linkedin?.isAuthenticated &&
+      socialAuthData?.data?.linkedin?.accessToken?.expiresAt &&
+      new Date(socialAuthData.data.linkedin.accessToken.expiresAt) >= new Date()
+      // Add additional checks for LinkedIn Page if needed
+    ),
+    facebook: !!(
+      socialAuthData?.data?.facebook?.isAuthenticated &&
+      socialAuthData?.data?.facebook?.accessToken?.expiresAt &&
+      new Date(socialAuthData.data.facebook.accessToken.expiresAt) >= new Date()
+    ),
+    instagram: !!(
+      socialAuthData?.data?.instagram?.isAuthenticated &&
+      socialAuthData?.data?.instagram?.accessToken?.expiresAt &&
+      new Date(socialAuthData.data.instagram.accessToken.expiresAt) >= new Date()
+    ),
+  };
+
+  // Update platformTokens based on getSocialAuth response
   useEffect(() => {
-    if (isAuthenticating && schedule.platform && authStatus[schedule.platform as keyof typeof authStatus]) {
-      console.log(`Auth status updated for ${schedule.platform}, proceeding to scheduling`);
-      setIsSocialOptionsOpen(false);
-      setIsScheduling(true);
-      setIsAuthenticating(false);
+    if (socialAuthData?.data) {
+      const linkedinData = socialAuthData.data.linkedin;
+      const facebookData = socialAuthData.data.facebook;
+      const instagramData = socialAuthData.data.instagram;
+
+      // Check LinkedIn Profile authentication and token expiration
+      let linkedinProfileStatus = false;
+      if (linkedinData?.isAuthenticated && linkedinData.accessToken?.expiresAt) {
+        const expiresAt = new Date(linkedinData.accessToken.expiresAt);
+        const now = new Date();
+        linkedinProfileStatus = expiresAt >= now;
+        if (linkedinProfileStatus) {
+          // Store LinkedIn access token and profile page
+          setPlatformTokens((prev) => ({
+            ...prev,
+            linkedin: {
+              accessToken: linkedinData.accessToken.token,
+              profilePage: linkedinData.profilePage || '',
+            },
+          }));
+        }
+      }
+
     }
-  }, [authStatus, isAuthenticating, schedule.platform]);
+  }, [socialAuthData]);
+
 
   const post: Post | undefined = data?.data?.[0];
 
   const platformIcons = {
     linkedin: <Linkedin className="w-6 h-6" />,
+    linkedinPage: <Linkedin className="w-6 h-6" />,
     instagram: <Instagram className="w-6 h-6" />,
     facebook: <Facebook className="w-6 h-6" />,
   };
 
   const socialPlatforms = [
     { name: 'facebook', label: 'Facebook Page', icon: platformIcons.facebook },
-    { name: 'linkedin', label: 'LinkedIn Profile', icon: platformIcons.linkedin },
+    { name: 'linkedin', subPlatform: 'profile', label: 'LinkedIn Profile', icon: platformIcons.linkedin },
+    { name: 'linkedin', subPlatform: 'page', label: 'LinkedIn Page', icon: platformIcons.linkedinPage },
     { name: 'instagram', label: 'Instagram', icon: platformIcons.instagram },
   ];
 
-  const updateSchedule = (platform?: string | null, dateTime?: Date | null) => {
+  const updateSchedule = (platform?: string | null, subPlatform?: string | null, dateTime?: Date | null) => {
     setSchedule((prev) => ({
       platform: platform !== undefined ? platform : prev.platform,
+      subPlatform: subPlatform !== undefined ? subPlatform : prev.subPlatform,
       dateTime: dateTime !== undefined ? dateTime : prev.dateTime,
+      userDetails: prev.userDetails,
     }));
   };
 
-  const handlePlatformSelect = (platform: string) => {
-    console.log(`Platform selected: ${platform}`);
-    console.log(`Auth status for ${platform}:`, authStatus[platform as keyof typeof authStatus]);
-    
-    updateSchedule(platform);
+  const handlePlatformSelect = (platform: string, subPlatform?: string) => {
+    console.log(`Platform selected: ${platform}${subPlatform ? ` (${subPlatform})` : ''}`);
+    const platformKey = platform === 'linkedin' ? `${platform}${subPlatform === 'page' ? 'Page' : ''}` : platform;
+
+    updateSchedule(platform, subPlatform);
     setIsAuthenticating(true);
-    
-    if (!authStatus[platform as keyof typeof authStatus]) {
-      console.log(`Initiating authentication for ${platform}`);
-      initiateAuth(platform as keyof typeof authStatus);
+
+    if (!authStatus[platformKey as keyof typeof authStatus]) {
+      console.log(`Initiating authentication for ${platformKey}`);
+      if (platform === 'linkedin') {
+        initiateAuth(platform);
+      } else {
+        initiateAuth(platform as 'facebook' | 'instagram');
+      }
     } else {
-      console.log(`Already authenticated for ${platform}, proceeding to scheduling`);
+      console.log(`Already authenticated for ${platformKey}, showing user details`);
       setIsSocialOptionsOpen(false);
-      setIsScheduling(true);
+
+      // Show user details if already authenticated
+      if (platform === 'linkedin' && socialAuthData?.data?.linkedin?.profileData) {
+        setSchedule((prev) => ({
+          ...prev,
+          userDetails: {
+            name: socialAuthData.data.linkedin.profileData.name,
+            profilePage: socialAuthData.data.linkedin.profilePage || '',
+          },
+        }));
+      }
+
+      setShowUserDetails(true);
       setIsAuthenticating(false);
     }
   };
 
-  const handleSchedulePost = async () => {
+  const handlePublishPost = async () => {
     if (!schedule.platform) {
       alert('Please select a platform');
       return;
@@ -213,8 +285,10 @@ export const UserPostDetail: React.FC = () => {
       return;
     }
 
-    const accessToken = localStorage.getItem(`${schedule.platform}_access_token`);
-    if (!accessToken) {
+    const platformKey = schedule.platform === 'linkedin' ? (schedule.subPlatform === 'page' ? 'linkedinPage' : 'linkedin') : schedule.platform;
+    const tokenData = platformTokens[platformKey];
+
+    if (!tokenData?.accessToken) {
       alert(`Please authenticate with ${schedule.platform} first`);
       return;
     }
@@ -223,9 +297,13 @@ export const UserPostDetail: React.FC = () => {
       imageUrl: post.images[0]?.url || '',
       title: post.title,
       description: post.description,
+      hashTags: post.hashtags.join(', '),
       scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
-      accessToken,
+      accessToken: tokenData.accessToken,
+      person_urn: tokenData.profilePage || "", // Include person_urn if available
     };
+
+    console.log(`Publishing post to ${schedule.platform} with payload:`, payload);
 
     try {
       let response;
@@ -238,8 +316,8 @@ export const UserPostDetail: React.FC = () => {
       }
 
       alert(`Post ${schedule.dateTime ? 'scheduled' : 'published'} successfully on ${schedule.platform}`);
-      setSchedule({ platform: null, dateTime: null });
-      setIsScheduling(false);
+      setSchedule({ platform: null, subPlatform: null, dateTime: null });
+      setShowUserDetails(false);
     } catch (err) {
       console.error(`Error posting to ${schedule.platform}:`, err);
       alert(`Failed to post to ${schedule.platform}`);
@@ -402,29 +480,37 @@ export const UserPostDetail: React.FC = () => {
                 </button>
               </div>
               <div className="grid grid-cols-3 gap-4 mb-4">
-                {socialPlatforms.map((platform) => (
-                  <button
-                    key={platform.name}
-                    onClick={() => handlePlatformSelect(platform.name)}
-                    className={`flex flex-col items-center justify-center p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ${
-                      authStatus[platform.name as keyof typeof authStatus] ? 'bg-green-500/20' : ''
-                    }`}
-                    disabled={isAuthenticating}
-                  >
-                    {platform.icon}
-                    <span className={`text-xs mt-2 ${currentTheme.textPrimary}`}>
-                      {platform.label}
-                      {authStatus[platform.name as keyof typeof authStatus] && ' (Connected)'}
-                    </span>
-                  </button>
-                ))}
+                {socialPlatforms.map((platform) => {
+                  const platformKey = platform.name === 'linkedin' ? `${platform.name}${platform.subPlatform === 'page' ? 'Page' : ''}` : platform.name;
+                  return (
+                    <button
+                      key={`${platform.name}-${platform.subPlatform || 'default'}`}
+                      onClick={() => handlePlatformSelect(platform.name, platform.subPlatform)}
+                      className={`flex flex-col items-center justify-center p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ${
+                        authStatus[platformKey as keyof typeof authStatus] ? 'bg-green-500/20' : ''
+                      }`}
+                      disabled={isAuthenticating}
+                    >
+                      {platform.icon}
+                      <span className={`text-xs mt-2 ${currentTheme.textPrimary}`}>
+                        {platform.label}
+                        {authStatus[platformKey as keyof typeof authStatus] && ' (Connected)'}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
+              {socialAuthData?.data?.linkedin?.isAuthenticated && socialAuthData?.data?.linkedin?.accessToken?.expiresAt && !authStatus.linkedin && (
+                <p className="text-red-400 text-sm mt-4">
+                  Your LinkedIn Profile token has expired. Please authenticate again.
+                </p>
+              )}
             </div>
           </motion.div>
         )}
 
-        {/* Scheduling Modal */}
-        {isScheduling && (
+        {/* User Details and Scheduling Modal */}
+        {showUserDetails && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -432,14 +518,43 @@ export const UserPostDetail: React.FC = () => {
             className={`fixed inset-0 flex items-center justify-center bg-black/50 z-50`}
           >
             <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 w-full max-w-md border ${currentTheme.border}`}>
-              <h3 className={`text-xl font-semibold ${currentTheme.textPrimary} mb-4`}>
-                {schedule.platform ? `Schedule Post to ${schedule.platform.charAt(0).toUpperCase() + schedule.platform.slice(1)}` : 'Select Platform'}
-              </h3>
+              <div className="flex items-center gap-2 mb-4">
+                {platformIcons[schedule.platform as keyof typeof platformIcons]}
+                <h3 className={`text-lg font-semibold ${currentTheme.textPrimary}`}>
+                  {schedule.subPlatform === 'page'
+                    ? 'LinkedIn Page'
+                    : schedule.platform
+                      ? schedule.platform.charAt(0).toUpperCase() + schedule.platform.slice(1)
+                      : ''}
+                </h3>
+              </div>
+              <p className={`text-xl font-semibold ${currentTheme.textPrimary} mb-2`}>
+                Publish your design straight to {schedule.subPlatform === 'page' ? 'LinkedIn Pages' : `${(schedule.platform ?? '').charAt(0).toUpperCase() + (schedule.platform ?? '').slice(1)}!`}
+              </p>
+              {schedule.platform === 'facebook' && (
+                <p className={`text-sm ${currentTheme.textSecondary} mb-4`}>
+                  Connected to Instagram Business? Be sure to authorize all Pages you want to use in Canva, including Facebook Pages linked to your Instagram accounts.
+                </p>
+              )}
+              {schedule.userDetails && (
+                <div className="flex items-center gap-2 mb-4">
+                  <select className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}>
+                    <option>{schedule.userDetails.name}</option>
+                  </select>
+                  <select className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}>
+                    <option>{schedule.userDetails.profilePage || 'Select Page'}</option>
+                  </select>
+                </div>
+              )}
+              <textarea
+                placeholder="Write something..."
+                className={`w-full h-32 ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4`}
+              />
               <div className="flex items-center gap-4 mb-4">
                 <Calendar className={`w-5 h-5 ${currentTheme.textSecondary}`} />
                 <DatePicker
                   selected={schedule.dateTime}
-                  onChange={(date: Date | null) => updateSchedule(undefined, date)}
+                  onChange={(date: Date | null) => updateSchedule(undefined, undefined, date)}
                   showTimeSelect
                   dateFormat="Pp"
                   className={`w-full ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}
@@ -449,14 +564,14 @@ export const UserPostDetail: React.FC = () => {
               </div>
               <div className="flex gap-4">
                 <button
-                  onClick={handleSchedulePost}
-                  className={`flex-1 px-4 py-2 ${currentTheme.buttonBg} ${currentTheme.textPrimary} rounded-lg ${currentTheme.buttonHover}`}
+                  onClick={handlePublishPost}
+                  className={`flex-1 px-4 py-2 bg-purple-600 ${currentTheme.textPrimary} rounded-lg hover:bg-purple-700`}
                   disabled={!schedule.platform || isAuthenticating}
                 >
-                  {schedule.dateTime ? 'Schedule' : 'Post Now'}
+                  Publish
                 </button>
                 <button
-                  onClick={() => setIsScheduling(false)}
+                  onClick={() => setShowUserDetails(false)}
                   className={`flex-1 px-4 py-2 ${currentTheme.inputBg} ${currentTheme.textSecondary} rounded-lg hover:bg-gray-700`}
                 >
                   Cancel

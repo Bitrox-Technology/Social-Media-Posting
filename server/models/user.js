@@ -38,24 +38,6 @@ const userSchema = new mongoose.Schema(
     password: { type: String, select: false, default: "" },
     provider: { type: String, enum: PROVIDER_ENUM, default: '' },
     uid: { type: String, trim: true, default: "" },
-    userScheduledPosts: {
-      type: [
-        {
-          taskId: { type: String, required: true }, // Unique ID for the scheduled task
-          platform: { type: String, enum: PLATFORM_ENUM, default: 'linkedin' },
-          imageUrl: { type: String, trim: true },
-          filePath: { type: String, trim: true }, // Local path of downloaded image
-          title: { type: String, trim: true },
-          description: { type: String, trim: true },
-          scheduleTime: { type: Date, required: true },
-          cronExpression: { type: String, trim: true },
-          status: { type: String, enum: SCHEDULE_STATUS_ENUM, default: 'pending' },
-          postId: { type: String, trim: true }, // LinkedIn post ID after execution
-          createdAt: { type: Date, default: Date.now },
-        },
-      ],
-      default: [],
-    },
     isEmailVerify: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
@@ -77,14 +59,10 @@ userSchema.index({ role: 1 });
 userSchema.index({ createdAt: 1 }); 
 userSchema.index({ updatedAt: 1 }); 
 
-// Indexes for userScheduledPosts array
-userSchema.index({ "userScheduledPosts.scheduleTime": 1 }); 
-userSchema.index({ "userScheduledPosts.status": 1 }); 
-userSchema.index({ "userScheduledPosts.platform": 1 }); 
-
 // Compound indexes
 userSchema.index({ status: 1, isDeleted: 1 }); 
-userSchema.index({ "userScheduledPosts.platform": 1, "userScheduledPosts.scheduleTime": 1 });
+userSchema.index({ role: 1, isBlocked: 1 });
+userSchema.index({ email: 1, isDeleted: 1 }, { unique: true }); // Unique index for email with isDeleted
 
 const User = mongoose.model("User", userSchema)
 export default User;

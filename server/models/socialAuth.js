@@ -3,22 +3,67 @@ import mongoose from "mongoose";
 const socialAuthSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', 
-    required: true,
+    ref: 'User',
   },
-  platform: {
-    type: String,
-    enum: ['linkedin'], 
-    required: true,
-    default: 'linkedin',
+  facebook: {
+    isAuthenticated: {
+      type: Boolean,
+      default: false,
+    },
+    accessToken: {
+      token: {
+        type: String,
+      },
+      expiresAt: {
+        type: Date,
+      },
+    },
+    profilePage: {
+      type: String,
+    },
+    profileData: {
+      type: Object,
+    },
   },
-  accessToken: {
-    type: String,
-    required: true,
+  linkedin: {
+    isAuthenticated: {
+      type: Boolean,
+      default: false,
+    },
+    accessToken: {
+      token: {
+        type: String,
+      },
+      expiresAt: {
+        type: Date,
+      },
+    },
+    profilePage: {
+      type: String,
+    },
+    profileData: {
+      type: Object,
+    },
   },
-  profileData: {
-    type: Object, 
-    required: true,
+  instagram: {
+    isAuthenticated: {
+      type: Boolean,
+      default: false,
+    },
+    accessToken: {
+      token: {
+        type: String,
+      },
+      expiresAt: {
+        type: Date,
+      },
+    },
+    profilePage: {
+      type: String,
+    },
+    profileData: {
+      type: Object,
+    },
   },
   createdAt: {
     type: Date,
@@ -31,9 +76,14 @@ const socialAuthSchema = new mongoose.Schema({
 });
 
 // Update the `updatedAt` timestamp before saving
-linkedInAuthSchema.pre('save', function (next) {
+socialAuthSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
+// Index for faster queries on userId
+socialAuthSchema.index({ userId: 1 }, { unique: true });
+
 const SocialAuth = mongoose.model('SocialAuth', socialAuthSchema);
+
+export default SocialAuth;

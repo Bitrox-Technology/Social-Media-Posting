@@ -512,11 +512,23 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
-    linkedInPost: builder.mutation<ApiResponse<any>, { title: String; description: String, imageUrl: String; scheduleTime: string }>({
+    linkedInPost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imageUrl: string; scheduleTime: string, person_urn: string, accessToken: string }>({
       query: (body) => ({
         url: '/social/linkedin/post',
         method: 'POST',
         body
+      }),
+    }),
+    getSocialAuth: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/social/auth/get-auth-detail',
+        method: 'GET',
+      }),
+    }),
+    getUserScheduledPosts: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/user/get-scheduled-posts',
+        method: 'GET',
       }),
     }),
 
@@ -593,4 +605,6 @@ export const {
   useLazyAuthFacebookQuery,
   useLazyAuthInstagramQuery,
   useLinkedInPostMutation,
+  useLazyGetSocialAuthQuery,
+  useLazyGetUserScheduledPostsQuery
 } = api;
