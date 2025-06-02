@@ -25,10 +25,9 @@ export const ContentTypeSelector: React.FC = () => {
     "Blog Article": "blog",
     "Promotional/Sales Post": "promotional",
     "Informative/Educational Post": "informative",
-    "Engagement Post": "engagement",
-    "Brand Building Post": "brand",
+    "News Post": "engagement",
+    "Product Post": "brand",
     "Event-Related Post": "event",
-    "Customer Testimonials/Reviews Post": "testimonial",
     "Holidays/Festival Greetings Post": "festivals",
   };
 
@@ -74,7 +73,7 @@ export const ContentTypeSelector: React.FC = () => {
       iconColor: 'text-green-600 dark:text-green-400',
     },
     {
-      type: 'Engagement Post',
+      type: 'News Post',
       icon: Heart,
       description: 'Boost engagement with interactive and fun content',
       gradient: 'from-pink-500 to-red-600',
@@ -82,7 +81,7 @@ export const ContentTypeSelector: React.FC = () => {
       iconColor: 'text-pink-600 dark:text-pink-400',
     },
     {
-      type: 'Brand Building Post',
+      type: 'Product Post',
       icon: Building,
       description: 'Strengthen your brand identity with storytelling content',
       gradient: 'from-purple-500 to-indigo-600',
@@ -96,14 +95,6 @@ export const ContentTypeSelector: React.FC = () => {
       gradient: 'from-orange-500 to-yellow-600',
       iconBg: 'bg-orange-100 dark:bg-orange-900/30',
       iconColor: 'text-orange-600 dark:text-orange-400',
-    },
-    {
-      type: 'Customer Testimonials/Reviews Post',
-      icon: Star,
-      description: 'Showcase customer reviews to build trust and credibility',
-      gradient: 'from-yellow-500 to-amber-600',
-      iconBg: 'bg-yellow-100 dark:bg-yellow-900/30',
-      iconColor: 'text-yellow-600 dark:text-yellow-400',
     },
     {
       type: 'Holidays/Festival Greetings Post',

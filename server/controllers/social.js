@@ -38,7 +38,7 @@ const LinkedInCallback = async (req, res, next) => {
         </body>
       </html>
     `;
-
+    // socket
     res.set('Content-Type', 'text/html');
     return res.status(200).send(script);
 

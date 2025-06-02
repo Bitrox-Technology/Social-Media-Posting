@@ -1,57 +1,76 @@
-import React, {useEffect} from 'react';
+// src/components/HeroSection.tsx
+import React, { useEffect } from 'react';
 import { ArrowRight, Bot, TrendingUp, Zap, Shield } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import ContentCard from '../ui/ContentCard';
-import { logout, setUser } from '../../store/appSlice';
+import { clearUser, setUser, clearCsrfToken } from '../../store/appSlice';
 import { Link, useNavigate } from 'react-router-dom';
-
+import { useCheckAuthStatusQuery } from '../../store/api';
+import Cookies from 'js-cookie';
 
 const HeroSection: React.FC = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.app.user);
   const dispatch = useAppDispatch();
+
+  // Check auth status if cookies are present
+  const { data: authData, error: authError } = useCheckAuthStatusQuery(undefined, {
+    skip: !Cookies.get('accessToken') && !Cookies.get('refreshToken'),
+  });
+
   useEffect(() => {
-     if (!user) {
-       const storedUser = localStorage.getItem('user');
-       if (storedUser) {
-         const parsedUser = JSON.parse(storedUser);
-         const { token, expiresAt, email } = parsedUser;
- 
-         // Check if token is still valid
-         if (expiresAt && Date.now() < expiresAt) {
-           dispatch(setUser({ email, token, expiresAt }));
-         } else {
-           dispatch(logout());
-           localStorage.removeItem('user');
-           navigate('/signin');
-         }
-       }
-     }
-   }, [user, dispatch, navigate]);
+    // Handle auth data
+    if (authData?.success && authData.data.isAuthenticated) {
+      dispatch(
+        setUser({
+          email: authData.data.user.email,
+          expiresAt: authData.data.user.expiresAt,
+          role: authData.data.user.role,
+          authenticate: true,
+        })
+      );
+    } else if (authError) {
+      // Clear state and cookies on auth failure
+      dispatch(clearUser());
+      dispatch(clearCsrfToken());
+      
+    }
+
+    // Handle cross-tab logout
+    const authChannel = new BroadcastChannel('auth_channel');
+    authChannel.onmessage = (event) => {
+      if (event.data.type === 'LOGOUT') {
+        dispatch(clearUser());
+        dispatch(clearCsrfToken());
+       
+      }
+    };
+
+    return () => authChannel.close();
+  }, [authData, authError, dispatch]);
 
   const handleGetStarted = () => {
-    // Navigate to dashboard if authenticated, otherwise to signup
-    navigate(user ? '/dashboard' : '/signup');
+    navigate(user?.authenticate ? '/dashboard' : '/signup');
   };
 
   const sampleContent = [
     {
       imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1745302238/fgtcjvyus4uzidwgrz0k.png',
       title: 'Social Media Post',
-      description: 'AI-optimized posts for maximum engagement across all popular platforms. Perfect for businesses looking to increase their social presence.'
+      description: 'AI-optimized posts for maximum engagement across all popular platforms. Perfect for businesses looking to increase their social presence.',
     },
     {
       imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1744892993/vtxpt1dfv49kmpftk8jo.png',
       title: 'Blog Post',
-      description: 'SEO-friendly articles and blog posts that rank higher in search results and keep your audience engaged with valuable information.'
+      description: 'SEO-friendly articles and blog posts that rank higher in search results and keep your audience engaged with valuable information.',
     },
     {
       imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1744892459/u1e65kb3934ctxdyvpqy.png',
       title: 'Visual Post',
-      description: 'Eye-catching designs and graphics that complement your written content and make your brand stand out from the competition.'
-    }
+      description: 'Eye-catching designs and graphics that complement your written content and make your brand stand out from the competition.',
+    },
   ];
 
   return (
@@ -69,10 +88,15 @@ const HeroSection: React.FC = () => {
               <button
                 onClick={handleGetStarted}
                 className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-lg font-medium"
+                aria-label="Get Started"
               >
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </button>
-              <Link to="/features" className={`px-8 py-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-xl shadow-lg hover:shadow-xl transition-all text-lg font-medium`}>
+              <Link
+                to="/features"
+                className={`px-8 py-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-xl shadow-lg hover:shadow-xl transition-all text-lg font-medium`}
+                aria-label="Learn More"
+              >
                 Learn More
               </Link>
             </div>

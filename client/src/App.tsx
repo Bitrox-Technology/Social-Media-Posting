@@ -46,6 +46,10 @@ import { FAQ } from './pages/FAQPage';
 import { PrivacyPolicy } from './pages/PrivacyPolicyPage';
 import { TermsOfService } from './pages/TermOfService';
 import { CookiePolicy } from './pages/CookiePolicy';
+import { ProductPostCreator } from './components/content/ProductSelect';
+import { ProductTemplateSelector } from './components/ui/ProductTemplates';
+import { InformativeTemplateSelector } from './components/ui/InformativeTemplates';
+import { EventTemplateSelector } from './components/ui/EventTemplates';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -117,6 +121,22 @@ function App() {
                       <Route
                         path="/topic"
                         element={<TopicSelector />}
+                      />
+                      <Route
+                        path="/promotional"
+                        element={<ProductPostCreator />}
+                      />
+                      <Route
+                        path="/tmproduct"
+                        element={<ProductTemplateSelector />}
+                      />
+                      <Route
+                        path="/tminformative"
+                        element={<InformativeTemplateSelector />}
+                      />
+                      <Route
+                        path="/tmevent"
+                        element={<EventTemplateSelector />}
                       />
                       <Route
                         path="/ideas"

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, IconButton, Divider, Tooltip, Avatar } from '@mui/material';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, IconButton, Divider, Avatar } from '@mui/material';
 import {
   Close as CloseIcon,
   Home as HomeIcon,
@@ -15,13 +15,18 @@ import {
   Logout as LogoutIcon,
   KeyboardArrowRight as ArrowIcon,
   Festival,
-  Schedule
+  Schedule,
+  ProductionQuantityLimitsSharp,
+  PermDeviceInformation,
+  Event
 } from '@mui/icons-material';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { logout } from '../../store/appSlice';
 import { motion, AnimatePresence } from 'framer-motion';
+import { clearCsrfToken, clearUser } from '../../store/appSlice';
 import { Bot } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useLogoutMutation } from '../../store/api';
+import { useAlert } from '../hooks/useAlert';
 
 interface SlidebarProps {
   isOpen: boolean;
@@ -33,13 +38,26 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const [logout] = useLogoutMutation()
   const { theme } = useTheme();
+  const { success, error: errorAlert } = useAlert();
 
-  const handleLogout = () => {
-    dispatch(logout());
-    localStorage.removeItem('user');
-    toggleDrawer(false)({} as React.MouseEvent);
-    navigate('/signin');
+  const handleLogout = async() => {
+    try {
+      const response = await logout().unwrap();
+      if (response.success) {
+        dispatch(clearUser());
+        dispatch(clearCsrfToken());
+        success('Logged Out', 'You have been successfully logged out.');
+        toggleDrawer(false)({ type: 'click' } as React.MouseEvent);
+        setTimeout(() => navigate('/signin', { replace: true }), 2000);
+      } else {
+        throw new Error('Logout response unsuccessful');
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+      errorAlert('Logout Failed', 'Unable to log out. Please try again.');
+    }
   };
 
   // Menu sections for better organization
@@ -58,6 +76,9 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
         { path: '/tmimagegeneration', label: 'Image Generation', icon: <AutoAwesomeIcon /> },
         { path: '/tmdoyouknow', label: 'Do You Know', icon: <QuestionMarkIcon /> },
         { path: '/tmfestival', label: 'Festival', icon: <Festival /> },
+        { path: '/tmproduct', label: 'Product', icon: <ProductionQuantityLimitsSharp /> },
+        { path: '/tminformative', label: 'Infromative', icon: <PermDeviceInformation /> },
+        { path: '/tmevent', label: 'Event', icon: <Event /> },
         { path: '/blog', label: 'Blog Posts', icon: <ArticleIcon /> },
       ]
     },

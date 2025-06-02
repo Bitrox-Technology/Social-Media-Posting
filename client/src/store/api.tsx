@@ -158,6 +158,7 @@ const baseQueryWithDispatch: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQ
 
   // Check for 401 Unauthorized (or whatever status you want to handle)
   if (result.error && result.error.status === 401) {
+    // Unauthorized check
     logger.warn('Unauthorized request', { endpoint });
     try {
       // Use existing CSRF token or fetch a new one
@@ -176,7 +177,7 @@ const baseQueryWithDispatch: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQ
         {
           url: '/auth/refresh-token',
           method: 'POST',
-          headers: { 'CSRF-Token': csrfToken },
+          headers: { 'X-CSRF-Token': csrfToken },
         },
         api,
         extraOptions
@@ -206,17 +207,14 @@ const baseQueryWithDispatch: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQ
         // Retry the original request
         result = await baseQuery(args, api, extraOptions);
       } else {
-        // Return the original result if refresh failed
-        return result;
+        window.location.href = '/signin';
+        logger.warn('Token refresh failed, redirecting to sign-in', { endpoint });
       }
     } catch (error) {
       logger.error('Token refresh failed:', { error });
       dispatch(clearUser());
       dispatch(clearCsrfToken());
       dispatch(setSessionWarning(false));
-      Cookies.remove('accessToken');
-      Cookies.remove('refreshToken');
-      // Return the original result on error
       return result;
     }
   }
@@ -352,6 +350,12 @@ export const api = createApi({
         url: '/user/signin',
         method: 'POST',
         body,
+      }),
+    }),
+    logout: builder.mutation<ApiResponse<any>, void>({
+      query: () => ({
+        url: '/user/logout',
+        method: 'POST',
       }),
     }),
     userDetails: builder.mutation<ApiResponse<any>, FormData>({
@@ -576,6 +580,7 @@ export const {
   useGenerateDoYouKnowMutation,
   useSignUpMutation,
   useSignInMutation,
+  useLogoutMutation,
   useSignUpAndSigninByProviderMutation,
   useVerifyOTPMutation,
   useGenerateTopicsMutation,
