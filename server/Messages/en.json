@@ -11,6 +11,7 @@
   "UNAUTHORIZED": "Unauthorized",
   "ACCOUNT_DEACTIVATED": "Account is deactivated",
   "INVALID_TOKEN": "Token is Invalid",
+  "TOKEN_EXPIRED": "Token has expired",
   "REFRESH_TOKEN": "Refresh token required",
   "INVALID_REFRESH_TOKEN": "Invalid refresh token",
   "TOKEN_REFRESH_FAILED": "Token Refresh failed",

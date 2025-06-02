@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { logout, setUser } from '../../store/appSlice';
 import { Menu, X, Bot, User } from 'lucide-react';
 import ThemeToggle from '../features/ThemeToggle';
 import { useTheme } from '../../context/ThemeContext';
@@ -11,26 +10,6 @@ const Header: React.FC<{ toggleDrawer: (open: boolean) => (event: React.Keyboard
   const { theme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const user = useAppSelector((state) => state.app.user);
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  console.log("User", user)
-  // Ensure user state is restored from localStorage on mount
-  // useEffect(() => {
-  //   if (user) {
-  //     console.log('Header: Checking expiresAt=', user.expiresAt, 'vs Date.now()=', Date.now());
-  //     if (user.authenticate ) {
-  //       console.log('Header: Session expired, redirecting to /signin');
-  //       dispatch(logout()); // Clear user state
-  //       navigate('/signin', { replace: true });
-  //     } else {
-  //       console.log('Header: Session valid, redirecting to /dashboard');
-  //       navigate('/dashboard', { replace: true });
-  //     }
-  //   } else {
-  //     console.log('Header: No user, redirecting to /signin');
-  //     navigate('/signin', { replace: true });
-  //   }
-  // }, [user, dispatch, navigate]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -116,7 +95,7 @@ const Header: React.FC<{ toggleDrawer: (open: boolean) => (event: React.Keyboard
               </Link>
             )}
             <div className="flex items-center space-x-4">
-              {user ? (
+              {user?.authenticate ? (
                 <div className="flex items-center space-x-2">
                   <User
                     className={`h-6 w-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'

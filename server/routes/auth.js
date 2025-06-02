@@ -34,9 +34,6 @@ authRouter.get('/validate-session', AuthMiddleware, async (req, res) => {
         if (!req.user || req.user.status === 'INACTIVE' || req.user.isDeleted) {
             throw new ApiError(UN_AUTHORIZED, i18n.__('SESSION_INVALID'));
         }
-        if (req.user.sessionExpiry < new Date()) {
-            throw new ApiError(UN_AUTHORIZED, i18n.__('SESSION_EXPIRED'));
-        }
         res.status(OK).json(new ApiResponse(OK, {
             user: { id: req.user._id, email: req.user.email, role: req.user.role, expiresAt: req.user.sessionExpiry },
             sessionValid: true,

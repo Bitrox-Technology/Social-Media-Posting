@@ -45,7 +45,8 @@ export const useSocialAuth = ({
       }
 
       if (!authUrl) {
-        throw new Error('Authentication URL not received');
+        console.error(`Authentication URL not received for ${platform}`);
+        // throw new Error('Authentication URL not received');
       }
 
       const width = 600;
@@ -57,7 +58,9 @@ export const useSocialAuth = ({
         authUrl,
         `${platform}-auth-popup`,
         `width=${width},height=${height},left=${left},top=${top}`
-      );
+      ); 
+
+      console.log(`Opened ${platform} auth popup:`, authWindow);
 
       if (!authWindow || authWindow.closed || typeof authWindow.closed === 'undefined') {
         setIsAuthenticating(false);

@@ -12,10 +12,14 @@ const AuthMiddleware = async (req, res, next) => {
 
         if (!accessToken) throw new ApiError(UN_AUTHORIZED, i18n.__("INVALID_TOKEN"))
         let decodedToken;
-  
-        decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-
-        if (!decodedToken) throw new ApiError(UN_AUTHORIZED, i18n.__('INVALID_TOKEN'));
+        try {
+            decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET) 
+        } catch (err) {
+            if (err instanceof TokenExpiredError) {
+                throw new ApiError(UN_AUTHORIZED, i18n.__('TOKEN_EXPIRED'));
+            }
+            throw new ApiError(UN_AUTHORIZED, i18n.__('INVALID_TOKEN'));
+        }
 
         let user;
 
@@ -24,7 +28,7 @@ const AuthMiddleware = async (req, res, next) => {
         } else {
             user = await User.findById(decodedToken._id).select('email role status isDeleted sessionExpiry');
         }
-        if (!user || user.status==='INACTIVE' || user.isDeleted) {
+        if (!user || user.status === 'INACTIVE' || user.isDeleted) {
             clearAuthCookies(res);
             throw new ApiError(UN_AUTHORIZED, i18n.__('ACCOUNT_DEACTIVATED'));
         }
@@ -58,13 +62,13 @@ const handleTokenRefresh = async (req, res, next) => {
         }
 
         // Generate new tokens
-        const accessToken = generateAccessToken(user, user.role);
+        const accessToken = await generateAccessToken(user, user.role);
 
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 15 * 60 * 1000, // 15 minutes
+            maxAge: 2 * 60 * 60 * 1000, // 15 minutes
             path: '/',
         });
 
@@ -77,4 +81,4 @@ const handleTokenRefresh = async (req, res, next) => {
 };
 
 
-export { AuthMiddleware }
+export { AuthMiddleware, handleTokenRefresh }

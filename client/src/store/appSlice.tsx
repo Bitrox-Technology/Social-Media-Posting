@@ -130,11 +130,7 @@ const appSlice = createSlice({
       state.isAuthenticated = false;
       state.sessionWarning = false;
     },
-    logout(state) {
-      state.user = undefined;
-      state.isAuthenticated = false;
-      state.sessionWarning = false;
-    },
+   
 
     setCsrfToken: (state, action: PayloadAction<CsrfState>) => {
       state.csrfToken = action.payload.token;
@@ -175,7 +171,6 @@ export const {
   setSelectedDoYouKnowTemplate,
   resetState,
   setUser,
-  logout,
   clearUser,
   setSelectedBusiness,
   setPosts,
@@ -186,7 +181,7 @@ export const {
   clearCsrfToken,
   setSessionWarning,
 } = appSlice.actions;
-export const selectUser = (state: RootState) => state.app.user;
+export const selectUser = (state: RootState) => (state.app as AppState).user;
 export const selectIsAuthenticated = (state: RootState) => !!state.app.user?.authenticate;
 export const selectSessionWarning = (state: RootState) => state.app.sessionWarning;
 export default appSlice.reducer;

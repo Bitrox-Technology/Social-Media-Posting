@@ -3,7 +3,7 @@ import User from "../models/user.js";
 import { ApiError } from "../utils/ApiError.js";
 import { generateAccessAndRefreshTokenForUser } from "../utils/generateToken.js";
 import { BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR } from "../utils/apiResponseCode.js";
-import { comparePasswordUsingBcrypt, Hashed_Password, isEmail } from "../utils/utilities.js";
+import { clearAuthCookies, comparePasswordUsingBcrypt, Hashed_Password, isEmail } from "../utils/utilities.js";
 import PostTopic from "../models/postTopics.js";
 import ImageContent from "../models/imageContent.js";
 import CarouselContent from "../models/carouselContent.js";
@@ -147,15 +147,15 @@ const login = async (inputs) => {
 
 
 const logout = async (req, res) => {
-    return new Promise((resolve, reject) => {
-        // Clear the accessToken cookie
-        res.clearCookie('accessToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict',
-        });
+    clearAuthCookies(res)
+    await User.findByIdAndUpdate(
+      req.user._id,
+      { $unset: { refreshToken: '', sessionExpiry: '' } },
+      { new: true }
+    ).lean();
 
-        // Destroy the session
+
+    return new Promise((resolve, reject) => {
         req.session.destroy((err) => {
             if (err) {
                 logger.error('Session destruction failed', {
