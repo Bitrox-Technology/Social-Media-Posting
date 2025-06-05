@@ -1,7 +1,7 @@
 import User from "../models/user.js";
 import Admin from "../models/admin.js";
 import { ApiError } from "../utils/ApiError.js";
-import { UN_AUTHORIZED } from "../utils/apiResponseCode.js";
+import { EXPIRED_TOKEN, UN_AUTHORIZED } from "../utils/apiResponseCode.js";
 import jwt from "jsonwebtoken"
 import i18n from "../utils/i18n.js";
 import { clearAuthCookies, generateAccessToken } from "../utils/utilities.js";
@@ -13,10 +13,10 @@ const AuthMiddleware = async (req, res, next) => {
         if (!accessToken) throw new ApiError(UN_AUTHORIZED, i18n.__("INVALID_TOKEN"))
         let decodedToken;
         try {
-            decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET) 
+            decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET)
         } catch (err) {
             if (err instanceof TokenExpiredError) {
-                throw new ApiError(UN_AUTHORIZED, i18n.__('TOKEN_EXPIRED'));
+                throw new ApiError(EXPIRED_TOKEN, i18n.__('TOKEN_EXPIRED'));
             }
             throw new ApiError(UN_AUTHORIZED, i18n.__('INVALID_TOKEN'));
         }
@@ -24,15 +24,15 @@ const AuthMiddleware = async (req, res, next) => {
         let user;
 
         if (decodedToken.role === 'ADMIN') {
-            user = await Admin.findById(decodedToken._id).select('email role status isDeleted sessionExpiry');
+            user = await Admin.findById(decodedToken._id).select('email role status isDeleted');
         } else {
-            user = await User.findById(decodedToken._id).select('email role status isDeleted sessionExpiry');
+            user = await User.findById(decodedToken._id).select('email role status isDeleted');
         }
         if (!user || user.status === 'INACTIVE' || user.isDeleted) {
             clearAuthCookies(res);
             throw new ApiError(UN_AUTHORIZED, i18n.__('ACCOUNT_DEACTIVATED'));
         }
-
+        user.expiresAt = decodedToken.exp * 1000;
         user.role === "ADMIN" ? req.admin = user : req.user = user;
 
         next()

@@ -71,7 +71,7 @@ const ForgetPassword = async (req, res, next) => {
 }
 
 
-const Logout = async (req, res, next) => {
+const Logout = async (req, res, next) => {  
     try {
         await UserServices.logout(req, res)
         return res.status(OK).json(new ApiResponse(OK, {}, i18n.__("USER_LOGOUT_SUCCESS")))
@@ -114,8 +114,6 @@ const Login = async (req, res, next) => {
         next(error)
     }
 }
-
-
 
 const PostContent = async (req, res, next) => {
     try {
@@ -273,11 +271,63 @@ const GetUserScheduledPosts = async (req, res, next) => {
         next(error)
     }
 }
+
+const SaveProductInfo = async (req, res, next) => {
+    try {
+        await UserValidation.validateProductInfo(req.body)
+        let user = await UserServices.saveProductInfo(req.body, req.user)
+        const {newCsrfToken, expiresAt} = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { user, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("PRODUCT_INFO_SAVED_SUCCESS")))
+    } catch (error) {
+        next(error)
+    }
+}
+
+const SaveBlog = async (req, res, next) => {
+    try {
+        await UserValidation.validateBlog(req.body)
+        let user = await UserServices.saveBlog(req.body, req.user)
+        const {newCsrfToken, expiresAt} = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { user, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("BLOG_POST_SAVED_SUCCESS")))
+    } catch (error) {
+        next(error)
+    }
+}
+
+const GetBlogById = async (req, res, next) => {
+    try {
+        let user = await UserServices.getBlogById(req.params.blogid, req.user)
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("BLOG_POST_FETCHED_SUCCESS")))
+    } catch (error) {
+        next(error)
+    }
+}
+
+const BlogPost = async (req, res, next) => {
+    try {
+        await UserValidation.validateBlogPost(req.body)
+        let blog = await UserServices.scheduledBlogPosts(req.body, req.user)
+        const {newCsrfToken, expiresAt} = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { blog, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("BLOG_POST_SUCCESSS")))
+    } catch (error) {
+        next(error)
+    }
+}
+
+const GetAllBlogs = async (req, res, next) => {
+    try {
+        let blogs = await UserServices.getAllBlogs(req.user)
+        return res.status(OK).json(new ApiResponse(OK, blogs, i18n.__("ALL_BLOGS_FETCHED_SUCCESS")))
+    } catch (error) {
+        next(error)
+    }
+}
+
 const UserControllers = {
     Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus, GetUserPostDetailById,
-    ForgetPassword, Logout, GetPendingTopics, GetUserAllPosts, SignupSigninByProvider,
-    Login, SavePosts, PostContent, GetPostContent, SaveImageContent, 
-    UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts,
+    ForgetPassword, Logout, GetPendingTopics, GetUserAllPosts, SignupSigninByProvider, GetAllBlogs,
+    Login, SavePosts, PostContent, GetPostContent, SaveImageContent, SaveProductInfo,
+    UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts, SaveBlog, GetBlogById, BlogPost,
     GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile, GetUserScheduledPosts
 }
 

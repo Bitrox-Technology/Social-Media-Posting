@@ -4,7 +4,7 @@ import cn from 'classnames';
 export interface NewProductSlide {
   title: string;
   description: string;
-  imageUrl: string;
+  imagesUrl: string[];
   footer: string;
   websiteUrl: string;
 }
@@ -53,7 +53,11 @@ export const NewProductTemplate1: NewProductTemplate = {
     {
       title: 'BEAUTY PRODUCT',
       description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-      imageUrl: '/images/product1.jpg',
+      imagesUrl: [
+        '/images/products/product1.jpg',
+        '/images/products/product2.jpg',
+        '/images/products/product3.jpg',
+      ],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },

@@ -1,7 +1,7 @@
 import { Router } from "express"
 import UserControllers from "../controllers/user.js"
 import { AuthMiddleware } from "../middlewares/auth.js"
-import { upload } from "../middlewares/multer.js"
+import { upload, uploadMemory } from "../middlewares/multer.js"
 import { otpGeneratorRateLimiter } from "../middlewares/rateLimiter.js"
 
 const userRouter = Router()
@@ -9,7 +9,7 @@ userRouter.post("/signup", otpGeneratorRateLimiter, UserControllers.Signup)
 userRouter.post("/verify-otp", UserControllers.VerifyOTP)
 userRouter.post("/resend", UserControllers.ResendOTP)
 userRouter.post("/forget-password", UserControllers.ForgetPassword)
-userRouter.post('/user-details', AuthMiddleware, upload.any(), UserControllers.UserDetails);
+userRouter.post('/user-details', AuthMiddleware, uploadMemory.any(), UserControllers.UserDetails);
 userRouter.get("/get-user-profile", AuthMiddleware, UserControllers.GetUserProfile)
 userRouter.post("/signin", UserControllers.Login)
 userRouter.post("/logout", AuthMiddleware, UserControllers.Logout)
@@ -31,6 +31,11 @@ userRouter.put("/update-post-topic/:posttopicid", AuthMiddleware, UserController
 userRouter.get("/get-all-posts", AuthMiddleware, UserControllers.GetUserAllPosts)
 userRouter.get("/get-user-post/:postid", AuthMiddleware, UserControllers.GetUserPostDetailById)
 userRouter.get("/get-scheduled-posts", AuthMiddleware, UserControllers.GetUserScheduledPosts)
+userRouter.post("/product-info", AuthMiddleware,uploadMemory.single('image'), UserControllers.SaveProductInfo)
+userRouter.post("/save-blog", AuthMiddleware, UserControllers.SaveBlog)
+userRouter.get("/get-all-blogs", AuthMiddleware, UserControllers.GetAllBlogs)
+userRouter.get("/get-blog/:blogid", AuthMiddleware, UserControllers.GetBlogById)
+userRouter.post("/blog-post", AuthMiddleware, UserControllers.BlogPost)
 // userRouter.post("/update-profile", AuthMiddleware, upload.single("avatar"), UserControllers.UpdateProfile)
 // userRouter.get("/get-profile", AuthMiddleware, UserControllers.GetProfile)
 // userRouter.post("/logout", AuthMiddleware, UserControllers.Logout)

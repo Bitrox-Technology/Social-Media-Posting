@@ -38,16 +38,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     '/services',
     '/pricing',
     '/features',
-    '/auto',
-    '/content-type',
     '/signin',
     '/signup',
     '/forgot-password',
-    '/verify-otp',
-    '/reset-password',
-    '/terms',
-    '/privacy-policy',
-    '/contact',
+    
   ];
   const isPublicRoute = publicRoutes.includes(location.pathname);
 
@@ -67,6 +61,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     pollingInterval: 10 * 60 * 1000,
   });
 
+
+
   // Handle auth status
   useEffect(() => {
     if (authData?.success && authData.data.isAuthenticated) {
@@ -78,12 +74,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           authenticate: true,
         })
       );
-    } else if (authError && !isPublicRoute) {
-      dispatch(clearUser());
-      dispatch(clearCsrfToken());
-      Cookies.remove('accessToken');
-      Cookies.remove('refreshToken');
-      navigate('/signin', { replace: true });
     }
   }, [authData, authError, authLoading, isPublicRoute, dispatch, navigate]);
 
@@ -110,10 +100,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           authenticate: true,
         })
       );
-    } else if (sessionError && !isPublicRoute) {
-      dispatch(clearUser());
-      dispatch(clearCsrfToken());
-      navigate('/signin', { replace: true });
     }
   }, [sessionData, sessionError, isPublicRoute, dispatch, navigate]);
 
@@ -167,14 +153,11 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         });
         authChannel.close();
       } else {
-        throw new Error('Refresh failed');
-      }
+        console.error('Session refresh failed:', response.message);
+      } 
     } catch (err) {
       dispatch(clearUser());
       dispatch(clearCsrfToken());
-      Cookies.remove('accessToken');
-      Cookies.remove('refreshToken');
-      navigate('/signin', { replace: true });
       throw err;
     }
   }, [refreshAuth, dispatch, navigate]);
@@ -186,4 +169,4 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   );
 };
 
-export default AuthProvider;
+export default AuthProvider;  

@@ -50,6 +50,8 @@ import { ProductPostCreator } from './components/content/ProductSelect';
 import { ProductTemplateSelector } from './components/ui/ProductTemplates';
 import { InformativeTemplateSelector } from './components/ui/InformativeTemplates';
 import { EventTemplateSelector } from './components/ui/EventTemplates';
+import PostBlog from './components/content/PostBlog';
+import BlogList from './components/content/SavedBlogs';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -202,6 +204,14 @@ function App() {
                       <Route
                         path="/blog"
                         element={<Blog />}
+                      />
+                      <Route
+                        path="/post-blog"
+                        element={<PostBlog />}
+                      />
+                      <Route
+                        path="/saved-blogs"
+                        element={<BlogList />}
                       />
                       <Route
                         path="/doyouknow"

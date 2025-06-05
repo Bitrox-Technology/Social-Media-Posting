@@ -1,28 +1,16 @@
 import joi from "joi"
 import VALIDATE_SCHEMA from "./validateSchema.js";
-import { CONTENT_TYPE_ENUM, POST_STATUS_ENUM, POST_TYPE_ENUM, PROVIDER_ENUM } from "../config/constant.js";
+import { CONTENT_TYPE_ENUM, POST_STATUS_ENUM, POST_TYPE_ENUM, PRODUCT_POST_TYPE_ENUM, PROVIDER_ENUM } from "../config/constant.js";
 
 const validateSignup = async (inputs) => {
     let schema = {};
-
-    // if (inputs.provider === 'google' || inputs.provider === 'apple') {
-    //     schema = joi.object().keys({
-    //         email: joi.string().email().lowercase().required(),
-    //         password: joi.string().optional().allow('').default(''),
-    //         provider: joi.string().valid('google', 'apple').required(),
-    //         uid: joi.string().trim().required(),
-    //     });
-    // } else {
     schema = joi.object().keys({
         email: joi.string().email().lowercase().required(),
         password: joi.string()
             .min(6)
             .pattern(new RegExp('^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])'))
             .required(),
-        // provider: joi.string().valid('').default('').optional(),
-        // uid: joi.string().trim().allow('').optional(),
     });
-    // }
 
     VALIDATE_SCHEMA(schema, inputs);
 }
@@ -40,6 +28,7 @@ const validateSignupSigninByProvider = async (inputs) => {
 
     VALIDATE_SCHEMA(schema, inputs);
 }
+
 const validateOTP = async (inputs) => {
     let schema = {}
     schema = joi.object().keys({
@@ -210,6 +199,77 @@ const validateUpdatePost = async (inputs) => {
     VALIDATE_SCHEMA(schema, inputs);
 };
 
+const validateSaveProductInfo = async (inputs) => {
+    let schema = {}
+    schema = joi.object({
+        contentType: joi.string().valid('ProductContent').required(),
+        productName: joi.string().trim().min(1).required(),
+        postTypes: joi.array().items(joi.string().valid(...PRODUCT_POST_TYPE_ENUM)).min(1).required(),
+        discount: joi.object({
+            percentage: joi.number().min(1).max(100),
+            description: joi.string().trim().min(1),
+        }).optional(),
+        flashSale: joi.object({
+            offer: joi.string().trim().min(1),
+            validUntil: joi.string().trim().min(1).$_match(/^\d{4}-\d{2}-\d{2}$/),
+        }).optional(),
+        schedule: joi.object({
+            fromDate: joi.string().trim().pattern(/^\d{4}-\d{2}-\d{2}$/),
+            toDate: joi.string().trim().pattern(/^\d{4}-\d{2}-\d{2}$/),
+            time: joi.string().trim().pattern(/^\d{2}:\d{2}$/)
+        }).optional(),
+        imagesUrl: joi.array().items(
+            joi.object({
+                url: joi.string().trim().uri(),
+                label: joi.string().trim().min(1),
+            })
+        ).optional(),
+    });
+
+
+    VALIDATE_SCHEMA(schema, inputs);
+};
+
+
+const validateBlog = async (inputs) => {
+    let schema = {}
+    schema = joi.object({
+        title: joi.string().trim().min(1).required(),
+        content: joi.string().trim().min(1).required(),
+        metaDescription: joi.string().trim().max(160).optional(),
+        excerpt: joi.string().trim().optional(),
+        focusKeyword: joi.string().trim().optional(),
+        categories: joi.array().items(joi.string().trim()).optional(),
+        tags: joi.array().items(joi.string().trim()).optional(),
+        imageUrl: joi.string().trim().uri().optional(),
+        imageAltText: joi.string().trim().optional(),
+        imageDescription: joi.string().trim().optional(),
+        slug: joi.string().trim().optional(),
+    });
+
+    VALIDATE_SCHEMA(schema, inputs);
+};
+
+const validateBlogPost = async (inputs) => {
+    let schema = {}
+    schema = joi.object({
+        title: joi.string().trim().min(1).required(),
+        content: joi.string().trim().min(1).required(),
+        metaDescription: joi.string().trim().optional(),
+        excerpt: joi.string().trim().optional(),
+        focusKeyword: joi.string().trim().optional(),
+        slug: joi.string().trim().optional(),
+        categories: joi.array().items(joi.string().trim()).optional(),
+        tags: joi.array().items(joi.string().trim()).optional(),
+        imageUrl: joi.string().trim().uri().optional(),
+        imageAltText: joi.string().trim().optional(),
+        scheduleTime: joi.string().trim().allow('').optional(),
+        imageDescription: joi.string().trim().optional(),
+    });
+
+    VALIDATE_SCHEMA(schema, inputs);
+};
+
 
 const UserValidation = {
     validateSignup,
@@ -224,7 +284,10 @@ const UserValidation = {
     validateSavePost,
     validateUpdatePost,
     validateUserProfile,
-    validateSignupSigninByProvider
+    validateSignupSigninByProvider,
+    validateSaveProductInfo,
+    validateBlog,
+    validateBlogPost,
 }
 
 export default UserValidation;

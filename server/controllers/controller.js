@@ -8,8 +8,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
 import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent, generateBlog, generateCode } from "../services/generateCarousel.js";
-import { postBlog } from "../services/blogPost.js";
-import { ConsentRepository } from "instagram-private-api/dist/repositories/consent.repository.js";
+import { postBlog, scheduledBlogPosts } from "../services/blogPost.js";
+
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
 
@@ -516,8 +516,6 @@ As we continue to push the boundaries of knowledge, one thing is clear: AI will 
 const GenerateBlog = async (req, res, next) => {
 
   const { topic } = req.body;
-  console.log("Received topic:", topic);
-
   if (!topic) {
     throw new ApiError(400, "Topic is required");
   }

@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
 import { RootState } from './index';
+import { set } from 'lodash';
 
 interface ContentIdea {
   title: string;
@@ -43,6 +44,20 @@ interface CsrfState {
   expiresAt?: number;
 }
 
+interface BlogContent {
+  title: string;
+    content: string;
+    metaDescription: string;
+    categories: string[];
+    tags: string[];
+    excerpt?: string; 
+    focusKeyword?: string; 
+    slug: string;
+    image: { 
+      url: string;
+      altText: string; 
+      description?: string }
+}
 interface AppState {
   contentType: 'topic' | 'blog' | 'carousel' | 'doyouknow' | 'promotional' | 'informative' | 'engagement' | 'brand' | 'event' | 'testimonial' | 'festivals' |null;
   selectedTopic: string;
@@ -56,10 +71,12 @@ interface AppState {
   apiTopics: string[];
   customTopics: string[];
   user?: User;
+  blogContent?: BlogContent;
   csrfToken?: string;
   csrfTokenExpiresAt?: number;
   isAuthenticated: boolean;
   sessionWarning: boolean;
+  sessionWarningToExpire? : boolean;
 }
 
 const initialState: AppState = {
@@ -79,6 +96,8 @@ const initialState: AppState = {
   csrfTokenExpiresAt: undefined,
   isAuthenticated: false,
   sessionWarning: false,
+  sessionWarningToExpire: false,
+  blogContent: undefined,
 };
 
 const appSlice = createSlice({
@@ -107,6 +126,9 @@ const appSlice = createSlice({
     },
     clearCustomTopics(state) {
       state.customTopics = [];
+    },
+    setBlogContent(state, action: PayloadAction<BlogContent>) {
+      state.blogContent = action.payload;
     },
     setSelectedFile(state, action: PayloadAction<SelectedFileData | null>) {
       state.selectedFile = action.payload;
@@ -143,6 +165,9 @@ const appSlice = createSlice({
     setSessionWarning: (state, action: PayloadAction<boolean>) => {
       state.sessionWarning = action.payload;
     },
+    setSessionWarningToExpire: (state, action: PayloadAction<boolean>) => {
+      state.sessionWarningToExpire = action.payload;
+    },
     setPosts: (state, action: PayloadAction<Post[]>) => {
       state.posts = action.payload;
     },
@@ -164,6 +189,7 @@ const appSlice = createSlice({
 export const {
   setContentType,
   setSelectedTopic,
+  setBlogContent,
   setSelectedIdea,
   setSelectedFile,
   setPosted,
@@ -180,8 +206,10 @@ export const {
   setCsrfToken,
   clearCsrfToken,
   setSessionWarning,
+  setSessionWarningToExpire
 } = appSlice.actions;
 export const selectUser = (state: RootState) => (state.app as AppState).user;
+export const selectBlogContent = (state: RootState) => (state.app as AppState).blogContent;
 export const selectIsAuthenticated = (state: RootState) => !!state.app.user?.authenticate;
 export const selectSessionWarning = (state: RootState) => state.app.sessionWarning;
 export default appSlice.reducer;

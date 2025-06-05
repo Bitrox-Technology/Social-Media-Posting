@@ -3,16 +3,20 @@ import User from "../models/user.js";
 import { ApiError } from "../utils/ApiError.js";
 import { generateAccessAndRefreshTokenForUser } from "../utils/generateToken.js";
 import { BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR } from "../utils/apiResponseCode.js";
-import { clearAuthCookies, comparePasswordUsingBcrypt, Hashed_Password, isEmail } from "../utils/utilities.js";
+import { clearAuthCookies, comparePasswordUsingBcrypt, convertToCron, Hashed_Password, isEmail } from "../utils/utilities.js";
 import PostTopic from "../models/postTopics.js";
 import ImageContent from "../models/imageContent.js";
 import CarouselContent from "../models/carouselContent.js";
 import DYKContent from "../models/dykContent.js";
 import SavePosts from "../models/savePosts.js";
 import { generateOTPForEmail, verifyEmailOTP } from "../utils/functions.js";
-import { uploadOnClodinary } from "../utils/cloudinary.js";
+import {  uploadStreamToCloudinary } from "../utils/cloudinary.js";
 import i18n from "../utils/i18n.js";
 import UserScheduledTask from "../models/userSchesuledTask.js";
+import Blog from "../models/blog.js";
+import { v4 as uuidv4 } from "uuid";
+import cron from 'node-cron';
+import { publishBlogPost } from "./blogPost.js";
 
 const signup = async (inputs) => {
     let user;
@@ -62,7 +66,7 @@ const signupSigninByProvider = async (inputs) => {
         }
         const { accessToken, refreshToken } = generateAccessAndRefreshTokenForUser(user)
         const sessionExpiry = Date.now() + parseInt(process.env.ACCESS_TOKEN_EXPIRY) * 1000;
-        user = await User.findByIdAndUpdate({_id: user._id}, {refreshToken: refreshToken, sessionExpiry: sessionExpiry}, {new: true})
+        user = await User.findByIdAndUpdate({ _id: user._id }, { refreshToken: refreshToken, sessionExpiry: sessionExpiry }, { new: true })
         user.accessToken = accessToken;
         user.refreshToken = refreshToken;
         user.login = login;
@@ -86,13 +90,11 @@ const verifyOTP = async (inputs) => {
         if (otp === false) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_OTP"))
         subObj.isEmailVerify = true
     }
-    
-    const {accessToken, refreshToken} = await generateAccessAndRefreshTokenForUser(user)
-    subObj.refreshToken = refreshToken
-    subObj.sessionExpiry = Date.now() + parseInt(process.env.ACCESS_TOKEN_EXPIRY) * 1000;
-    user = await User.findByIdAndUpdate({ _id: user._id }, subObj, { new: true }).lean()
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokenForUser(user)
+
     user.accessToken = accessToken;
-    user.refreshToken = refreshToken; 
+    user.refreshToken = refreshToken;
     return user;
 }
 
@@ -135,10 +137,8 @@ const login = async (inputs) => {
         if (!user) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_USER"))
         let compare = await comparePasswordUsingBcrypt(inputs.password, user.password);
         if (!compare) throw new ApiError(BAD_REQUEST, i18n.__("INVALID_PASSWORD"))
-        const {accessToken, refreshToken} = await generateAccessAndRefreshTokenForUser(user)
-        let sessionExpiry = Date.now() + parseInt(process.env.ACCESS_TOKEN_EXPIRY) * 1000;
-        user = await User.findByIdAndUpdate({ _id: user._id }, {refreshToken: refreshToken, sessionExpiry: sessionExpiry}, { new: true }).lean()
-        
+        const { accessToken, refreshToken } = await generateAccessAndRefreshTokenForUser(user)
+
         user.accessToken = accessToken;
         user.refreshToken = refreshToken;
         return user
@@ -148,12 +148,6 @@ const login = async (inputs) => {
 
 const logout = async (req, res) => {
     clearAuthCookies(res)
-    await User.findByIdAndUpdate(
-      req.user._id,
-      { $unset: { refreshToken: '', sessionExpiry: '' } },
-      { new: true }
-    ).lean();
-
 
     return new Promise((resolve, reject) => {
         req.session.destroy((err) => {
@@ -171,10 +165,15 @@ const logout = async (req, res) => {
 }
 
 const userDetails = async (inputs, user, files) => {
+
+    console.log("User Details Inputs", files)
     if (files && files.length > 0) {
         for (const file of files) {
             if (file.fieldname === 'logo') {
-                const result = await uploadOnClodinary(file.path, 'logo');
+                const result = await uploadStreamToCloudinary(file.buffer, {
+                    folder: 'company_logos',
+                    public_id: `${inputs.companyName}_logo_${Date.now()}`,
+                });
                 if (!result || !result.secure_url) throw new ApiError(BAD_REQUEST, 'Unable to upload logo');
                 inputs.logo = result.secure_url;
 
@@ -183,7 +182,10 @@ const userDetails = async (inputs, user, files) => {
                 const match = file.fieldname.match(/productCategories\[(\d+)\]\[image\]/);
                 if (match) {
                     const index = parseInt(match[1], 10);
-                    const result = await uploadOnClodinary(file.path, `productCategories_${index}`);
+                    const result = await uploadStreamToCloudinary(file.buffer, {
+                        folder: 'product_categories',
+                        public_id: `${inputs.companyName}_category_${index}_${Date.now()}`,
+                    });
                     if (!result || !result.secure_url) {
                         throw new ApiError(BAD_REQUEST, `Unable to upload product image for index ${index}`);
                     }
@@ -468,6 +470,7 @@ const getUserPostDetail = async (params, user) => {
 
 
 }
+
 const getImageContent = async (contentId, user) => {
 
     let content = await ImageContent.findOne({ _id: contentId, userId: user._id })
@@ -513,6 +516,127 @@ const getUserScheduledPosts = async (user) => {
     return scheduledPosts;
 }
 
+const saveBlog = async (inputs, user) => {
+    const blogPost = await Blog.create({
+        userId: user._id,
+        title: inputs.title,
+        content: inputs.content,
+        metaDescription: inputs.metaDescription,
+        categories: inputs.categories,
+        tags: inputs.tags,
+        imageUrl: inputs.imageUrl,
+        imageAltText: inputs.imageAltText,
+        imageDescription: inputs.imageDescription,
+        focusKeyword: inputs.focusKeyword,
+        slug: inputs.slug,
+        excerpt: inputs.excerpt
+
+    });
+    if (!blogPost) throw new ApiError(BAD_REQUEST, i18n.__("UNABLE_TO_SAVE_BLOG_POST"));
+    return blogPost;
+}
+
+const getBlogById = async (blogId, user) => {
+    const blogPost = await Blog.findOne({ _id: blogId, userId: user._id }).lean();
+    if (!blogPost) throw new ApiError(BAD_REQUEST, i18n.__("BLOG_POST_NOT_FOUND"));
+    return blogPost;
+}
+
+const getAllBlogs = async (user) => {
+    const blogs = await Blog.find({ userId: user._id }).sort({ createdAt: -1 }).lean();
+    if (!blogs || blogs.length === 0) throw new ApiError(BAD_REQUEST, i18n.__("NO_BLOGS_FOUND"));
+    return blogs;
+}
+
+const scheduledBlogPosts = async (inputs, user) => {
+  let postResult;
+
+  if (inputs.scheduleTime && inputs.scheduleTime !== "") {
+    const cronExpression = convertToCron(inputs.scheduleTime);
+    console.log("Generated cron expression:", cronExpression);
+
+    const scheduledDate = new Date(inputs.scheduleTime);
+    const now = new Date();
+    if (scheduledDate <= now) {
+      throw new ApiError(BAD_REQUEST, i18n.__("INVALID_SCHEDULED_TIME"));
+    }
+
+    const taskId = uuidv4();
+
+    const scheduledTask = new UserScheduledTask({
+      userId: user._id,
+      taskId,
+      task: "Post to Blog",
+      platform: "wordpress",
+      imageUrl: inputs.imageUrl,
+      title: inputs.title,
+      description: inputs.content,
+      scheduleTime: scheduledDate,
+      cronExpression,
+      status: "pending",
+      postId: null,
+    });
+
+    await scheduledTask.save();
+
+    // Schedule the task using node-cron
+    const task = cron.schedule(
+      cronExpression,
+      async () => {
+        try {
+          postResult = await publishBlogPost(inputs);
+          console.log(
+            `Scheduled post executed successfully with post ID: ${postResult}`
+          );
+
+          // Update the scheduled task with the postId and status
+          await UserScheduledTask.updateOne(
+            { taskId },
+            {
+              $set: {
+                status: "completed",
+                postId: postResult,
+              },
+            }
+          );
+        } catch (error) {
+          console.error("Scheduled LinkedIn post failed:", error.message);
+
+          // Update the scheduled task status to 'failed'
+          await UserScheduledTask.updateOne(
+            { taskId },
+            {
+              $set: {
+                status: "failed",
+              },
+            }
+          );
+        }
+      },
+      {
+        scheduled: true,
+        timezone: "Asia/Kolkata", // Use IST timezone as per the current date
+      }
+    );
+
+    return {
+      message: `Post scheduled successfully for ${scheduledDate.toLocaleString(
+        "en-IN",
+        { timeZone: "Asia/Kolkata" }
+      )}`,
+      taskId,
+      postId: null,
+    };
+  } else {
+    postResult = await publishBlogPost(inputs);
+    console.log(`Post executed immediately with post ID: ${postResult}`);
+    if (!postResult) throw new ApiError(BAD_REQUEST, i18n.__("POST_FAILED"));
+    return {
+      message: "Post published immediately",
+      postId: postResult,
+    };
+  }
+};
 
 const UserServices = {
     signup,
@@ -539,6 +663,10 @@ const UserServices = {
     updatePostTopics,
     getUserAllPosts,
     getUserPostDetail,
-    getUserScheduledPosts
+    getUserScheduledPosts,
+    saveBlog,
+    getBlogById,
+    scheduledBlogPosts,
+    getAllBlogs,
 }
 export default UserServices;

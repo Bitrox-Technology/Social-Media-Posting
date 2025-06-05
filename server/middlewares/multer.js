@@ -5,9 +5,23 @@ const storage = multer.diskStorage({
         cb(null, './uploads');
     },
     filename: (req, file, cb) => {
-        // console.log("File---", file)
         cb(null, `${Date.now()}-${file.originalname}`);
     }
+});
+
+const storage2 = multer.memoryStorage();
+
+export const uploadMemory = multer({
+  storage2,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb("Error: File upload only supports the following filetypes - " + filetypes, false);
+    }
+  },
 });
 
 export const upload = multer({ 

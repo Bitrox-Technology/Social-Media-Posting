@@ -23,7 +23,7 @@ import {
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clearCsrfToken, clearUser } from '../../store/appSlice';
-import { Bot } from 'lucide-react';
+import { BlocksIcon, Bot } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLogoutMutation } from '../../store/api';
 import { useAlert } from '../hooks/useAlert';
@@ -87,6 +87,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
       items: [
         { path: '/post-analyzer', label: 'Post Analyzer', icon: <AnalyticsIcon /> },
         { path: '/user-posts', label: 'Content Library', icon: <LibraryBooksIcon /> },
+        { path: '/saved-blogs', label: 'Blog Library', icon: <BlocksIcon /> },
         { path: '/scheduled-posts', label: 'Scheduled Posts', icon: <Schedule /> },
       ]
     }

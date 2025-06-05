@@ -30,6 +30,7 @@ const platformTypes = Object.freeze({
   linkedin: 'linkedin',
   instagram: 'instagram',
   facebook: 'facebook',
+  wordpress: 'wordpress',
 });
 
 // Schedule Status Types
@@ -60,6 +61,12 @@ const contentTypeTypes = Object.freeze({
   dykContent: 'DYKContent',
 });
 
+const productPostTypes = Object.freeze({
+  newProduct: 'newProduct',
+  discount: 'discount',
+  flashSale: 'flashSale',
+});
+
 export const SUBSCRIPTION_ENUM = Object.values(subscriptionTypes);
 export const ROLE_ENUM = Object.values(roleTypes);
 export const STATUS_ENUM = Object.values(statusTypes);
@@ -69,6 +76,7 @@ export const SCHEDULE_STATUS_ENUM = Object.values(scheduleStatusTypes);
 export const POST_STATUS_ENUM = Object.values(postStatusTypes);
 export const POST_TYPE_ENUM = Object.values(postTypeTypes);
 export const CONTENT_TYPE_ENUM = Object.values(contentTypeTypes);
+export const PRODUCT_POST_TYPE_ENUM = Object.values(productPostTypes);
 
 export const config = {
   port: process.env.PORT || 3000,

@@ -1,7 +1,8 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import { ApiError } from "./ApiError.js";
-import { INTERNAL_SERVER_ERROR } from "./apiResponseCode.js";
+import { BAD_REQUEST, INTERNAL_SERVER_ERROR } from "./apiResponseCode.js";
+import { Readable } from 'stream';
 
 
 const configCloudinary = () => {
@@ -21,7 +22,7 @@ const uploadOnClodinary = async (localFilePath, folder) => {
 
   try {
     if (!localFilePath) return null;
-    
+
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "image",
       folder: folder
@@ -29,7 +30,7 @@ const uploadOnClodinary = async (localFilePath, folder) => {
     fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
-    fs.unlinkSync(localFilePath); 
+    fs.unlinkSync(localFilePath);
     return null;
   }
 };
@@ -44,13 +45,13 @@ const carouselUploadOnCloudinary = async (files) => {
 
   try {
     for (const file of files) {
-      const uniqueFilename = `${file.originalname}`; 
+      const uniqueFilename = `${file.originalname}`;
       const result = await cloudinary.uploader.upload(
         file.path,
         {
           public_id: uniqueFilename,
           resource_type: "image",
-          folder: "carousel-images", 
+          folder: "carousel-images",
         }
       );
       fs.unlinkSync(file.path);
@@ -79,7 +80,7 @@ const deleteImageFromCloudinary = async (url) => {
     });
     return response;
   } catch (error) {
-    throw new ApiError(INTERNAL_SERVER_ERROR,  `Error deleting image from Cloudinary, ${error}`);
+    throw new ApiError(INTERNAL_SERVER_ERROR, `Error deleting image from Cloudinary, ${error}`);
   }
 }
 
@@ -99,9 +100,49 @@ const deleteMultipleImagesFromCloudinary = async (urls) => {
     throw new ApiError(INTERNAL_SERVER_ERROR, `Error deleting images from Cloudinary, ${error}`);
   }
 }
+
+
+const bufferToStream = (buffer) => {
+  const readable = new Readable();
+  readable._read = () => { };
+  readable.push(buffer);
+  readable.push(null);
+  return readable;
+};
+
+const uploadStreamToCloudinary = (buffer, options) => {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        ...options,
+        resource_type: 'image',
+        fetch_format: 'auto', // Use f_auto for automatic format
+        quality: 'auto', // q_auto for compression
+      },
+      (error, result) => {
+        if (error) {
+          console.error('Cloudinary upload error:', error);
+          reject(new ApiError(BAD_REQUEST, `Cloudinary upload failed: ${error.message}`));
+        } else {
+          resolve(result);
+        }
+      }
+    );
+    bufferToStream(buffer).pipe(stream).on('error', (err) => {
+      console.error('Stream pipe error:', err);
+      reject(err);
+    });
+  });
+};
 export {
   uploadOnClodinary,
   carouselUploadOnCloudinary,
   deleteImageFromCloudinary,
-  deleteMultipleImagesFromCloudinary,  
+  deleteMultipleImagesFromCloudinary,
+  uploadStreamToCloudinary
 };

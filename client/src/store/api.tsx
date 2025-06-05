@@ -6,7 +6,7 @@ import {
   FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
 import Cookies from 'js-cookie';
-import { setUser, clearUser, setCsrfToken, clearCsrfToken, setSessionWarning } from './appSlice';
+import { setUser, clearUser, setCsrfToken, clearCsrfToken, setSessionWarning, setSessionWarningToExpire } from './appSlice';
 import { backendURL } from '../constants/urls';
 import logger from '../Utilities/logger';
 import { store } from "./index"
@@ -141,7 +141,7 @@ const baseQueryWithDispatch: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQ
 
       // Session warning
       if (user?.expiresAt && user.expiresAt - Date.now() <= 5 * 60 * 1000) {
-        dispatch(setSessionWarning(true));
+        dispatch(setSessionWarningToExpire(true));
       }
 
       // Set CSRF token for non-safe methods
@@ -157,66 +157,67 @@ const baseQueryWithDispatch: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQ
   let result = await baseQuery(args, api, extraOptions);
 
   // Check for 401 Unauthorized (or whatever status you want to handle)
-  if (result.error && result.error.status === 401) {
-    // Unauthorized check
-    logger.warn('Unauthorized request', { endpoint });
-    try {
-      // Use existing CSRF token or fetch a new one
-      if (!csrfToken || (state.app?.csrfTokenExpiresAt && Date.now() >= state.app.csrfTokenExpiresAt)) {
-        const fetchedToken = await fetchCsrfToken(dispatch);
-        console.log('CSRF Token fetched for refresh:', fetchedToken);
-        csrfToken = fetchedToken === null ? undefined : fetchedToken;
-      }
+  if (result.error && result.error.status === 402) {
+    dispatch(setSessionWarning(true));
+    // try {
+    //   // Use existing CSRF token or fetch a new one
+    //   if (!csrfToken || (state.app?.csrfTokenExpiresAt && Date.now() >= state.app.csrfTokenExpiresAt)) {
+    //     const fetchedToken = await fetchCsrfToken(dispatch);
+    //     console.log('CSRF Token fetched for refresh:', fetchedToken);
+    //     csrfToken = fetchedToken === null ? undefined : fetchedToken;
+    //   }
 
-      if (!csrfToken) {
-        // Return the original result if we can't get a CSRF token
-        return result;
-      }
+    //   if (!csrfToken) {
+    //     // Return the original result if we can't get a CSRF token
+    //     return result;
+    //   }
 
-      const refreshResult = await baseQuery(
-        {
-          url: '/auth/refresh-token',
-          method: 'POST',
-          headers: { 'X-CSRF-Token': csrfToken },
-        },
-        api,
-        extraOptions
-      );
+    //   const refreshResult = await baseQuery(
+    //     {
+    //       url: '/auth/refresh-token',
+    //       method: 'POST',
+    //       headers: { 'X-CSRF-Token': csrfToken },
+    //     },
+    //     api,
+    //     extraOptions
+    //   );
 
-      if (refreshResult.data && (refreshResult.data as ApiResponse<any>).success) {
-        const { email, role, sessionExpiry, csrfToken: newCsrfToken, csrfExpiresAt } = (
-          refreshResult.data as ApiResponse<any>
-        ).data;
-        dispatch(
-          setUser({
-            email,
-            expiresAt: sessionExpiry,
-            role,
-            authenticate: true,
-          })
-        );
-        dispatch(
-          setCsrfToken({
-            token: newCsrfToken,
-            expiresAt: csrfExpiresAt,
-          })
-        );
-        if (authChannel) {
-          authChannel.postMessage({ type: 'AUTH_REFRESH', payload: { email, role, expiresAt: sessionExpiry } });
-        }
-        // Retry the original request
-        result = await baseQuery(args, api, extraOptions);
-      } else {
-        window.location.href = '/signin';
-        logger.warn('Token refresh failed, redirecting to sign-in', { endpoint });
-      }
-    } catch (error) {
-      logger.error('Token refresh failed:', { error });
-      dispatch(clearUser());
-      dispatch(clearCsrfToken());
-      dispatch(setSessionWarning(false));
-      return result;
-    }
+    //   console.log('Refresh result:', refreshResult);
+
+    //   if (refreshResult.data && (refreshResult.data as ApiResponse<any>).success) {
+    //     const { email, role, expiresAt, csrfToken: newCsrfToken, csrfExpiresAt } = (
+    //       refreshResult.data as ApiResponse<any>
+    //     ).data;
+    //     dispatch(
+    //       setUser({
+    //         email,
+    //         expiresAt: expiresAt,
+    //         role,
+    //         authenticate: true,
+    //       })
+    //     );
+    //     dispatch(
+    //       setCsrfToken({
+    //         token: newCsrfToken,
+    //         expiresAt: csrfExpiresAt,
+    //       })
+    //     );
+    //     if (authChannel) {
+    //       authChannel.postMessage({ type: 'AUTH_REFRESH', payload: { email, role, expiresAt: expiresAt } });
+    //     }
+    //     // Retry the original request
+    //     result = await baseQuery(args, api, extraOptions);
+    //   }
+    // } catch (error) {
+    //   logger.error('Token refresh failed:', { error });
+    // }
+  } else if (result.error && result.error.status === 401) {
+    dispatch(clearUser());
+    dispatch(clearCsrfToken());
+    dispatch(setSessionWarning(false));
+    dispatch(setSessionWarningToExpire(false));
+    window.location.href = '/signin';
+
   }
 
   // Refetch CSRF token after non-safe methods
@@ -385,7 +386,7 @@ export const api = createApi({
         body,
       }),
     }),
-    generateBlog: builder.mutation<ApiResponse<any>, void>({
+    generateBlog: builder.mutation<ApiResponse<any>, {topic: string}>({
       query: (topic) => ({
         url: '/generate-blog',
         method: 'POST',
@@ -498,6 +499,32 @@ export const api = createApi({
         body: formData
       }),
     }),
+    saveBlog: builder.mutation<ApiResponse<any>, {title: string, content: string, metaDescription: string, categories:  string[]; tags:  string[]; slug: string; focusKeyword: string; excerpt: string; imageUrl: string, imageAltText: string}>({
+      query: (body) => ({
+        url: '/user/save-blog',
+        method: 'POST',
+        body: body
+      }),
+    }),
+    postBlog: builder.mutation<ApiResponse<any>, {title: string, content: string, metaDescription: string, categories:  string[]; tags:  string[]; slug: string; focusKeyword: string; excerpt: string; imageUrl: string, imageAltText: string; scheduleTime: string}>({
+      query: (body) => ({
+        url: '/user/blog-post',
+        method: 'POST',
+        body: body
+      }),
+    }),
+    getBlogById: builder.query<ApiResponse<any>, {blogId: string}>({
+      query: ({blogId}) => ({
+        url: `/user/get-blog/${blogId}`,
+        method: 'GET',
+      }),
+    }),
+    getAllBlogs: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: `/user/get-all-blogs`,
+        method: 'GET',
+      }),
+    }),
     authLinkedIn: builder.query<ApiResponse<any>, void>({
       query: () => ({
         url: '/social/linkedin/auth',
@@ -535,9 +562,6 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
-
-
-
   }),
 });
 
@@ -578,6 +602,7 @@ export const {
   useUploadCarouselToCloudinaryMutation,
   useUploadImageToCloudinaryMutation,
   useGenerateDoYouKnowMutation,
+  useLazyGetAllBlogsQuery,
   useSignUpMutation,
   useSignInMutation,
   useLogoutMutation,
@@ -586,7 +611,9 @@ export const {
   useGenerateTopicsMutation,
   useGenerateImageContentMutation,
   useSavePostsMutation,
+  usePostBlogMutation,
   useGenerateBlogMutation,
+  useLazyGetBlogByIdQuery,
   useSavePostContentMutation,
   useLazyGetPostContentQuery,
   useImageContentMutation,
@@ -597,6 +624,7 @@ export const {
   useLazyGetCarouselContentQuery,
   useLazyGetDYKContentQuery,
   useUpdatePostMutation,
+  useSaveBlogMutation,
   useResendOTPMutation,
   useForgetPasswordMutation,
   useUserDetailsMutation,

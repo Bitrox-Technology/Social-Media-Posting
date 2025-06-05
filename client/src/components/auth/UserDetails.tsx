@@ -189,25 +189,8 @@ const UserDetail = () => {
         console.log(`${key}:`, value);
       }
 
-      // Save to localStorage (excluding files)
-      const dataToSave = {
-        ...cleanedValues,
-        logo: null, // Exclude file
-        productCategories: cleanedValues.productCategories.map((item) => ({
-          category: item.category,
-          productName: item.productName,
-          image: null, // Exclude file
-        })),
-      };
-      localStorage.setItem('userDetails', JSON.stringify(dataToSave));
-
       const response = await userDetails(formData).unwrap();
       console.log('API response:', response);
-
-      // Uncomment when API response structure is confirmed
-      // if (!response.success) {
-      //   throw new Error(response.message || 'Failed to save profile');
-      // }
 
       toast.success(response.message || 'Profile saved successfully!', {
         position: 'bottom-right',

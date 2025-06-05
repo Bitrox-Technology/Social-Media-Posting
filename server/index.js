@@ -82,29 +82,51 @@ app.use(mongoSanitize());
 
 // Data sanitization against XSS using sanitize-html
 app.use((req, res, next) => {
-  const sanitizeObject = (obj) => {
+  const sanitizeObject = (obj, allowHtmlFields = []) => {
     if (!obj || typeof obj !== 'object') return obj;
     Object.keys(obj).forEach((key) => {
       if (typeof obj[key] === 'string') {
-        obj[key] = sanitizeHtml(obj[key], {
-          allowedTags: [], // Disallow all HTML tags
-          allowedAttributes: {}, // Disallow all attributes
-        });
+        // Allow HTML in specified fields (e.g., content)
+        const options = allowHtmlFields.includes(key)
+          ? {
+              allowedTags: [
+                'h2', 'h3', 'p', 'ul', 'ol', 'li', 'a', 'b', 'i', 'strong', 'em',
+                'br', 'div', 'span', 'img', 'blockquote', 'code', 'pre',
+              ],
+              allowedAttributes: {
+                a: ['href', 'title', 'target'],
+                img: ['src', 'alt', 'title'],
+                div: ['class'],
+                span: ['class'],
+              },
+              // Prevent XSS by disallowing scripts and unsafe attributes
+              disallowedTagsMode: 'discard',
+            }
+          : {
+              allowedTags: [], // Strip all tags for other fields
+              allowedAttributes: {},
+            };
+        obj[key] = sanitizeHtml(obj[key], options);
       } else if (typeof obj[key] === 'object') {
-        sanitizeObject(obj[key]);
+        sanitizeObject(obj[key], allowHtmlFields);
       }
     });
     return obj;
   };
 
   // Sanitize request body, query, and params
-  if (req.body) req.body = sanitizeObject(req.body);
-  if (req.query) req.query = sanitizeObject(req.query);
-  if (req.params) req.params = sanitizeObject(req.params);
+  if (req.body) {
+    req.body = sanitizeObject(req.body, ['content']); // Allow HTML in content
+  }
+  if (req.query) {
+    req.query = sanitizeObject(req.query);
+  }
+  if (req.params) {
+    req.params = sanitizeObject(req.params);
+  }
 
   next();
 });
-
 // Prevent parameter pollution
 app.use(hpp());
 
