@@ -52,6 +52,7 @@ const postTypeTypes = Object.freeze({
   image: 'image',
   carousel: 'carousel',
   doyouknow: 'doyouknow',
+  festival: 'festival'
 });
 
 // Content Type Types
@@ -59,6 +60,7 @@ const contentTypeTypes = Object.freeze({
   imageContent: 'ImageContent',
   carouselContent: 'CarouselContent',
   dykContent: 'DYKContent',
+  festivalContent: 'FestivalContent'
 });
 
 const productPostTypes = Object.freeze({
@@ -66,6 +68,12 @@ const productPostTypes = Object.freeze({
   discount: 'discount',
   flashSale: 'flashSale',
 });
+
+const serctionTypes = Object.freeze({
+  blog: 'blog',
+  news: 'news',
+  article: 'article'
+})
 
 export const SUBSCRIPTION_ENUM = Object.values(subscriptionTypes);
 export const ROLE_ENUM = Object.values(roleTypes);
@@ -77,6 +85,7 @@ export const POST_STATUS_ENUM = Object.values(postStatusTypes);
 export const POST_TYPE_ENUM = Object.values(postTypeTypes);
 export const CONTENT_TYPE_ENUM = Object.values(contentTypeTypes);
 export const PRODUCT_POST_TYPE_ENUM = Object.values(productPostTypes);
+export const SECTION_TYPE_ENUM = Object.values(serctionTypes);
 
 export const config = {
   port: process.env.PORT || 3000,

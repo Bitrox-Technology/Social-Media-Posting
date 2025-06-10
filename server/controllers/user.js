@@ -306,7 +306,7 @@ const GetBlogById = async (req, res, next) => {
 const BlogPost = async (req, res, next) => {
     try {
         await UserValidation.validateBlogPost(req.body)
-        let blog = await UserServices.scheduledBlogPosts(req.body, req.user)
+        let blog = await UserServices.scheduledContent(req.body, req.user)
         const {newCsrfToken, expiresAt} = RevokeToken(req);
         return res.status(CREATED).json(new ApiResponse(CREATED, { blog, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("BLOG_POST_SUCCESSS")))
     } catch (error) {
@@ -323,10 +323,30 @@ const GetAllBlogs = async (req, res, next) => {
     }
 }
 
+const FestivalContent = async (req, res, next) => {
+    try {
+        await UserValidation.validateFestivalContent(req.body)
+        let blog = await UserServices.festivalContent(req.body, req.file,  req.user)
+        const {newCsrfToken, expiresAt} = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { blog, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("SAVE_FESTIVAL_CONTENT_SUCCESSS")))
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+const GetFestivalContent = async (req, res, next) => {
+    try {
+        let blogs = await UserServices.getFestivalContent(req.user, req.params)
+        return res.status(OK).json(new ApiResponse(OK, blogs, i18n.__("FESTIVAL_CONTENT_FETCHED_SUCCESS")))
+    } catch (error) {
+        next(error)
+    }
+}
 const UserControllers = {
     Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus, GetUserPostDetailById,
     ForgetPassword, Logout, GetPendingTopics, GetUserAllPosts, SignupSigninByProvider, GetAllBlogs,
-    Login, SavePosts, PostContent, GetPostContent, SaveImageContent, SaveProductInfo,
+    Login, SavePosts, PostContent, GetPostContent, SaveImageContent, SaveProductInfo, FestivalContent, GetFestivalContent,
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts, SaveBlog, GetBlogById, BlogPost,
     GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile, GetUserScheduledPosts
 }

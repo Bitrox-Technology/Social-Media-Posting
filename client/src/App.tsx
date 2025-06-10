@@ -40,7 +40,7 @@ import { UserPostDetail } from './components/content/UserPostDetail';
 import SessionWarning from './components/providers/SessionWarning';
 import AuthProvider from './components/providers/AuthProvider';
 import ProtectedRoute from './components/providers/ProtectedRoute';
-import { FestivalTemplates } from './components/ui/festivalTemplates';
+import { FestivalTemplatesSelector } from './components/ui/festivalTemplates';
 import { ScheduledPosts } from './components/content/ScheduledPosts';
 import { FAQ } from './pages/FAQPage';
 import { PrivacyPolicy } from './pages/PrivacyPolicyPage';
@@ -52,6 +52,7 @@ import { InformativeTemplateSelector } from './components/ui/InformativeTemplate
 import { EventTemplateSelector } from './components/ui/EventTemplates';
 import PostBlog from './components/content/PostBlog';
 import BlogList from './components/content/SavedBlogs';
+import { FestivalPostCreator } from './components/content/festivalInfo';
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -183,7 +184,7 @@ function App() {
                       />
                       <Route
                         path="/tmfestival"
-                        element={<FestivalTemplates />}
+                        element={<FestivalTemplatesSelector />}
                       />
                       <Route
                         path="/tmdoyouknow"
@@ -236,6 +237,10 @@ function App() {
                       <Route
                         path="/auto"
                         element={<AutoPostCreator />}
+                      />
+                      <Route
+                        path="/festivals"
+                        element={<FestivalPostCreator />}
                       />
                       <Route
                         path="/select-media"

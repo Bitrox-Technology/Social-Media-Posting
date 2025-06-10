@@ -1,7 +1,7 @@
 // src/components/ui/ImageGenerationTemplate.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { festivalTemplates, ImageTemplate, Colors } from '../../templetes/festivalTemplates';
+import { FestivalTemplates, FestivalTemplate, Colors } from '../../templetes/festivalTemplates';
 import { ArrowLeft, Image as ImageIcon, ChevronRight, Layout, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
@@ -27,7 +27,7 @@ const defaultColors: Colors = {
   footerColor: '#50E3C2',
   backgroundColor: '#FFFFFF',
   glowColor: '#FFD700', // Added default glow color
-  complementaryGlowColor: '#00BFFF', // Added default complementary glow color
+  complementaryTextColor: '#00BFFF', // Added default complementary text color
   typography: {
     fontFamily: 'Roboto, sans-serif',
     fontWeight: 500,
@@ -51,11 +51,11 @@ const defaultColors: Colors = {
   },
 };
 
-export const FestivalTemplates: React.FC = () => {
+export const FestivalTemplatesSelector: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const defaultLogoUrl = '/images/Logo.png' 
-  const [selectedTemplate, setSelectedTemplate] = useState<ImageTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<FestivalTemplate | null>(null);
   const [activeTab, setActiveTab] = useState<'templates' | 'preview' | 'settings'>('templates');
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -87,7 +87,7 @@ export const FestivalTemplates: React.FC = () => {
     return () => window.removeEventListener('resize', updateScale);
   }, [selectedTemplate]);
 
-  const handleSelectTemplate = (template: ImageTemplate) => {
+  const handleSelectTemplate = (template: FestivalTemplate) => {
     setSelectedTemplate(template);
     setActiveTab('preview');
     console.log('Selected Template:', template.id, 'Logo URL:', defaultLogoUrl);
@@ -137,7 +137,7 @@ export const FestivalTemplates: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {festivalTemplates.map((template) => (
+            {FestivalTemplates.map((template) => (
               <motion.div
                 key={template.id}
                 onClick={() => handleSelectTemplate(template)}

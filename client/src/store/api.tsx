@@ -42,11 +42,11 @@ interface ApiResponse<T> {
 interface SavePostRequest {
   postContentId: string;
   topic: string;
-  type: 'image' | 'carousel' | 'doyouknow';
+  type: 'image' | 'carousel' | 'doyouknow' | 'festival';
   status?: 'pending' | 'error' | 'success';
   images?: { url: string; label: string }[];
   contentId?: string;
-  contentType?: 'ImageContent' | 'CarouselContent' | 'DYKContent';
+  contentType?: 'ImageContent' | 'CarouselContent' | 'DYKContent' | 'FestivalContent';
 }
 
 interface UserState {
@@ -562,17 +562,29 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
+
+    festivalContent: builder.mutation<ApiResponse<any>, FormData>({
+      query: (formData) => ({
+        url: '/user/festival-content',
+        method: 'POST',
+        body: formData
+      }),
+    }),
+    getFestivalContent: builder.query<ApiResponse<any>, {contentId: String}>({
+      query: ({contentId}) => ({
+        url: `/user/get-festival-content/${contentId}`,
+        method: 'GET',
+      }),
+    }),
   }),
 });
-
-
 
 if (authChannel) {
   authChannel.onmessage = (event) => {
     const { type, payload } = event.data;
     if (type === 'AUTH_UPDATE' || type === 'AUTH_REFRESH') {
       // Avoid redundant updates by checking current state
-      const currentUser = store.getState().app.user;
+      const currentUser = (store.getState() as { app: { user?: UserState } }).app.user;
       if (currentUser?.email !== payload.email || currentUser?.expiresAt !== payload.expiresAt) {
         store.dispatch(setUser(payload));
         logger.info('Cross-tab auth update', { email: payload.email });
@@ -639,5 +651,7 @@ export const {
   useLazyAuthInstagramQuery,
   useLinkedInPostMutation,
   useLazyGetSocialAuthQuery,
-  useLazyGetUserScheduledPostsQuery
+  useLazyGetUserScheduledPostsQuery,
+  useFestivalContentMutation,
+  useLazyGetFestivalContentQuery
 } = api;

@@ -335,7 +335,7 @@ Rules:
 
     // Parse JSON string into an object
     let parsedResponse = JSON.parse(jsonString);
-    
+
     console.log("Parsed Response:", parsedResponse);
 
     // Unescape HTML tags in content for rendering
@@ -368,6 +368,96 @@ Rules:
   }
 }
 
+
+const generateContent = async (topic, audience = 'general-public', tone = 'objective', section) => {
+  try {
+    const topicString = topic && typeof topic === 'object' ? topic.topic : topic;
+    if (!topicString || typeof topicString !== 'string') {
+      throw new ApiError(400, 'Invalid topic provided for content generation');
+    }
+    if (!['blog', 'news', 'article'].includes(section)) {
+      throw new ApiError(400, 'Invalid section provided');
+    }
+
+    const primaryKeyword = topicString.toLowerCase().replace(/\s+/g, '-');
+    const year = new Date().getFullYear(); // 2025
+
+    const prompt = `
+You are an expert content generator. Generate a ${section === 'blog' ? '600-800 word' : section === 'news' ? '300-600 word' : '500-1000 word'} SEO-optimized ${section} post about "${topicString}" for ${audience} in a ${tone} tone in **valid JSON format** with the following structure:
+{
+  "title": "A 50-60 character title including '${primaryKeyword}' and '${year}'",
+  "content": "<p>Introduction (2-3 sentences introducing '${topicString}' with '${primaryKeyword}').</p>${section === 'blog' ? '<h2>Section 1 Title</h2><p>150-200 words on a tutorial or guide.</p><h2>Section 2 Title</h2><p>150-200 words on benefits or steps.</p><h2>Section 3 Title</h2><p>150-200 words on examples or use cases.</p>' : section === 'news' ? '<h2>Section 1 Title</h2><p>100-150 words on key facts.</p><h2>Section 2 Title</h2><p>100-150 words on implications.</p>' : '<h2>Section 1 Title</h2><p>150-200 words on trends.</p><h2>Section 2 Title</h2><p>150-200 words on analysis.</p><h2>Section 3 Title</h2><p>150-200 words on future outlook.</p>'}${section === 'news' ? '<h3>FAQ</h3><p><strong>Q1?</strong> 1-2 sentence answer.</p><p><strong>Q2?</strong> 1-2 sentence answer.</p>' : ''}<p>Conclusion (2-3 sentences summarizing key points with a call-to-action, e.g., 'Share your thoughts!').</p><p>Insert infographic: ${topicString} trends.</p><p><a href=\\"/${section}/related-${primaryKeyword}\\">Related ${section}</a></p><p><a href=\\"https://helium.com\\">Helium</a></p>",
+  "metaDescription": "150-160 character description with '${primaryKeyword}'",
+  "categories": ["${section.charAt(0).toUpperCase() + section.slice(1)}", "Blockchain"],
+  "tags": ["${primaryKeyword}", "${section}", "${audience}", "${tone}", "blockchain", "${year}"],
+  "focusKeyword": "${primaryKeyword}",
+  "excerpt": "100-160 character excerpt with '${primaryKeyword}'",
+  "image": {
+    "altText": "80-100 character alt text for an image related to '${topicString}'",
+    "description": "1-2 sentence image description"
+  }
+}
+Rules:
+- Ensure 1-2% '${primaryKeyword}' density in 'content', avoiding keyword stuffing.
+- Include HTML tags (<p>, <h2>, <h3>, <strong>, <a>) in 'content', but **escape all HTML tags and special characters** in the JSON output (e.g., '<' as '\\\\<', '>' as '\\\\>', '"' as '\\\\"', '\n' as '\\\\n').
+- Use double backslashes for escaping to ensure proper JSON serialization (e.g., '\\\\<p\\\\>' for '<p>').
+- Use short paragraphs (2-3 sentences) and bullet points/numbered lists where appropriate.
+- Tailor section titles and ${section === 'news' ? 'FAQs' : 'content'} to '${topicString}' (e.g., for 'Rust Blockchain': 'Rust Development Trends').
+- Output **only valid JSON** with no markdown, extra whitespace, or comments.
+- Ensure the JSON is a single object starting with '{' and ending with '}'.
+- **Test the output JSON for validity** before returning to ensure it can be parsed by JSON.parse(). If invalid, fix by properly escaping HTML tags and special characters.
+`;
+
+    const response = await ollama.chat({
+      model: 'gemma3:latest',
+      messages: [{ role: 'user', content: prompt }],
+      options: {
+        temperature: 0.4,
+        max_tokens: 4000,
+        timeout: 120000,
+      },
+    });
+
+    console.log('Response from Ollama:', response.message.content);
+    let jsonString = response.message.content.trim().replace(/^```json\s*|\s*```$/g, '');
+    console.log('Cleaned JSON String:', jsonString);
+
+    let parsedResponse;
+
+    parsedResponse = JSON.parse(jsonString);
+
+
+    console.log('Parsed Response:', parsedResponse);
+
+    // Unescape HTML tags in content
+     const unescapedContent = parsedResponse.content
+      .replace(/\\</g, '<')
+      .replace(/\\>/g, '>')
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, '\n')
+      .replace(/\\\\/g, '\\');
+
+    return {
+      title: parsedResponse.title,
+      content: unescapedContent,
+      metaDescription: parsedResponse.metaDescription,
+      categories: parsedResponse.categories,
+      tags: parsedResponse.tags,
+      imageAltText: parsedResponse.image?.altText,
+      imageDescription: parsedResponse.image?.description,
+      excerpt: parsedResponse.excerpt,
+      focusKeyword: parsedResponse.focusKeyword,
+      topic: topic,
+      slug: primaryKeyword,
+      audience,
+      tone,
+      section,
+    };
+  } catch (error) {
+    console.error('Error generating content:', error);
+    throw new ApiError(500, error.message || 'Failed to generate SEO-optimized content');
+  }
+};
 
 const generateCode = async (input, file) => {
   if (!file) throw new ApiError(400, "Image is required");
@@ -404,4 +494,5 @@ export {
   generateImageContent,
   generateBlog,
   generateCode,
+  generateContent
 };

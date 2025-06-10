@@ -1,6 +1,6 @@
 import joi from "joi"
 import VALIDATE_SCHEMA from "./validateSchema.js";
-import { CONTENT_TYPE_ENUM, POST_STATUS_ENUM, POST_TYPE_ENUM, PRODUCT_POST_TYPE_ENUM, PROVIDER_ENUM } from "../config/constant.js";
+import { CONTENT_TYPE_ENUM, POST_STATUS_ENUM, POST_TYPE_ENUM, PRODUCT_POST_TYPE_ENUM, PROVIDER_ENUM, SECTION_TYPE_ENUM } from "../config/constant.js";
 
 const validateSignup = async (inputs) => {
     let schema = {};
@@ -163,7 +163,7 @@ const validateDYKContent = async (inputs) => {
 const validateSavePost = async (inputs) => {
     let schema = {}
     schema = joi.object({
-        postContentId: joi.string().required(),
+        postContentId: joi.string().allow('').optional(),
         contentId: joi.string().required(),
         contentType: joi.string().valid(...CONTENT_TYPE_ENUM).required(),
         topic: joi.string().trim().min(1).optional(),
@@ -238,6 +238,10 @@ const validateBlog = async (inputs) => {
         content: joi.string().trim().min(1).required(),
         metaDescription: joi.string().trim().max(160).optional(),
         excerpt: joi.string().trim().optional(),
+        topic: joi.string().trim().optional(),
+        audience:joi.string().trim().optional(),
+        tone: joi.string().trim().optional(),
+        section: joi.string().valid(...SECTION_TYPE_ENUM).required(),
         focusKeyword: joi.string().trim().optional(),
         categories: joi.array().items(joi.string().trim()).optional(),
         tags: joi.array().items(joi.string().trim()).optional(),
@@ -258,6 +262,10 @@ const validateBlogPost = async (inputs) => {
         metaDescription: joi.string().trim().optional(),
         excerpt: joi.string().trim().optional(),
         focusKeyword: joi.string().trim().optional(),
+        topic: joi.string().trim().optional(),
+        audience:joi.string().trim().optional(),
+        tone: joi.string().trim().optional(),
+        section: joi.string().valid(...SECTION_TYPE_ENUM).required(),
         slug: joi.string().trim().optional(),
         categories: joi.array().items(joi.string().trim()).optional(),
         tags: joi.array().items(joi.string().trim()).optional(),
@@ -265,6 +273,17 @@ const validateBlogPost = async (inputs) => {
         imageAltText: joi.string().trim().optional(),
         scheduleTime: joi.string().trim().allow('').optional(),
         imageDescription: joi.string().trim().optional(),
+    });
+
+    VALIDATE_SCHEMA(schema, inputs);
+};
+
+const validateFestivalContent = async (inputs) => {
+    let schema = {}
+    schema = joi.object({
+        festivalName: joi.string().trim().min(1).required(),
+        description: joi.string().trim().min(1).max(300).required(),
+        festivalDate: joi.string().trim().required(),
     });
 
     VALIDATE_SCHEMA(schema, inputs);
@@ -288,6 +307,7 @@ const UserValidation = {
     validateSaveProductInfo,
     validateBlog,
     validateBlogPost,
+    validateFestivalContent
 }
 
 export default UserValidation;

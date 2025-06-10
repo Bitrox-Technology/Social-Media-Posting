@@ -1356,7 +1356,7 @@ export const ImageTemplate17: ImageTemplate = {
       hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
     );
     const descriptionColor = ensureContrast(
-      chroma(complementaryGlowColor).luminance(0.7).hex(),
+      chroma(complementaryGlowColor).luminance(0.7).hex(),   
       hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
     );
     const footerColor = ensureContrast(

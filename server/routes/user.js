@@ -36,6 +36,8 @@ userRouter.post("/save-blog", AuthMiddleware, UserControllers.SaveBlog)
 userRouter.get("/get-all-blogs", AuthMiddleware, UserControllers.GetAllBlogs)
 userRouter.get("/get-blog/:blogid", AuthMiddleware, UserControllers.GetBlogById)
 userRouter.post("/blog-post", AuthMiddleware, UserControllers.BlogPost)
+userRouter.post("/festival-content", AuthMiddleware,uploadMemory.single("image"), UserControllers.FestivalContent);
+userRouter.get("/get-festival-content/:contentid", AuthMiddleware, UserControllers.GetFestivalContent)
 // userRouter.post("/update-profile", AuthMiddleware, upload.single("avatar"), UserControllers.UpdateProfile)
 // userRouter.get("/get-profile", AuthMiddleware, UserControllers.GetProfile)
 // userRouter.post("/logout", AuthMiddleware, UserControllers.Logout)

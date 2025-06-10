@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { SECTION_TYPE_ENUM } from '../config/constant.js';
 
 const blogSchema = new mongoose.Schema({
     userId: {
@@ -11,6 +12,10 @@ const blogSchema = new mongoose.Schema({
     excerpt: { type: String, trim: true, },
     focusKeyword: { type: String, trim: true, },
     slug: { type: String, trim: true, unique: true, },
+    topic: {type: String},
+    audience: {type: String},
+    tone: {type: String},
+    section: { type: String, enum: SECTION_TYPE_ENUM, default: "blog" },
     categories: { type: [String], },
     tags: { type: [String], },
     imageUrl: { type: String, trim: true, },

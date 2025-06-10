@@ -9,6 +9,9 @@ import UserScheduledTask from '../models/userSchesuledTask.js';
 import fetch from 'node-fetch'; // Ensure you have node-fetch installed
 import { Buffer } from 'buffer'; // For Node.js environments, use Buffer for Base64 encoding
 import sharp from 'sharp'; // Ensure you have sharp installed
+import slugify from 'slugify'
+
+
 async function postBlog(postData) {
   const wpUrl = process.env.WORDPRESS_URL; // Replace with your domain
 
@@ -142,9 +145,8 @@ const publishBlogPost = async (inputs) => {
     inputs.focusKeyword,
     inputs.scheduleTime,
   );
- await triggerSitemapUpdate();
-  return postData;
-
+  await triggerSitemapUpdate();
+  return postData.id;
 }
 
 const triggerSitemapUpdate = async () => {
@@ -183,7 +185,7 @@ const createPost = async (title, content, categories, tags, featuredImageId, exc
       tags,
       featured_media: featuredImageId,
       excerpt: excerpt || metaDescription?.slice(0, 160),
-      slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      slug: slug || slugify(title, { lower: true }),
       meta: {
         _yoast_wpseo_metadesc: metaDescription,
         _yoast_wpseo_focuskw: focusKeyword || '',
@@ -192,6 +194,17 @@ const createPost = async (title, content, categories, tags, featuredImageId, exc
         _yoast_wpseo_opengraph_description: metaDescription,
         _yoast_wpseo_twitter_title: `${title} - Tweet`,
         _yoast_wpseo_twitter_description: metaDescription,
+
+        schema: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: title,
+          description: metaDescription,
+          image: featuredImageId ? `image_url_here_or_fetch_later` : undefined,
+          author: { '@type': 'Person', name: 'Bitrox Tech Team' },
+          publisher: { '@type': 'Organization', name: 'Bitrox Tech' },
+          datePublished: scheduleTime || new Date().toISOString(),
+        }),
       },
     };
 
@@ -202,26 +215,26 @@ const createPost = async (title, content, categories, tags, featuredImageId, exc
       },
     });
 
-    const schema = {
-      '@context': 'https://schema.org',
-      '@type': 'Article',
-      headline: title,
-      description: metaDescription,
-      image: featuredImageId ? blog.data.featured_image_src : undefined,
-      author: { '@type': 'Person', name: 'Bitrox Tech Team' },
-      publisher: { '@type': 'Organization', name: 'Bitrox Tech' },
-      datePublished: scheduleTime || new Date().toISOString(),
-    };
-    const data = await axios.post(
-      `https://bitrox.tech/wp-json/wp/v2/posts/${blog.data.id}`,
-      { meta: { schema: JSON.stringify(schema) } },
-      {
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // const schema = {
+    //   '@context': 'https://schema.org',
+    //   '@type': 'Article',
+    //   headline: title,
+    //   description: metaDescription,
+    //   image: featuredImageId ? blog.data.featured_image_src : undefined,
+    //   author: { '@type': 'Person', name: 'Bitrox Tech Team' },
+    //   publisher: { '@type': 'Organization', name: 'Bitrox Tech' },
+    //   datePublished: scheduleTime || new Date().toISOString(),
+    // };
+    // const data = await axios.post(
+    //   `https://bitrox.tech/wp-json/wp/v2/posts/${blog.data.id}`,
+    //   { meta: { schema: JSON.stringify(schema) } },
+    //   {
+    //     headers: {
+    //       Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+    //       'Content-Type': 'application/json',
+    //     },
+    //   }
+    // );
 
     return blog.data;
   } catch (error) {
@@ -323,4 +336,239 @@ const scheduledBlogPosts = async (inputs, user) => {
 };
 
 
-export { postBlog, scheduledBlogPosts, uploadImage, publishBlogPost, createPost };
+const uploadImage1 = async (imageUrl, altText, title, description) => {
+  try {
+    const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 10000 });
+    if (imageResponse.status !== 200) {
+      throw new ApiError(400, `Failed to fetch image: ${imageResponse.status}`);
+    }
+
+    const imageBuffer = Buffer.from(imageResponse.data);
+    const optimizedImage = await sharp(imageBuffer)
+      .resize({ width: 1200, withoutEnlargement: true })
+      .jpeg({ quality: 80 })
+      .toBuffer();
+
+    const filename = `${uuidv4()}-${imageUrl.split('/').pop()?.replace(/[^a-z0-9.]/gi, '-') || 'featured-image.jpg'}`;
+    const formData = new FormData();
+    formData.append('file', new Blob([optimizedImage], { type: 'image/jpeg' }), filename);
+    formData.append('title', title);
+    formData.append('alt_text', altText);
+    formData.append('caption', `Featured image for ${title}`);
+    formData.append('description', description);
+
+    const response = await axios.post('https://bitrox.tech/wp-json/wp/v2/media', formData, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+        ...formData.getHeaders(),
+      },
+      timeout: 10000,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error uploading image:', error.message || error);
+    throw new ApiError(500, error.message || 'Failed to upload image to WordPress');
+  }
+};
+
+const createPost1 = async (
+  title,
+  content,
+  categories = [],
+  tags = [],
+  featuredImageId,
+  excerpt,
+  metaDescription,
+  slug,
+  focusKeyword,
+  scheduleTime,
+  section,
+) => {
+  try {
+    if (!title || !content || !excerpt || !metaDescription || !section) {
+      throw new ApiError(400, 'Required fields missing');
+    }
+
+    const getCategoryIds = async (categoryNames) => {
+      const responses = await Promise.all(
+        categoryNames.map(name =>
+          axios.get('https://bitrox.tech/wp-json/wp/v2/categories', {
+            params: { search: name },
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+            },
+            timeout: 5000,
+          })
+        )
+      );
+      const ids = responses.flatMap(res => res.data.map((cat) => cat.id)).filter(id => id !== 1); // Exclude Uncategorized
+      const sectionCategory = await axios.get('https://bitrox.tech/wp-json/wp/v2/categories', {
+        params: { slug: section },
+        headers: { Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}` },
+        timeout: 5000,
+      });
+      if (sectionCategory.data.length) {
+        ids.push(sectionCategory.data[0].id);
+      } else {
+        const newCategory = await axios.post(
+          'https://bitrox.tech/wp-json/wp/v2/categories',
+          { name: section.charAt(0).toUpperCase() + section.slice(1), slug: section },
+          {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        ids.push(newCategory.data.id);
+      }
+      return [...new Set(ids)];
+    };
+
+    const generateUniqueSlug = async (baseSlug) => {
+      let slug = baseSlug;
+      let counter = 1;
+      while (true) {
+        const response = await axios.get('https://bitrox.tech/wp-json/wp/v2/posts', {
+          params: { slug },
+          headers: { Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}` },
+          timeout: 5000,
+        });
+        if (!response.data.length) return slug;
+        slug = `${baseSlug}-${++counter}`;
+      }
+    };
+
+    const postData = {
+      title,
+      content,
+      status: scheduleTime ? 'future' : 'publish',
+      date: scheduleTime ? new Date(scheduleTime).toISOString() : undefined,
+      categories: await getCategoryIds([...categories, section.charAt(0).toUpperCase() + section.slice(1)]),
+      tags,
+      featured_media: featuredImageId || 0,
+      excerpt,
+      slug: await generateUniqueSlug(slug || slugify(title, { lower: true })),
+      meta: {
+        _bitrox_seo_meta_description: metaDescription,
+        _bitrox_seo_focus_keyword: focusKeyword || '',
+        _bitrox_seo_title: `${title} | Bitrox Tech`,
+        _bitrox_seo_opengraph_title: `${title} - Share on Bitrox Tech`,
+        _bitrox_seo_opengraph_description: metaDescription,
+        _bitrox_seo_twitter_title: `${title} - Tweet`,
+        _bitrox_seo_twitter_description: metaDescription,
+        _bitrox_seo_schema: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: title,
+          description: metaDescription,
+          image: featuredImageId ? undefined : undefined, // Fetch later if needed
+          author: { '@type': 'Person', name: 'Bitrox Tech Team' },
+          publisher: { '@type': 'Organization', name: 'Bitrox Tech' },
+          datePublished: scheduleTime || new Date().toISOString(),
+        }),
+      },
+    };
+
+    const blog = await axios.post('https://bitrox.tech/wp-json/wp/v2/posts', postData, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+
+    return blog.data;
+  } catch (error) {
+    console.error('Error creating post:', error);
+    throw new ApiError(500, `Error creating post: ${error.message || 'Unknown error'}`);
+  }
+};
+
+const publishContent1 = async (inputs) => {
+  try {
+    if (!inputs.title || !inputs.content || !inputs.excerpt || !inputs.metaDescription || !inputs.section) {
+      throw new ApiError(400, 'Required fields missing');
+    }
+
+    const categories = await Promise.all(
+      inputs.categories.map(async (categoryName) => {
+        const response = await axios.get(`https://bitrox.tech/wp-json/wp/v2/categories?search=${encodeURIComponent(categoryName)}`, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+          },
+          timeout: 5000,
+        });
+        if (response.data?.length > 0) {
+          return response.data[0].id;
+        }
+        const newCategory = await axios.post(
+          'https://bitrox.tech/wp-json/wp/v2/categories',
+          { name: categoryName, slug: categoryName.toLowerCase().replace(/\s+/g, '-') },
+          {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return newCategory.data.id;
+      })
+    );
+
+    const tags = await Promise.all(
+      inputs.tags.map(async (tagName) => {
+        const response = await axios.get(`https://bitrox.tech/wp-json/wp/v2/tags?search=${encodeURIComponent(tagName)}`, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+          },
+          timeout: 5000,
+        });
+        if (response.data?.length > 0) {
+          return response.data[0].id;
+        }
+        const newTag = await axios.post(
+          'https://bitrox.tech/wp-json/wp/v2/tags',
+          { name: tagName, slug: tagName.toLowerCase().replace(/\s+/g, '-') },
+          {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return newTag.data.id;
+      })
+    );
+
+    let featuredImageId = null;
+    if (inputs.imageUrl && inputs.imageAltText && inputs.imageDescription) {
+      const featuredImage = await uploadImage1(inputs.imageUrl, inputs.imageAltText, inputs.title, inputs.imageDescription);
+      featuredImageId = featuredImage.id;
+    }
+
+    const postData = await createPost1(
+      inputs.title,
+      inputs.content,
+      categories,
+      tags,
+      featuredImageId,
+      inputs.excerpt,
+      inputs.metaDescription,
+      inputs.slug,
+      inputs.focusKeyword,
+      inputs.scheduleTime,
+      inputs.section,
+    );
+
+    await triggerSitemapUpdate();
+    return postData.id;
+  } catch (error) {
+    console.error('Error publishing content:', error);
+    throw new ApiError(500, `Error publishing content: ${error.message || 'Unknown error'}`);
+  }
+};
+
+
+export { postBlog, scheduledBlogPosts, uploadImage, publishBlogPost, createPost, publishContent1 };

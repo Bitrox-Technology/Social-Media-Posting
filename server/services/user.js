@@ -10,13 +10,14 @@ import CarouselContent from "../models/carouselContent.js";
 import DYKContent from "../models/dykContent.js";
 import SavePosts from "../models/savePosts.js";
 import { generateOTPForEmail, verifyEmailOTP } from "../utils/functions.js";
-import {  uploadStreamToCloudinary } from "../utils/cloudinary.js";
+import { uploadStreamToCloudinary } from "../utils/cloudinary.js";
 import i18n from "../utils/i18n.js";
 import UserScheduledTask from "../models/userSchesuledTask.js";
 import Blog from "../models/blog.js";
 import { v4 as uuidv4 } from "uuid";
 import cron from 'node-cron';
-import { publishBlogPost } from "./blogPost.js";
+import { publishBlogPost, publishContent1 } from "./blogPost.js";
+import FestivalContent from "../models/festivalContent.js";
 
 const signup = async (inputs) => {
     let user;
@@ -318,9 +319,12 @@ const saveDYKContent = async (inputs, user) => {
 }
 
 const savePosts = async (inputs, user) => {
-    let postContent = await PostTopic.findById({ _id: inputs.postContentId, userId: user._id })
-    if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
+    if (inputs.type === 'festival') {
 
+    } else {
+        let postContent = await PostTopic.findById({ _id: inputs.postContentId, userId: user._id })
+        if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
+    }
     inputs.userId = user._id
     let post = await SavePosts.create(inputs)
     if (!post) throw new ApiError(BAD_REQUEST, "Unable to save posts")
@@ -524,6 +528,10 @@ const saveBlog = async (inputs, user) => {
         metaDescription: inputs.metaDescription,
         categories: inputs.categories,
         tags: inputs.tags,
+        tone: inputs.tone,
+        topic: inputs.topic,
+        audience: inputs.audience,
+        section: inputs.section,
         imageUrl: inputs.imageUrl,
         imageAltText: inputs.imageAltText,
         imageDescription: inputs.imageDescription,
@@ -548,94 +556,245 @@ const getAllBlogs = async (user) => {
     return blogs;
 }
 
-const scheduledBlogPosts = async (inputs, user) => {
-  let postResult;
+// const scheduledBlogPosts = async (inputs, user) => {
+//   let postResult;
 
-  if (inputs.scheduleTime && inputs.scheduleTime !== "") {
-    const cronExpression = convertToCron(inputs.scheduleTime);
-    console.log("Generated cron expression:", cronExpression);
+//   if (inputs.scheduleTime && inputs.scheduleTime !== "") {
+//     const cronExpression = convertToCron(inputs.scheduleTime);
+//     console.log("Generated cron expression:", cronExpression);
 
-    const scheduledDate = new Date(inputs.scheduleTime);
-    const now = new Date();
-    if (scheduledDate <= now) {
-      throw new ApiError(BAD_REQUEST, i18n.__("INVALID_SCHEDULED_TIME"));
+//     const scheduledDate = new Date(inputs.scheduleTime);
+//     const now = new Date();
+//     if (scheduledDate <= now) {
+//       throw new ApiError(BAD_REQUEST, i18n.__("INVALID_SCHEDULED_TIME"));
+//     }
+
+//     const taskId = uuidv4();
+
+//     const scheduledTask = new UserScheduledTask({
+//       userId: user._id,
+//       taskId,
+//       task: "Post to Blog",
+//       platform: "wordpress",
+//       imageUrl: inputs.imageUrl,
+//       title: inputs.title,
+//       description: inputs.content,
+//       scheduleTime: scheduledDate,
+//       cronExpression,
+//       status: "pending",
+//       postId: null,
+//     });
+
+//     await scheduledTask.save();
+
+//     // Schedule the task using node-cron
+//     const task = cron.schedule(
+//       cronExpression,
+//       async () => {
+//         try {
+//           postResult = await publishBlogPost(inputs);
+//           console.log(
+//             `Scheduled post executed successfully with post ID: ${postResult}`
+//           );
+
+//           // Update the scheduled task with the postId and status
+//           await UserScheduledTask.updateOne(
+//             { taskId },
+//             {
+//               $set: {
+//                 status: "completed",
+//                 postId: postResult,
+//               },
+//             }
+//           );
+//         } catch (error) {
+//           console.error("Scheduled blog post failed:", error.message);
+
+//           // Update the scheduled task status to 'failed'
+//           await UserScheduledTask.updateOne(
+//             { taskId },
+//             {
+//               $set: {
+//                 status: "failed",
+//               },
+//             }
+//           );
+//         }
+//       },
+//       {
+//         scheduled: true,
+//         timezone: "Asia/Kolkata", // Use IST timezone as per the current date
+//       }
+//     );
+
+//     return {
+//       message: `Post scheduled successfully for ${scheduledDate.toLocaleString(
+//         "en-IN",
+//         { timeZone: "Asia/Kolkata" }
+//       )}`,
+//       taskId,
+//       postId: null,
+//     };
+//   } else {
+//     postResult = await publishBlogPost(inputs);;
+//     if (!postResult) throw new ApiError(BAD_REQUEST, i18n.__("POST_FAILED"));
+//     return {
+//       message: "Post published immediately",
+//       postId: postResult,
+//     };
+//   }
+// };
+
+const scheduledContent = async (inputs, user) => {
+    try {
+        if (!inputs.title || !inputs.content || !inputs.excerpt || !inputs.metaDescription || !inputs.section) {
+            throw new ApiError(400, 'Required fields missing');
+        }
+
+        let postResult;
+
+        if (inputs.scheduleTime && inputs.scheduleTime !== '') {
+            const scheduledDate = new Date(inputs.scheduleTime);
+            const now = new Date();
+            if (isNaN(scheduledDate.getTime()) || scheduledDate <= now) {
+                throw new ApiError(400, 'Invalid or past schedule time');
+            }
+
+            const cronExpression = convertToCron(inputs.scheduleTime);
+            console.log('Generated cron expression:', cronExpression);
+
+            const taskId = uuidv4();
+            const scheduledTask = new UserScheduledTask({
+                userId: user._id,
+                taskId,
+                task: `Post to ${inputs.section.charAt(0).toUpperCase() + inputs.section.slice(1)}`,
+                platform: 'wordpress',
+                imageUrl: inputs.imageUrl,
+                title: inputs.title,
+                description: inputs.content,
+                scheduleTime: scheduledDate,
+                cronExpression,
+                status: 'pending',
+                postId: null,
+            });
+
+            await scheduledTask.save();
+
+            cron.schedule(
+                cronExpression,
+                async () => {
+                    try {
+                        postResult = await publishContent1(inputs);
+                        console.log(`Scheduled ${inputs.section} post executed with post ID: ${postResult}`);
+
+                        await UserScheduledTask.updateOne(
+                            { taskId },
+                            { $set: { status: 'completed', postId: postResult } }
+                        );
+                    } catch (error) {
+                        console.error(`Scheduled ${inputs.section} post failed:`, error.message);
+                        await UserScheduledTask.updateOne(
+                            { taskId },
+                            { $set: { status: 'failed' } }
+                        );
+                    }
+                },
+                { scheduled: true, timezone: 'Asia/Kolkata' }
+            );
+
+            return {
+                message: `Post scheduled successfully for ${scheduledDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
+                taskId,
+                postId: null,
+            };
+        } else {
+            postResult = await publishContent1(inputs);
+            console.log(`Post executed immediately with post ID: ${postResult}`);
+            return {
+                message: 'Post published immediately',
+                postId: postResult,
+            };
+        }
+    } catch (error) {
+        console.error('Error scheduling content:', error);
+        throw new ApiError(500, error.message || 'Failed to schedule content');
+    }
+};
+
+const festivalContent = async (inputs, file, user) => {
+    if (!file) throw new ApiError(BAD_REQUEST, i18n.__("FILE_NOT_FOUND"));
+
+    const result = await uploadStreamToCloudinary(file.buffer, {
+        folder: 'festival_images',
+        public_id: `festival_image_${Date.now()}`,
+    });
+    if (!result || !result.secure_url) throw new ApiError(BAD_REQUEST, 'Unable to upload logo');
+    inputs.imageUrl = result.secure_url;
+    inputs.userId = user._id
+
+
+    const createContent = await FestivalContent.create(inputs)
+    if (!createContent) throw new ApiError(BAD_REQUEST, i18n.__("UNABLE_SAVE_CONTENT"));
+
+    return createContent;
+
+}
+
+const getFestivalContent = async (user, params) => {
+    const content = await FestivalContent.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(params.contentid),
+                userId: new mongoose.Types.ObjectId(user._id),
+            },
+        },
+        {
+            $lookup: {
+                from: 'users',
+                let: { userId: '$userId' }, // Define variable for lookup
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: { $eq: ['$_id', '$$userId'] }, // Match userId with user._id
+                        },
+                    },
+                    {
+                        $project: {
+                            logo: 1,
+                            websiteUrl: 1 // Include only the logo field
+                        },
+                    },
+                ],
+                as: 'userData',
+            },
+        },
+        {
+            $unwind: {
+                path: '$userData',
+                preserveNullAndEmptyArrays: true, // Keep documents even if no user is found
+            },
+        },
+        {
+            $project: {
+                festivalName: 1,
+                description: 1,
+                festivalDate: 1,
+                imageUrl: 1,
+                userId: 1,
+                logo: '$userData.logo',
+                websiteUrl: '$userData.websiteUrl',// Project the logo from userData
+                _id: 1,
+            },
+        },
+    ]);
+
+    console.log('Festival Content ==========', content);
+
+    if (!content || content.length === 0) {
+        throw new ApiError(BAD_REQUEST, 'No post content found');
     }
 
-    const taskId = uuidv4();
-
-    const scheduledTask = new UserScheduledTask({
-      userId: user._id,
-      taskId,
-      task: "Post to Blog",
-      platform: "wordpress",
-      imageUrl: inputs.imageUrl,
-      title: inputs.title,
-      description: inputs.content,
-      scheduleTime: scheduledDate,
-      cronExpression,
-      status: "pending",
-      postId: null,
-    });
-
-    await scheduledTask.save();
-
-    // Schedule the task using node-cron
-    const task = cron.schedule(
-      cronExpression,
-      async () => {
-        try {
-          postResult = await publishBlogPost(inputs);
-          console.log(
-            `Scheduled post executed successfully with post ID: ${postResult}`
-          );
-
-          // Update the scheduled task with the postId and status
-          await UserScheduledTask.updateOne(
-            { taskId },
-            {
-              $set: {
-                status: "completed",
-                postId: postResult,
-              },
-            }
-          );
-        } catch (error) {
-          console.error("Scheduled LinkedIn post failed:", error.message);
-
-          // Update the scheduled task status to 'failed'
-          await UserScheduledTask.updateOne(
-            { taskId },
-            {
-              $set: {
-                status: "failed",
-              },
-            }
-          );
-        }
-      },
-      {
-        scheduled: true,
-        timezone: "Asia/Kolkata", // Use IST timezone as per the current date
-      }
-    );
-
-    return {
-      message: `Post scheduled successfully for ${scheduledDate.toLocaleString(
-        "en-IN",
-        { timeZone: "Asia/Kolkata" }
-      )}`,
-      taskId,
-      postId: null,
-    };
-  } else {
-    postResult = await publishBlogPost(inputs);
-    console.log(`Post executed immediately with post ID: ${postResult}`);
-    if (!postResult) throw new ApiError(BAD_REQUEST, i18n.__("POST_FAILED"));
-    return {
-      message: "Post published immediately",
-      postId: postResult,
-    };
-  }
+    return content[0]; // Return the first document (single content)
 };
 
 const UserServices = {
@@ -666,7 +825,9 @@ const UserServices = {
     getUserScheduledPosts,
     saveBlog,
     getBlogById,
-    scheduledBlogPosts,
+    scheduledContent,
     getAllBlogs,
+    festivalContent,
+    getFestivalContent
 }
 export default UserServices;

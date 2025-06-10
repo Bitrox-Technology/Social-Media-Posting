@@ -7,7 +7,7 @@ import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
-import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent, generateBlog, generateCode } from "../services/generateCarousel.js";
+import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent, generateBlog, generateCode, generateContent } from "../services/generateCarousel.js";
 import { postBlog, scheduledBlogPosts } from "../services/blogPost.js";
 
 
@@ -527,6 +527,19 @@ const GenerateBlog = async (req, res, next) => {
   }
 };
 
+
+const GenerateContent = async (req, res, next) => {
+
+  const { topic, audience , tone, section} = req.body
+  try {
+    const result = await generateContent(topic, audience , tone, section);
+    return res.status(200).json(new ApiResponse(200, result, "Blog generated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 const GenerateCode = async (req, res, next) => {
   try {
     const result = await generateCode(req.body, req.file);
@@ -538,7 +551,7 @@ const GenerateCode = async (req, res, next) => {
 
 
 const PostControllers = {
-  Post, Content, Ideas, GenerateImage, GenerateCarousel, GenerateBlog,
+  Post, Content, Ideas, GenerateImage, GenerateCarousel, GenerateBlog, GenerateContent,
   UploadCarouselImages, UploadSingleImage, GenerateDoYouKnow, GenerateTopics, GenerateImageContent,
   BlogPost, GenerateCode
 };

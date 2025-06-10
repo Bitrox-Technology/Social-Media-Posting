@@ -31,12 +31,12 @@ export interface ImageContent {
   
   export interface Post {
     topic: string;
-    type: 'image' | 'carousel' | 'doyouknow';
+    type: 'image' | 'carousel' | 'doyouknow' | 'festival';
     content: ImageContent | DoYouKnowContent | Slide[] | string;
     images?: { url: string; label: string }[];
     templateId?: string;
     status: 'pending' | 'success' | 'error' | 'generating';
     errorMessage?: string;
     contentId?: string;
-    contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent';
+    contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent' | 'FestivalContent';
   }
