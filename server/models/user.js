@@ -41,8 +41,9 @@ const userSchema = new mongoose.Schema(
     isEmailVerify: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
-    refreshToken: { type: String, default: ""},
-    sessionExpiry: { type: Number, default: null }, 
+    refreshToken: { type: String, default: "" },
+    sessionExpiry: { type: Number, default: null },
+
   },
   {
     timestamps: true,
@@ -51,16 +52,16 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.index({ uid: 1 }); 
-userSchema.index({ status: 1 }); 
-userSchema.index({ isDeleted: 1 }); 
-userSchema.index({ isBlocked: 1 }); 
-userSchema.index({ role: 1 }); 
-userSchema.index({ createdAt: 1 }); 
-userSchema.index({ updatedAt: 1 }); 
+userSchema.index({ uid: 1 });
+userSchema.index({ status: 1 });
+userSchema.index({ isDeleted: 1 });
+userSchema.index({ isBlocked: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ createdAt: 1 });
+userSchema.index({ updatedAt: 1 });
 
 // Compound indexes
-userSchema.index({ status: 1, isDeleted: 1 }); 
+userSchema.index({ status: 1, isDeleted: 1 });
 userSchema.index({ role: 1, isBlocked: 1 });
 userSchema.index({ email: 1, isDeleted: 1 }, { unique: true }); // Unique index for email with isDeleted
 

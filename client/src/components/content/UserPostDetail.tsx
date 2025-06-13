@@ -11,6 +11,8 @@ import {
   useLazyGetSocialAuthQuery,
   useLazyGetUserPostDetailQuery,
   useLinkedInPostMutation,
+  useFacebookPagePostMutation,// New mutation for Facebook posting
+  useInstagramBusinessPostMutation
 } from '../../store/api';
 import { useTheme } from '../../context/ThemeContext';
 import {
@@ -36,7 +38,6 @@ import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useSocialAuth } from '../providers/useSocialAuth';
-import { has } from 'lodash';
 
 type AuthFunction = (...args: any[]) => Promise<{ statusCode: number; data: { authUrl: string } }>;
 
@@ -44,6 +45,22 @@ interface Image {
   url: string;
   label: string;
   _id: string;
+}
+
+interface InstagramAccount {
+  id: string;
+  username: string;
+  accessToken: string;
+}
+
+interface FacebookManagedPage {
+  id: string;
+  name: string;
+  accessToken: string;
+}
+
+interface InstagramAuthData {
+  accounts: InstagramAccount[];
 }
 
 interface Post {
@@ -61,14 +78,23 @@ interface Post {
 
 interface Schedule {
   platform: string | null;
-  subPlatform: string | null; // For LinkedIn: 'profile' or 'page'
+  subPlatform: string | null;
   dateTime: Date | null;
   userDetails?: {
     name: string;
     profilePage: string;
   };
+  selectedPage?: { // New field for selected Facebook page
+    id: string;
+    name: string;
+    accessToken: string;
+  };
+  selectedInstagramAccount?: { // New field for Instagram account
+    id: string;
+    username: string;
+    accessToken: string;
+  };
 }
-
 
 export const UserPostDetail: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -79,18 +105,19 @@ export const UserPostDetail: React.FC = () => {
   const [authLinkedIn] = useLazyAuthLinkedInQuery();
   const [authInstagram] = useLazyAuthInstagramQuery();
   const [linkedInPost] = useLinkedInPostMutation();
+  const [facebookPagePost] = useFacebookPagePostMutation(); // New mutation
+  const [instagramBusinessPost] = useInstagramBusinessPostMutation()
   const [getSocialAuth, { data: socialAuthData }] = useLazyGetSocialAuthQuery();
 
   const [isSocialOptionsOpen, setIsSocialOptionsOpen] = useState(false);
   const [schedule, setSchedule] = useState<Schedule>({ platform: null, subPlatform: null, dateTime: null });
-  const [isAuthenticating, setIsAuthenticating] = useState(false);;
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(false);
-  // State to store access token and profile page
   const [platformTokens, setPlatformTokens] = useState<{
     [key: string]: { accessToken: string; profilePage: string };
   }>({});
 
-  // Wrap RTK Query lazy triggers to match AuthFunction signature
+  // Auth functions
   const authLinkedInFn: AuthFunction = async (_subPlatform: string) => {
     const result = await authLinkedIn().unwrap();
     return {
@@ -126,7 +153,7 @@ export const UserPostDetail: React.FC = () => {
     setIsAuthenticating,
   });
 
-  // Theme-based styles
+  // Theme styles
   const themeStyles = {
     light: {
       background: 'bg-gradient-to-br from-gray-100 to-gray-200',
@@ -157,11 +184,11 @@ export const UserPostDetail: React.FC = () => {
   useEffect(() => {
     if (postId) {
       getUserPostDetail({ postId });
-      getSocialAuth(); // Fetch social auth status on component mount
+      getSocialAuth();
     }
   }, [postId, getUserPostDetail, getSocialAuth]);
 
-  // Compute authentication status for each platform
+  // Compute authentication status
   const authStatus = {
     linkedin: !!(
       socialAuthData?.data?.linkedin?.isAuthenticated &&
@@ -172,48 +199,54 @@ export const UserPostDetail: React.FC = () => {
       socialAuthData?.data?.linkedin?.isAuthenticated &&
       socialAuthData?.data?.linkedin?.accessToken?.expiresAt &&
       new Date(socialAuthData.data.linkedin.accessToken.expiresAt) >= new Date()
-      // Add additional checks for LinkedIn Page if needed
     ),
-    facebook: !!(
-      socialAuthData?.data?.facebook?.isAuthenticated &&
-      socialAuthData?.data?.facebook?.accessToken?.expiresAt &&
-      new Date(socialAuthData.data.facebook.accessToken.expiresAt) >= new Date()
-    ),
-    instagram: !!(
-      socialAuthData?.data?.instagram?.isAuthenticated &&
-      socialAuthData?.data?.instagram?.accessToken?.expiresAt &&
-      new Date(socialAuthData.data.instagram.accessToken.expiresAt) >= new Date()
-    ),
+    facebook: socialAuthData?.data?.facebook?.isAuthenticated || false, // Facebook tokens may not expire
+    instagram: socialAuthData?.data?.instagram?.isAuthenticated || false,
   };
-
-  // Update platformTokens based on getSocialAuth response
+  // Update platformTokens and managed pages
   useEffect(() => {
     if (socialAuthData?.data) {
       const linkedinData = socialAuthData.data.linkedin;
       const facebookData = socialAuthData.data.facebook;
       const instagramData = socialAuthData.data.instagram;
 
-      // Check LinkedIn Profile authentication and token expiration
-      let linkedinProfileStatus = false;
-      if (linkedinData?.isAuthenticated && linkedinData.accessToken?.expiresAt) {
-        const expiresAt = new Date(linkedinData.accessToken.expiresAt);
-        const now = new Date();
-        linkedinProfileStatus = expiresAt >= now;
-        if (linkedinProfileStatus) {
-          // Store LinkedIn access token and profile page
-          setPlatformTokens((prev) => ({
-            ...prev,
-            linkedin: {
-              accessToken: linkedinData.accessToken.token,
-              profilePage: linkedinData.profilePage || '',
-            },
-          }));
-        }
+      // LinkedIn Profile
+      if (
+        linkedinData?.isAuthenticated &&
+        linkedinData.accessToken?.expiresAt &&
+        new Date(linkedinData.accessToken.expiresAt) >= new Date()
+      ) {
+        setPlatformTokens((prev) => ({
+          ...prev,
+          linkedin: {
+            accessToken: linkedinData.accessToken.token,
+            profilePage: linkedinData.profilePage || '',
+          },
+        }));
       }
 
+      // Facebook
+      if (facebookData?.isAuthenticated) {
+        setPlatformTokens((prev) => ({
+          ...prev,
+          facebook: {
+            accessToken: facebookData.accessToken.token,
+            profilePage: facebookData,
+          },
+        }));
+      }
+
+      if (instagramData?.isAuthenticated && instagramData.accounts?.length > 0) {
+        setPlatformTokens((prev) => ({
+          ...prev,
+          instagram: {
+            accessToken: instagramData.accounts[0].accessToken,
+            profilePage: instagramData.accounts[0].id,
+          },
+        }));
+      }
     }
   }, [socialAuthData]);
-
 
   const post: Post | undefined = data?.data?.[0];
 
@@ -231,12 +264,21 @@ export const UserPostDetail: React.FC = () => {
     { name: 'instagram', label: 'Instagram', icon: platformIcons.instagram },
   ];
 
-  const updateSchedule = (platform?: string | null, subPlatform?: string | null, dateTime?: Date | null) => {
+  const updateSchedule = (
+    platform?: string | null,
+    subPlatform?: string | null,
+    dateTime?: Date | null,
+    selectedPage?: Schedule['selectedPage'],
+    selectedInstagramAccount?: Schedule['selectedInstagramAccount']
+  ) => {
     setSchedule((prev) => ({
+      ...prev,
       platform: platform !== undefined ? platform : prev.platform,
       subPlatform: subPlatform !== undefined ? subPlatform : prev.subPlatform,
       dateTime: dateTime !== undefined ? dateTime : prev.dateTime,
-      userDetails: prev.userDetails,
+      selectedPage: selectedPage !== undefined ? selectedPage : prev.selectedPage,
+      selectedInstagramAccount:
+        selectedInstagramAccount !== undefined ? selectedInstagramAccount : prev.selectedInstagramAccount,
     }));
   };
 
@@ -258,7 +300,6 @@ export const UserPostDetail: React.FC = () => {
       console.log(`Already authenticated for ${platformKey}, showing user details`);
       setIsSocialOptionsOpen(false);
 
-      // Show user details if already authenticated
       if (platform === 'linkedin' && socialAuthData?.data?.linkedin?.profileData) {
         setSchedule((prev) => ({
           ...prev,
@@ -266,6 +307,23 @@ export const UserPostDetail: React.FC = () => {
             name: socialAuthData.data.linkedin.profileData.name,
             profilePage: socialAuthData.data.linkedin.profilePage || '',
           },
+        }));
+      } else if (platform === 'facebook' && socialAuthData?.data?.facebook?.profileData) {
+        setSchedule((prev) => ({
+          ...prev,
+          userDetails: {
+            name: socialAuthData.data.facebook.profileData.name,
+            profilePage: socialAuthData.data.facebook.profileData.id,
+          },
+        }));
+      } else if (platform === 'instagram' && socialAuthData?.data?.instagram?.accounts?.length > 0) {
+        setSchedule((prev) => ({
+          ...prev,
+          userDetails: {
+            name: socialAuthData?.data?.instagram?.accounts?.[0]?.username,
+            profilePage: socialAuthData?.data?.instagram?.accounts[0]?.id,
+          },
+          selectedInstagramAccount: socialAuthData?.data?.instagram?.accounts[0], // Default to first account
         }));
       }
 
@@ -293,35 +351,64 @@ export const UserPostDetail: React.FC = () => {
       return;
     }
 
-    const payload = {
-      imageUrl: post.images[0]?.url || '',
-      title: post.title,
-      description: post.description,
-      hashTags: post.hashtags.join(', '),
-      scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
-      accessToken: tokenData.accessToken,
-      person_urn: tokenData.profilePage || "", // Include person_urn if available
-    };
-
-    console.log(`Publishing post to ${schedule.platform} with payload:`, payload);
+    if (schedule.platform === 'facebook' && !schedule.selectedPage) {
+      alert('Please select a Facebook page');
+      return;
+    }
 
     try {
       let response;
       if (schedule.platform === 'linkedin') {
+        const payload = {
+          imageUrl: post.images[0]?.url || '',
+          title: post.title,
+          description: post.description,
+          hashTags: post.hashtags.join(', '),
+          scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
+          accessToken: tokenData.accessToken,
+          person_urn: tokenData.profilePage || '',
+        };
+
+        console.log(`Publishing post to ${schedule.platform} with payload:`, payload);
         response = await linkedInPost(payload).unwrap();
       } else if (schedule.platform === 'facebook') {
-        // response = await facebookPost(payload).unwrap();
+        const payload = {
+          title: post.title,
+          description: post.description,
+          hashTags: post.hashtags.join(', '),
+          imageUrl: post.images[0]?.url || '',
+          scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
+          pageId: schedule.selectedPage!.id,
+          pageAccessToken: schedule.selectedPage!.accessToken,
+
+        }
+        console.log(`Publishing post to ${schedule.platform} with payload:`, payload);
+        response = await facebookPagePost(payload).unwrap();
       } else if (schedule.platform === 'instagram') {
-        // response = await instagramPost(payload).unwrap();
+        const payload = {
+          igBusinessId: schedule.selectedInstagramAccount!.id,
+          pageAccessToken: schedule.selectedInstagramAccount!.accessToken,
+          imageUrl: post.images[0]?.url || '',
+          title: post.title,
+          description: post.description,
+          hashTags: post.hashtags.join(', '),
+          scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
+        };
+        console.log(`Publishing post to ${schedule.platform} with payload:`, payload);
+        response = await instagramBusinessPost(payload).unwrap();
       }
 
       alert(`Post ${schedule.dateTime ? 'scheduled' : 'published'} successfully on ${schedule.platform}`);
-      setSchedule({ platform: null, subPlatform: null, dateTime: null });
+      setSchedule({ platform: null, subPlatform: null, dateTime: null, selectedPage: undefined });
       setShowUserDetails(false);
     } catch (err) {
       console.error(`Error posting to ${schedule.platform}:`, err);
       alert(`Failed to post to ${schedule.platform}`);
     }
+  };
+
+  const handlePageSelect = (page: { id: string; name: string; accessToken: string }) => {
+    updateSchedule(undefined, undefined, undefined, page);
   };
 
   const renderImage = (image: Image) => (
@@ -416,6 +503,10 @@ export const UserPostDetail: React.FC = () => {
     );
   }
 
+  function handleInstagramAccountSelect(selectedAccount: { id: string; username: string; accessToken: string }) {
+    updateSchedule(undefined, undefined, undefined, undefined, selectedAccount);
+  }
+
   return (
     <div className={`min-h-screen ${currentTheme.background} p-4 sm:p-6`}>
       <div className="max-w-6xl mx-auto">
@@ -486,9 +577,8 @@ export const UserPostDetail: React.FC = () => {
                     <button
                       key={`${platform.name}-${platform.subPlatform || 'default'}`}
                       onClick={() => handlePlatformSelect(platform.name, platform.subPlatform)}
-                      className={`flex flex-col items-center justify-center p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ${
-                        authStatus[platformKey as keyof typeof authStatus] ? 'bg-green-500/20' : ''
-                      }`}
+                      className={`flex flex-col items-center justify-center p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ${authStatus[platformKey as keyof typeof authStatus] ? 'bg-green-500/20' : ''
+                        }`}
                       disabled={isAuthenticating}
                     >
                       {platform.icon}
@@ -532,153 +622,210 @@ export const UserPostDetail: React.FC = () => {
                 Publish your design straight to {schedule.subPlatform === 'page' ? 'LinkedIn Pages' : `${(schedule.platform ?? '').charAt(0).toUpperCase() + (schedule.platform ?? '').slice(1)}!`}
               </p>
               {schedule.platform === 'facebook' && (
-                <p className={`text-sm ${currentTheme.textSecondary} mb-4`}>
-                  Connected to Instagram Business? Be sure to authorize all Pages you want to use in Canva, including Facebook Pages linked to your Instagram accounts.
-                </p>
+                <>
+                  <p className={`text-sm ${currentTheme.textSecondary} mb-4`}>Select a Facebook Page to post to:</p>
+                  {socialAuthData?.data?.facebook?.managedPages?.length > 0 ? (
+
+
+                    <select
+                      className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4 w-full`}
+                      onChange={(
+                        e: React.ChangeEvent<HTMLSelectElement>
+                      ) => {
+                        const selectedPage: FacebookManagedPage | undefined = (socialAuthData?.data?.facebook?.managedPages as FacebookManagedPage[] | undefined)?.find(
+                          (page: FacebookManagedPage) => page.id === e.target.value
+                        );
+                        if (selectedPage) {
+                          handlePageSelect(selectedPage);
+                        }
+                      }}
+                      value={schedule.selectedPage?.id || ''}
+                    >
+                      <option value="">Select a Page</option>
+                      {socialAuthData?.data?.facebook?.managedPages.map((page: FacebookManagedPage) => (
+                        <option key={page.id} value={page.id}>
+                          {page.name}
+                        </option>
+                      ))}
+                    </select>
+              ) : (
+              <p className="text-red-400 text-sm mb-4">No Facebook pages found. Please authenticate or link a page.</p>
+                  )}
+            </>
               )}
-              {schedule.userDetails && (
-                <div className="flex items-center gap-2 mb-4">
-                  <select className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}>
-                    <option>{schedule.userDetails.name}</option>
+            {schedule.platform === 'instagram' && (
+              <>
+                <p className={`text-sm ${currentTheme.textSecondary} mb-4`}>Select an Instagram Account to post to:</p>
+                {socialAuthData?.data?.instagram?.accounts?.length > 0 ? (
+
+
+                  <select
+                    className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4 w-full`}
+                    onChange={(
+                      e: React.ChangeEvent<HTMLSelectElement>
+                    ) => {
+                      const selectedAccount: InstagramAccount | undefined = (socialAuthData?.data?.instagram as InstagramAuthData)?.accounts.find(
+                        (account: InstagramAccount) => account.id === e.target.value
+                      );
+                      if (selectedAccount) {
+                        handleInstagramAccountSelect(selectedAccount);
+                      }
+                    }}
+                    value={schedule.selectedInstagramAccount?.id || ''}
+                  >
+                    <option value="">Select an Account</option>
+                    {(socialAuthData?.data?.instagram as InstagramAuthData)?.accounts.map((account: InstagramAccount) => (
+                      <option key={account.id} value={account.id}>
+                        {account.username}
+                      </option>
+                    ))}
                   </select>
-                  <select className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}>
-                    <option>{schedule.userDetails.profilePage || 'Select Page'}</option>
-                  </select>
-                </div>
-              )}
-              <textarea
-                placeholder="Write something..."
-                className={`w-full h-32 ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4`}
+                ) : (
+                  <p className="text-red-400 text-sm mb-4">No Instagram accounts found. Please link an account.</p>
+                )}
+              </>
+            )}
+            {schedule.userDetails && schedule.platform !== 'facebook' && (
+              <div className="flex items-center gap-2 mb-4">
+                <select className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}>
+                  <option>{schedule.userDetails.name}</option>
+                </select>
+                <select className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}>
+                  <option>{schedule.userDetails.profilePage || 'Select Page'}</option>
+                </select>
+              </div>
+            )}
+            <textarea
+              placeholder="Write something..."
+              className={`w-full h-32 ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4`}
+            />
+            <div className="flex items-center gap-4 mb-4">
+              <Calendar className={`w-5 h-5 ${currentTheme.textSecondary}`} />
+              <DatePicker
+                selected={schedule.dateTime}
+                onChange={(date: Date | null) => updateSchedule(undefined, undefined, date)}
+                showTimeSelect
+                dateFormat="Pp"
+                className={`w-full ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}
+                placeholderText="Select date and time (optional)"
+                minDate={new Date()}
               />
-              <div className="flex items-center gap-4 mb-4">
-                <Calendar className={`w-5 h-5 ${currentTheme.textSecondary}`} />
-                <DatePicker
-                  selected={schedule.dateTime}
-                  onChange={(date: Date | null) => updateSchedule(undefined, undefined, date)}
-                  showTimeSelect
-                  dateFormat="Pp"
-                  className={`w-full ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}
-                  placeholderText="Select date and time (optional)"
-                  minDate={new Date()}
-                />
-              </div>
-              <div className="flex gap-4">
-                <button
-                  onClick={handlePublishPost}
-                  className={`flex-1 px-4 py-2 bg-purple-600 ${currentTheme.textPrimary} rounded-lg hover:bg-purple-700`}
-                  disabled={!schedule.platform || isAuthenticating}
-                >
-                  Publish
-                </button>
-                <button
-                  onClick={() => setShowUserDetails(false)}
-                  className={`flex-1 px-4 py-2 ${currentTheme.inputBg} ${currentTheme.textSecondary} rounded-lg hover:bg-gray-700`}
-                >
-                  Cancel
-                </button>
-              </div>
             </div>
+            <div className="flex gap-4">
+              <button
+                onClick={handlePublishPost}
+                className={`flex-1 px-4 py-2 bg-purple-600 ${currentTheme.textPrimary} rounded-lg hover:bg-purple-700`}
+                disabled={!schedule.platform || isAuthenticating || (schedule.platform === 'facebook' && !schedule.selectedPage)}
+              >
+                Publish
+              </button>
+              <button
+                onClick={() => setShowUserDetails(false)}
+                className={`flex-1 px-4 py-2 ${currentTheme.inputBg} ${currentTheme.textSecondary} rounded-lg hover:bg-gray-700`}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Image Section */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="w-full"
-          >
-            {renderPost()}
-          </motion.div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Image Section */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="w-full"
+        >
+          {renderPost()}
+        </motion.div>
 
-          {/* Content Section */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
-            {/* Main Content */}
-            <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 ${currentTheme.border}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs ${
-                    post.type === 'carousel'
-                      ? 'bg-purple-500/20 text-purple-400'
-                      : post.type === 'doyouknow'
-                        ? 'bg-yellow-500/20 text-yellow-400'
-                        : 'bg-blue-500/20 text-blue-400'
+        {/* Content Section */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="space-y-6"
+        >
+          {/* Main Content */}
+          <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 ${currentTheme.border}`}>
+            <div className="flex items-center gap-2 mb-4">
+              <span
+                className={`px-3 py-1 rounded-full text-xs ${post.type === 'carousel'
+                  ? 'bg-purple-500/20 text-purple-400'
+                  : post.type === 'doyouknow'
+                    ? 'bg-yellow-500/20 text-yellow-400'
+                    : 'bg-blue-500/20 text-blue-400'
                   }`}
-                >
-                  {post.type.toUpperCase()}
-                </span>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs ${
-                    post.status === 'published'
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-orange-500/20 text-orange-400'
+              >
+                {post.type.toUpperCase()}
+              </span>
+              <span
+                className={`px-3 py-1 rounded-full text-xs ${post.status === 'published'
+                  ? 'bg-green-500/20 text-green-400'
+                  : 'bg-orange-500/20 text-orange-400'
                   }`}
-                >
-                  {post.status.toUpperCase()}
-                </span>
-              </div>
-
-              <h1 className={`text-3xl font-bold ${currentTheme.textPrimary} mb-4`}>{post.topic}</h1>
-              <h2 className={`text-xl font-medium ${currentTheme.textPrimary} mb-4`}>{post.title}</h2>
-              <p className={`${currentTheme.textSecondary} leading-relaxed mb-6`}>{post.description}</p>
-
-              <div className="flex flex-wrap gap-2 mb-6">
-                {post.hashtags.map((hashtag, index) => (
-                  <span
-                    key={index}
-                    className={`flex items-center gap-1 text-xs bg-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full`}
-                  >
-                    <Tag className="w-3 h-3" />
-                    {hashtag}
-                  </span>
-                ))}
-              </div>
-
-              <div className={`flex items-center justify-between text-sm ${currentTheme.textSecondary}`}>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span>{new Date(post.createdAt).toLocaleString()}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4" />
-                  <span>{post.contentType}</span>
-                </div>
-              </div>
+              >
+                {post.status.toUpperCase()}
+              </span>
             </div>
 
-            {/* Engagement Stats */}
-            <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 ${currentTheme.border}`}>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 text-red-400 mb-1">
-                    <Heart className="w-5 h-5" />
-                    <span className="text-lg font-semibold">2.4k</span>
-                  </div>
-                  <p className={`text-sm ${currentTheme.textSecondary}`}>Likes</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 text-blue-400 mb-1">
-                    <MessageSquare className="w-5 h-5" />
-                    <span className="text-lg font-semibold">142</span>
-                  </div>
-                  <p className={`text-sm ${currentTheme.textSecondary}`}>Comments</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 text-green-400 mb-1">
-                    <Eye className="w-5 h-5" />
-                    <span className="text-lg font-semibold">3.8k</span>
-                  </div>
-                  <p className={`text-sm ${currentTheme.textSecondary}`}>Views</p>
-                </div>
+            <h1 className={`text-3xl font-bold ${currentTheme.textPrimary} mb-4`}>{post.topic}</h1>
+            <h2 className={`text-xl font-medium ${currentTheme.textPrimary} mb-4`}>{post.title}</h2>
+            <p className={`${currentTheme.textSecondary} leading-relaxed mb-6`}>{post.description}</p>
+
+            <div className="flex flex-wrap gap-2 mb-6">
+              {post.hashtags.map((hashtag, index) => (
+                <span
+                  key={index}
+                  className={`flex items-center gap-1 text-xs bg-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full`}
+                >
+                  <Tag className="w-3 h-3" />
+                  {hashtag}
+                </span>
+              ))}
+            </div>
+
+            <div className={`flex items-center justify-between text-sm ${currentTheme.textSecondary}`}>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{new Date(post.createdAt).toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                <span>{post.contentType}</span>
               </div>
             </div>
-          </motion.div>
-        </div>
+          </div>
+
+          {/* Engagement Stats */}
+          <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 ${currentTheme.border}`}>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 text-red-400 mb-1">
+                  <Heart className="w-5 h-5" />
+                  <span className="text-lg font-semibold">2.4k</span>
+                </div>
+                <p className={`text-sm ${currentTheme.textSecondary}`}>Likes</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 text-blue-400 mb-1">
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="text-lg font-semibold">142</span>
+                </div>
+                <p className={`text-sm ${currentTheme.textSecondary}`}>Comments</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 text-green-400 mb-1">
+                  <Eye className="w-5 h-5" />
+                  <span className="text-lg font-semibold">3.8k</span>
+                </div>
+                <p className={`text-sm ${currentTheme.textSecondary}`}>Views</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </div>
+    </div >
   );
 };

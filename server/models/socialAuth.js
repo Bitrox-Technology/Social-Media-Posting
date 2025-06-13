@@ -18,8 +18,8 @@ const socialAuthSchema = new mongoose.Schema({
         type: Date,
       },
     },
-    profilePage: {
-      type: String,
+    managedPages: {
+      type: Array,
     },
     profileData: {
       type: Object,
@@ -50,18 +50,7 @@ const socialAuthSchema = new mongoose.Schema({
       type: Boolean,
       default: false,
     },
-    accessToken: {
-      token: {
-        type: String,
-      },
-      expiresAt: {
-        type: Date,
-      },
-    },
-    profilePage: {
-      type: String,
-    },
-    profileData: {
+    accounts: {
       type: Object,
     },
   },

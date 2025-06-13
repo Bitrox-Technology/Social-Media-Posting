@@ -273,6 +273,8 @@ const validateBlogPost = async (inputs) => {
         imageAltText: joi.string().trim().optional(),
         scheduleTime: joi.string().trim().allow('').optional(),
         imageDescription: joi.string().trim().optional(),
+        wordpress_username: joi.string().optional(),
+        wordpress_password: joi.string().optional(),
     });
 
     VALIDATE_SCHEMA(schema, inputs);
@@ -284,6 +286,27 @@ const validateFestivalContent = async (inputs) => {
         festivalName: joi.string().trim().min(1).required(),
         description: joi.string().trim().min(1).max(300).required(),
         festivalDate: joi.string().trim().required(),
+    });
+
+    VALIDATE_SCHEMA(schema, inputs);
+};
+
+const validateProductContent = async (inputs) => {
+    let schema = {}
+    schema = joi.object({
+        productName: joi.string().trim().min(1).required(),
+        description: joi.string().trim().min(1).max(300).required(),
+        images: joi.array().items()
+    });
+
+    VALIDATE_SCHEMA(schema, inputs);
+};
+
+const validateWordpressAuth = async (inputs) => {
+    let schema = {}
+    schema = joi.object({
+        wordpress_username: joi.string().min(1).required(),
+        wordpress_password: joi.string().required(),
     });
 
     VALIDATE_SCHEMA(schema, inputs);
@@ -307,7 +330,9 @@ const UserValidation = {
     validateSaveProductInfo,
     validateBlog,
     validateBlogPost,
-    validateFestivalContent
+    validateFestivalContent,
+    validateProductContent,
+    validateWordpressAuth
 }
 
 export default UserValidation;

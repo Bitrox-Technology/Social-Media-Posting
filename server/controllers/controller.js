@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
 import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent, generateBlog, generateCode, generateContent } from "../services/generateCarousel.js";
 import { postBlog, scheduledBlogPosts } from "../services/blogPost.js";
+import { OK } from "../utils/apiResponseCode.js";
 
 
 const ollama = new Ollama({ host: "http://localhost:11434" });
@@ -530,9 +531,9 @@ const GenerateBlog = async (req, res, next) => {
 
 const GenerateContent = async (req, res, next) => {
 
-  const { topic, audience , tone, section} = req.body
+  const { topic, audience, tone, section } = req.body
   try {
-    const result = await generateContent(topic, audience , tone, section);
+    const result = await generateContent(topic, audience, tone, section);
     return res.status(200).json(new ApiResponse(200, result, "Blog generated successfully"));
   } catch (error) {
     next(error);
@@ -548,11 +549,34 @@ const GenerateCode = async (req, res, next) => {
     next(error);
   }
 };
+const Holidays = async (req, res, next) => {
+  try {
+    const { year, region, type } = req.query;
+    const data = JSON.parse(await fs.readFile('config/data/holidays.json', 'utf8'));
+    let holidays = data;
+
+    // Filter by year
+    if (year) {
+      holidays = holidays.filter(h => h.year === parseInt(year));
+    }
+    // Filter by region (e.g., "KL" for Kerala, "All" for nationwide)
+    if (region) {
+      holidays = holidays.filter(h => h.regions.includes(region) || h.regions.includes('All'));
+    }
+    // Filter by type (PUBLIC_HOLIDAY or FESTIVAL)
+    if (type) {
+      holidays = holidays.filter(h => h.type === type);
+    }
+    return res.status(OK).json(new ApiResponse(OK, holidays, "Holidays Fetched successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 const PostControllers = {
   Post, Content, Ideas, GenerateImage, GenerateCarousel, GenerateBlog, GenerateContent,
   UploadCarouselImages, UploadSingleImage, GenerateDoYouKnow, GenerateTopics, GenerateImageContent,
-  BlogPost, GenerateCode
+  BlogPost, GenerateCode, Holidays
 };
 export default PostControllers;

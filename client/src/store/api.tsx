@@ -39,6 +39,14 @@ interface ApiResponse<T> {
   success: boolean;
 }
 
+export interface PaymentInitiateRequest {
+  orderId: string;
+  amount: number;
+  customerId: string;
+  email: string;
+  mobileNumber: string;
+}
+
 interface SavePostRequest {
   postContentId: string;
   topic: string;
@@ -506,7 +514,7 @@ export const api = createApi({
         body: body
       }),
     }),
-    postBlog: builder.mutation<ApiResponse<any>, {title: string, content: string, metaDescription: string, categories:  string[]; tags:  string[]; slug: string; focusKeyword: string; excerpt: string; imageUrl: string, imageAltText: string; scheduleTime: string}>({
+    postBlog: builder.mutation<ApiResponse<any>, {title: string, content: string, metaDescription: string, categories:  string[]; tags:  string[]; slug: string; focusKeyword: string; excerpt: string; imageUrl: string, imageAltText: string; section: string; scheduleTime: string, wordpress_username: string; wordpress_password: string}>({
       query: (body) => ({
         url: '/user/blog-post',
         method: 'POST',
@@ -550,6 +558,20 @@ export const api = createApi({
         body
       }),
     }),
+    facebookPagePost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imageUrl: string; scheduleTime: string, pageAccessToken: string, pageId: string}>({
+      query: (body) => ({
+        url: '/social/facebook/post',
+        method: 'POST',
+        body
+      }),
+    }),
+    instagramBusinessPost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imageUrl: string; scheduleTime: string, pageAccessToken: string, igBusinessId: string}>({
+      query: (body) => ({
+        url: '/social/instagram/post',
+        method: 'POST',
+        body
+      }),
+    }),
     getSocialAuth: builder.query<ApiResponse<any>, void>({
       query: () => ({
         url: '/social/auth/get-auth-detail',
@@ -576,6 +598,41 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
+
+    initiatePayment: builder.mutation<ApiResponse<any>, PaymentInitiateRequest>({
+      query: (body) => ({
+        url: '/paymenet/payment-initiate',
+        method: 'POST',
+        body,
+      }),
+    }),
+    verifyPayment: builder.query<ApiResponse<any>, { orderId: string }>({
+      query: ({ orderId }) => ({
+        url: `/payment/verify?orderId=${orderId}`,
+        method: 'GET',
+      }),
+    }),
+    holidays: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: `/holidays`,
+        method: 'GET',
+
+      }),
+    }),
+    wordpressAuth: builder.mutation<ApiResponse<any>, {wordpress_username: string, wordpress_password: string}>({
+      query: (body) => ({
+        url: '/user/wordpress-auth',
+        method: 'POST',
+        body,
+      }),
+    }),
+    getWordpressAuth: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: `/user/get-wordpress-auth`,
+        method: 'GET',
+      }),
+    }),
+
   }),
 });
 
@@ -650,8 +707,15 @@ export const {
   useLazyAuthFacebookQuery,
   useLazyAuthInstagramQuery,
   useLinkedInPostMutation,
+  useFacebookPagePostMutation,
+  useInstagramBusinessPostMutation,
   useLazyGetSocialAuthQuery,
   useLazyGetUserScheduledPostsQuery,
   useFestivalContentMutation,
-  useLazyGetFestivalContentQuery
+  useLazyGetFestivalContentQuery,
+  useInitiatePaymentMutation,
+  useVerifyPaymentQuery,
+  useLazyHolidaysQuery,
+  useWordpressAuthMutation,
+  useLazyGetWordpressAuthQuery
 } = api;

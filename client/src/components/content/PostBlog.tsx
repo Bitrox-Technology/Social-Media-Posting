@@ -1,10 +1,9 @@
-// src/components/PostBlog.tsx
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, CheckCircle } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import { useLazyGetBlogByIdQuery, usePostBlogMutation } from '../../store/api';
+import { useLazyGetBlogByIdQuery, usePostBlogMutation, useWordpressAuthMutation, useLazyGetWordpressAuthQuery } from '../../store/api';
 import { useAlert } from '../hooks/useAlert';
 import { Alert } from '../ui/Alert';
 import { toast, ToastContainer } from 'react-toastify';
@@ -13,12 +12,10 @@ import { toast, ToastContainer } from 'react-toastify';
 const formatPlainTextContent = (content: string) => {
   if (!content) return '';
 
-  // Check if content already contains HTML tags
   if (content.includes('<p>') || content.includes('<h2>') || content.includes('<h3>')) {
-    return content; // Return as-is if HTML is present
+    return content;
   }
 
-  // Split content into sections based on headings and structure
   const sections = content.split(/(Latest Trends|Why Rust Offers Superior Security|Rust’s Impact|FAQ|Conclusion)/);
   let formattedContent = '';
   let isFAQ = false;
@@ -37,7 +34,6 @@ const formatPlainTextContent = (content: string) => {
         formattedContent += `<h2 class="section-heading">${section}</h2>`;
       }
     } else if (isFAQ) {
-      // Handle FAQ section
       const faqItems = section.split(/Q\d:/).filter(item => item.trim());
       faqItems.forEach(item => {
         const [question, answer] = item.split('?');
@@ -46,7 +42,6 @@ const formatPlainTextContent = (content: string) => {
         }
       });
     } else {
-      // Split section into paragraphs (assuming double newlines or sentences)
       const paragraphs = section
         .split(/\n\n|\. (?=[A-Z])/)
         .filter(p => p.trim())
@@ -79,13 +74,43 @@ export const PostBlog: React.FC = () => {
     excerpt: string;
     slug: string;
     focusKeyword: string;
+    section: string;
   } | null>(null);
   const [scheduleDate, setScheduleDate] = useState<string>('');
   const [isPosting, setIsPosting] = useState(false);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [wordpressUsername, setWordpressUsername] = useState('');
+  const [wordpressPassword, setWordpressPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [getBlogById] = useLazyGetBlogByIdQuery();
   const [postBlog] = usePostBlogMutation();
+  const [getWordpressAuth] = useLazyGetWordpressAuthQuery();
+  const [wordpressAuth] = useWordpressAuthMutation();
   const { isOpen, config, showAlert, closeAlert, handleConfirm, error: showErrorAlert } = useAlert();
+
+  // Check WordPress credentials on component mount
+  const checkWordpressAuth = async () => {
+    try {
+      const response = await getWordpressAuth().unwrap();
+      if (response.success && response.data.isAuthenticate) {
+        setIsAuthenticated(true);
+        setWordpressUsername(response.data.wordpress_username);
+        setWordpressPassword(response.data.wordpress_password);
+      } else {
+        setShowCredentialsModal(true);
+        showAlert({
+          type: 'confirm',
+          title: 'WordPress Credentials Required',
+          message: 'Please provide your WordPress username and application password to post the blog.',
+        });
+      }
+    } catch (err) {
+      console.error('Error checking WordPress auth:', err);
+      setShowCredentialsModal(true);
+      showErrorAlert('Failed to verify WordPress credentials. Please provide your credentials.');
+    }
+  };
 
   const fetchBlog = async () => {
     const blogId = location.state?.blogId;
@@ -110,12 +135,55 @@ export const PostBlog: React.FC = () => {
   };
 
   useEffect(() => {
+    checkWordpressAuth();
     fetchBlog();
   }, []);
 
+  const handleSaveCredentials = async () => {
+    if (!wordpressUsername || !wordpressPassword) {
+      showErrorAlert('Please provide both WordPress username and application password.');
+      return;
+    }
+
+    try {
+      const response = await wordpressAuth({
+        wordpress_username: wordpressUsername,
+        wordpress_password: wordpressPassword,
+      }).unwrap();
+      if (response.success) {
+        setIsAuthenticated(true);
+        setShowCredentialsModal(false);
+        toast.success('WordPress credentials saved successfully!', {
+          position: 'bottom-right',
+          autoClose: 3000,
+        });
+      } else {
+        showErrorAlert('Failed to authenticate WordPress credentials. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error saving WordPress credentials:', err);
+      showErrorAlert('Failed to save WordPress credentials. Please try again.');
+    }
+  };
+
+  const handleUpdateCredentials = () => {
+    setShowCredentialsModal(true);
+    showAlert({
+      type: 'confirm',
+      title: 'Update WordPress Credentials',
+      message: 'Please provide your new WordPress username and application password.',
+    });
+  };
+
   const handlePostToWordPress = async () => {
     if (!blog) {
-      showErrorAlert('Blog data not available.');
+      showErrorAlert('Blog data transplanted.');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setShowCredentialsModal(true);
+      showErrorAlert('Please provide WordPress credentials before posting.');
       return;
     }
 
@@ -123,7 +191,7 @@ export const PostBlog: React.FC = () => {
     try {
       const postData = {
         title: blog.title,
-        content: blog.content, 
+        content: formatPlainTextContent(blog.content),
         metaDescription: blog.metaDescription,
         focusKeyword: blog.focusKeyword,
         excerpt: blog.excerpt,
@@ -134,6 +202,9 @@ export const PostBlog: React.FC = () => {
         slug: blog.slug,
         imageAltText: blog.imageAltText,
         scheduleTime: scheduleDate ? new Date(scheduleDate).toISOString() : '',
+        section: blog.section,
+        wordpress_username: wordpressUsername,
+        wordpress_password: wordpressPassword
       };
 
       const response = await postBlog(postData).unwrap();
@@ -202,6 +273,78 @@ export const PostBlog: React.FC = () => {
             {blog.excerpt}
           </p>
         </motion.div>
+
+        {/* WordPress Credentials Modal */}
+        {showCredentialsModal && (
+          <motion.div
+            className={`fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div
+              className={`p-6 rounded-xl shadow-lg ${theme === 'dark'
+                ? 'bg-gray-800 text-white'
+                : 'bg-white text-gray-900'
+                } max-w-md w-full`}
+            >
+              <h2 className="text-2xl font-bold mb-4">WordPress Credentials</h2>
+              <div className="mb-4">
+                <label className="block mb-2 text-sm font-medium">
+                  WordPress Username
+                </label>
+                <input
+                  type="text"
+                  value={wordpressUsername}
+                  onChange={(e) => setWordpressUsername(e.target.value)}
+                  className={`w-full p-3 rounded-lg border ${theme === 'dark'
+                    ? 'bg-gray-700 text-white border-gray-600'
+                    : 'bg-gray-100 text-gray-900 border-gray-300'
+                    } focus:outline-none focus:ring-2 focus:ring-green-500`}
+                  placeholder="Enter your WordPress username"
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block mb-2 text-sm font-medium">
+                  Application Password
+                </label>
+                <input
+                  type="password"
+                  value={wordpressPassword}
+                  onChange={(e) => setWordpressPassword(e.target.value)}
+                  className={`w-full p-3 rounded-lg border ${theme === 'dark'
+                    ? 'bg-gray-700 text-white border-gray-600'
+                    : 'bg-gray-100 text-gray-900 border-gray-300'
+                    } focus:outline-none focus:ring-2 focus:ring-green-500`}
+                  placeholder="Enter your WordPress application password"
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowCredentialsModal(false);
+                    navigate('/blog');
+                  }}
+                  className={`px-4 py-2 rounded-lg ${theme === 'dark'
+                    ? 'bg-gray-600 text-white hover:bg-gray-500'
+                    : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                    }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveCredentials}
+                  className={`px-4 py-2 rounded-lg ${theme === 'dark'
+                    ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white hover:from-purple-300 hover:to-pink-300'
+                    : 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-400 hover:to-purple-400'
+                    }`}
+                >
+                  {isAuthenticated ? 'Update Credentials' : 'Save Credentials'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Blog Preview */}
         <motion.div
@@ -299,6 +442,24 @@ export const PostBlog: React.FC = () => {
             </div>
           </motion.div>
 
+          {/* Update Credentials Button */}
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <button
+              onClick={handleUpdateCredentials}
+              className={`inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl transition-all duration-300 ${theme === 'dark'
+                ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white hover:from-yellow-300 hover:to-orange-300'
+                : 'bg-gradient-to-r from-blue-500 to-teal-500 text-white hover:from-blue-400 hover:to-teal-400'
+                }`}
+            >
+              Update WordPress Credentials
+            </button>
+          </motion.div>
+
           {/* Scheduling Section */}
           <motion.div
             className="mb-8"
@@ -334,7 +495,7 @@ export const PostBlog: React.FC = () => {
           >
             <button
               onClick={handlePostToWordPress}
-              disabled={isPosting}
+              disabled={isPosting || !isAuthenticated}
               className={`inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl transition-all duration-300 disabled:cursor-not-allowed gap-2 ${theme === 'dark'
                 ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white hover:from-purple-300 hover:to-pink-300 disabled:opacity-50'
                 : 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-400 hover:to-purple-400 disabled:opacity-50'
@@ -352,7 +513,10 @@ export const PostBlog: React.FC = () => {
           message={config.message}
           isOpen={isOpen}
           onClose={closeAlert}
-          onConfirm={config.type === 'confirm' ? handleConfirm : undefined}
+          onConfirm={config.type === 'confirm' ? () => {
+            handleSaveCredentials();
+            handleConfirm();
+          } : undefined}
         />
         <ToastContainer
           position="bottom-right"

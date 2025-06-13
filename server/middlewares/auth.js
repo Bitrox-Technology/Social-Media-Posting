@@ -5,10 +5,12 @@ import { EXPIRED_TOKEN, UN_AUTHORIZED } from "../utils/apiResponseCode.js";
 import jwt from "jsonwebtoken"
 import i18n from "../utils/i18n.js";
 import { clearAuthCookies, generateAccessToken } from "../utils/utilities.js";
+// import { log } from "winston";
 
 const AuthMiddleware = async (req, res, next) => {
     try {
         const accessToken = req.cookies?.accessToken
+        console.log("Access Token", accessToken)
 
         if (!accessToken) throw new ApiError(UN_AUTHORIZED, i18n.__("INVALID_TOKEN"))
         let decodedToken;

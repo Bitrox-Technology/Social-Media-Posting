@@ -7,10 +7,13 @@ import { useAlert } from '../hooks/useAlert';
 import { Alert } from '../ui/Alert';
 import { NewProductTemplates, NewProductTemplate, Colors } from '../../templetes/Product/newProductTemplates';
 import { useDropzone } from 'react-dropzone';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 
 interface ProductInfo {
   name: string;
-  imageUrl: string;
+  description: string;
+  images: File[]; // Array of File objects, max 3
   postTypes: ('discount' | 'flashSale')[]; // Array to store selected post types
   discount: {
     percentage: number;
@@ -23,29 +26,10 @@ interface ProductInfo {
   websiteUrl: string;
 }
 
-interface Schedule {
-  fromDate: string; // e.g., "2025-06-03"
-  toDate: string;   // e.g., "2025-06-10"
-  time: string;     // e.g., "14:00" (2:00 PM)
-}
-
 export const ProductPostCreator: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { isOpen, config, showAlert, closeAlert, handleConfirm } = useAlert();
-  const [productInfo, setProductInfo] = useState<ProductInfo>({
-    name: '',
-    imageUrl: '',
-    postTypes: [],
-    discount: { percentage: 0, description: '' },
-    flashSale: { offer: '', validUntil: '' },
-    websiteUrl: '',
-  });
-  const [schedule, setSchedule] = useState<Schedule>({
-    fromDate: '',
-    toDate: '',
-    time: '',
-  });
   const [preview, setPreview] = useState<boolean>(false);
   const [previewType, setPreviewType] = useState<'discount' | 'flashSale' | null>(null);
   const [selectedTemplates, setSelectedTemplates] = useState<{
@@ -53,51 +37,85 @@ export const ProductPostCreator: React.FC = () => {
     flashSale: NewProductTemplate | null;
   }>({ discount: null, flashSale: null });
 
-  // Handle file drop for image upload
+  // Yup validation schema
+  const validationSchema = Yup.object({
+    name: Yup.string().required('Product name is required'),
+    description: Yup.string().required('Product description is required'),
+    images: Yup.array()
+      .of(Yup.mixed().required('Image is required'))
+      .min(3, 'Three images are required')
+      .max(3, 'Maximum 3 images allowed'),
+    postTypes: Yup.array()
+      .of(Yup.string().oneOf(['discount', 'flashSale']))
+      .min(1, 'Select at least one post type (Discount or Flash Sale)'),
+    discount: Yup.object().when('postTypes', {
+      is: (postTypes: string[]) => postTypes.includes('discount'),
+      then: (schema) =>
+        schema.shape({
+          percentage: Yup.number()
+            .min(1, 'Discount percentage must be at least 1')
+            .required('Discount percentage is required'),
+          description: Yup.string().required('Discount description is required'),
+        }),
+      otherwise: (schema) => schema,
+    }),
+    flashSale: Yup.object().when('postTypes', {
+      is: (postTypes: string[]) => postTypes.includes('flashSale'),
+      then: (schema) =>
+        schema.shape({
+          offer: Yup.string().required('Flash sale offer is required'),
+          validUntil: Yup.string().required('Flash sale validity date is required'),
+        }),
+      otherwise: (schema) => schema,
+    }),
+    websiteUrl: Yup.string()
+      .url('Must be a valid URL')
+      .required('Website URL is required'),
+  });
+
+  // Formik setup
+  const formik = useFormik<ProductInfo>({
+    initialValues: {
+      name: '',
+      description: '',
+      images: [],
+      postTypes: [],
+      discount: { percentage: 0, description: '' },
+      flashSale: { offer: '', validUntil: '' },
+      websiteUrl: '',
+    },
+    validationSchema,
+    onSubmit: (values) => {
+      // Only trigger preview, do not log values here
+      setPreview(true);
+      setPreviewType(values.postTypes[0] || null);
+    },
+  });
+
+  // Handle file drop for image upload (max 3 images)
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setProductInfo((prev) => ({ ...prev, imageUrl }));
-    }
-  }, []);
+    const newImages = [...formik.values.images, ...acceptedFiles].slice(0, 3); // Limit to 3 images
+    formik.setFieldValue('images', newImages);
+  }, [formik]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.png', '.jpg', '.jpeg'] },
-    maxFiles: 1,
+    maxFiles: 3 - formik.values.images.length, // Allow only remaining slots
   });
 
-  const handleInputChange = useCallback(
-    (
-      field: keyof ProductInfo,
-      value: string | { percentage: number; description: string } | { offer: string; validUntil: string }
-    ) => {
-      setProductInfo((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    },
-    []
-  );
+  // Remove an image
+  const removeImage = (index: number) => {
+    const newImages = formik.values.images.filter((_, i) => i !== index);
+    formik.setFieldValue('images', newImages);
+  };
 
-  const handleScheduleChange = useCallback(
-    (field: keyof Schedule, value: string) => {
-      setSchedule((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    },
-    []
-  );
-
+  // Handle post type toggle
   const handlePostTypeToggle = useCallback((postType: 'discount' | 'flashSale') => {
-    setProductInfo((prev) => {
-      const postTypes = prev.postTypes.includes(postType)
-        ? prev.postTypes.filter((type) => type !== postType)
-        : [...prev.postTypes, postType];
-      return { ...prev, postTypes };
-    });
+    const postTypes = formik.values.postTypes.includes(postType)
+      ? formik.values.postTypes.filter((type) => type !== postType)
+      : [...formik.values.postTypes, postType];
+    formik.setFieldValue('postTypes', postTypes);
 
     // Select a random template for the post type
     if (!selectedTemplates[postType]) {
@@ -105,105 +123,7 @@ export const ProductPostCreator: React.FC = () => {
       const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
       setSelectedTemplates((prev) => ({ ...prev, [postType]: randomTemplate }));
     }
-  }, [selectedTemplates]);
-
-  const generatePostDates = useCallback(() => {
-    const { fromDate, toDate, time } = schedule;
-    if (!fromDate || !toDate || !time) return [];
-
-    const start = new Date(fromDate);
-    const end = new Date(toDate);
-    const postDates: { type: 'discount' | 'flashSale'; date: string }[] = [];
-
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      const [hours, minutes] = time.split(':').map(Number);
-      productInfo.postTypes.forEach((postType) => {
-        for (let i = 0; i < 3; i++) {
-          const postTime = new Date(date);
-          // Stagger posts: discount at 0, 10, 20 minutes; flashSale at 30, 40, 50 minutes
-          const offset = postType === 'discount' ? i * 10 : 30 + i * 10;
-          postTime.setHours(hours, minutes + offset);
-          postDates.push({ type: postType, date: postTime.toISOString() });
-        }
-      });
-    }
-    return postDates;
-  }, [schedule, productInfo.postTypes]);
-
-  const handleSubmit = useCallback(() => {
-
-    console.log('Submitting product info:', productInfo);
-    console.log('Schedule:', schedule);
-    
-    // Validation
-    if (!productInfo.name || !productInfo.imageUrl || !productInfo.websiteUrl) {
-      showAlert({
-        type: 'error',
-        title: 'Missing Information',
-        message: 'Please fill in all required fields (product name, image, and website URL).',
-      });
-      return;
-    }
-
-    if (productInfo.postTypes.length === 0) {
-      showAlert({
-        type: 'error',
-        title: 'No Post Type Selected',
-        message: 'Please select at least one post type (Discount or Flash Sale).',
-      });
-      return;
-    }
-
-    if (
-      productInfo.postTypes.includes('discount') &&
-      (!productInfo.discount.percentage || !productInfo.discount.description)
-    ) {
-      showAlert({
-        type: 'error',
-        title: 'Missing Discount Information',
-        message: 'Please provide the discount percentage and description.',
-      });
-      return;
-    }
-
-    if (
-      productInfo.postTypes.includes('flashSale') &&
-      (!productInfo.flashSale.offer || !productInfo.flashSale.validUntil)
-    ) {
-      showAlert({
-        type: 'error',
-        title: 'Missing Flash Sale Information',
-        message: 'Please provide the flash sale offer and validity date.',
-      });
-      return;
-    }
-
-    if (!schedule.fromDate || !schedule.toDate || !schedule.time) {
-      showAlert({
-        type: 'error',
-        title: 'Missing Schedule Information',
-        message: 'Please provide the date range and time for scheduling posts.',
-      });
-      return;
-    }
-
-    const postDates = generatePostDates();
-    if (postDates.length === 0) {
-      showAlert({
-        type: 'error',
-        title: 'Invalid Schedule',
-        message: 'The date range is invalid or no posts could be scheduled.',
-      });
-      return;
-    }
-
-    // Log scheduled posts
-    console.log('Scheduled Posts:', postDates);
-
-    // Show preview (default to first post type)
-    setPreview(true);
-    setPreviewType(productInfo.postTypes[0] || null);
-  }, [productInfo, schedule, generatePostDates, showAlert]);
+  }, [formik, selectedTemplates]);
 
   const handleBack = useCallback(() => {
     if (preview) {
@@ -214,51 +134,14 @@ export const ProductPostCreator: React.FC = () => {
     }
   }, [preview, navigate]);
 
-  const generateSlide = useCallback(
-    (postType: 'discount' | 'flashSale') => {
-      const selectedTemplate = selectedTemplates[postType];
-      if (!selectedTemplate) return null;
+  // Reinstated generateSlide function
+  
 
-      const slideData = {
-        title: postType === 'discount' ? 'SPECIAL OFFER' : productInfo.name.toUpperCase(),
-        description:
-          postType === 'discount'
-            ? `Get ${productInfo.discount.percentage}% Off! ${productInfo.discount.description}`
-            : `${productInfo.flashSale.offer} - Valid Until ${productInfo.flashSale.validUntil}`,
-        imageUrl: productInfo.imageUrl,
-        footer: productInfo.websiteUrl,
-        websiteUrl: productInfo.websiteUrl,
-      };
-
-      const colors: Colors = {
-        logoColors: { primary: '#000', secondary: '#fff', accent: ['#ff0000', '#00ff00'] },
-        imageColors: ['#ffffff', '#000000', '#cccccc'],
-        glowColor: '#00f0ff',
-        complementaryGlowColor: '#ff00f0',
-        vibrantLogoColor: '#ff9800',
-        vibrantTextColor: '#1976d2',
-        footerColor: '#424242',
-        backgroundColor: '#f5f5f5',
-        ensureContrast: (foreground: string, background: string) => foreground,
-        materialTheme: {
-          primary: '#1976d2',
-          secondary: '#424242',
-          tertiary: '#ff9800',
-          background: '#f5f5f5',
-          surface: '#ffffff',
-          onPrimary: '#ffffff',
-          onSecondary: '#ffffff',
-          onBackground: '#000000',
-          onSurface: '#000000',
-        },
-        typography: { fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '16px' },
-        graphicStyle: { borderRadius: '8px', iconStyle: '', filter: '' },
-      };
-
-      return selectedTemplate.renderSlide(slideData, true, '/logo.png', colors);
-    },
-    [productInfo, selectedTemplates]
-  );
+  // Handle final "Generate Post" button click in preview
+  const handleGeneratePost = useCallback(() => {
+    console.log('Submitting product info:', formik.values);
+   
+  }, [formik.values, navigate]);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'dark' : ''}`}>
@@ -281,102 +164,134 @@ export const ProductPostCreator: React.FC = () => {
             <div className="w-24" /> {/* Spacer for alignment */}
           </div>
 
-          {!preview ? (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl space-y-6">
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Product Information</h3>
-                <div className="space-y-4">
-                  {/* Product Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Product Name
-                    </label>
-                    <input
-                      type="text"
-                      value={productInfo.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Enter product name..."
-                      className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
 
-                  {/* Product Image Upload */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Product Image
-                    </label>
-                    <div
-                      {...getRootProps()}
-                      className={`w-full p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-colors ${
-                        isDragActive
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900'
-                          : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700'
+          <form onSubmit={formik.handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl space-y-6">
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Product Information</h3>
+              <div className="space-y-4">
+                {/* Product Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Product Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formik.values.name}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    placeholder="Enter product name..."
+                    className="w-full px-4 py-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {formik.touched.name && formik.errors.name && (
+                    <p className="text-red-500 text-sm mt-1">{formik.errors.name}</p>
+                  )}
+                </div>
+
+                {/* Product Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Product Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formik.values.description}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    placeholder="Enter product description..."
+                    className="w-full px-4 py-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                  />
+                  {formik.touched.description && formik.errors.description && (
+                    <p className="text-red-500 text-sm mt-1">{formik.errors.description}</p>
+                  )}
+                </div>
+
+                {/* Product Images Upload (Max 3) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Product Images (Max 3)
+                  </label>
+                  <div
+                    {...getRootProps()}
+                    className={`w-full p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-colors ${isDragActive
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900'
+                        : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700'
                       }`}
+                  >
+                    <input {...getInputProps()} />
+                    {formik.values.images.length > 0 ? (
+                      <div className="flex flex-wrap gap-4 justify-center">
+                        {formik.values.images.map((file, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Uploaded ${index}`}
+                              className="max-h-40 rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Drag and drop up to 3 images here, or click to select.
+                      </p>
+                    )}
+                  </div>
+                  {formik.touched.images && formik.errors.images && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {typeof formik.errors.images === 'string' ? formik.errors.images : 'Invalid images'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Post Type Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Post Types
+                  </label>
+                  <div className="flex space-x-4">
+                    <motion.button
+                      type="button"
+                      onClick={() => handlePostTypeToggle('discount')}
+                      className={`px-6 py-4 rounded-xl font-semibold ${formik.values.postTypes.includes('discount')
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600'
+                        }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <input {...getInputProps()} />
-                      {productInfo.imageUrl ? (
-                        <div>
-                          <img src={productInfo.imageUrl} alt="Uploaded" className="max-h-40 mx-auto mb-2" />
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Image uploaded. Drag or click to replace.
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Drag and drop an image here, or click to select one.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Website URL */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Website URL
-                    </label>
-                    <input
-                      type="text"
-                      value={productInfo.websiteUrl}
-                      onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
-                      placeholder="Enter website URL..."
-                      className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {/* Post Type Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Post Types
-                    </label>
-                    <div className="flex space-x-4">
-                      <motion.button
-                        onClick={() => handlePostTypeToggle('discount')}
-                        className={`px-6 py-3 rounded-xl font-semibold ${
-                          productInfo.postTypes.includes('discount')
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600'
+                      Discount Post
+                    </motion.button>
+                    <motion.button
+                      type="button"
+                      onClick={() => handlePostTypeToggle('flashSale')}
+                      className={`px-6 py-4 rounded-xl font-semibold ${formik.values.postTypes.includes('flashSale')
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600'
                         }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        Discount Post
-                      </motion.button>
-                      <motion.button
-                        onClick={() => handlePostTypeToggle('flashSale')}
-                        className={`px-6 py-3 rounded-xl font-semibold ${
-                          productInfo.postTypes.includes('flashSale')
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-600'
-                        }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        Flash Sale Post
-                      </motion.button>
-                    </div>
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Flash Sale Post
+                    </motion.button>
                   </div>
+                  {formik.touched.postTypes && formik.errors.postTypes && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {typeof formik.errors.postTypes === 'string' ? formik.errors.postTypes : 'Select a post type'}
+                    </p>
+                  )}
+                </div>
 
-                  {/* Discount Information */}
+                {/* Discount Information */}
+                {formik.values.postTypes.includes('discount') && (
                   <div className="space-y-4">
                     <h4 className="text-lg font-medium text-gray-900 dark:text-white">Discount Information</h4>
                     <div>
@@ -385,16 +300,16 @@ export const ProductPostCreator: React.FC = () => {
                       </label>
                       <input
                         type="number"
-                        value={productInfo.discount.percentage}
-                        onChange={(e) =>
-                          handleInputChange('discount', {
-                            percentage: parseInt(e.target.value) || 0,
-                            description: productInfo.discount.description,
-                          })
-                        }
+                        name="discount.percentage"
+                        value={formik.values.discount.percentage}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
                         placeholder="Enter discount percentage..."
-                        className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                      {formik.touched.discount?.percentage && formik.errors.discount?.percentage && (
+                        <p className="text-red-500 text-sm mt-1">{formik.errors.discount.percentage}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -402,20 +317,22 @@ export const ProductPostCreator: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={productInfo.discount.description}
-                        onChange={(e) =>
-                          handleInputChange('discount', {
-                            percentage: productInfo.discount.percentage,
-                            description: e.target.value,
-                          })
-                        }
+                        name="discount.description"
+                        value={formik.values.discount.description}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
                         placeholder="Enter discount description..."
-                        className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                      {formik.touched.discount?.description && formik.errors.discount?.description && (
+                        <p className="text-red-500 text-sm mt-1">{formik.errors.discount.description}</p>
+                      )}
                     </div>
                   </div>
+                )}
 
-                  {/* Flash Sale Information */}
+                {/* Flash Sale Information */}
+                {formik.values.postTypes.includes('flashSale') && (
                   <div className="space-y-4">
                     <h4 className="text-lg font-medium text-gray-900 dark:text-white">Flash Sale Information</h4>
                     <div>
@@ -424,16 +341,16 @@ export const ProductPostCreator: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={productInfo.flashSale.offer}
-                        onChange={(e) =>
-                          handleInputChange('flashSale', {
-                            offer: e.target.value,
-                            validUntil: productInfo.flashSale.validUntil,
-                          })
-                        }
+                        name="flashSale.offer"
+                        value={formik.values.flashSale.offer}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
                         placeholder="e.g., Buy 1 Get 1 Free..."
-                        className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                      {formik.touched.flashSale?.offer && formik.errors.flashSale?.offer && (
+                        <p className="text-red-500 text-sm mt-1">{formik.errors.flashSale.offer}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -441,115 +358,77 @@ export const ProductPostCreator: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={productInfo.flashSale.validUntil}
-                        onChange={(e) =>
-                          handleInputChange('flashSale', {
-                            offer: productInfo.flashSale.offer,
-                            validUntil: e.target.value,
-                          })
-                        }
+                        name="flashSale.validUntil"
+                        value={formik.values.flashSale.validUntil}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
                         placeholder="e.g., 31 July 2025..."
-                        className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                      {formik.touched.flashSale?.validUntil && formik.errors.flashSale?.validUntil && (
+                        <p className="text-red-500 text-sm mt-1">{formik.errors.flashSale.validUntil}</p>
+                      )}
                     </div>
                   </div>
-
-                  {/* Schedule Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Schedule Posts</h3>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        From Date
-                      </label>
-                      <input
-                        type="date"
-                        value={schedule.fromDate}
-                        onChange={(e) => handleScheduleChange('fromDate', e.target.value)}
-                        className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        To Date
-                      </label>
-                      <input
-                        type="date"
-                        value={schedule.toDate}
-                        onChange={(e) => handleScheduleChange('toDate', e.target.value)}
-                        className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Post Time
-                      </label>
-                      <input
-                        type="time"
-                        value={schedule.time}
-                        onChange={(e) => handleScheduleChange('time', e.target.value)}
-                        className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <motion.button
-                  onClick={handleSubmit}
-                  className="w-full px-6 py-4 bg-blue-500 text-white font-semibold rounded-xl"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Generate Posts
-                </motion.button>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl space-y-6">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Post Previews</h3>
-              <div className="flex space-x-4 mb-4">
-                {productInfo.postTypes.includes('discount') && (
-                  <motion.button
-                    onClick={() => setPreviewType('discount')}
-                    className={`px-4 py-2 rounded-xl font-semibold ${
-                      previewType === 'discount'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Discount Preview
-                  </motion.button>
-                )}
-                {productInfo.postTypes.includes('flashSale') && (
-                  <motion.button
-                    onClick={() => setPreviewType('flashSale')}
-                    className={`px-4 py-2 rounded-xl font-semibold ${
-                      previewType === 'flashSale'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Flash Sale Preview
-                  </motion.button>
                 )}
               </div>
-              <div className="flex justify-center">
-                {previewType && generateSlide(previewType)}
-              </div>
+
+              {/* Submit Button (Preview) */}
               <motion.button
-                onClick={() => navigate('/content-type')} // Navigate back or to a confirmation page
-                className="w-full px-6 py-4 bg-blue-500 text-white font-semibold rounded-xl"
+                type="submit"
+                disabled={formik.isSubmitting}
+                onClick={handleGeneratePost}
+                className={`w-full px-6 py-4 bg-blue-500 text-white font-semibold rounded-xl ${formik.isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Save & Continue
+                {formik.isSubmitting ? 'Generating...' : 'Generate Post'}
               </motion.button>
             </div>
-          )}
+          </form>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl space-y-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Post Previews</h3>
+            <div className="flex space-x-4 mb-4">
+              {formik.values.postTypes.includes('discount') && (
+                <motion.button
+                  onClick={() => setPreviewType('discount')}
+                  className={`px-4 py-2 rounded-xl font-semibold ${previewType === 'discount'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'
+                    }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Discount Preview
+                </motion.button>
+              )}
+              {formik.values.postTypes.includes('flashSale') && (
+                <motion.button
+                  onClick={() => setPreviewType('flashSale')}
+                  className={`px-4 py-2 rounded-xl font-semibold ${previewType === 'flashSale'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'
+                    }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Flash Sale Preview
+                </motion.button>
+              )}
+            </div>
+            <div className="flex justify-center">
+            </div>
+            <motion.button
+              className="w-full px-6 py-4 bg-blue-500 text-white font-semibold rounded-xl"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Preview Post
+            </motion.button>
+          </div>
+
 
           <Alert
             type={config.type}

@@ -19,5 +19,5 @@ aiRouters.post('/blog-post', PostControllers.BlogPost);
 aiRouters.post('/generate-blog', PostControllers.GenerateBlog);
 aiRouters.post("/generate-code",upload.single('image'), PostControllers.GenerateCode)
 aiRouters.post("/generate-content", PostControllers.GenerateContent)
-
+aiRouters.get("/holidays", PostControllers.Holidays)
 export default aiRouters;

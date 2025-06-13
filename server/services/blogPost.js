@@ -336,7 +336,7 @@ const scheduledBlogPosts = async (inputs, user) => {
 };
 
 
-const uploadImage1 = async (imageUrl, altText, title, description) => {
+const uploadImage1 = async (imageUrl, altText, title, description, wordpress_username, wordpress_password) => {
   try {
     const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 10000 });
     if (imageResponse.status !== 200) {
@@ -359,8 +359,7 @@ const uploadImage1 = async (imageUrl, altText, title, description) => {
 
     const response = await axios.post('https://bitrox.tech/wp-json/wp/v2/media', formData, {
       headers: {
-        Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
-        ...formData.getHeaders(),
+        Authorization: `Basic ${Buffer.from(`${wordpress_username}:${wordpress_password}`).toString('base64')}`,
       },
       timeout: 10000,
     });
@@ -384,6 +383,8 @@ const createPost1 = async (
   focusKeyword,
   scheduleTime,
   section,
+  wordpress_username, 
+  wordpress_password
 ) => {
   try {
     if (!title || !content || !excerpt || !metaDescription || !section) {
@@ -396,7 +397,7 @@ const createPost1 = async (
           axios.get('https://bitrox.tech/wp-json/wp/v2/categories', {
             params: { search: name },
             headers: {
-              Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+              Authorization: `Basic ${Buffer.from(`${wordpress_username}:${wordpress_password}`).toString('base64')}`,
             },
             timeout: 5000,
           })
@@ -405,7 +406,7 @@ const createPost1 = async (
       const ids = responses.flatMap(res => res.data.map((cat) => cat.id)).filter(id => id !== 1); // Exclude Uncategorized
       const sectionCategory = await axios.get('https://bitrox.tech/wp-json/wp/v2/categories', {
         params: { slug: section },
-        headers: { Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}` },
+        headers: { Authorization: `Basic ${Buffer.from(`${wordpress_username}:${wordpress_password}`).toString('base64')}` },
         timeout: 5000,
       });
       if (sectionCategory.data.length) {
@@ -416,7 +417,7 @@ const createPost1 = async (
           { name: section.charAt(0).toUpperCase() + section.slice(1), slug: section },
           {
             headers: {
-              Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+              Authorization: `Basic ${Buffer.from(`${wordpress_username}:${wordpress_password}`).toString('base64')}`,
               'Content-Type': 'application/json',
             },
           }
@@ -432,7 +433,7 @@ const createPost1 = async (
       while (true) {
         const response = await axios.get('https://bitrox.tech/wp-json/wp/v2/posts', {
           params: { slug },
-          headers: { Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}` },
+          headers: { Authorization: `Basic ${Buffer.from(`${wordpress_username}:${wordpress_password}`).toString('base64')}` },
           timeout: 5000,
         });
         if (!response.data.length) return slug;
@@ -473,7 +474,7 @@ const createPost1 = async (
 
     const blog = await axios.post('https://bitrox.tech/wp-json/wp/v2/posts', postData, {
       headers: {
-        Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+        Authorization: `Basic ${Buffer.from(`${wordpress_username}:${wordpress_password}`).toString('base64')}`,
         'Content-Type': 'application/json',
       },
       timeout: 10000,
@@ -488,7 +489,7 @@ const createPost1 = async (
 
 const publishContent1 = async (inputs) => {
   try {
-    if (!inputs.title || !inputs.content || !inputs.excerpt || !inputs.metaDescription || !inputs.section) {
+    if (!inputs.title || !inputs.content || !inputs.excerpt || !inputs.metaDescription) {
       throw new ApiError(400, 'Required fields missing');
     }
 
@@ -496,7 +497,7 @@ const publishContent1 = async (inputs) => {
       inputs.categories.map(async (categoryName) => {
         const response = await axios.get(`https://bitrox.tech/wp-json/wp/v2/categories?search=${encodeURIComponent(categoryName)}`, {
           headers: {
-            Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+            Authorization: `Basic ${Buffer.from(`${inputs.wordpress_username}:${inputs.wordpress_password}`).toString('base64')}`,
           },
           timeout: 5000,
         });
@@ -508,7 +509,7 @@ const publishContent1 = async (inputs) => {
           { name: categoryName, slug: categoryName.toLowerCase().replace(/\s+/g, '-') },
           {
             headers: {
-              Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+              Authorization: `Basic ${Buffer.from(`${inputs.wordpress_username}:${inputs.wordpress_password}`).toString('base64')}`,
               'Content-Type': 'application/json',
             },
           }
@@ -521,7 +522,7 @@ const publishContent1 = async (inputs) => {
       inputs.tags.map(async (tagName) => {
         const response = await axios.get(`https://bitrox.tech/wp-json/wp/v2/tags?search=${encodeURIComponent(tagName)}`, {
           headers: {
-            Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+            Authorization: `Basic ${Buffer.from(`${inputs.wordpress_username}:${inputs.wordpress_password}`).toString('base64')}`,
           },
           timeout: 5000,
         });
@@ -533,7 +534,7 @@ const publishContent1 = async (inputs) => {
           { name: tagName, slug: tagName.toLowerCase().replace(/\s+/g, '-') },
           {
             headers: {
-              Authorization: `Basic ${Buffer.from(`${process.env.WORDPRESS_USERNAME}:${process.env.WORDPRESS_PASSWORD}`).toString('base64')}`,
+              Authorization: `Basic ${Buffer.from(`${inputs.wordpress_username}:${inputs.wordpress_password}`).toString('base64')}`,
               'Content-Type': 'application/json',
             },
           }
@@ -544,7 +545,7 @@ const publishContent1 = async (inputs) => {
 
     let featuredImageId = null;
     if (inputs.imageUrl && inputs.imageAltText && inputs.imageDescription) {
-      const featuredImage = await uploadImage1(inputs.imageUrl, inputs.imageAltText, inputs.title, inputs.imageDescription);
+      const featuredImage = await uploadImage1(inputs.imageUrl, inputs.imageAltText, inputs.title, inputs.imageDescription, inputs.wordpress_username, inputs.wordpress_password);
       featuredImageId = featuredImage.id;
     }
 
@@ -560,6 +561,8 @@ const publishContent1 = async (inputs) => {
       inputs.focusKeyword,
       inputs.scheduleTime,
       inputs.section,
+      inputs.wordpress_username,
+      inputs.wordpress_password
     );
 
     await triggerSitemapUpdate();

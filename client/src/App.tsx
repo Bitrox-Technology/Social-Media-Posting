@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { PersistGate } from 'redux-persist/integration/react';
 import { persistor } from './store';
@@ -53,6 +53,8 @@ import { EventTemplateSelector } from './components/ui/EventTemplates';
 import PostBlog from './components/content/PostBlog';
 import BlogList from './components/content/SavedBlogs';
 import { FestivalPostCreator } from './components/content/festivalInfo';
+import { PaymentPage } from './components/price/PaymentPage';
+
 
 function App() {
   const contentType = useAppSelector((state) => state.app.contentType);
@@ -61,6 +63,8 @@ function App() {
   const user = useAppSelector(selectUser);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  
+
 
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
     if (
@@ -250,6 +254,7 @@ function App() {
                         path="/user-details"
                         element={<UserDetail />}
                       />
+                      <Route path="/payment/:planTitle" element={<PaymentPage />} />
                       <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                     <SessionWarning />

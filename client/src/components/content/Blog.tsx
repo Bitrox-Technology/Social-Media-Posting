@@ -17,6 +17,7 @@ export const Blog: React.FC = () => {
   const [topic, setTopic] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  const [section, setSection] = useState<'blog' | 'news' | 'article'>('blog'); // Default to 'blog'
 
   const [generateBlog, { isLoading: isBlogLoading }] = useGenerateBlogMutation();
   const [generateImage] = useGenerateImageMutation();
@@ -30,6 +31,12 @@ export const Blog: React.FC = () => {
     'A Beginners Guide to Healthy Living',
     'The Impact of AI on Everyday Life',
   ];
+
+  const sections = {
+    blog: 'Blog',
+    news: 'News',
+    article: 'Article',
+  };
 
   // Handle blog generation
   const handleGenerateBlog = async () => {
@@ -131,6 +138,7 @@ export const Blog: React.FC = () => {
       imageUrl: imageUrl,
       imageAltText: blogContent.image.altText,
       imageDescription: blogContent.image.description || '',
+      section, // Include selected section
     };
 
     console.log('Saving blog data:', blogData);
@@ -185,7 +193,7 @@ export const Blog: React.FC = () => {
           </motion.p>
         </div>
 
-        {/* Topic Input and Suggested Topics */}
+        {/* Topic Input, Suggested Topics, and Section Selector */}
         <motion.div
           className={`grid grid-cols-1 gap-8 mb-12 ${theme === 'dark'
             ? 'bg-gray-800/50 backdrop-blur-sm border-gray-700/50'
@@ -207,7 +215,7 @@ export const Blog: React.FC = () => {
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="Enter your blog topic (e.g., Blockchain for AI Data Management)"
+              placeholder="Enter your blog topic (e.g., Rust is Future of Blockchain)"
               className={`w-full p-4 rounded-xl border focus:outline-none transition-all duration-300 ${theme === 'dark'
                 ? 'bg-gray-700/50 text-white border-gray-600 placeholder-gray-400 focus:border-blue-400 focus:ring-blue-400/50'
                 : 'bg-gray-100/50 text-gray-900 border-gray-300 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/50'
@@ -238,6 +246,30 @@ export const Blog: React.FC = () => {
                 </motion.button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="section" className="flex items-center mb-3">
+              <BookOpen className={`w-6 h-6 mr-2 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+              <span className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Blog Section
+              </span>
+            </label>
+            <select
+              id="section"
+              value={section}
+              onChange={(e) => setSection(e.target.value as 'blog' | 'news' | 'article')}
+              className={`w-full p-4 rounded-xl border focus:outline-none transition-all duration-300 ${theme === 'dark'
+                ? 'bg-gray-700/50 text-white border-gray-600 focus:border-blue-400 focus:ring-blue-400/50'
+                : 'bg-gray-100/50 text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500/50'
+                }`}
+            >
+              {Object.entries(sections).map(([key, value]) => (
+                <option key={key} value={key}>
+                  {value}
+                </option>
+              ))}
+            </select>
           </div>
         </motion.div>
 
@@ -415,6 +447,10 @@ export const Blog: React.FC = () => {
                   <CheckCircle className={`w-5 h-5 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
                   <span><strong>Image Description:</strong> {blogContent.image.description}</span>
                 </div>
+                <div className={`flex items-center space-x-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <CheckCircle className={`w-5 h-5 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
+                  <span><strong>Section:</strong> {sections[section]}</span>
+                </div>
               </div>
             </div>
 
@@ -448,5 +484,3 @@ export const Blog: React.FC = () => {
     </div>
   );
 };
-
-export default Blog;

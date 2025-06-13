@@ -3,7 +3,7 @@ import User from "../models/user.js";
 import { ApiError } from "../utils/ApiError.js";
 import { generateAccessAndRefreshTokenForUser } from "../utils/generateToken.js";
 import { BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR } from "../utils/apiResponseCode.js";
-import { clearAuthCookies, comparePasswordUsingBcrypt, convertToCron, Hashed_Password, isEmail } from "../utils/utilities.js";
+import { clearAuthCookies, comparePasswordUsingBcrypt, convertToCron, decryptToken, encryptToken, Hashed_Password, isEmail } from "../utils/utilities.js";
 import PostTopic from "../models/postTopics.js";
 import ImageContent from "../models/imageContent.js";
 import CarouselContent from "../models/carouselContent.js";
@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from "uuid";
 import cron from 'node-cron';
 import { publishBlogPost, publishContent1 } from "./blogPost.js";
 import FestivalContent from "../models/festivalContent.js";
+import WordpressCredentials from "../models/wordpress.js";
 
 const signup = async (inputs) => {
     let user;
@@ -647,9 +648,12 @@ const getAllBlogs = async (user) => {
 
 const scheduledContent = async (inputs, user) => {
     try {
-        if (!inputs.title || !inputs.content || !inputs.excerpt || !inputs.metaDescription || !inputs.section) {
+        if (!inputs.title || !inputs.content || !inputs.excerpt || !inputs.metaDescription || !inputs.section || !inputs.wordpress_username || !inputs.wordpress_password) {
             throw new ApiError(400, 'Required fields missing');
         }
+
+        inputs.wordpress_username = decryptToken(inputs.wordpress_username)
+        inputs.wordpress_password = decryptToken(inputs.wordpress_password)
 
         let postResult;
 
@@ -797,6 +801,32 @@ const getFestivalContent = async (user, params) => {
     return content[0]; // Return the first document (single content)
 };
 
+
+const wordpressAuth = async(inputs, user) => {
+    let result;
+    if(!inputs.wordpress_username && !inputs.wordpress_password) throw new ApiError(BAD_REQUEST, i18n.__("CREDENTIALS_MISSING"))
+    
+    inputs.wordpress_username = encryptToken(inputs.wordpress_username)
+    inputs.wordpress_password = encryptToken(inputs.wordpress_password)
+
+
+    result = await WordpressCredentials.findOne({userId: user._id});
+    inputs.isAuthenticate = true
+    inputs.userId= user._id
+    if(result){
+        
+        result = await WordpressCredentials.updateOne(inputs, {new: true}).lean()
+    }else{
+        result = await WordpressCredentials.create(inputs)
+    }
+    return result;
+}
+
+const getWordpressAuth = async(user) => {
+    const result = await WordpressCredentials.findOne({userId: user._id}).lean()
+
+    return result
+}
 const UserServices = {
     signup,
     signupSigninByProvider,
@@ -828,6 +858,8 @@ const UserServices = {
     scheduledContent,
     getAllBlogs,
     festivalContent,
-    getFestivalContent
+    getFestivalContent,
+    wordpressAuth,
+    getWordpressAuth
 }
 export default UserServices;
