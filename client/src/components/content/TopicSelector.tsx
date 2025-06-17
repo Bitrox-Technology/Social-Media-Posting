@@ -29,11 +29,23 @@ export const TopicSelector: React.FC = () => {
     (state) => state.app
   );
   const [businesses, setBusinesses] = useState<string[]>([
-    'E-commerce',
-    'Healthcare',
-    'Technology',
-    'Finance',
-    'Education',
+    'Tata Consultancy Services (TCS)',
+    'Google LLC (Alphabet Inc.)',
+    'Narayana Health',
+    'Apollo Hospitals',
+    'Blue Dart',
+    'XpressBees',
+    'Flipkart',
+    'Reliance Retail',
+    'Paytm',
+    'BharatMoney',
+    'AgroStar',
+    'Netafim India (Irrigation tech)',
+    'DLF Limited',
+    'Godrej Properties',
+    'Tata Motors',
+    'Ola Electric',
+    'Maruti Suzuki'
   ]);
   const [customBusiness, setCustomBusiness] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
@@ -158,7 +170,7 @@ export const TopicSelector: React.FC = () => {
               expiresAt: saveResponse.data.csrfExpiresAt,
             }))
             console.log('Pending post saved:', saveResponse);
-            navigate('/auto', { state: { postContentId: saveResponse.data._id, fromTopicSelector: true } });
+            navigate('/auto', { state: { postContentId: saveResponse.data.user._id, fromTopicSelector: true } });
           } else {
             showErrorAlert('Failed to Save Post', 'Please try again.');
 

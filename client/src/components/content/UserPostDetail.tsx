@@ -11,8 +11,8 @@ import {
   useLazyGetSocialAuthQuery,
   useLazyGetUserPostDetailQuery,
   useLinkedInPostMutation,
-  useFacebookPagePostMutation,// New mutation for Facebook posting
-  useInstagramBusinessPostMutation
+  useFacebookPagePostMutation,
+  useInstagramBusinessPostMutation,
 } from '../../store/api';
 import { useTheme } from '../../context/ThemeContext';
 import {
@@ -74,6 +74,23 @@ interface Post {
   status: string;
   type: string;
   createdAt: string;
+  imagesUrl?: string[];
+  footer?: string;
+  websiteUrl?: string;
+  price?: string;
+  discount?: {
+    title: string;
+    percentage: number;
+    description: string;
+  };
+  flashSale?: {
+    title: string;
+    offer: string;
+    validUntil: string;
+    pricesStartingAt: string;
+    description: string;
+  };
+  postTypes?: string[];
 }
 
 interface Schedule {
@@ -84,12 +101,12 @@ interface Schedule {
     name: string;
     profilePage: string;
   };
-  selectedPage?: { // New field for selected Facebook page
+  selectedPage?: {
     id: string;
     name: string;
     accessToken: string;
   };
-  selectedInstagramAccount?: { // New field for Instagram account
+  selectedInstagramAccount?: {
     id: string;
     username: string;
     accessToken: string;
@@ -105,8 +122,8 @@ export const UserPostDetail: React.FC = () => {
   const [authLinkedIn] = useLazyAuthLinkedInQuery();
   const [authInstagram] = useLazyAuthInstagramQuery();
   const [linkedInPost] = useLinkedInPostMutation();
-  const [facebookPagePost] = useFacebookPagePostMutation(); // New mutation
-  const [instagramBusinessPost] = useInstagramBusinessPostMutation()
+  const [facebookPagePost] = useFacebookPagePostMutation();
+  const [instagramBusinessPost] = useInstagramBusinessPostMutation();
   const [getSocialAuth, { data: socialAuthData }] = useLazyGetSocialAuthQuery();
 
   const [isSocialOptionsOpen, setIsSocialOptionsOpen] = useState(false);
@@ -116,8 +133,8 @@ export const UserPostDetail: React.FC = () => {
   const [platformTokens, setPlatformTokens] = useState<{
     [key: string]: { accessToken: string; profilePage: string };
   }>({});
+  const [selectedPostType, setSelectedPostType] = useState<'product' | 'discount' | 'flashSale'>('product'); // For ProductContent
 
-  // Auth functions
   const authLinkedInFn: AuthFunction = async (_subPlatform: string) => {
     const result = await authLinkedIn().unwrap();
     return {
@@ -153,7 +170,6 @@ export const UserPostDetail: React.FC = () => {
     setIsAuthenticating,
   });
 
-  // Theme styles
   const themeStyles = {
     light: {
       background: 'bg-gradient-to-br from-gray-100 to-gray-200',
@@ -188,29 +204,12 @@ export const UserPostDetail: React.FC = () => {
     }
   }, [postId, getUserPostDetail, getSocialAuth]);
 
-  // Compute authentication status
-  const authStatus = {
-    linkedin: !!(
-      socialAuthData?.data?.linkedin?.isAuthenticated &&
-      socialAuthData?.data?.linkedin?.accessToken?.expiresAt &&
-      new Date(socialAuthData.data.linkedin.accessToken.expiresAt) >= new Date()
-    ),
-    linkedinPage: !!(
-      socialAuthData?.data?.linkedin?.isAuthenticated &&
-      socialAuthData?.data?.linkedin?.accessToken?.expiresAt &&
-      new Date(socialAuthData.data.linkedin.accessToken.expiresAt) >= new Date()
-    ),
-    facebook: socialAuthData?.data?.facebook?.isAuthenticated || false, // Facebook tokens may not expire
-    instagram: socialAuthData?.data?.instagram?.isAuthenticated || false,
-  };
-  // Update platformTokens and managed pages
   useEffect(() => {
     if (socialAuthData?.data) {
       const linkedinData = socialAuthData.data.linkedin;
       const facebookData = socialAuthData.data.facebook;
       const instagramData = socialAuthData.data.instagram;
 
-      // LinkedIn Profile
       if (
         linkedinData?.isAuthenticated &&
         linkedinData.accessToken?.expiresAt &&
@@ -225,7 +224,6 @@ export const UserPostDetail: React.FC = () => {
         }));
       }
 
-      // Facebook
       if (facebookData?.isAuthenticated) {
         setPlatformTokens((prev) => ({
           ...prev,
@@ -249,6 +247,21 @@ export const UserPostDetail: React.FC = () => {
   }, [socialAuthData]);
 
   const post: Post | undefined = data?.data?.[0];
+
+  const authStatus = {
+    linkedin: !!(
+      socialAuthData?.data?.linkedin?.isAuthenticated &&
+      socialAuthData?.data?.linkedin?.accessToken?.expiresAt &&
+      new Date(socialAuthData.data.linkedin.accessToken.expiresAt) >= new Date()
+    ),
+    linkedinPage: !!(
+      socialAuthData?.data?.linkedin?.isAuthenticated &&
+      socialAuthData?.data?.linkedin?.accessToken?.expiresAt &&
+      new Date(socialAuthData.data.linkedin.accessToken.expiresAt) >= new Date()
+    ),
+    facebook: socialAuthData?.data?.facebook?.isAuthenticated || false,
+    instagram: socialAuthData?.data?.instagram?.isAuthenticated || false,
+  };
 
   const platformIcons = {
     linkedin: <Linkedin className="w-6 h-6" />,
@@ -283,21 +296,18 @@ export const UserPostDetail: React.FC = () => {
   };
 
   const handlePlatformSelect = (platform: string, subPlatform?: string) => {
-    console.log(`Platform selected: ${platform}${subPlatform ? ` (${subPlatform})` : ''}`);
     const platformKey = platform === 'linkedin' ? `${platform}${subPlatform === 'page' ? 'Page' : ''}` : platform;
 
     updateSchedule(platform, subPlatform);
     setIsAuthenticating(true);
 
     if (!authStatus[platformKey as keyof typeof authStatus]) {
-      console.log(`Initiating authentication for ${platformKey}`);
       if (platform === 'linkedin') {
         initiateAuth(platform);
       } else {
         initiateAuth(platform as 'facebook' | 'instagram');
       }
     } else {
-      console.log(`Already authenticated for ${platformKey}, showing user details`);
       setIsSocialOptionsOpen(false);
 
       if (platform === 'linkedin' && socialAuthData?.data?.linkedin?.profileData) {
@@ -323,7 +333,7 @@ export const UserPostDetail: React.FC = () => {
             name: socialAuthData?.data?.instagram?.accounts?.[0]?.username,
             profilePage: socialAuthData?.data?.instagram?.accounts[0]?.id,
           },
-          selectedInstagramAccount: socialAuthData?.data?.instagram?.accounts[0], // Default to first account
+          selectedInstagramAccount: socialAuthData?.data?.instagram?.accounts[0],
         }));
       }
 
@@ -356,45 +366,61 @@ export const UserPostDetail: React.FC = () => {
       return;
     }
 
+    // Determine which image and description to use based on selectedPostType
+    let imageUrl = '';
+    let postTitle = post.title;
+    let postDescription = post.description;
+
+    if (post.contentType === 'ProductContent') {
+      if (selectedPostType === 'product') {
+        imageUrl = post.images[0].url;
+      } else if (selectedPostType === 'discount') {
+        imageUrl = post.images[1].url;
+        postTitle = post.discount?.title || post.title;
+        postDescription = post.discount?.description || post.description;
+      } else if (selectedPostType === 'flashSale') {
+        imageUrl = post.images[2].url;
+        postTitle = post.flashSale?.title || post.title;
+        postDescription = post.flashSale?.description || post.description;
+      }
+    } else {
+      imageUrl = post.images[0]?.url || '';
+    }
+
     try {
       let response;
       if (schedule.platform === 'linkedin') {
         const payload = {
-          imageUrl: post.images[0]?.url || '',
-          title: post.title,
-          description: post.description,
+          imageUrl,
+          title: postTitle,
+          description: postDescription,
           hashTags: post.hashtags.join(', '),
           scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
           accessToken: tokenData.accessToken,
           person_urn: tokenData.profilePage || '',
         };
-
-        console.log(`Publishing post to ${schedule.platform} with payload:`, payload);
         response = await linkedInPost(payload).unwrap();
       } else if (schedule.platform === 'facebook') {
         const payload = {
-          title: post.title,
-          description: post.description,
+          title: postTitle,
+          description: postDescription,
           hashTags: post.hashtags.join(', '),
-          imageUrl: post.images[0]?.url || '',
+          imageUrl,
           scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
           pageId: schedule.selectedPage!.id,
           pageAccessToken: schedule.selectedPage!.accessToken,
-
-        }
-        console.log(`Publishing post to ${schedule.platform} with payload:`, payload);
+        };
         response = await facebookPagePost(payload).unwrap();
       } else if (schedule.platform === 'instagram') {
         const payload = {
           igBusinessId: schedule.selectedInstagramAccount!.id,
           pageAccessToken: schedule.selectedInstagramAccount!.accessToken,
-          imageUrl: post.images[0]?.url || '',
-          title: post.title,
-          description: post.description,
+          imageUrl,
+          title: postTitle,
+          description: postDescription,
           hashTags: post.hashtags.join(', '),
           scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
         };
-        console.log(`Publishing post to ${schedule.platform} with payload:`, payload);
         response = await instagramBusinessPost(payload).unwrap();
       }
 
@@ -402,13 +428,16 @@ export const UserPostDetail: React.FC = () => {
       setSchedule({ platform: null, subPlatform: null, dateTime: null, selectedPage: undefined });
       setShowUserDetails(false);
     } catch (err) {
-      console.error(`Error posting to ${schedule.platform}:`, err);
       alert(`Failed to post to ${schedule.platform}`);
     }
   };
 
   const handlePageSelect = (page: { id: string; name: string; accessToken: string }) => {
     updateSchedule(undefined, undefined, undefined, page);
+  };
+
+  const handleInstagramAccountSelect = (selectedAccount: { id: string; username: string; accessToken: string }) => {
+    updateSchedule(undefined, undefined, undefined, undefined, selectedAccount);
   };
 
   const renderImage = (image: Image) => (
@@ -439,6 +468,69 @@ export const UserPostDetail: React.FC = () => {
       );
     }
 
+    if (post.contentType === 'ProductContent') {
+      // Find the image corresponding to the selected post type
+      let selectedImage: Image | undefined;
+      if (selectedPostType === 'product') {
+        selectedImage = post.images.find((img) => img.label === 'Product');
+      } else if (selectedPostType === 'discount') {
+        selectedImage = post.images.find((img) => img.label === 'Offer');
+      } else if (selectedPostType === 'flashSale') {
+        selectedImage = post.images.find((img) => img.label === 'FlashSale');
+      }
+
+      return (
+        <div className="w-full space-y-4">
+          {/* Buttons to toggle between Product, Offer, and Flash Sale */}
+          <div className="flex space-x-4 mb-4">
+            {post.postTypes?.includes('product') && (
+              <motion.button
+                onClick={() => setSelectedPostType('product')}
+                className={`px-4 py-2 rounded-xl font-semibold ${
+                  selectedPostType === 'product'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Product Post
+              </motion.button>
+            )}
+            {post.postTypes?.includes('discount') && (
+              <motion.button
+                onClick={() => setSelectedPostType('discount')}
+                className={`px-4 py-2 rounded-xl font-semibold ${
+                  selectedPostType === 'discount'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Offer Post
+              </motion.button>
+            )}
+            {post.postTypes?.includes('flashSale') && (
+              <motion.button
+                onClick={() => setSelectedPostType('flashSale')}
+                className={`px-4 py-2 rounded-xl font-semibold ${
+                  selectedPostType === 'flashSale'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200'
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Flash Sale Post
+              </motion.button>
+            )}
+          </div>
+          {selectedImage ? renderImage(selectedImage) : <p>No image available for this post type</p>}
+        </div>
+      );
+    }
+
     if (post.type === 'carousel') {
       return (
         <div className="w-full">
@@ -460,6 +552,17 @@ export const UserPostDetail: React.FC = () => {
     }
 
     return renderImage(post.images[0]);
+  };
+
+  // Calculate time remaining for Flash Sale
+  const calculateTimeRemaining = (validUntil: string): string => {
+    const currentDate = new Date('2025-06-17T12:47:00+05:30'); // Current date and time (IST)
+    const endDate = new Date('2025-06-17T20:23:00+05:30'); // Flash sale end date (from validUntil, assuming IST)
+    const timeDiff = endDate.getTime() - currentDate.getTime();
+    if (timeDiff <= 0) return 'Expired';
+    const hoursRemaining = Math.floor(timeDiff / (1000 * 3600));
+    const minutesRemaining = Math.floor((timeDiff % (1000 * 3600)) / (1000 * 60));
+    return `${hoursRemaining} hours, ${minutesRemaining} minutes`;
   };
 
   if (isLoading) {
@@ -503,14 +606,9 @@ export const UserPostDetail: React.FC = () => {
     );
   }
 
-  function handleInstagramAccountSelect(selectedAccount: { id: string; username: string; accessToken: string }) {
-    updateSchedule(undefined, undefined, undefined, undefined, selectedAccount);
-  }
-
   return (
     <div className={`min-h-screen ${currentTheme.background} p-4 sm:p-6`}>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -541,7 +639,6 @@ export const UserPostDetail: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Loading overlay */}
         {isAuthenticating && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className={`${currentTheme.cardBackground} rounded-xl p-6 flex flex-col items-center gap-4`}>
@@ -551,7 +648,6 @@ export const UserPostDetail: React.FC = () => {
           </div>
         )}
 
-        {/* Social Media Options Modal */}
         {isSocialOptionsOpen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -577,8 +673,9 @@ export const UserPostDetail: React.FC = () => {
                     <button
                       key={`${platform.name}-${platform.subPlatform || 'default'}`}
                       onClick={() => handlePlatformSelect(platform.name, platform.subPlatform)}
-                      className={`flex flex-col items-center justify-center p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ${authStatus[platformKey as keyof typeof authStatus] ? 'bg-green-500/20' : ''
-                        }`}
+                      className={`flex flex-col items-center justify-center p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all ${
+                        authStatus[platformKey as keyof typeof authStatus] ? 'bg-green-500/20' : ''
+                      }`}
                       disabled={isAuthenticating}
                     >
                       {platform.icon}
@@ -590,16 +687,17 @@ export const UserPostDetail: React.FC = () => {
                   );
                 })}
               </div>
-              {socialAuthData?.data?.linkedin?.isAuthenticated && socialAuthData?.data?.linkedin?.accessToken?.expiresAt && !authStatus.linkedin && (
-                <p className="text-red-400 text-sm mt-4">
-                  Your LinkedIn Profile token has expired. Please authenticate again.
-                </p>
-              )}
+              {socialAuthData?.data?.linkedin?.isAuthenticated &&
+                socialAuthData?.data?.linkedin?.accessToken?.expiresAt &&
+                !authStatus.linkedin && (
+                  <p className="text-red-400 text-sm mt-4">
+                    Your LinkedIn Profile token has expired. Please authenticate again.
+                  </p>
+                )}
             </div>
           </motion.div>
         )}
 
-        {/* User Details and Scheduling Modal */}
         {showUserDetails && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -614,27 +712,26 @@ export const UserPostDetail: React.FC = () => {
                   {schedule.subPlatform === 'page'
                     ? 'LinkedIn Page'
                     : schedule.platform
-                      ? schedule.platform.charAt(0).toUpperCase() + schedule.platform.slice(1)
-                      : ''}
+                    ? schedule.platform.charAt(0).toUpperCase() + schedule.platform.slice(1)
+                    : ''}
                 </h3>
               </div>
               <p className={`text-xl font-semibold ${currentTheme.textPrimary} mb-2`}>
-                Publish your design straight to {schedule.subPlatform === 'page' ? 'LinkedIn Pages' : `${(schedule.platform ?? '').charAt(0).toUpperCase() + (schedule.platform ?? '').slice(1)}!`}
+                Publish your design straight to{' '}
+                {schedule.subPlatform === 'page'
+                  ? 'LinkedIn Pages'
+                  : `${(schedule.platform ?? '').charAt(0).toUpperCase() + (schedule.platform ?? '').slice(1)}!`}
               </p>
               {schedule.platform === 'facebook' && (
                 <>
                   <p className={`text-sm ${currentTheme.textSecondary} mb-4`}>Select a Facebook Page to post to:</p>
                   {socialAuthData?.data?.facebook?.managedPages?.length > 0 ? (
-
-
                     <select
                       className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4 w-full`}
-                      onChange={(
-                        e: React.ChangeEvent<HTMLSelectElement>
-                      ) => {
-                        const selectedPage: FacebookManagedPage | undefined = (socialAuthData?.data?.facebook?.managedPages as FacebookManagedPage[] | undefined)?.find(
-                          (page: FacebookManagedPage) => page.id === e.target.value
-                        );
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                        const selectedPage: FacebookManagedPage | undefined = (
+                          socialAuthData?.data?.facebook?.managedPages as FacebookManagedPage[] | undefined
+                        )?.find((page: FacebookManagedPage) => page.id === e.target.value);
                         if (selectedPage) {
                           handlePageSelect(selectedPage);
                         }
@@ -648,184 +745,254 @@ export const UserPostDetail: React.FC = () => {
                         </option>
                       ))}
                     </select>
-              ) : (
-              <p className="text-red-400 text-sm mb-4">No Facebook pages found. Please authenticate or link a page.</p>
+                  ) : (
+                    <p className="text-red-400 text-sm mb-4">No Facebook pages found. Please authenticate or link a page.</p>
                   )}
-            </>
+                </>
               )}
-            {schedule.platform === 'instagram' && (
-              <>
-                <p className={`text-sm ${currentTheme.textSecondary} mb-4`}>Select an Instagram Account to post to:</p>
-                {socialAuthData?.data?.instagram?.accounts?.length > 0 ? (
-
-
+              {schedule.platform === 'instagram' && (
+                <>
+                  <p className={`text-sm ${currentTheme.textSecondary} mb-4`}>Select an Instagram Account to post to:</p>
+                  {socialAuthData?.data?.instagram?.accounts?.length > 0 ? (
+                    <select
+                      className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4 w-full`}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                        const selectedAccount: InstagramAccount | undefined = (
+                          socialAuthData?.data?.instagram as InstagramAuthData
+                        )?.accounts.find((account: InstagramAccount) => account.id === e.target.value);
+                        if (selectedAccount) {
+                          handleInstagramAccountSelect(selectedAccount);
+                        }
+                      }}
+                      value={schedule.selectedInstagramAccount?.id || ''}
+                    >
+                      <option value="">Select an Account</option>
+                      {(socialAuthData?.data?.instagram as InstagramAuthData)?.accounts.map((account: InstagramAccount) => (
+                        <option key={account.id} value={account.id}>
+                          {account.username}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-red-400 text-sm mb-4">No Instagram accounts found. Please link an account.</p>
+                  )}
+                </>
+              )}
+              {schedule.userDetails && schedule.platform !== 'facebook' && (
+                <div className="flex items-center gap-2 mb-4">
                   <select
-                    className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4 w-full`}
-                    onChange={(
-                      e: React.ChangeEvent<HTMLSelectElement>
-                    ) => {
-                      const selectedAccount: InstagramAccount | undefined = (socialAuthData?.data?.instagram as InstagramAuthData)?.accounts.find(
-                        (account: InstagramAccount) => account.id === e.target.value
-                      );
-                      if (selectedAccount) {
-                        handleInstagramAccountSelect(selectedAccount);
-                      }
-                    }}
-                    value={schedule.selectedInstagramAccount?.id || ''}
+                    className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}
                   >
-                    <option value="">Select an Account</option>
-                    {(socialAuthData?.data?.instagram as InstagramAuthData)?.accounts.map((account: InstagramAccount) => (
-                      <option key={account.id} value={account.id}>
-                        {account.username}
-                      </option>
-                    ))}
+                    <option>{schedule.userDetails.name}</option>
                   </select>
-                ) : (
-                  <p className="text-red-400 text-sm mb-4">No Instagram accounts found. Please link an account.</p>
-                )}
-              </>
-            )}
-            {schedule.userDetails && schedule.platform !== 'facebook' && (
-              <div className="flex items-center gap-2 mb-4">
-                <select className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}>
-                  <option>{schedule.userDetails.name}</option>
-                </select>
-                <select className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}>
-                  <option>{schedule.userDetails.profilePage || 'Select Page'}</option>
-                </select>
-              </div>
-            )}
-            <textarea
-              placeholder="Write something..."
-              className={`w-full h-32 ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4`}
-            />
-            <div className="flex items-center gap-4 mb-4">
-              <Calendar className={`w-5 h-5 ${currentTheme.textSecondary}`} />
-              <DatePicker
-                selected={schedule.dateTime}
-                onChange={(date: Date | null) => updateSchedule(undefined, undefined, date)}
-                showTimeSelect
-                dateFormat="Pp"
-                className={`w-full ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}
-                placeholderText="Select date and time (optional)"
-                minDate={new Date()}
+                  <select
+                    className={`${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}
+                  >
+                    <option>{schedule.userDetails.profilePage || 'Select Page'}</option>
+                  </select>
+                </div>
+              )}
+              <textarea
+                placeholder="Write something..."
+                className={`w-full h-32 ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder} mb-4`}
               />
+              <div className="flex items-center gap-4 mb-4">
+                <Calendar className={`w-5 h-5 ${currentTheme.textSecondary}`} />
+                <DatePicker
+                  selected={schedule.dateTime}
+                  onChange={(date: Date | null) => updateSchedule(undefined, undefined, date)}
+                  showTimeSelect
+                  dateFormat="Pp"
+                  className={`w-full ${currentTheme.inputBg} ${currentTheme.textPrimary} rounded-lg px-4 py-2 border ${currentTheme.inputBorder}`}
+                  placeholderText="Select date and time (optional)"
+                  minDate={new Date()}
+                />
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={handlePublishPost}
+                  className={`flex-1 px-4 py-2 bg-purple-600 ${currentTheme.textPrimary} rounded-lg hover:bg-purple-700`}
+                  disabled={
+                    !schedule.platform || isAuthenticating || (schedule.platform === 'facebook' && !schedule.selectedPage)
+                  }
+                >
+                  Publish
+                </button>
+                <button
+                  onClick={() => setShowUserDetails(false)}
+                  className={`flex-1 px-4 py-2 ${currentTheme.inputBg} ${currentTheme.textSecondary} rounded-lg hover:bg-gray-700`}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-            <div className="flex gap-4">
-              <button
-                onClick={handlePublishPost}
-                className={`flex-1 px-4 py-2 bg-purple-600 ${currentTheme.textPrimary} rounded-lg hover:bg-purple-700`}
-                disabled={!schedule.platform || isAuthenticating || (schedule.platform === 'facebook' && !schedule.selectedPage)}
-              >
-                Publish
-              </button>
-              <button
-                onClick={() => setShowUserDetails(false)}
-                className={`flex-1 px-4 py-2 ${currentTheme.inputBg} ${currentTheme.textSecondary} rounded-lg hover:bg-gray-700`}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
           </motion.div>
         )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Image Section */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="w-full"
-        >
-          {renderPost()}
-        </motion.div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="w-full">
+            {renderPost()}
+            {/* Display Product Images for ProductContent */}
+            {/* {post.contentType === 'ProductContent' && post.imagesUrl && (
+              <div className="mt-4">
+                <h3 className={`text-lg font-semibold ${currentTheme.textPrimary} mb-2`}>Product Images</h3>
+                <div className="flex flex-wrap gap-4">
+                  {post.imagesUrl.map((url, index) => (
+                    <img
+                      key={index}
+                      src={url}
+                      alt={`Product Image ${index + 1}`}
+                      className="max-h-40 rounded-lg"
+                    />
+                  ))}
+                </div>
+              </div>
+            )} */}
+          </motion.div>
 
-        {/* Content Section */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="space-y-6"
-        >
-          {/* Main Content */}
-          <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 ${currentTheme.border}`}>
-            <div className="flex items-center gap-2 mb-4">
-              <span
-                className={`px-3 py-1 rounded-full text-xs ${post.type === 'carousel'
-                  ? 'bg-purple-500/20 text-purple-400'
-                  : post.type === 'doyouknow'
-                    ? 'bg-yellow-500/20 text-yellow-400'
-                    : 'bg-blue-500/20 text-blue-400'
-                  }`}
-              >
-                {post.type.toUpperCase()}
-              </span>
-              <span
-                className={`px-3 py-1 rounded-full text-xs ${post.status === 'published'
-                  ? 'bg-green-500/20 text-green-400'
-                  : 'bg-orange-500/20 text-orange-400'
-                  }`}
-              >
-                {post.status.toUpperCase()}
-              </span>
-            </div>
-
-            <h1 className={`text-3xl font-bold ${currentTheme.textPrimary} mb-4`}>{post.topic}</h1>
-            <h2 className={`text-xl font-medium ${currentTheme.textPrimary} mb-4`}>{post.title}</h2>
-            <p className={`${currentTheme.textSecondary} leading-relaxed mb-6`}>{post.description}</p>
-
-            <div className="flex flex-wrap gap-2 mb-6">
-              {post.hashtags.map((hashtag, index) => (
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+            <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 ${currentTheme.border}`}>
+              <div className="flex items-center gap-2 mb-4">
                 <span
-                  key={index}
-                  className={`flex items-center gap-1 text-xs bg-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full`}
+                  className={`px-3 py-1 rounded-full text-xs ${
+                    post.type === 'carousel'
+                      ? 'bg-purple-500/20 text-purple-400'
+                      : post.type === 'doyouknow'
+                      ? 'bg-yellow-500/20 text-yellow-400'
+                      : 'bg-blue-500/20 text-blue-400'
+                  }`}
                 >
-                  <Tag className="w-3 h-3" />
-                  {hashtag}
+                  {post.type.toUpperCase()}
                 </span>
-              ))}
+                <span
+                  className={`px-3 py-1 rounded-full text-xs ${
+                    post.status === 'published'
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-orange-500/20 text-orange-400'
+                  }`}
+                >
+                  {post.status.toUpperCase()}
+                </span>
+              </div>
+
+              <h1 className={`text-3xl font-bold ${currentTheme.textPrimary} mb-4`}>{post.topic}</h1>
+              <h2 className={`text-xl font-medium ${currentTheme.textPrimary} mb-4`}>
+                {post.contentType === 'ProductContent' && selectedPostType === 'discount' && post.discount
+                  ? post.discount.title
+                  : post.contentType === 'ProductContent' && selectedPostType === 'flashSale' && post.flashSale
+                  ? post.flashSale.title
+                  : post.title}
+              </h2>
+              <p className={`${currentTheme.textSecondary} leading-relaxed mb-4`}>
+                {post.contentType === 'ProductContent' && selectedPostType === 'discount' && post.discount
+                  ? post.discount.description
+                  : post.contentType === 'ProductContent' && selectedPostType === 'flashSale' && post.flashSale
+                  ? post.flashSale.description
+                  : post.description}
+              </p>
+
+              {/* Additional Details for ProductContent */}
+              {post.contentType === 'ProductContent' && (
+                <div className="space-y-2 mb-4">
+                  <p className={`${currentTheme.textSecondary}`}>
+                    <strong>Price:</strong> ₹{post.price}
+                  </p>
+                  {selectedPostType === 'discount' && post.discount && (
+                    <>
+                      <p className={`${currentTheme.textSecondary}`}>
+                        <strong>Discount:</strong> {post.discount.percentage}% off
+                      </p>
+                      <p className={`${currentTheme.textSecondary}`}>
+                        <strong>Price After Discount:</strong> ₹
+                        {Math.round(Number(post.price) * (1 - post.discount.percentage / 100))}
+                      </p>
+                    </>
+                  )}
+                  {selectedPostType === 'flashSale' && post.flashSale && (
+                    <>
+                      <p className={`${currentTheme.textSecondary}`}>
+                        <strong>Offer:</strong> {post.flashSale.offer}
+                      </p>
+                      <p className={`${currentTheme.textSecondary}`}>
+                        <strong>Prices Starting At:</strong> ₹{post.flashSale.pricesStartingAt.split('"')[1]}
+                      </p>
+                      <p className={`${currentTheme.textSecondary}`}>
+                        <strong>Valid Until:</strong> {post.flashSale.validUntil}
+                      </p>
+                      <p className={`${currentTheme.textSecondary}`}>
+                        <strong>Time Remaining:</strong> {calculateTimeRemaining(post.flashSale.validUntil)}
+                      </p>
+                    </>
+                  )}
+                  <p className={`${currentTheme.textSecondary}`}>
+                    <strong>Website URL:</strong>{' '}
+                    <a
+                      href={post.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline"
+                    >
+                      {post.websiteUrl}
+                    </a>
+                  </p>
+                  <p className={`${currentTheme.textSecondary}`}>
+                    <strong>Footer:</strong> @{post.footer}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                {post.hashtags.map((hashtag, index) => (
+                  <span
+                    key={index}
+                    className={`flex items-center gap-1 text-xs bg-blue-500/20 text-blue-300 px-3 py-1.5 rounded-full`}
+                  >
+                    <Tag className="w-3 h-3" />
+                    {hashtag}
+                  </span>
+                ))}
+              </div>
+
+              <div className={`flex items-center justify-between text-sm ${currentTheme.textSecondary}`}>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  <span>{new Date(post.createdAt).toLocaleString()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  <span>{post.contentType}</span>
+                </div>
+              </div>
             </div>
 
-            <div className={`flex items-center justify-between text-sm ${currentTheme.textSecondary}`}>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                <span>{new Date(post.createdAt).toLocaleString()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4" />
-                <span>{post.contentType}</span>
+            <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 ${currentTheme.border}`}>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 text-red-400 mb-1">
+                    <Heart className="w-5 h-5" />
+                    <span className="text-lg font-semibold">2.4k</span>
+                  </div>
+                  <p className={`text-sm ${currentTheme.textSecondary}`}>Likes</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 text-blue-400 mb-1">
+                    <MessageSquare className="w-5 h-5" />
+                    <span className="text-lg font-semibold">142</span>
+                  </div>
+                  <p className={`text-sm ${currentTheme.textSecondary}`}>Comments</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 text-green-400 mb-1">
+                    <Eye className="w-5 h-5" />
+                    <span className="text-lg font-semibold">3.8k</span>
+                  </div>
+                  <p className={`text-sm ${currentTheme.textSecondary}`}>Views</p>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Engagement Stats */}
-          <div className={`${currentTheme.cardBackground} backdrop-blur-sm rounded-xl p-6 ${currentTheme.border}`}>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-red-400 mb-1">
-                  <Heart className="w-5 h-5" />
-                  <span className="text-lg font-semibold">2.4k</span>
-                </div>
-                <p className={`text-sm ${currentTheme.textSecondary}`}>Likes</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-blue-400 mb-1">
-                  <MessageSquare className="w-5 h-5" />
-                  <span className="text-lg font-semibold">142</span>
-                </div>
-                <p className={`text-sm ${currentTheme.textSecondary}`}>Comments</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-green-400 mb-1">
-                  <Eye className="w-5 h-5" />
-                  <span className="text-lg font-semibold">3.8k</span>
-                </div>
-                <p className={`text-sm ${currentTheme.textSecondary}`}>Views</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </div>
-    </div >
   );
 };

@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NewProductTemplates } from '../../templetes/Product/newProductTemplates';
-import { OfferTemplates } from '../../templetes/Product/offerDiscountTemplates';
-import { FlashSaleTemplates } from '../../templetes/Product/flashSaleTemplates';
-import { ImageTemplate, Colors } from '../../templetes/ImageTemplate'; // Adjust path as needed
+import { NewProductTemplates, NewProductTemplate, Colors } from '../../templetes/Product/newProductTemplates';
+import { OfferTemplates, OfferTemplate } from '../../templetes/Product/offerDiscountTemplates';
+import { FlashSaleTemplates, FlashSaleTemplate } from '../../templetes/Product/flashSaleTemplates';
 import { ArrowLeft, Image as ImageIcon, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
@@ -57,7 +56,7 @@ export const ProductTemplateSelector: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const defaultLogoUrl = '/images/Logo.png';
-  const [selectedTemplate, setSelectedTemplate] = useState<ImageTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<NewProductTemplate | OfferTemplate | FlashSaleTemplate | null>(null);
   const [activeTab, setActiveTab] = useState<'newProduct' | 'offers' | 'flashSales'>('newProduct');
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -88,7 +87,7 @@ export const ProductTemplateSelector: React.FC = () => {
     return () => window.removeEventListener('resize', updateScale);
   }, [selectedTemplate]);
 
-  const handleSelectTemplate = (template: ImageTemplate) => {
+  const handleSelectTemplate = (template: NewProductTemplate | OfferTemplate | FlashSaleTemplate) => {
     setSelectedTemplate(template);
     console.log('Selected Template:', template.id, 'Logo URL:', defaultLogoUrl);
   };
@@ -256,18 +255,31 @@ export const ProductTemplateSelector: React.FC = () => {
                         margin: '0 auto',
                       }}
                     >
-                      {selectedTemplate.renderSlide(selectedTemplate.slides[0], true, defaultLogoUrl, defaultColors)}
+                      {activeTab === 'newProduct' && selectedTemplate && 'slides' in selectedTemplate
+                        ? (selectedTemplate as NewProductTemplate).renderSlide(
+                            (selectedTemplate as NewProductTemplate).slides[0],
+                            true,
+                            defaultLogoUrl,
+                            defaultColors
+                          )
+                        : activeTab === 'offers' && selectedTemplate && 'slides' in selectedTemplate
+                        ? (selectedTemplate as OfferTemplate).renderSlide(
+                            (selectedTemplate as OfferTemplate).slides[0],
+                            true,
+                            defaultLogoUrl,
+                            defaultColors
+                          )
+                        : activeTab === 'flashSales' && selectedTemplate && 'slides' in selectedTemplate
+                        ? (selectedTemplate as FlashSaleTemplate).renderSlide(
+                            (selectedTemplate as FlashSaleTemplate).slides[0],
+                            true,
+                            defaultLogoUrl,
+                            defaultColors
+                          )
+                        : null}
                     </div>
                   </div>
-                  <motion.button
-                    onClick={handleProceedToEdit}
-                    className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-lg"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Customize Template
-                    <ChevronRight className="w-5 h-5" />
-                  </motion.button>
+                  
                 </motion.div>
               ) : (
                 <motion.div

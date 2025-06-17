@@ -348,9 +348,9 @@ const GetFestivalContent = async (req, res, next) => {
 const SaveProductContent = async (req, res, next) => {
     try {
         await UserValidation.validateProductContent(req.body)
-        let blog = await UserServices.productContent(req.body, req.file, req.user)
+        let product = await UserServices.productContent(req.body, req.files, req.user)
         const { newCsrfToken, expiresAt } = RevokeToken(req);
-        return res.status(CREATED).json(new ApiResponse(CREATED, { blog, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("SAVE_PRODUCT_CONTENT_SUCCESSS")))
+        return res.status(CREATED).json(new ApiResponse(CREATED, { product, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("SAVE_PRODUCT_CONTENT_SUCCESSS")))
     } catch (error) {
         next(error)
     }
@@ -358,8 +358,8 @@ const SaveProductContent = async (req, res, next) => {
 
 const GetProductContent = async (req, res, next) => {
     try {
-        let blogs = await UserServices.getFestivalContent(req.user, req.params)
-        return res.status(OK).json(new ApiResponse(OK, blogs, i18n.__("FESTIVAL_CONTENT_FETCHED_SUCCESS")))
+        let product = await UserServices.getProductContent(req.user, req.params)
+        return res.status(OK).json(new ApiResponse(OK, product, i18n.__("PRODUCT_CONTENT_FETCHED_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -384,7 +384,6 @@ const GetWordpressAuth = async (req, res, next) => {
         next(error)
     }
 }
-
 
 const UserControllers = {
     Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus, GetUserPostDetailById,

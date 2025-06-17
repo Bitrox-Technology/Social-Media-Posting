@@ -375,58 +375,25 @@ export const HoliTemplate: FestivalTemplate = {
   slides: [
     {
       title: 'Happy Holi',
-      description: 'May your life be painted with colors of joy and happiness!',
-      date: '2025-03-29', // Holi 2025 date (past, as today is June 10, 2025)
-      imageUrl: '/images/background.png', // Background image
+      description: 'May your life be painted with colors of joy and happiness! Join us to celebrate the festival of colors with love and laughter.',
+      date: '2026-03-19', // Updated to Holi 2026 (future date)
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1750150785/festival_images/festival_image_1750150783593.jpg', // Background image
       footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const {
-      logoColors,
-      materialTheme,
-      typography,
-      graphicStyle,
-      ensureContrast,
-      glowColor,
-    } = colors;
+    const { logoColors, materialTheme, typography, graphicStyle } = colors;
 
-    // Responsive layout adjustments
-    const isLongText = slide.description.length > 100;
-    const hasImage = !!slide.imageUrl;
-    const titleLength = slide.title.length;
+    // Define colors for a vibrant Holi theme
+    const primaryColor = chroma('#ff6f61').hex(); // Coral pink (used in FlashSaleTemplate1)
+    const secondaryColor = chroma('#1b263b').hex(); // Navy blue (for the button)
+    const accentColor = chroma('#fff').hex(); // White for text
+    const bgColor = chroma('#f5f5f5').hex(); // Light gray for the overall background
+    const textColor = chroma('#1b263b').hex(); // Navy blue for footer text
 
-    // Dynamic font size based on title length
-
-
-    // Determine the background color for contrast calculations
-    const backgroundColor = hasImage
-      ? chroma(materialTheme.background).alpha(0.3).hex()
-      : materialTheme.background;
-
-    // Compute high-contrast colors for text elements
-    // Base colors for text (we'll adjust for contrast)
-    const baseTextColor = '#FFFFFF'; // Start with white, adjust for contrast
-    const baseFooterColor = '#FFFFFF'; // Start with white for footer and website URL
-
-    // High-contrast colors for each text element
-    const highContrastTitleColor = ensureContrast(
-      baseTextColor,
-      backgroundColor
-    );
-    const highContrastDescriptionColor = ensureContrast(
-      chroma(baseTextColor).luminance(0.8).hex(), // Slightly darker for description
-      backgroundColor
-    );
-    const highContrastDateColor = ensureContrast(
-      chroma(baseTextColor).luminance(0.7).hex(), // Even darker for date
-      backgroundColor
-    );
-    const highContrastFooterColor = ensureContrast(
-      baseFooterColor,
-      chroma(materialTheme.surface).alpha(0.2).hex()
-    );
+    const usePrimary = logoColors.primary || primaryColor;
+    const useSecondary = logoColors.secondary || secondaryColor;
 
     const splashColors = [
       '#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3',
@@ -434,150 +401,114 @@ export const HoliTemplate: FestivalTemplate = {
       '#FFEB3B', '#FFC107', '#FF9800', '#FF5722',
     ];
 
+    // Calculate days remaining until the festival
+    const currentDate = new Date('2025-06-17T14:31:00+05:30'); // Current date and time (IST)
+    const festivalDate = new Date('2026-03-19T23:59:59+05:30'); // Festival date (end of day)
+    const timeDiff = festivalDate.getTime() - currentDate.getTime();
+    const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24)); // Convert to days
+
     return (
       <div
-        className={cn(
-          'relative w-[1080px] h-[1080px] flex flex-col',
-          {
-            'rounded-lg': graphicStyle.borderRadius !== '0px',
-          }
-        )}
+        className={cn('relative w-[1080px] h-[1080px] flex', {
+          'rounded-lg': graphicStyle.borderRadius !== '0px',
+        })}
         style={{
+          backgroundColor: bgColor,
           fontFamily: typography.fontFamily,
-          fontWeight: typography.fontWeight,
-          backgroundImage: hasImage ? `url(${slide.imageUrl})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundColor: !hasImage ? materialTheme.background : undefined,
-          overflow: 'hidden'
+          color: textColor,
+          overflow: 'hidden',
         }}
       >
-        {/* Dynamic Color Splashes/Blobs */}
-        {splashColors.map((color, index) => (
-          <div
-            key={index}
-            className="absolute rounded-full blur-3xl opacity-40 animate-pulse"
-            style={{
-              backgroundColor: color,
-              width: `${100 + index * 20}px`,
-              height: `${100 + index * 20}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              transform: `translate(-50%, -50%) rotate(${Math.random() * 360}deg)`,
-              animationDelay: `${Math.random() * 2}s`,
-              zIndex: 0,
-            }}
+        {/* Left Side: Image with Color Splashes */}
+        <div className="w-1/2 h-full relative">
+          <img
+            src={slide.imageUrl}
+            alt="Holi Background"
+            className="w-full h-full object-cover"
+            style={{ objectPosition: 'center' }}
           />
-        ))}
-
-        {/* Additional Decorative Blobs */}
-        <div className="absolute inset-0 overflow-hidden">
+          
           <div
-            className="absolute w-40 h-40 rounded-full blur-3xl -top-10 -left-10 opacity-30"
-            style={{ backgroundColor: logoColors.accent[0] || chroma(logoColors.primary).set('hsl.l', 0.6).hex() }}
-          />
-          <div
-            className="absolute w-40 h-40 rounded-full blur-3xl top-1/2 right-10 opacity-30"
-            style={{ backgroundColor: logoColors.accent[1] || chroma(logoColors.secondary).set('hsl.l', 0.6).hex() }}
-          />
-          <div
-            className="absolute w-40 h-40 rounded-full blur-3xl bottom-10 left-1/2 opacity-30"
-            style={{ backgroundColor: logoColors.accent[2] || chroma(logoColors.primary).set('hsl.h', '+30').hex() }}
+            className="absolute inset-0"
+            style={{ backgroundColor: chroma(materialTheme.background).alpha(0.3).css() }}
           />
         </div>
 
-        {/* Semi-transparent Overlay to Show Background */}
-        {hasImage && (
-          <div
-            className="absolute inset-0"
-            style={{ backgroundColor: chroma(materialTheme.background).alpha(0.2).css() }}
-          />
-        )}
+        {/* Right Side: Content */}
+        <div
+          className="w-1/2 h-full flex flex-col justify-center items-start p-20"
+          style={{ backgroundColor: chroma(usePrimary).alpha(0.9).css() }}
+        >
+          {/* Logo in Top-Right */}
+          {addLogo && (
+            <div className="absolute top-8 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
+          )}
 
-        {/* Logo in Top-Right */}
-        {addLogo && (
-          <div className="absolute top-4 right-4 z-20">
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="w-32 h-16 object-contain"
-
-            />
-          </div>
-        )}
-
-        {/* Content Section (Title, Description, Date) - Centered Vertically and Horizontally */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center flex-grow">
-          {/* Title with High-Contrast Color and Glow */}
+          {/* Title */}
           <h2
-            className="font-extrabold uppercase mb-4 tracking-wide"
-            style={{
-              color: chroma(baseTextColor).mix(logoColors.primary).darken(2.6).hex(),
-              fontFamily: typography.fontFamily,
-              fontSize: '4rem',
-              fontWeight: typography.fontWeight || '800',
-
-            }}
+            className="text-5xl font-bold mb-6 leading-tight"
+            style={{ color: accentColor, maxWidth: '90%', textAlign: 'left' }}
           >
             {slide.title}
           </h2>
 
-          {/* Description with High-Contrast Color and Glow */}
+          {/* Description */}
           <p
-            className="max-w-2xl leading-relaxed mb-6"
-            style={{
-              color: chroma(baseTextColor).mix(logoColors.primary, 0.25).darken(2.6).hex(),
-              fontFamily: typography.fontFamily,
-              fontSize: isLongText ? '1.5rem' : '2rem',
-              fontWeight: '400',
-
-
-            }}
+            className="text-xl leading-relaxed mb-4"
+            style={{ color: chroma(accentColor).alpha(0.9).css(), maxWidth: '85%', textAlign: 'left' }}
           >
             {slide.description}
           </p>
 
-          {/* Date with High-Contrast Color and Glow */}
+          {/* Date */}
           <p
-            className="mb-6"
-            style={{
-              color: chroma(baseTextColor).mix(logoColors.primary, 0.25).darken(2.6).hex(),
-              fontFamily: typography.fontFamily,
-              fontSize: '1.25rem',
-              fontWeight: '400',
-
-
-            }}
+            className="text-lg font-medium mb-4"
+            style={{ color: accentColor, textAlign: 'left' }}
           >
             On the Date: {slide.date}
           </p>
-        </div>
 
-        {/* Website URL (Bottom-Left) and Footer (Bottom-Right) */}
-        <div className="absolute bottom-4 w-full flex justify-between items-center z-10 px-8">
-          {/* Website URL - Bottom Left */}
+          {/* Days Remaining */}
+          <p
+            className="text-lg font-medium mb-8"
+            style={{ color: accentColor, textAlign: 'left' }}
+          >
+            Few days to go!
+          </p>
+
+          {/* Call-to-Action Button */}
           <a
             href={slide.websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-lg font-semibold tracking-wider"
+            className="inline-block px-8 py-4 rounded-full text-xl font-medium transition-all duration-300 hover:scale-105"
             style={{
-              color: chroma(baseTextColor).mix(logoColors.primary).darken(2.6).hex(),
-
-
+              backgroundColor: useSecondary,
+              color: accentColor,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+              textAlign: 'center',
             }}
+          >
+            Celebrate Now
+          </a>
+        </div>
+
+        {/* Bottom Section: Website URL and Footer */}
+        <div className="absolute bottom-8 w-full flex justify-between items-center z-10 px-12">
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xl font-medium tracking-wide hover:underline"
+            style={{ color: chroma(textColor).alpha(0.9).css() }}
           >
             {slide.websiteUrl}
           </a>
-
-          {/* Footer - Bottom Right */}
           <p
-            className="text-lg font-semibold tracking-wider"
-            style={{
-              color: chroma(baseTextColor).mix(logoColors.primary).darken(2.6).hex(),
-
-
-            }}
+            className="text-xl font-medium tracking-wide"
+            style={{ color: chroma(textColor).alpha(0.9).css() }}
           >
             @{slide.footer}
           </p>

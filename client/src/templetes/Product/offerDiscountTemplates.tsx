@@ -4,7 +4,8 @@ import cn from 'classnames';
 export interface OfferSlide {
   title: string;
   description: string;
-  imageUrl: string;
+  offer: number;
+  imagesUrl: string[];
   footer: string;
   websiteUrl: string;
 }
@@ -23,18 +24,8 @@ export interface Colors {
   backgroundColor: string;
   typography: { fontFamily: string; fontWeight: number; fontSize: string };
   graphicStyle: { borderRadius: string; iconStyle: string; filter: string };
-  materialTheme: {
-    primary: string;
-    secondary: string;
-    tertiary: string;
-    background: string;
-    surface: string;
-    onPrimary: string;
-    onSecondary: string;
-    onBackground: string;
-    onSurface: string;
-  };
-  
+  materialTheme: { [key: string]: string };
+
 }
 
 export interface OfferTemplate {
@@ -53,7 +44,8 @@ export const OfferTemplate1: OfferTemplate = {
     {
       title: 'SPECIAL OFFER',
       description: 'Up to 30% Discount',
-      imageUrl: '/images/fashion1.jpg',
+      offer: 34,
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -92,7 +84,7 @@ export const OfferTemplate1: OfferTemplate = {
         {/* Left Side: Image */}
         <div className="w-1/2 h-full relative">
           <div className="absolute top-0 left-0 w-64 h-64 bg-gray-200 opacity-20" style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)' }}></div>
-          <img src={slide.imageUrl} alt="Product" className="w-full h-full object-cover" />
+          <img src={slide.imagesUrl[0]} alt="Product" className="w-full h-full object-cover" />
         </div>
 
         {/* Right Side: Text */}
@@ -131,7 +123,8 @@ export const OfferTemplate2: OfferTemplate = {
     {
       title: 'SPECIAL OFFER',
       description: 'Up to 50%',
-      imageUrl: '/images/fashion2.jpg',
+      offer: 25,
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -170,13 +163,13 @@ export const OfferTemplate2: OfferTemplate = {
         {/* Collage Background */}
         <div className="absolute inset-0 grid grid-cols-2 gap-4 p-4">
           <div className="w-full h-64 rounded-lg overflow-hidden">
-            <img src={slide.imageUrl} alt="Product 1" className="w-full h-full object-cover" />
+            <img src={slide.imagesUrl[0]} alt="Product 1" className="w-full h-full object-cover" />
           </div>
           <div className="w-full h-64 rounded-lg overflow-hidden">
-            <img src={slide.imageUrl} alt="Product 2" className="w-full h-full object-cover" />
+            <img src={slide.imagesUrl[1]} alt="Product 2" className="w-full h-full object-cover" />
           </div>
           <div className="w-full h-64 rounded-lg overflow-hidden">
-            <img src={slide.imageUrl} alt="Product 3" className="w-full h-full object-cover" />
+            <img src={slide.imagesUrl[2]} alt="Product 3" className="w-full h-full object-cover" />
           </div>
         </div>
 
@@ -216,7 +209,8 @@ export const OfferTemplate3: OfferTemplate = {
     {
       title: 'HAPPY HOUR SALE',
       description: 'Get 50% Off!! Shop Our Crazy Clearance Sale. Huge Discount On Selected Items.',
-      imageUrl: '/images/fashion3.jpg',
+      offer: 50,
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -254,7 +248,7 @@ export const OfferTemplate3: OfferTemplate = {
 
         {/* Left Side: Image */}
         <div className="w-1/2 h-full">
-          <img src={slide.imageUrl} alt="Product" className="w-full h-full object-cover" />
+          <img src={slide.imagesUrl[0]} alt="Product" className="w-full h-full object-cover" />
         </div>
 
         {/* Right Side: Text */}
@@ -293,7 +287,8 @@ export const OfferTemplate4: OfferTemplate = {
     {
       title: 'SPECIAL OFFER',
       description: 'Get a special discount today. This discount is limited. Do not miss this opportunity.',
-      imageUrl: '/images/fashion4.jpg',
+      offer: 50,
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
       footer: '@reallygreatsite',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -363,7 +358,7 @@ export const OfferTemplate4: OfferTemplate = {
         {/* Background Image */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-64 h-64 rounded-full overflow-hidden">
-            <img src={slide.imageUrl} alt="Product" className="w-full h-full object-cover" />
+            <img src={slide.imagesUrl[0]} alt="Product" className="w-full h-full object-cover" />
           </div>
         </div>
       </div>
@@ -378,8 +373,9 @@ export const OfferTemplate5: OfferTemplate = {
   slides: [
     {
       title: 'Special Offer',
+      offer: 40,
       description: 'Up to 40% Discount. Delight your senses with our special offer. Indulge in exceptional flavors at an exclusive price. Don’t miss out!',
-      imageUrl: '/images/food1.jpg',
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg"],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -389,9 +385,9 @@ export const OfferTemplate5: OfferTemplate = {
 
     const primaryColor = chroma('#4a7c59').hex(); // Forest green
     const secondaryColor = chroma('#fff').hex(); // White
-    const accentColor = chroma('#2d3033').hex(); // Dark slate
-    const bgColor = chroma('#fff').hex(); // White
-    const textColor = chroma('#2d3033').hex(); // Dark slate
+    const accentColor = chroma('#fff').hex(); // White for text on primary background
+    const bgColor = chroma('#f5f5f5').hex(); // Light gray background
+    const textColor = chroma('#1a1a1a').hex(); // Darker text for readability
 
     const usePrimary = logoColors.primary || primaryColor;
     const useSecondary = logoColors.secondary || secondaryColor;
@@ -410,49 +406,94 @@ export const OfferTemplate5: OfferTemplate = {
       >
         {/* Logo */}
         {addLogo && (
-          <div className="absolute top-4 right-4 z-20">
-            <img src={defaultLogoUrl} alt="Logo" className="w-32 h-16 object-contain" />
+          <div className="absolute top-8 right-8 z-20">
+            <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
           </div>
         )}
 
         {/* Left Side: Image */}
         <div className="w-1/2 h-full">
-          <img src={slide.imageUrl} alt="Product" className="w-full h-full object-cover" />
+          <img
+            src={slide.imagesUrl[0]}
+            alt="Product"
+            className="w-full h-full object-cover"
+            style={{ objectPosition: 'center' }}
+          />
         </div>
 
         {/* Right Side: Text */}
-        <div className="w-1/2 h-full flex flex-col justify-center p-16">
-          <h2 className="text-5xl font-bold mb-4">{slide.title}</h2>
-          <p className="text-3xl font-semibold mb-4" style={{ color: usePrimary }}>Up to 40% Discount</p>
-          <p className="text-lg mb-6" style={{ color: chroma(textColor).alpha(0.8).css() }}>{slide.description}</p>
+        <div
+          className="w-1/2 h-full flex flex-col justify-center items-start p-20"
+          style={{ backgroundColor: chroma(usePrimary).alpha(0.9).css() }}
+        >
+          {/* Title */}
+          <h2
+            className="text-5xl font-bold mb-6 leading-tight"
+            style={{ color: accentColor, maxWidth: '90%', textAlign: 'left' }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Offer */}
+          <p
+            className="text-4xl font-semibold mb-4"
+            style={{ color: accentColor, fontWeight: 600, textAlign: 'left' }}
+          >
+            Up to {slide.offer}% Off
+          </p>
+
+          {/* Description */}
+          <p
+            className="text-xl leading-relaxed mb-8"
+            style={{ color: chroma(accentColor).alpha(0.9).css(), maxWidth: '85%', textAlign: 'left' }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Shop Now Button */}
           <a
             href={slide.websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-6 py-3 rounded-full text-lg"
-            style={{ backgroundColor: usePrimary, color: useSecondary }}
+            className="inline-block px-8 py-4 rounded-full text-xl font-medium transition-all duration-300 hover:scale-105"
+            style={{
+              backgroundColor: useSecondary,
+              color: usePrimary,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+              textAlign: 'center',
+            }}
           >
-            Order Now
+            Shop Now
           </a>
+        </div>
+
+        {/* Bottom Section: Website URL and Footer */}
+        <div className="absolute bottom-8 w-full flex justify-between items-center z-10 px-12">
           <a
             href={slide.websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 text-sm"
-            style={{ color: textColor }}
+            className="text-xl font-medium tracking-wide hover:underline"
+            style={{
+              color: chroma(textColor).alpha(0.9).css(),
+            }}
           >
-            {slide.footer}
+            {slide.websiteUrl}
           </a>
+
+          <p
+            className="text-xl font-medium tracking-wide"
+            style={{
+              color: chroma(textColor).alpha(0.9).css(),
+            }}
+          >
+            @{slide.footer}
+          </p>
         </div>
       </div>
     );
   },
 };
-
 export const OfferTemplates: OfferTemplate[] = [
-    OfferTemplate1,
-    OfferTemplate2,
-    OfferTemplate3,
-    OfferTemplate4,
-    OfferTemplate5,
+  OfferTemplate5
 ];

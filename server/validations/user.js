@@ -239,7 +239,7 @@ const validateBlog = async (inputs) => {
         metaDescription: joi.string().trim().max(160).optional(),
         excerpt: joi.string().trim().optional(),
         topic: joi.string().trim().optional(),
-        audience:joi.string().trim().optional(),
+        audience: joi.string().trim().optional(),
         tone: joi.string().trim().optional(),
         section: joi.string().valid(...SECTION_TYPE_ENUM).required(),
         focusKeyword: joi.string().trim().optional(),
@@ -263,7 +263,7 @@ const validateBlogPost = async (inputs) => {
         excerpt: joi.string().trim().optional(),
         focusKeyword: joi.string().trim().optional(),
         topic: joi.string().trim().optional(),
-        audience:joi.string().trim().optional(),
+        audience: joi.string().trim().optional(),
         tone: joi.string().trim().optional(),
         section: joi.string().valid(...SECTION_TYPE_ENUM).required(),
         slug: joi.string().trim().optional(),
@@ -296,8 +296,24 @@ const validateProductContent = async (inputs) => {
     schema = joi.object({
         productName: joi.string().trim().min(1).required(),
         description: joi.string().trim().min(1).max(300).required(),
-        images: joi.array().items()
-    });
+        imagesUrl: joi.array().items(joi.any()).min(3).max(3).optional(),
+        postTypes: joi.array().items(joi.string().valid(...PRODUCT_POST_TYPE_ENUM)).min(1).required(),
+        footer: joi.string().trim().min(1).optional(),
+        websiteUrl: joi.string().uri({ scheme: ['http', 'https'] }).optional(),
+        price: joi.string().trim().min(1).required(),
+        discount: joi.object({
+            title: joi.string().trim().min(1).optional(),
+            percentage: joi.number().min(1).max(100).optional(),
+            description: joi.string().trim().min(1).optional(),
+        }).optional(),
+        flashSale: joi.object({
+            title: joi.string().trim().min(1).optional(),
+            offer: joi.string().trim().min(1).optional(),
+            validUntil: joi.string().trim().min(1).optional(),
+            pricesStartingAt: joi.string().trim().min(1).optional(),
+            description: joi.string().trim().min(1).optional(),
+        }).optional()
+    })
 
     VALIDATE_SCHEMA(schema, inputs);
 };

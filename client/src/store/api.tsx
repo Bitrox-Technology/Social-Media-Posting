@@ -50,11 +50,11 @@ export interface PaymentInitiateRequest {
 interface SavePostRequest {
   postContentId: string;
   topic: string;
-  type: 'image' | 'carousel' | 'doyouknow' | 'festival';
+  type: 'image' | 'carousel' | 'doyouknow' | 'festival' | 'product';
   status?: 'pending' | 'error' | 'success';
   images?: { url: string; label: string }[];
   contentId?: string;
-  contentType?: 'ImageContent' | 'CarouselContent' | 'DYKContent' | 'FestivalContent';
+  contentType?: 'ImageContent' | 'CarouselContent' | 'DYKContent' | 'FestivalContent' | 'ProductContent';
 }
 
 interface UserState {
@@ -64,10 +64,6 @@ interface UserState {
   login?: boolean;
 }
 
-interface CsrfState {
-  token: string;
-  expiresAt: number;
-}
 
 const throttle = <T extends (...args: any[]) => any>(
   func: T,
@@ -584,7 +580,6 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
-
     festivalContent: builder.mutation<ApiResponse<any>, FormData>({
       query: (formData) => ({
         url: '/user/festival-content',
@@ -598,7 +593,6 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
-
     initiatePayment: builder.mutation<ApiResponse<any>, PaymentInitiateRequest>({
       query: (body) => ({
         url: '/paymenet/payment-initiate',
@@ -629,6 +623,19 @@ export const api = createApi({
     getWordpressAuth: builder.query<ApiResponse<any>, void>({
       query: () => ({
         url: `/user/get-wordpress-auth`,
+        method: 'GET',
+      }),
+    }),
+    productContent: builder.mutation<ApiResponse<any>, FormData>({
+      query: (formData) => ({
+        url: '/user/product-content',
+        method: 'POST',
+        body: formData
+      }),
+    }),
+    getProductContent: builder.query<ApiResponse<any>, {contentId: String}>({
+      query: ({contentId}) => ({
+        url: `/user/get-product-content/${contentId}`,
         method: 'GET',
       }),
     }),
@@ -717,5 +724,7 @@ export const {
   useVerifyPaymentQuery,
   useLazyHolidaysQuery,
   useWordpressAuthMutation,
-  useLazyGetWordpressAuthQuery
+  useLazyGetWordpressAuthQuery,
+  useProductContentMutation,
+  useLazyGetProductContentQuery,
 } = api;

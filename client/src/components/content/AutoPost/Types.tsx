@@ -1,3 +1,7 @@
+import { FlashSaleSlide } from "../../../templetes/Product/flashSaleTemplates";
+import { NewProductSlide } from "../../../templetes/Product/newProductTemplates";
+import { OfferSlide } from "../../../templetes/Product/offerDiscountTemplates";
+
 export interface ImageContent {
     title: string;
     description: string;
@@ -31,12 +35,13 @@ export interface ImageContent {
   
   export interface Post {
     topic: string;
-    type: 'image' | 'carousel' | 'doyouknow' | 'festival';
-    content: ImageContent | DoYouKnowContent | Slide[] | string;
+    type: 'image' | 'carousel' | 'doyouknow' | 'festival' | 'product';
+    content: ImageContent | DoYouKnowContent | Slide[] | string | NewProductSlide | OfferSlide | FlashSaleSlide ;
     images?: { url: string; label: string }[];
     templateId?: string;
     status: 'pending' | 'success' | 'error' | 'generating';
     errorMessage?: string;
     contentId?: string;
-    contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent' | 'FestivalContent';
+    contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent' | 'FestivalContent' | 'ProductContent';
+    postId?:string
   }

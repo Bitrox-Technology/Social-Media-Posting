@@ -8,7 +8,7 @@ import { Alert } from '../ui/Alert';
 import { useDropzone } from 'react-dropzone';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import axios from 'axios';
+
 import { toast } from 'react-toastify';
 import { useFestivalContentMutation, useLazyGetFestivalContentQuery, useSavePostsMutation, useUploadImageToCloudinaryMutation } from '../../store/api';
 import { generateFestivalPost } from '../../Utilities/functions';
@@ -31,6 +31,8 @@ export const FestivalPostCreator: React.FC = () => {
   const { isOpen, config, showAlert, closeAlert, handleConfirm } = useAlert();
   const [preview, setPreview] = useState<boolean>(false);
   const [image, setImage] = useState<string | undefined>(undefined);
+  
+  const [newPost, setNewPost] = useState<any>(null);;
   const [festivalContent] = useFestivalContentMutation();
   const [getFestivalContent] = useLazyGetFestivalContentQuery();
   const [savePosts] = useSavePostsMutation();
@@ -42,7 +44,7 @@ export const FestivalPostCreator: React.FC = () => {
     description: Yup.string()
       .trim()
       .min(1, 'Description is required')
-      .max(500, 'Description must be 500 characters or less')
+      .max(300, 'Description must be 300 characters or less')
       .required('Description is required'),
     festivalDate: Yup.string().required('Festival date is required'),
     imageFile: Yup.mixed().required('Festival image is required'),
@@ -85,7 +87,7 @@ export const FestivalPostCreator: React.FC = () => {
         const getResponse = await getFestivalContent({ contentId: response.data.blog._id }).unwrap();
         console.log('Get response', getResponse.data);
 
-        let newPost = await generateFestivalPost(
+        let generatePost = await generateFestivalPost(
           'festival',
           {
             savePosts,
@@ -98,8 +100,9 @@ export const FestivalPostCreator: React.FC = () => {
           getResponse.data
         );
 
-        console.log('New Post', newPost);
-        setImage(newPost.images?.[0]?.url || '');
+        console.log('New Post', generatePost);
+        setNewPost(generatePost)
+        setImage(generatePost.images?.[0]?.url || '');
         setPreview(true);
       } catch (error: any) {
         console.error('API Response Error:', error.response?.data || error.message);
@@ -180,9 +183,8 @@ export const FestivalPostCreator: React.FC = () => {
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
                       placeholder="e.g., Diwali, Christmas..."
-                      className={`w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formik.touched.festivalName && formik.errors.festivalName ? 'border-red-500' : ''
-                      }`}
+                      className={`w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${formik.touched.festivalName && formik.errors.festivalName ? 'border-red-500' : ''
+                        }`}
                     />
                     {formik.touched.festivalName && formik.errors.festivalName && (
                       <p className="text-red-500 text-sm mt-1">{formik.errors.festivalName}</p>
@@ -200,9 +202,8 @@ export const FestivalPostCreator: React.FC = () => {
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
                       placeholder="Enter festival description..."
-                      className={`w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formik.touched.description && formik.errors.description ? 'border-red-500' : ''
-                      }`}
+                      className={`w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${formik.touched.description && formik.errors.description ? 'border-red-500' : ''
+                        }`}
                       rows={4}
                     />
                     {formik.touched.description && formik.errors.description && (
@@ -221,9 +222,8 @@ export const FestivalPostCreator: React.FC = () => {
                       value={formik.values.festivalDate}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      className={`w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formik.touched.festivalDate && formik.errors.festivalDate ? 'border-red-500' : ''
-                      }`}
+                      className={`w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${formik.touched.festivalDate && formik.errors.festivalDate ? 'border-red-500' : ''
+                        }`}
                     />
                     {formik.touched.festivalDate && formik.errors.festivalDate && (
                       <p className="text-red-500 text-sm mt-1">{formik.errors.festivalDate}</p>
@@ -237,11 +237,10 @@ export const FestivalPostCreator: React.FC = () => {
                     </label>
                     <div
                       {...getRootProps()}
-                      className={`w-full p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-colors ${
-                        isDragActive
+                      className={`w-full p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-colors ${isDragActive
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900'
                           : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700'
-                      } ${formik.touched.imageFile && formik.errors.imageFile ? 'border-red-500' : ''}`}
+                        } ${formik.touched.imageFile && formik.errors.imageFile ? 'border-red-500' : ''}`}
                     >
                       <input {...getInputProps()} />
                       {formik.values.imageUrl ? (
@@ -267,9 +266,8 @@ export const FestivalPostCreator: React.FC = () => {
                 <motion.button
                   type="submit"
                   disabled={formik.isSubmitting}
-                  className={`w-full px-6 py-4 bg-blue-500 text-white font-semibold rounded-xl ${
-                    formik.isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className={`w-full px-6 py-4 bg-blue-500 text-white font-semibold rounded-xl ${formik.isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -292,12 +290,14 @@ export const FestivalPostCreator: React.FC = () => {
                 <p className="text-gray-500 dark:text-gray-400 text-center">No image available for preview.</p>
               )}
               <motion.button
-                onClick={() => navigate('/content-type')}
-                className="w-full px-6 py-4 bg-blue-500 text-white font-semibold rounded-xl"
+                onClick={() => navigate(`/user-post/${newPost.postId}`)}
+                className={`px-4 py-2 rounded-xl font-semibold bg-blue-500 text-white
+                    bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200
+                  `}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Save & Continue
+                Continue to Post
               </motion.button>
             </div>
           )}

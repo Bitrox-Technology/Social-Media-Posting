@@ -19,6 +19,7 @@ import cron from 'node-cron';
 import { publishBlogPost, publishContent1 } from "./blogPost.js";
 import FestivalContent from "../models/festivalContent.js";
 import WordpressCredentials from "../models/wordpress.js";
+import ProductContent from "../models/productContent.js";
 
 const signup = async (inputs) => {
     let user;
@@ -320,7 +321,7 @@ const saveDYKContent = async (inputs, user) => {
 }
 
 const savePosts = async (inputs, user) => {
-    if (inputs.type === 'festival') {
+    if (inputs.type === 'festival' || inputs.type === 'product') {
 
     } else {
         let postContent = await PostTopic.findById({ _id: inputs.postContentId, userId: user._id })
@@ -414,67 +415,105 @@ const getUserAllPosts = async (user) => {
 }
 
 const getUserPostDetail = async (params, user) => {
+  let post, content;
+  let results = [];
+  let contentData = {};
 
+  // Fetch the post by ID and user ID
+  post = await SavePosts.findById({ _id: params.postid, userId: user._id });
 
-    let post, content;
-    let results = [];
-    let contentData = {};
+  if (!post) throw new ApiError(400, "Post does not exist");
 
-
-    post = await SavePosts.findById({ _id: params.postid, userId: user._id })
-
-    if (!post) throw new ApiError(400, "Post does not exist");
-
-    if (post.contentType === "ImageContent") {
-        content = await ImageContent.findById(post.contentId, 'content hashtags');
-        if (content && content.content && content.hashtags) {
-            contentData = {
-                title: content.content.title || '',
-                description: content.content.description || '',
-                hashtags: content.hashtags || []
-            };
-        }
-    } else if (post.contentType === 'DYKContent') {
-        const content = await DYKContent.findById(post.contentId, 'content hashtags');
-        if (content && content.content && content.hashtags) {
-            contentData = {
-                title: content.content.title || '',
-                description: content.content.fact || '', // Use fact as description for DYKContent
-                hashtags: content.hashtags || []
-            };
-        }
-    } else if (post.contentType === 'CarouselContent') {
-        const content = await CarouselContent.findById(post.contentId, 'content');
-        if (content && content.content && content.content.length >= 6) {
-            // Extract title, description, hashtags from content[5] (sixth position)
-            contentData = {
-                title: content.content[5].title || '',
-                description: content.content[5].description || '',
-                hashtags: content.content[5].hashtags || []
-            };
-        }
+  // Handle different content types
+  if (post.contentType === "ImageContent") {
+    content = await ImageContent.findById(post.contentId, 'content hashtags');
+    if (content && content.content && content.hashtags) {
+      contentData = {
+        title: content.content.title || '',
+        description: content.content.description || '',
+        hashtags: content.hashtags || [],
+      };
     }
+  } else if (post.contentType === 'DYKContent') {
+    content = await DYKContent.findById(post.contentId, 'content hashtags');
+    if (content && content.content && content.hashtags) {
+      contentData = {
+        title: content.content.title || '',
+        description: content.content.fact || '',
+        hashtags: content.hashtags || [],
+      };
+    }
+  } else if (post.contentType === 'CarouselContent') {
+    content = await CarouselContent.findById(post.contentId, 'content');
+    if (content && content.content && content.content.length >= 6) {
+      contentData = {
+        title: content.content[5].title || '',
+        description: content.content[5].description || '',
+        hashtags: content.content[5].hashtags || [],
+      };
+    }
+  } else if (post.contentType === 'FestivalContent') {
+    content = await FestivalContent.findById(post.contentId, 'festivalName description festivalDate imageUrl');
+    if (content) {
+      contentData = {
+        title: content.festivalName || '',
+        description: content.description || '',
+        hashtags: [], // Hashtags not provided in FestivalContent
+        festivalDate: content.festivalDate || '',
+        imageUrl: content.imageUrl || '',
+      };
+    }
+  } else if (post.contentType === 'ProductContent') {
+    content = await ProductContent.findById(
+      post.contentId,
+      'productName description imagesUrl footer websiteUrl price discount flashSale postTypes'
+    );
+    if (content) {
+      contentData = {
+        title: content.productName || '',
+        description: content.description || '',
+        hashtags: [], // Hashtags not provided in ProductContent
+        imagesUrl: content.imagesUrl || [],
+        footer: content.footer || '',
+        websiteUrl: content.websiteUrl || '',
+        price: content.price || '',
+        discount: content.discount || null,
+        flashSale: content.flashSale || null,
+        postTypes: content.postTypes || [],
+      };
+    }
+  }
 
+  // Construct the result object
+  results.push({
+    _id: post._id,
+    images: post.images || [],
+    title: contentData.title || '',
+    description: contentData.description || '',
+    hashtags: contentData.hashtags || [],
+    contentType: post.contentType || '',
+    topic: post.topic || '',
+    status: post.status || '',
+    type: post.type || '',
+    createdAt: post.createdAt || '',
+    // Include additional fields for specific content types
+    ...(post.contentType === 'FestivalContent' && {
+      festivalDate: contentData.festivalDate || '',
+      imageUrl: contentData.imageUrl || '',
+    }),
+    ...(post.contentType === 'ProductContent' && {
+      imagesUrl: contentData.imagesUrl || [],
+      footer: contentData.footer || '',
+      websiteUrl: contentData.websiteUrl || '',
+      price: contentData.price || '',
+      discount: contentData.discount || null,
+      flashSale: contentData.flashSale || null,
+      postTypes: contentData.postTypes || [],
+    }),
+  });
 
-
-    results.push({
-        _id: post._id,
-        images: post.images || [],
-        title: contentData.title,
-        description: contentData.description,
-        hashtags: contentData.hashtags,
-        contentType: post.contentType,
-        topic: post.topic || '',
-        status: post.status || '',
-        type: post.type || '',
-        createdAt: post.createdAt || ''
-    });
-
-    return results
-
-
-
-}
+  return results;
+};
 
 const getImageContent = async (contentId, user) => {
 
@@ -802,31 +841,123 @@ const getFestivalContent = async (user, params) => {
 };
 
 
-const wordpressAuth = async(inputs, user) => {
+const wordpressAuth = async (inputs, user) => {
     let result;
-    if(!inputs.wordpress_username && !inputs.wordpress_password) throw new ApiError(BAD_REQUEST, i18n.__("CREDENTIALS_MISSING"))
-    
+    if (!inputs.wordpress_username && !inputs.wordpress_password) throw new ApiError(BAD_REQUEST, i18n.__("CREDENTIALS_MISSING"))
+
     inputs.wordpress_username = encryptToken(inputs.wordpress_username)
     inputs.wordpress_password = encryptToken(inputs.wordpress_password)
 
 
-    result = await WordpressCredentials.findOne({userId: user._id});
+    result = await WordpressCredentials.findOne({ userId: user._id });
     inputs.isAuthenticate = true
-    inputs.userId= user._id
-    if(result){
-        
-        result = await WordpressCredentials.updateOne(inputs, {new: true}).lean()
-    }else{
+    inputs.userId = user._id
+    if (result) {
+
+        result = await WordpressCredentials.updateOne(inputs, { new: true }).lean()
+    } else {
         result = await WordpressCredentials.create(inputs)
     }
     return result;
 }
 
-const getWordpressAuth = async(user) => {
-    const result = await WordpressCredentials.findOne({userId: user._id}).lean()
+const getWordpressAuth = async (user) => {
+    const result = await WordpressCredentials.findOne({ userId: user._id }).lean()
 
     return result
 }
+
+
+const productContent = async (inputs, files, user) => {
+    if (!files) throw new ApiError(BAD_REQUEST, i18n.__("FILES_NOT_FOUND"));
+
+    console.log("Files: ", files)
+
+    inputs.imagesUrl = []
+    for (const file of files) {
+        if (file.fieldname === 'imagesUrl') {
+            const result = await uploadStreamToCloudinary(file.buffer, {
+                folder: 'product_images',
+                public_id: `${file.fieldname}_image_${Date.now()}`,
+            });
+            if (!result || !result.secure_url) {
+                throw new ApiError(BAD_REQUEST, 'Unable to upload product image');
+            }
+            inputs.imagesUrl.push(result.secure_url);
+        }
+    }
+
+    const product = await ProductContent.create({
+        ...inputs,
+        contentType: 'ProductContent',
+        userId: user._id
+    });
+
+    return product;
+
+}
+
+
+const getProductContent = async (user, params) => {
+    const content = await ProductContent.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(params.contentid),
+                userId: new mongoose.Types.ObjectId(user._id),
+            },
+        },
+        {
+            $lookup: {
+                from: 'users',
+                let: { userId: '$userId' }, // Define variable for lookup
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: { $eq: ['$_id', '$$userId'] }, // Match userId with user._id
+                        },
+                    },
+                    {
+                        $project: {
+                            logo: 1,
+                            websiteUrl: 1 // Include only the logo field
+                        },
+                    },
+                ],
+                as: 'userData',
+            },
+        },
+        {
+            $unwind: {
+                path: '$userData',
+                preserveNullAndEmptyArrays: true, // Keep documents even if no user is found
+            },
+        },
+        {
+            $project: {
+                productName: 1,
+                description: 1,
+                price: 1,
+                imagesUrl: 1,
+                userId: 1,
+                logo: '$userData.logo',
+                websiteUrl: '$userData.websiteUrl',// Project the logo from userData
+                postTypes: 1,
+                discount: 1,
+                flashSale: 1,
+                footer: 1,
+                websiteUrl: 1,
+                _id: 1,
+            },
+        },
+    ]);
+
+    if (!content || content.length === 0) {
+        throw new ApiError(BAD_REQUEST, 'No post content found');
+    }
+
+    return content[0]; 
+}
+
 const UserServices = {
     signup,
     signupSigninByProvider,
@@ -860,6 +991,8 @@ const UserServices = {
     festivalContent,
     getFestivalContent,
     wordpressAuth,
-    getWordpressAuth
+    getWordpressAuth,
+    productContent,
+    getProductContent
 }
 export default UserServices;

@@ -5,6 +5,7 @@ export interface NewProductSlide {
   title: string;
   description: string;
   imagesUrl: string[];
+  price: string;
   footer: string;
   websiteUrl: string;
 }
@@ -23,18 +24,8 @@ export interface Colors {
   backgroundColor: string;
   typography: { fontFamily: string; fontWeight: number; fontSize: string };
   graphicStyle: { borderRadius: string; iconStyle: string; filter: string };
-  materialTheme: {
-    primary: string;
-    secondary: string;
-    tertiary: string;
-    background: string;
-    surface: string;
-    onPrimary: string;
-    onSecondary: string;
-    onBackground: string;
-    onSurface: string;
-  };
-  
+  materialTheme: { [key: string]: string };
+
 }
 
 export interface NewProductTemplate {
@@ -48,29 +39,32 @@ export interface NewProductTemplate {
 export const NewProductTemplate1: NewProductTemplate = {
   id: 'hexagonal-showcase',
   name: 'Hexagonal Showcase',
-  coverImageUrl: '/images/image-cover/hexagonal-showcase.png',
+  coverImageUrl: '/images/product-covers/hexagonal-showcase.png',
   slides: [
     {
-      title: 'BEAUTY PRODUCT',
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      title: 'Summer Shirt',
+      description: 'Discover the latest summer styles with vibrant colours and trendy designs, perfect for any occasion!',
       imagesUrl: [
-        '/images/products/product1.jpg',
-        '/images/products/product2.jpg',
-        '/images/products/product3.jpg',
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084381/product_images/imagesUrl_image_1750084379003.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084382/product_images/imagesUrl_image_1750084381218.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084383/product_images/imagesUrl_image_1750084382556.jpg",
       ],
-      footer: 'reallygreatsite.com',
-      websiteUrl: 'https://reallygreatsite.com',
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://www.bitrox.tech',
+      price: '599',
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const { logoColors, materialTheme, typography, graphicStyle } = colors;
 
+    // Colors inspired by the image
     const primaryColor = chroma('#f5c7c7').hex(); // Soft pink
     const secondaryColor = chroma('#e8d7c5').hex(); // Beige
-    const accentColor = chroma('#4a7c59').hex(); // Forest green
-    const bgColor = chroma('#fff').hex(); // White
-    const textColor = chroma('#2d3033').hex(); // Dark slate
+    const accentColor = chroma('#fff').hex(); // Forest green (for button)
+    const bgColor = chroma('#fff').hex(); // White background
+    const textColor = chroma('#2d3033').hex(); // Dark slate for text
 
+    // Use logoColors if provided, otherwise fall back to defined colors
     const usePrimary = logoColors.primary || primaryColor;
     const useSecondary = logoColors.secondary || secondaryColor;
 
@@ -86,10 +80,10 @@ export const NewProductTemplate1: NewProductTemplate = {
           overflow: 'hidden',
         }}
       >
-        {/* Organic Leaf Shape */}
+        {/* Organic Leaf Shape (Decorative Element) */}
         <svg
           className="absolute top-0 left-0 w-1/3 h-1/3 opacity-20"
-          viewBox="1 1 200 200"
+          viewBox="0 0 200 200"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
@@ -99,47 +93,131 @@ export const NewProductTemplate1: NewProductTemplate = {
           />
         </svg>
 
-        {/* Hexagonal Frames */}
+        {/* Hexagonal Frames for Images */}
         <div className="relative w-2/3 h-full flex items-center justify-center">
-          <div className="absolute w-48 h-48 transform rotate-45" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)', backgroundColor: usePrimary }}>
-            <img src={slide.imageUrl} alt="Product" className="w-full h-full object-cover transform -rotate-45" />
-          </div>
-          <div className="absolute w-48 h-48 transform rotate-45 translate-x-24 -translate-y-24" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)', backgroundColor: usePrimary }}>
-            <img src={slide.imageUrl} alt="Product" className="w-full h-full object-cover transform -rotate-45" />
-          </div>
-          <div className="absolute w-48 h-48 transform rotate-45 -translate-x-24 translate-y-24" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)', backgroundColor: usePrimary }}>
-            <img src={slide.imageUrl} alt="Product" className="w-full h-full object-cover transform -rotate-45" />
-          </div>
+          {slide.imagesUrl && slide.imagesUrl.length >= 3 && (
+            <>
+              {/* Center Hexagon */}
+              <div
+                className="absolute w-64 h-64"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: usePrimary,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[0]}
+                  alt="Product 1"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Top-Right Hexagon */}
+              <div
+                className="absolute w-64 h-64 translate-x-32 -translate-y-32"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: usePrimary,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[1]}
+                  alt="Product 2"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Bottom-Left Hexagon */}
+              <div
+                className="absolute w-64 h-64 -translate-x-32 translate-y-32"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: usePrimary,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[2]}
+                  alt="Product 3"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Text Panel */}
-        <div className="w-1/3 h-full flex flex-col justify-center p-8" style={{ backgroundColor: useSecondary }}>
-          <h2 className="text-4xl font-bold mb-4">{slide.title}</h2>
-          <p className="text-lg mb-6" style={{ color: chroma(textColor).alpha(0.8).css() }}>{slide.description}</p>
+        <div
+          className="w-1/3 h-full flex flex-col justify-center p-8"
+          style={{ backgroundColor:  chroma(usePrimary).alpha(0.8).css() }}
+        >
+          <h2
+            className="text-6xl font-extrabold mb-6 text-center leading-tight"
+            style={{ color: chroma(accentColor).alpha(0.8).css() }}
+          >
+            {slide.title}
+          </h2>
+          <p
+            className="text-lg mb-4"
+            style={{ color: chroma(accentColor).alpha(0.8).css() }}
+          >
+            {slide.description}
+          </p>
+          {/* Add Price Here */}
+          <p
+            className="text-xl font-bold mb-6"
+            style={{ color: accentColor }}
+          >
+            ${slide.price}
+          </p>
           <a
             href={slide.websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-6 py-2 rounded-full text-white text-lg"
-            style={{ backgroundColor: accentColor }}
+            className="inline-block px-6 py-2 rounded-full text-white text-lg font-semibold"
+            style={{ backgroundColor: 'black' }}
           >
             Shop Now
           </a>
+        </div>
+
+        {/* Logo in Top-Right (Optional) */}
+        {addLogo && (
+          <div className="absolute top-4 right-4 z-20">
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="w-32 h-16 object-contain"
+              style={{ filter: graphicStyle.filter }}
+            />
+          </div>
+        )}
+
+        <div className="absolute bottom-4 w-full flex justify-between items-center z-10 px-8">
+          {/* Website URL - Bottom Left */}
           <a
             href={slide.websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 text-sm"
-            style={{ color: textColor }}
+            className="text-lg font-semibold tracking-wider"
+            style={{
+              color: chroma(textColor).alpha(0.8).css(),
+            }}
           >
-            {slide.footer}
+            {slide.websiteUrl}
           </a>
+
+          {/* Footer - Bottom Right */}
+          <p
+            className="text-lg font-semibold tracking-wider"
+            style={{
+              color: chroma(textColor).alpha(0.8).css(),
+            }}
+          >
+            @{slide.footer}
+          </p>
         </div>
       </div>
     );
   },
 };
-
 
 export const NewProductTemplate2: NewProductTemplate = {
   id: 'collage-promotion',
@@ -149,7 +227,8 @@ export const NewProductTemplate2: NewProductTemplate = {
     {
       title: 'THE NEW PRODUCT',
       description: 'Chase and get our new product which is very high quality and limited.',
-      imageUrl: '/images/product2.jpg',
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
+      price: '599',
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -181,16 +260,16 @@ export const NewProductTemplate2: NewProductTemplate = {
         {/* Collage Background */}
         <div className="absolute inset-0 grid grid-cols-2 gap-4 p-4">
           <div className="w-full h-64 rounded-lg overflow-hidden">
-            <img src={slide.imageUrl} alt="Product 1" className="w-full h-full object-cover" />
+            <img src={slide.imagesUrl[0]} alt="Product 1" className="w-full h-full object-cover" />
           </div>
           <div className="w-full h-64 rounded-lg overflow-hidden">
-            <img src={slide.imageUrl} alt="Product 2" className="w-full h-full object-cover" />
+            <img src={slide.imagesUrl[1]} alt="Product 2" className="w-full h-full object-cover" />
           </div>
           <div className="w-full h-64 rounded-lg overflow-hidden">
-            <img src={slide.imageUrl} alt="Product 3" className="w-full h-full object-cover" />
+            <img src={slide.imagesUrl[2]} alt="Product 3" className="w-full h-full object-cover" />
           </div>
           <div className="w-full h-64 rounded-lg overflow-hidden">
-            <img src={slide.imageUrl} alt="Product 4" className="w-full h-full object-cover" />
+            <img src={slide.imagesUrl[3]} alt="Product 4" className="w-full h-full object-cover" />
           </div>
         </div>
 
@@ -232,7 +311,8 @@ export const NewProductTemplate3: NewProductTemplate = {
     {
       title: 'RAIN FOREST EAU DE PERFUME',
       description: 'Introducing Rain Forest Eau de Perfume',
-      imageUrl: '/images/product3.jpg',
+      price: '399',
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -278,7 +358,7 @@ export const NewProductTemplate3: NewProductTemplate = {
 
         {/* Product Image */}
         <div className="relative z-10">
-          <img src={slide.imageUrl} alt="Product" className="w-48 h-64 object-contain mb-8" />
+          <img src={slide.imagesUrl[0]} alt="Product" className="w-48 h-64 object-contain mb-8" />
         </div>
 
         {/* Text Content */}
@@ -315,7 +395,8 @@ export const NewProductTemplate4: NewProductTemplate = {
     {
       title: 'NEW PRODUCT',
       description: 'Get Discount Up to 50%',
-      imageUrl: '/images/product4.jpg',
+      price: '449',
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -361,7 +442,7 @@ export const NewProductTemplate4: NewProductTemplate = {
 
         {/* Product Image */}
         <div className="relative z-10">
-          <img src={slide.imageUrl} alt="Product" className="w-48 h-64 object-contain mb-8" />
+          <img src={slide.imagesUrl[0]} alt="Product" className="w-48 h-64 object-contain mb-8" />
         </div>
 
         {/* Text Content */}
@@ -398,7 +479,8 @@ export const NewProductTemplate5: NewProductTemplate = {
     {
       title: 'NATURAL ESSENCE',
       description: 'Pure and simple beauty',
-      imageUrl: '/images/product5.jpg',
+      price: '299',
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -444,7 +526,7 @@ export const NewProductTemplate5: NewProductTemplate = {
 
         {/* Product Image */}
         <div className="relative z-10">
-          <img src={slide.imageUrl} alt="Product" className="w-48 h-64 object-contain mb-8" />
+          <img src={slide.imagesUrl[0]} alt="Product" className="w-48 h-64 object-contain mb-8" />
         </div>
 
         {/* Text Content */}
@@ -479,9 +561,10 @@ export const NewProductTemplate6: NewProductTemplate = {
   coverImageUrl: '/images/image-cover/split-layout.png',
   slides: [
     {
-      title : 'ORGANIC BEAUTY',
+      title: 'ORGANIC BEAUTY',
       description: 'Discover the power of nature',
-      imageUrl: '/images/product6.jpg',
+      price: "999",
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -512,7 +595,7 @@ export const NewProductTemplate6: NewProductTemplate = {
       >
         {/* Left Side: Image */}
         <div className="w-1/2 h-full">
-          <img src={slide.imageUrl} alt="Product" className="w-full h-full object-cover" />
+          <img src={slide.imagesUrl[0]} alt="Product" className="w-full h-full object-cover" />
         </div>
 
         {/* Right Side: Text */}
@@ -551,7 +634,8 @@ export const NewProductTemplate7: NewProductTemplate = {
     {
       title: 'LIMITED EDITION',
       description: 'Get yours before it’s gone!',
-      imageUrl: '/images/product7.jpg',
+      price: "1299",
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
     },
@@ -584,7 +668,7 @@ export const NewProductTemplate7: NewProductTemplate = {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: `url(${slide.imageUrl})`,
+            backgroundImage: `url(${slide.imagesUrl[0]})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             opacity: 0.8,
@@ -594,7 +678,12 @@ export const NewProductTemplate7: NewProductTemplate = {
 
         {/* Text Content */}
         <div className="relative z-10 text-center">
-          <h2 className="text-5xl font-bold mb-4">{slide.title}</h2>
+          <h2
+            className="text-6xl font-extrabold mb-6 text-center leading-tight"
+            style={{ color: accentColor }}
+          >
+            {slide.title}
+          </h2>
           <p className="text-xl mb-6">{slide.description}</p>
           <a
             href={slide.websiteUrl}
@@ -622,10 +711,5 @@ export const NewProductTemplate7: NewProductTemplate = {
 
 export const NewProductTemplates: NewProductTemplate[] = [
   NewProductTemplate1,
-  NewProductTemplate2,
-  NewProductTemplate3,
-  NewProductTemplate4,
-  NewProductTemplate5,
-  NewProductTemplate6,
-  NewProductTemplate7,  
+
 ];

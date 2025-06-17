@@ -52,7 +52,8 @@ const postTypeTypes = Object.freeze({
   image: 'image',
   carousel: 'carousel',
   doyouknow: 'doyouknow',
-  festival: 'festival'
+  festival: 'festival',
+  product: 'product'
 });
 
 // Content Type Types
@@ -60,11 +61,12 @@ const contentTypeTypes = Object.freeze({
   imageContent: 'ImageContent',
   carouselContent: 'CarouselContent',
   dykContent: 'DYKContent',
-  festivalContent: 'FestivalContent'
+  festivalContent: 'FestivalContent',
+  productContent: 'ProductContent'
 });
 
 const productPostTypes = Object.freeze({
-  newProduct: 'newProduct',
+  product: 'product',
   discount: 'discount',
   flashSale: 'flashSale',
 });

@@ -11,6 +11,9 @@ import html2canvas from 'html2canvas';
 import { useAlert } from '../components/hooks/useAlert';
 import { argbFromHex, themeFromSourceColor } from '@material/material-color-utilities';
 import { FestivalSlide, FestivalTemplates } from '../templetes/festivalTemplates';
+import { NewProductSlide, NewProductTemplates } from '../templetes/Product/newProductTemplates';
+import { OfferSlide, OfferTemplates } from '../templetes/Product/offerDiscountTemplates';
+import { FlashSaleSlide, FlashSaleTemplates } from '../templetes/Product/flashSaleTemplates';
 
 // Define BrandStyle type
 // Define BrandStyle type with a new 'Elegant' option
@@ -1446,227 +1449,6 @@ export const generateCarouselPost = async (
     }
   }
 };
-// export const generateDoYouKnowPost = async (
-//   topic: string,
-//   type: 'doyouknow',
-//   postContentId: string,
-//   mutations: {
-//     generateDoYouKnow: ReturnType<typeof useGenerateDoYouKnowMutation>[0];
-//     dykContent: ReturnType<typeof useDykContentMutation>[0];
-//     savePosts: ReturnType<typeof useSavePostsMutation>[0];
-//     uploadImageToCloudinary: ReturnType<typeof useUploadImageToCloudinaryMutation>[0];
-//   },
-//   showAlert: ReturnType<typeof useAlert>['showAlert'],
-//   userLogo?: string,
-//   brandStyle: BrandStyle = 'Modern',
-//   competitorImageUrl?: string
-// ): Promise<Post> => {
-//   let newPost: Post;
-//   let screenshotUrl: string | undefined;
-
-//   try {
-//     console.log(`Generating Do You Know post with topic: ${topic}, postContentId: ${postContentId}`);
-
-//     // Select random DYK template
-//     const randomDoYouKnowTemplateIndex = Math.floor(Math.random() * doYouKnowTemplates.length);
-//     const randomDoYouKnowTemplate = doYouKnowTemplates[randomDoYouKnowTemplateIndex];
-
-//     // Generate DYK content via API
-//     const doYouKnowResponse = await mutations.generateDoYouKnow({ topic }).unwrap();
-//     const generatedDoYouKnowContent = doYouKnowResponse.data;
-
-//     // Create new DYK slide
-//     const newDoYouKnowSlide: DoYouKnowSlide = {
-//       title: generatedDoYouKnowContent.title || randomDoYouKnowTemplate.slides[0].title,
-//       fact: generatedDoYouKnowContent.description || randomDoYouKnowTemplate.slides[0].fact,
-//       footer: randomDoYouKnowTemplate.slides[0].footer || '',
-//       websiteUrl: randomDoYouKnowTemplate.slides[0].websiteUrl || '',
-//       imageUrl: randomDoYouKnowTemplate.slides[0].imageUrl || '',
-//       slideNumber: 1,
-//     };
-
-//     // Save DYK content
-//     const dykResult = await mutations.dykContent({
-//       postContentId,
-//       topic,
-//       templateId: randomDoYouKnowTemplate.id,
-//       content: { title: generatedDoYouKnowContent.title, fact: generatedDoYouKnowContent.description },
-//       hashtags: generatedDoYouKnowContent?.hashtags,
-//       status: 'success',
-//     }).unwrap();
-
-//     // Create new post object
-//     newPost = {
-//       topic,
-//       type,
-//       content: newDoYouKnowSlide,
-//       templateId: randomDoYouKnowTemplate.id,
-//       status: 'success',
-//       contentId: dykResult.data._id,
-//       contentType: 'DoyouknowContent',
-//     };
-
-//     // Extract colors from logo and slide image
-//     const tempContainerColor = document.createElement('div');
-//     tempContainerColor.style.position = 'absolute';
-//     tempContainerColor.style.top = '-9999px';
-//     tempContainerColor.style.width = '1080px';
-//     tempContainerColor.style.height = '1080px';
-//     document.body.appendChild(tempContainerColor);
-
-//     const ColorExtractor = ({
-//       logoUrl,
-//       imageUrl,
-//       competitorUrl,
-//       onColorsExtracted,
-//     }: {
-//       logoUrl: string;
-//       imageUrl: string;
-//       competitorUrl?: string;
-//       onColorsExtracted: (colors: {
-//         logoColors: { primary: string; secondary: string; accent: string[] };
-//         imageColors: string[];
-//         competitorColors?: string[];
-//       }) => void;
-//     }) => {
-//       const { data: logoPalette } = usePalette(logoUrl, 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
-//       const { data: imagePalette } = usePalette(imageUrl || '', 5, 'hex', { crossOrigin: 'anonymous', quality: 10 });
-//       const { data: competitorPalette } = usePalette(competitorUrl || '', 5, 'hex', {
-//         crossOrigin: 'anonymous',
-//         quality: 10,
-//       });
-
-//       React.useEffect(() => {
-//         if (logoPalette) {
-//           const sortedLogoColors = logoPalette.sort((a, b) => {
-//             const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
-//             const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
-//             return vibrancyB - vibrancyA;
-//           });
-//           const logoColors = {
-//             primary: sortedLogoColors[0],
-//             secondary: sortedLogoColors[1] || chroma(sortedLogoColors[0]).set('hsl.l', 0.3).hex(),
-//             accent: sortedLogoColors.slice(2),
-//           };
-//           onColorsExtracted({
-//             logoColors,
-//             imageColors: imagePalette || [materialTheme.background, materialTheme.surface],
-//             competitorColors: competitorPalette,
-//           });
-//         }
-//       }, [logoPalette, imagePalette, competitorPalette]);
-
-//       return null;
-//     };
-
-//     const materialTheme = generateM3Theme('#4A90E2'); // Fallback theme for initial use
-//     const colors = await new Promise<{
-//       logoColors: { primary: string; secondary: string; accent: string[] };
-//       imageColors: string[];
-//       competitorColors?: string[];
-//     }>((resolve) => {
-//       const tempRoot = createRoot(tempContainerColor);
-//       tempRoot.render(
-//         <ColorExtractor
-//           logoUrl={userLogo || '/images/Logo1.png'}
-//           imageUrl={newDoYouKnowSlide.imageUrl || ''}
-//           competitorUrl={competitorImageUrl}
-//           onColorsExtracted={(extractedColors) => {
-//             resolve(extractedColors);
-//             setTimeout(() => {
-//               tempRoot.unmount();
-//               document.body.removeChild(tempContainerColor);
-//             }, 0);
-//           }}
-//         />
-//       );
-//     });
-
-//     console.log('Extracted Colors:', colors);
-
-//     // Generate M3 theme from logo's primary color
-//     const finalMaterialTheme = generateM3Theme(colors.logoColors.primary);
-//     const mappedPalette = colors.competitorColors
-//       ? mapCompetitorPalette(colors.competitorColors, colors.logoColors)
-//       : colors.logoColors;
-
-//     const typography = m3Typography[brandStyle] || m3Typography.Modern;
-//     const graphicStyle = graphicStyles[brandStyle] || graphicStyles.Modern;
-
-//     // Render DYK slide with extracted colors
-//     const tempContainerDYK = document.createElement('div');
-//     tempContainerDYK.style.position = 'absolute';
-//     tempContainerDYK.style.top = '-9999px';
-//     tempContainerDYK.style.width = '1080px';
-//     tempContainerDYK.style.height = '1080px';
-//     document.body.appendChild(tempContainerDYK);
-
-//     const vibrantTextColor = ensureContrast(finalMaterialTheme.onSurface, finalMaterialTheme.background);
-//     const vibrantAccentColor = colors.imageColors.length > 0 ? selectVibrantColor(colors.imageColors) : finalMaterialTheme.secondary;
-//     const footerColor = finalMaterialTheme.secondary;
-//     const backgroundColor = finalMaterialTheme.background;
-
-//     const doYouKnowTemplate = doYouKnowTemplates.find((t) => t.id === randomDoYouKnowTemplate.id) || doYouKnowTemplates[0];
-//     const doYouKnowSlideElement = doYouKnowTemplate.renderSlide(
-//       newDoYouKnowSlide,
-//       true,
-//       userLogo || '/images/Logo1.png',
-//       {
-//         logoColors: mappedPalette,
-//         imageColors: colors.imageColors,
-//         ensureContrast,
-//         vibrantLogoColor: finalMaterialTheme.primary,
-//         vibrantTextColor,
-//         footerColor,
-//         vibrantAccentColor,
-//         backgroundColor,
-//         typography,
-//         graphicStyle,
-//         materialTheme: finalMaterialTheme,
-//       }
-//     );
-
-//     const root = createRoot(tempContainerDYK);
-//     root.render(doYouKnowSlideElement);
-
-//     // Capture and upload screenshot
-//     screenshotUrl = await captureAndUploadScreenshot(tempContainerDYK, topic, type, {
-//       uploadImageToCloudinary: mutations.uploadImageToCloudinary,
-//     });
-
-//     document.body.removeChild(tempContainerDYK);
-//     root.unmount();
-
-//     // Save post with screenshot
-//     if (screenshotUrl) {
-//       await mutations.savePosts({
-//         postContentId,
-//         topic,
-//         type: 'doyouknow',
-//         status: 'success',
-//         images: [{ url: screenshotUrl, label: 'Did You Know?' }],
-//         contentId: dykResult.data._id,
-//         contentType: 'DYKContent',
-//       }).unwrap();
-//       newPost.images = [{ url: screenshotUrl, label: 'Did You Know?' }];
-//     } else {
-//       throw new Error('Failed to capture or upload screenshot');
-//     }
-
-//     return newPost;
-//   } catch (error) {
-//     const errorMessage = (error as any)?.data?.message || 'An unexpected error occurred while generating the Do You Know post.';
-//     showAlert({
-//       type: 'error',
-//       title: 'Failed to Generate Do You Know Post',
-//       message: errorMessage,
-//     });
-//     throw error;
-//   }
-// };
-
-
-
 
 type FestivalData = {
   _id?: string;
@@ -1706,11 +1488,11 @@ export const generateFestivalPost = async (
     const randomFestivalTemplate = FestivalTemplates[randomFestivalIndex];
     console.log('Selected Template:', randomFestivalTemplate.id);
 
-  
+
     const newFestivalSlide: FestivalSlide = {
       title: data.festivalName || randomFestivalTemplate.slides[0].title,
       description: data.description || randomFestivalTemplate.slides[0].description || 'Festival of Lightening.',
-      date: data.festivalDate ||   randomFestivalTemplate.slides[0].date,
+      date: data.festivalDate || randomFestivalTemplate.slides[0].date,
       footer: randomFestivalTemplate.slides[0].footer || 'bitrox.tech',
       websiteUrl: data.websiteUrl || 'https://bitrox.tech',
       imageUrl: data.imageUrl || randomFestivalTemplate.slides[0].imageUrl || 'https://via.placeholder.com/1080',
@@ -1719,7 +1501,7 @@ export const generateFestivalPost = async (
 
 
     newPost = {
-      topic : data.festivalName || 'festival-post',
+      topic: data.festivalName || 'festival-post',
       type: 'festival',
       content: newFestivalSlide,
       templateId: randomFestivalTemplate.id,
@@ -1988,7 +1770,7 @@ export const generateFestivalPost = async (
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      screenshotUrl = await captureAndUploadScreenshot(tempContainerFestival,data.festivalName? data.festivalName: "festival-post" , type, {
+      screenshotUrl = await captureAndUploadScreenshot(tempContainerFestival, data.festivalName ? data.festivalName : "festival-post", type, {
         uploadImageToCloudinary: mutations.uploadImageToCloudinary,
       });
       console.log('Screenshot URL:', screenshotUrl);
@@ -2000,7 +1782,7 @@ export const generateFestivalPost = async (
     // Save post with screenshot
     if (screenshotUrl) {
       const savePostResult = await mutations.savePosts({
-        postContentId:  data._id || "",
+        postContentId: data._id || "",
         topic: data?.festivalName || "festival Post",
         type: 'festival',
         status: 'success',
@@ -2014,6 +1796,7 @@ export const generateFestivalPost = async (
       }));
       console.log('Post saved:', savePostResult);
       newPost.images = [{ url: screenshotUrl, label: 'Festival' }];
+      newPost.postId = savePostResult.data.user._id
     } else {
       console.warn('No screenshot URL generated, marking post as error');
       newPost.status = 'error';
@@ -2045,3 +1828,625 @@ export const generateFestivalPost = async (
     }
   }
 };
+
+type ProductData = {
+  _id?: string;
+  productName: string,
+  description: string,
+  footer: string,
+  websiteUrl: string,
+  price: string,
+  postTypes: [],
+  logo: string,
+  imagesUrl: string[],
+  discount?: {
+    title: '',
+    percentage: number,
+    description: string,
+  },
+  flashSale?: {
+    title: '',
+    description: ''
+    offer: string,
+    validUntil: string,
+    pricesStartingAt: string,
+  },
+}
+
+export const generateProductPost = async (
+  type: 'product',
+  mutations: {
+    savePosts: ReturnType<typeof useSavePostsMutation>[0];
+    uploadImageToCloudinary: ReturnType<typeof useUploadImageToCloudinaryMutation>[0];
+  },
+  dispatch: React.Dispatch<any>,
+  setCsrfToken: (token: { token: string; expiresAt: string }) => void,
+  showAlert: ReturnType<typeof useAlert>['showAlert'],
+  data: ProductData,
+  brandStyle: BrandStyle = 'Modern',
+): Promise<any> => {
+  let newPost: Post;
+  let screenshotUrl: string | undefined;
+  let tempContainerColor: HTMLDivElement | null = null;
+  let tempContainerProduct: HTMLDivElement | null = null;
+
+  let tempRootColor: ReturnType<typeof createRoot> | null = null;
+  let tempRootProduct: ReturnType<typeof createRoot> | null = null;
+  console.log("Data", data)
+  try {
+
+    const randomProductIndex = Math.floor(Math.random() * NewProductTemplates.length);
+    const randomProductTemplate = NewProductTemplates[randomProductIndex];
+    console.log('Selected Template:', randomProductTemplate.id);
+
+
+    const newProductSlide: NewProductSlide = {
+      title: data.productName || randomProductTemplate.slides[0].title,
+      description: data.description || randomProductTemplate.slides[0].description,
+      price: data.price || randomProductTemplate.slides[0].price,
+      websiteUrl: data.websiteUrl || 'https://bitrox.tech',
+      footer: data.footer || randomProductTemplate.slides[0].footer || 'bitrox.tech',
+      imagesUrl: data.imagesUrl || randomProductTemplate.slides[0].imagesUrl,
+    };
+    console.log('New Product Slide:', newProductSlide);
+
+
+    newPost = {
+      topic: data.productName || 'product-post',
+      type: 'product',
+      content: newProductSlide,
+      templateId: randomProductTemplate.id,
+      status: 'success',
+      contentId: data._id,
+      contentType: 'ProductContent',
+    };
+    console.log('New Post:', newPost);
+
+
+    // Extract colors from logo and background image
+    tempContainerColor = document.createElement('div');
+    tempContainerColor.style.position = 'absolute';
+    tempContainerColor.style.top = '-9999px';
+    tempContainerColor.style.width = '1080px';
+    tempContainerColor.style.height = '1080px';
+    document.body.appendChild(tempContainerColor);
+
+    const ColorExtractor = ({
+      logoUrl,
+      imageUrl,
+      onColorsExtracted,
+    }: {
+      logoUrl: string;
+      imageUrl: string;
+      onColorsExtracted: (colors: {
+        logoColors: { primary: string; secondary: string; accent: string[] };
+        imageColors: string[];
+        glowColor: string;
+        complementaryTextColor: string;
+        complementaryFooterColor: string;
+      }) => void;
+    }) => {
+      const { data: logoPalette, error: logoError, loading: logoLoading } = usePalette(logoUrl, 5, 'hex', {
+        crossOrigin: 'anonymous',
+        quality: 10,
+      });
+      const { data: imagePalette, error: imageError, loading: imageLoading } = usePalette(imageUrl, 5, 'hex', {
+        crossOrigin: 'anonymous',
+        quality: 10,
+      });
+
+      React.useEffect(() => {
+        console.log('ColorExtractor state:', {
+          logoPalette,
+          logoError,
+          logoLoading,
+          imagePalette,
+          imageError,
+          imageLoading,
+        });
+
+        if (logoError || imageError || logoPalette === null || imagePalette === null) {
+          console.error('Color extraction failed, using defaults:', {
+            logoError,
+            imageError,
+            logoPaletteNull: logoPalette === null,
+            imagePaletteNull: imagePalette === null,
+          });
+          onColorsExtracted({
+            logoColors: defaultColors.logoColors,
+            imageColors: defaultColors.imageColors,
+            glowColor: defaultColors.glowColor,
+            complementaryTextColor: defaultColors.complementaryTextColor,
+            complementaryFooterColor: defaultColors.complementaryFooterColor,
+          });
+          return;
+        }
+
+        if (logoPalette && imagePalette && !logoLoading && !imageLoading) {
+          try {
+            const sortedLogoColors = logoPalette.sort((a, b) => {
+              const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
+              const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
+              return vibrancyB - vibrancyA;
+            });
+            const sortedImageColors = imagePalette.sort((a, b) => {
+              const vibrancyA = chroma(a).hsl()[1] * (1 - Math.abs(chroma(a).hsl()[2] - 0.5));
+              const vibrancyB = chroma(b).hsl()[1] * (1 - Math.abs(chroma(b).hsl()[2] - 0.5));
+              return vibrancyB - vibrancyA;
+            });
+            const logoColors = {
+              primary: sortedLogoColors[0] || defaultColors.logoColors.primary,
+              secondary: sortedLogoColors[1] || chroma(sortedLogoColors[0]).set('hsl.l', 0.3).hex() || defaultColors.logoColors.secondary,
+              accent: sortedLogoColors.slice(2).length > 0 ? sortedLogoColors.slice(2) : defaultColors.logoColors.accent,
+            };
+            const vibrantImageColor = selectVibrantColor(sortedImageColors) || defaultColors.vibrantAccentColor;
+            const glowColor = chroma(vibrantImageColor).luminance(0.7).hex();
+            const complementaryTextColor = defaultColors.ensureContrast(
+              chroma(vibrantImageColor).set('hsl.h', '+180').luminance(0.8).hex(),
+              defaultColors.backgroundColor,
+              4.5
+            );
+            const complementaryFooterColor = defaultColors.ensureContrast(
+              chroma(vibrantImageColor).set('hsl.h', '+180').set('hsl.s', '*0.5').luminance(0.6).hex(),
+              defaultColors.backgroundColor,
+              4.5
+            );
+            onColorsExtracted({
+              logoColors,
+              imageColors: sortedImageColors,
+              glowColor,
+              complementaryTextColor,
+              complementaryFooterColor,
+            });
+          } catch (error) {
+            console.error('Error processing colors:', error);
+            onColorsExtracted({
+              logoColors: defaultColors.logoColors,
+              imageColors: defaultColors.imageColors,
+              glowColor: defaultColors.glowColor,
+              complementaryTextColor: defaultColors.complementaryTextColor,
+              complementaryFooterColor: defaultColors.complementaryFooterColor,
+            });
+          }
+        }
+      }, [logoPalette, imagePalette, logoError, imageError, logoLoading, imageLoading]);
+
+      return null;
+    };
+
+    const colors = await new Promise<{
+      logoColors: { primary: string; secondary: string; accent: string[] };
+      imageColors: string[];
+      glowColor: string;
+      complementaryTextColor: string;
+      complementaryFooterColor: string;
+    }>((resolve, reject) => {
+      try {
+        tempRootColor = createRoot(tempContainerColor!);
+        tempRootColor.render(
+          <ColorExtractor
+            logoUrl={data.logo || ""}
+            imageUrl={Array.isArray(data.imagesUrl) && data.imagesUrl.length > 0 ? data.imagesUrl[0] || "" : ""}
+            onColorsExtracted={(extractedColors) => {
+              console.log('Extracted Colors:', extractedColors);
+              resolve(extractedColors);
+              setTimeout(() => {
+                if (tempRootColor) {
+                  tempRootColor.unmount();
+                  tempRootColor = null;
+                }
+                if (tempContainerColor && document.body.contains(tempContainerColor)) {
+                  document.body.removeChild(tempContainerColor);
+                  tempContainerColor = null;
+                }
+              }, 0);
+            }}
+          />
+        );
+        setTimeout(() => reject(new Error('Color extraction timed out')), 10000);
+      } catch (error) {
+        console.error('ColorExtractor setup error:', error);
+        reject(error);
+      }
+    });
+    console.log('Colors Extracted:', colors);
+
+    // Generate M3 theme from logo's primary color
+    let materialTheme;
+    try {
+      materialTheme = generateM3Theme(colors.logoColors.primary);
+      if (!materialTheme || Object.keys(materialTheme).length === 0) {
+        console.warn('generateM3Theme returned empty or invalid theme, using default');
+        materialTheme = defaultColors.materialTheme;
+      }
+    } catch (error) {
+      console.error('Error in generateM3Theme:', error);
+      materialTheme = defaultColors.materialTheme;
+    }
+    console.log('Material Theme:', materialTheme);
+
+    // Normalize theme colors
+    const normalizeHex = (color: string): string => {
+      if (color.length === 9 && color.startsWith('#ff')) {
+        return `#${color.slice(3, 9)}`;
+      }
+      return chroma.valid(color) ? color : defaultColors.materialTheme.background;
+    };
+
+    let vibrantLogoColor: string;
+    let vibrantTextColor: string;
+    let vibrantAccentColor: string;
+    let footerColor: string;
+    let backgroundColor: string;
+
+    try {
+      vibrantLogoColor = normalizeHex(materialTheme.primary);
+      vibrantTextColor = colors.complementaryTextColor; // Use complementary color for title and fact
+      vibrantAccentColor = colors.imageColors.length > 0
+        ? selectVibrantColor(colors.imageColors) || defaultColors.vibrantAccentColor
+        : normalizeHex(materialTheme.secondary);
+      footerColor = colors.complementaryFooterColor; // Use complementary color for footer and website URL
+      backgroundColor = normalizeHex(materialTheme.background);
+    } catch (error) {
+      console.error('Error processing theme colors:', error);
+      vibrantLogoColor = defaultColors.vibrantLogoColor;
+      vibrantTextColor = defaultColors.complementaryTextColor;
+      vibrantAccentColor = defaultColors.vibrantAccentColor;
+      footerColor = defaultColors.complementaryFooterColor;
+      backgroundColor = defaultColors.backgroundColor;
+    }
+    console.log('Theme Colors:', { vibrantLogoColor, vibrantTextColor, vibrantAccentColor, footerColor, backgroundColor });
+
+    const typography = m3Typography[brandStyle] || m3Typography.Modern;
+    const graphicStyle = graphicStyles[brandStyle] || graphicStyles.Modern;
+    console.log('Typography and Graphic Style:', { typography, graphicStyle });
+
+    // Render DYK slide
+    tempContainerProduct = document.createElement('div');
+    tempContainerProduct.style.position = 'absolute';
+    tempContainerProduct.style.top = '-9999px';
+    tempContainerProduct.style.width = '1080px';
+    tempContainerProduct.style.height = '1080px';
+    document.body.appendChild(tempContainerProduct);
+
+    const productTemplate = NewProductTemplates.find((t) => t.id === randomProductTemplate.id) || NewProductTemplates[0];
+    if (!productTemplate || !productTemplate.renderSlide) {
+      throw new Error(`Invalid template: ${randomProductTemplate.id}`);
+    }
+    console.log('Rendering slide for template:', productTemplate.id);
+
+    // Validate slide data
+    if (!newProductSlide.title || !newProductSlide.description) {
+      console.warn('Incomplete slide data, using fallbacks', newProductSlide);
+      newProductSlide.title = newProductSlide.title || 'Happy New Year';
+      newProductSlide.description = newProductSlide.description || 'We Celebrate it with together!';
+      newProductSlide.price = newProductSlide.price || '599';
+      newProductSlide.footer = newProductSlide.footer || 'bitrox.tech';
+      newProductSlide.websiteUrl = newProductSlide.websiteUrl || 'https://bitrox.tech';
+      newProductSlide.imagesUrl = newProductSlide.imagesUrl || 'https://via.placeholder.com/1080';
+    }
+
+    let productSlideElement: JSX.Element;
+    try {
+      productSlideElement = productTemplate.renderSlide(
+        newProductSlide,
+        true,
+        data.logo || 'https://via.placeholder.com/150',
+        {
+          logoColors: colors.logoColors,
+          imageColors: colors.imageColors,
+          glowColor: colors.glowColor,
+          complementaryGlowColor: colors.complementaryTextColor,
+          ensureContrast: defaultColors.ensureContrast,
+          vibrantLogoColor,
+          vibrantTextColor,
+          footerColor,
+          backgroundColor,
+          typography,
+          graphicStyle,
+          materialTheme,
+        }
+      );
+      console.log('Slide Element Rendered:', productSlideElement.type, Object.keys(productSlideElement.props));
+    } catch (error) {
+      console.error('Error rendering slide:', error);
+      throw new Error(`Failed to render slide: ${(error as Error).message}`);
+    }
+
+    tempRootProduct = createRoot(tempContainerProduct);
+    try {
+      tempRootProduct.render(productSlideElement);
+      console.log('Slide Element Mounted');
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      screenshotUrl = await captureAndUploadScreenshot(tempContainerProduct, data.productName ? data.productName : "product-post", type, {
+        uploadImageToCloudinary: mutations.uploadImageToCloudinary,
+      });
+      console.log('Screenshot URL:', screenshotUrl);
+    } catch (error) {
+      console.error('Error during rendering or screenshot:', error);
+      throw new Error(`Failed to render or capture screenshot: ${(error as Error).message}`);
+    }
+
+    // Offer Post 
+    let newPost1: Post;
+    let screenshotUrl1: string | undefined;
+    let tempContainerOffer: HTMLDivElement | null = null;
+    let tempRootOffer: ReturnType<typeof createRoot> | null = null;
+    console.log("Data", data)
+    try {
+
+      const randomOfferIndex = Math.floor(Math.random() * OfferTemplates.length);
+      const randomOfferTemplate = OfferTemplates[randomOfferIndex];
+      console.log('Selected Template:', randomOfferTemplate.id);
+
+
+      const newOfferSlide: OfferSlide = {
+        title: (data.discount && data.discount.title) || randomOfferTemplate.slides[0].title,
+        offer: (data.discount && data.discount.percentage) || randomOfferTemplate.slides[0].offer,
+        description: (data.discount && data.discount.description) || randomOfferTemplate.slides[0].description,
+        websiteUrl: data.websiteUrl || 'https://bitrox.tech',
+        footer: data.footer || randomOfferTemplate.slides[0].footer || 'bitrox.tech',
+        imagesUrl: data.imagesUrl || randomOfferTemplate.slides[0].imagesUrl,
+      };
+      console.log('New Product Slide:', newOfferSlide);
+
+
+      newPost1 = {
+        topic: (data.discount && data.discount.title) || 'offer-post',
+        type: 'product',
+        content: newOfferSlide,
+        templateId: randomOfferTemplate.id,
+        status: 'success',
+        contentId: data._id,
+        contentType: 'ProductContent',
+      };
+      console.log('New Post1:', newPost1);
+
+
+      tempContainerOffer = document.createElement('div');
+      tempContainerOffer.style.position = 'absolute';
+      tempContainerOffer.style.top = '-9999px';
+      tempContainerOffer.style.width = '1080px';
+      tempContainerOffer.style.height = '1080px';
+      document.body.appendChild(tempContainerOffer);
+
+      const offerTemplate = OfferTemplates.find((t) => t.id === randomOfferTemplate.id) || OfferTemplates[0];
+      if (!offerTemplate || !offerTemplate.renderSlide) {
+        throw new Error(`Invalid template: ${randomOfferTemplate.id}`);
+      }
+      console.log('Rendering slide for template:', offerTemplate.id);
+
+      // Validate slide data
+      if (!newOfferSlide.title || !newOfferSlide.description) {
+        console.warn('Incomplete slide data, using fallbacks', newOfferSlide);
+        newOfferSlide.title = newOfferSlide.title || 'Special Offer';
+        newOfferSlide.description = newOfferSlide.description || 'Delight your senses with our special offer.';
+        newOfferSlide.offer = newOfferSlide.offer || 40;
+        newOfferSlide.footer = newOfferSlide.footer || 'bitrox.tech';
+        newOfferSlide.websiteUrl = newOfferSlide.websiteUrl || 'https://bitrox.tech';
+        newOfferSlide.imagesUrl = newOfferSlide.imagesUrl || 'https://via.placeholder.com/1080';
+      }
+
+      let offerSlideElement: JSX.Element;
+      try {
+        offerSlideElement = offerTemplate.renderSlide(
+          newOfferSlide,
+          true,
+          data.logo || 'https://via.placeholder.com/150',
+          {
+            logoColors: colors.logoColors,
+            imageColors: colors.imageColors,
+            glowColor: colors.glowColor,
+            complementaryGlowColor: colors.complementaryTextColor,
+            ensureContrast: defaultColors.ensureContrast,
+            vibrantLogoColor,
+            vibrantTextColor,
+            footerColor,
+            backgroundColor,
+            typography,
+            graphicStyle,
+            materialTheme,
+          }
+        );
+        console.log('Slide Element Rendered:', offerSlideElement.type, Object.keys(offerSlideElement.props));
+      } catch (error) {
+        console.error('Error rendering slide:', error);
+        throw new Error(`Failed to render slide: ${(error as Error).message}`);
+      }
+
+      tempRootOffer = createRoot(tempContainerOffer);
+      try {
+        tempRootOffer.render(offerSlideElement);
+        console.log('Slide Element Mounted');
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        screenshotUrl1 = await captureAndUploadScreenshot(tempContainerOffer, data.productName ? data.productName : "offer-post", type, {
+          uploadImageToCloudinary: mutations.uploadImageToCloudinary,
+        });
+        console.log('Screenshot URL:', screenshotUrl1);
+      } catch (error) {
+        console.error('Error during rendering or screenshot:', error);
+        throw new Error(`Failed to render or capture screenshot: ${(error as Error).message}`);
+      }
+    } catch (error) {
+      const errorMessage = (error as any)?.data?.message || `An unexpected error occurred while generating the Offer post: ${(error as Error).message}`;
+      console.error('Error in generateOfferPost:', error);
+      showAlert({
+        type: 'error',
+        title: 'Failed to Generate Offer Post',
+        message: errorMessage,
+      });
+      throw error;
+    }
+
+    // FlashSale Post
+    let newPost2: Post;
+    let screenshotUrl2: string | undefined;
+    let tempContainerFlashSale: HTMLDivElement | null = null;
+    let tempRootFlashSale: ReturnType<typeof createRoot> | null = null;
+    console.log("Data", data)
+    try {
+
+      const randomFlashSaleIndex = Math.floor(Math.random() * FlashSaleTemplates.length);
+      const randomFlashSaleTemplate = FlashSaleTemplates[randomFlashSaleIndex];
+      console.log('Selected Template:', randomFlashSaleTemplate.id);
+
+
+      const newFlashSaleSlide: FlashSaleSlide = {
+        title: (data.flashSale && data.flashSale.title) || randomFlashSaleTemplate.slides[0].title,
+        offer: (data.flashSale && data.flashSale.offer) || randomFlashSaleTemplate.slides[0].offer,
+        validUntil: (data.flashSale && data.flashSale.validUntil) || randomFlashSaleTemplate.slides[0].validUntil,
+        pricesStartingAt: (data.flashSale && data.flashSale.pricesStartingAt) || randomFlashSaleTemplate.slides[0].pricesStartingAt,
+        description: (data.flashSale && data.flashSale.description) || randomFlashSaleTemplate.slides[0].description,
+        websiteUrl: data.websiteUrl || 'https://bitrox.tech',
+        footer: data.footer || randomFlashSaleTemplate.slides[0].footer || 'bitrox.tech',
+        imagesUrl: data.imagesUrl || randomFlashSaleTemplate.slides[0].imagesUrl,
+      };
+      console.log('New Flash Sale Slide:', newFlashSaleSlide);
+
+
+      newPost2 = {
+        topic: (data.discount && data.discount.title) || 'flash-sale-post',
+        type: 'product',
+        content: newFlashSaleSlide,
+        templateId: randomFlashSaleTemplate.id,
+        status: 'success',
+        contentId: data._id,
+        contentType: 'ProductContent',
+      };
+      console.log('New Post1:', newPost2);
+
+
+
+      // Render DYK slide
+      tempContainerFlashSale = document.createElement('div');
+      tempContainerFlashSale.style.position = 'absolute';
+      tempContainerFlashSale.style.top = '-9999px';
+      tempContainerFlashSale.style.width = '1080px';
+      tempContainerFlashSale.style.height = '1080px';
+      document.body.appendChild(tempContainerFlashSale);
+
+      const flashSaleTemplate = FlashSaleTemplates.find((t) => t.id === randomFlashSaleTemplate.id) || FlashSaleTemplates[0];
+      if (!flashSaleTemplate || !flashSaleTemplate.renderSlide) {
+        throw new Error(`Invalid template: ${randomFlashSaleTemplate.id}`);
+      }
+      console.log('Rendering slide for template:', flashSaleTemplate.id);
+
+      // Validate slide data
+      if (!newFlashSaleSlide.title || !newFlashSaleSlide.description) {
+        console.warn('Incomplete slide data, using fallbacks', newFlashSaleSlide);
+        newFlashSaleSlide.title = newFlashSaleSlide.title || 'Special Offer';
+        newFlashSaleSlide.description = newFlashSaleSlide.description || 'Delight your senses with our special offer.';
+        newFlashSaleSlide.offer = newFlashSaleSlide.offer || '40';
+        newFlashSaleSlide.validUntil = newFlashSaleSlide.validUntil || '10 July 2025';
+        newFlashSaleSlide.pricesStartingAt = newFlashSaleSlide.pricesStartingAt || '399';
+        newFlashSaleSlide.footer = newFlashSaleSlide.footer || 'bitrox.tech';
+        newFlashSaleSlide.websiteUrl = newFlashSaleSlide.websiteUrl || 'https://bitrox.tech';
+        newFlashSaleSlide.imagesUrl = newFlashSaleSlide.imagesUrl || 'https://via.placeholder.com/1080';
+      }
+
+      let flashSaleSlideElement: JSX.Element;
+      try {
+        flashSaleSlideElement = flashSaleTemplate.renderSlide(
+          newFlashSaleSlide,
+          true,
+          data.logo || 'https://via.placeholder.com/150',
+          {
+            logoColors: colors.logoColors,
+            imageColors: colors.imageColors,
+            glowColor: colors.glowColor,
+            complementaryGlowColor: colors.complementaryTextColor,
+            ensureContrast: defaultColors.ensureContrast,
+            vibrantLogoColor,
+            vibrantTextColor,
+            footerColor,
+            backgroundColor,
+            typography,
+            graphicStyle,
+            materialTheme,
+          }
+        );
+        console.log('Slide Element Rendered:', flashSaleSlideElement.type, Object.keys(flashSaleSlideElement.props));
+      } catch (error) {
+        console.error('Error rendering slide:', error);
+        throw new Error(`Failed to render slide: ${(error as Error).message}`);
+      }
+
+      tempRootFlashSale = createRoot(tempContainerFlashSale);
+      try {
+        tempRootFlashSale.render(flashSaleSlideElement);
+        console.log('Slide Element Mounted');
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        screenshotUrl2 = await captureAndUploadScreenshot(tempContainerFlashSale, data.productName ? data.productName : "flash-sale-post", type, {
+          uploadImageToCloudinary: mutations.uploadImageToCloudinary,
+        });
+        console.log('Screenshot2 URL:', screenshotUrl2);
+      } catch (error) {
+        console.error('Error during rendering or screenshot:', error);
+        throw new Error(`Failed to render or capture screenshot: ${(error as Error).message}`);
+      }
+    } catch (error) {
+      const errorMessage = (error as any)?.data?.message || `An unexpected error occurred while generating the Flash Sale post: ${(error as Error).message}`;
+      console.error('Error in generateFlashSalePost:', error);
+      showAlert({
+        type: 'error',
+        title: 'Failed to Generate Flash Sale Post',
+        message: errorMessage,
+      });
+      throw error;
+    }
+
+    // Save post with screenshot
+    if (screenshotUrl || screenshotUrl1 || screenshotUrl2) {
+      const savePostResult = await mutations.savePosts({
+        postContentId: data._id || "",
+        topic: data?.productName || "Product Post",
+        type: 'product',
+        status: 'success',
+        images: [{ url: screenshotUrl || '', label: 'Product' }, { url: screenshotUrl1 || '', label: 'Offer' }, { url: screenshotUrl2 || '', label: 'FlashSale' }],
+        contentId: data._id,
+        contentType: 'ProductContent',
+      }).unwrap();
+      dispatch(setCsrfToken({
+        token: savePostResult.data.csrfToken,
+        expiresAt: savePostResult.data.expiresAt,
+      }));
+      console.log('Post saved:', savePostResult);
+      newPost.images = [{ url: screenshotUrl || '', label: 'Product' }, { url: screenshotUrl1 || '', label: 'Offer' }, { url: screenshotUrl2 || '', label: 'FlashSale' }];
+      newPost.postId = savePostResult.data.user._id
+    } else {
+      console.warn('No screenshot URL generated, marking post as error');
+      newPost.status = 'error';
+    }
+
+    console.log('Post Generated Successfully:', newPost, newPost1, newPost2);
+    return { newPost, newPost1, newPost2 };
+  } catch (error) {
+    const errorMessage = (error as any)?.data?.message || `An unexpected error occurred while generating the Product post: ${(error as Error).message}`;
+    console.error('Error in generateProductPost:', error);
+    showAlert({
+      type: 'error',
+      title: 'Failed to Generate Product Post',
+      message: errorMessage,
+    });
+    throw error;
+  } finally {
+    if (tempContainerColor && document.body.contains(tempContainerColor)) {
+      if (tempRootColor) {
+        tempRootColor;
+      }
+      document.body.removeChild(tempContainerColor);
+    }
+    if (tempContainerProduct && document.body.contains(tempContainerProduct)) {
+      if (tempRootProduct) {
+        tempRootProduct.unmount();
+      }
+      document.body.removeChild(tempContainerProduct);
+    }
+  }
+}
