@@ -34,7 +34,7 @@ export interface Colors {
     onBackground: string;
     onSurface: string;
   };
-  
+
 }
 
 export interface ImageTemplate {
@@ -63,14 +63,14 @@ export interface ImageTemplate {
 //       const logoColors = colors?.logoColors || ['#FF5733', '#33FF57', '#5733FF', '#FFFFFF', '#000000'];
 //       const imageColors = colors?.imageColors || ['#A0A0A0', '#D3D3D3', '#4A4A4A', '#FFFFFF', '#000000'];
 //       const ensureContrast = colors?.ensureContrast ?? ((textColor: string) => textColor);
-        
-  
+
+
 //       // Select colors for styling
 //       const backgroundColor = imageColors[0]; 
 //       const textColor = logoColors[0];
 //       const accentColor = logoColors[1]; 
 //       const footerColor = imageColors[2]; 
-  
+
 //       // Ensure text readability
 //       const adjustedTextColor = ensureContrast(textColor, backgroundColor);
 //     const adjustedFooterColor = ensureContrast(footerColor, backgroundColor);
@@ -98,7 +98,7 @@ export interface ImageTemplate {
 //                 {/* Title */}
 //                 <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center uppercase" style={{ color: adjustedTextColor }}>
 //                     {slide.title}
-                    
+
 //                 </h2>
 
 //                 {/* Description */}
@@ -145,7 +145,7 @@ export interface ImageTemplate {
 //                     src={defaultLogoUrl}
 //                     alt="Logo"
 //                     className="absolute top-4 right-4 w-32 h-12 object-contain z-20 md:w-40 md:h-16"
-                    
+
 //                 />
 //             )}
 //             <div className="relative z-10 flex flex-col items-center justify-center p-6 md:p-8">
@@ -223,7 +223,7 @@ export interface ImageTemplate {
 //             src={defaultLogoUrl}
 //             alt="Logo"
 //             className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-           
+
 //           />
 //         )}
 
@@ -365,7 +365,7 @@ export interface ImageTemplate {
 //           >
 //             {slide.description}
 //           </p>
-          
+
 //           {/* Brain visualization with ASI node icons */}
 //           <div className="relative mt-12 w-96 h-96">
 //             {/* This would be where the brain network visualization appears */}
@@ -1326,7 +1326,7 @@ export const ImageTemplate17: ImageTemplate = {
     {
       title: 'CREATIVE FLOW',
       description: 'Where imagination takes flight',
-      imageUrl: '/images/background20.jpg',
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1747125324/hdwulgzqmmmqtpxzsuoh.png',
       footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
@@ -1352,11 +1352,11 @@ export const ImageTemplate17: ImageTemplate = {
 
     // Compute font colors based on complementaryGlowColor
     const titleColor = ensureContrast(
-      chroma(complementaryGlowColor).luminance(0.8).hex(), 
+      chroma(complementaryGlowColor).luminance(0.8).hex(),
       hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
     );
     const descriptionColor = ensureContrast(
-      chroma(complementaryGlowColor).luminance(0.7).hex(),   
+      chroma(complementaryGlowColor).luminance(0.7).hex(),
       hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
     );
     const footerColor = ensureContrast(
@@ -1378,6 +1378,8 @@ export const ImageTemplate17: ImageTemplate = {
           fontFamily: typography.fontFamily,
           fontWeight: typography.fontWeight,
           boxShadow: `0 0 20px ${chroma(glowColor).alpha(0.5).css()}`,
+          mixBlendMode: 'overlay',
+          opacity: 0.8,
         }}
       >
         {/* Floating Elements (Blurred Circles) */}
@@ -1410,10 +1412,7 @@ export const ImageTemplate17: ImageTemplate = {
             src={defaultLogoUrl}
             alt="Logo"
             className="absolute top-8 right-8 w-48 h-24 object-contain z-30"
-            style={{
-              filter: graphicStyle.filter,
-              boxShadow: `0 0 15px ${chroma(complementaryGlowColor).luminance(0.7).alpha(0.7).css()}`,
-            }}
+
           />
         )}
 
@@ -1457,7 +1456,7 @@ export const ImageTemplate17: ImageTemplate = {
 
         {/* Footer with Complementary Color */}
         <div
-          className="relative z-10 flex justify-end p-6"
+          className="absolute bottom-8 w-full flex justify-between items-center z-10 px-12"
           style={{
             backgroundColor: chroma(materialTheme.surface).alpha(0.2).css(),
             borderRadius: graphicStyle.borderRadius,
@@ -1473,8 +1472,15 @@ export const ImageTemplate17: ImageTemplate = {
               textShadow: `0 2px 4px ${chroma(complementaryGlowColor).alpha(0.3).css()}`,
             }}
           >
-            @{slide.footer}
+            @{slide.websiteUrl}
           </a>
+
+          <p
+            className="text-xl font-medium tracking-wide"
+            style={{ color: chroma(footerColor).alpha(0.9).css() }}
+          >
+            @{slide.footer}
+          </p>
         </div>
       </div>
     );
@@ -1491,7 +1497,7 @@ export const ImageTemplate18: ImageTemplate = {
       title: 'SIMPLICITY',
       description: 'Less is more',
       imageUrl: '/images/background15.jpg',
-       footer: 'bitrox.tech',
+      footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
@@ -1527,7 +1533,7 @@ export const ImageTemplate18: ImageTemplate = {
         }}
       >
         {/* Left panel - Image or Color */}
-        <div 
+        <div
           className="w-1/2 h-full relative"
           style={{
             backgroundImage: hasImage ? `url(${slide.imageUrl})` : `linear-gradient(135deg, ${logoColors.primary} 0%, ${logoColors.secondary} 100%)`,
@@ -1537,7 +1543,7 @@ export const ImageTemplate18: ImageTemplate = {
         >
           {/* Subtle overlay for better text contrast if needed */}
           {hasImage && (
-            <div 
+            <div
               className="absolute inset-0"
               style={{
                 backgroundColor: chroma(materialTheme.background).alpha(0.1).css(),
@@ -1562,11 +1568,11 @@ export const ImageTemplate18: ImageTemplate = {
           {/* Content */}
           <div className="flex-1 flex flex-col justify-center">
             {/* Accent line */}
-            <div 
+            <div
               className="w-16 h-1 mb-8"
               style={{ backgroundColor: accentColor }}
             />
-            
+
             <h2
               className={cn('font-bold mb-6', {
                 'text-6xl': titleLength <= 15,
@@ -1576,7 +1582,7 @@ export const ImageTemplate18: ImageTemplate = {
             >
               {slide.title}
             </h2>
-            
+
             <p
               className="text-2xl font-light"
               style={{ color: chroma(textColor).alpha(0.8).css() }}
@@ -1592,7 +1598,7 @@ export const ImageTemplate18: ImageTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg"
-               style={{ color: chroma(accentColor).alpha(0.8).css() }}
+              style={{ color: chroma(accentColor).alpha(0.8).css() }}
             >
               {slide.footer}
             </a>
@@ -1612,8 +1618,8 @@ export const ImageTemplate19: ImageTemplate = {
     {
       title: 'BOLD VISION',
       description: 'Breaking boundaries with design',
-      imageUrl: '/images/background12.jpg',
-       footer: 'bitrox.tech',
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1747125324/hdwulgzqmmmqtpxzsuoh.png',
+      footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
@@ -1649,50 +1655,10 @@ export const ImageTemplate19: ImageTemplate = {
           overflow: 'hidden',
         }}
       >
-        {/* Geometric shapes in background */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Circle */}
-          <div 
-            className="absolute w-96 h-96 rounded-full"
-            style={{ 
-              backgroundColor: primaryColor,
-              top: '10%',
-              right: '-10%',
-              opacity: 0.8,
-            }}
-          />
-          
-          {/* Rectangle */}
-          <div 
-            className="absolute w-64 h-64 transform rotate-45"
-            style={{ 
-              backgroundColor: secondaryColor,
-              bottom: '15%',
-              left: '-5%',
-              opacity: 0.8,
-            }}
-          />
-          
-          {/* Triangle (CSS triangle) */}
-          <div 
-            className="absolute"
-            style={{ 
-              width: 0,
-              height: 0,
-              borderLeft: '200px solid transparent',
-              borderRight: '200px solid transparent',
-              borderBottom: `350px solid ${chroma(primaryColor).darken(0.5).hex()}`,
-              top: '60%',
-              right: '20%',
-              opacity: 0.6,
-              transform: 'rotate(15deg)',
-            }}
-          />
-        </div>
 
         {/* Image overlay if available */}
         {hasImage && (
-          <div 
+          <div
             className="absolute inset-0 z-10"
             style={{
               backgroundImage: `url(${slide.imageUrl})`,
@@ -1708,7 +1674,7 @@ export const ImageTemplate19: ImageTemplate = {
         <div className="relative z-20 flex flex-col h-full p-16">
           {/* Logo */}
           {addLogo && (
-            <div className="mb-auto">
+            <div className="absolute top-8 right-8 z-20">
               <img
                 src={defaultLogoUrl}
                 alt="Logo"
@@ -1728,7 +1694,7 @@ export const ImageTemplate19: ImageTemplate = {
             >
               {slide.title}
             </h2>
-            
+
             <p
               className="text-3xl font-medium max-w-2xl"
               style={{ color: chroma(textColor).alpha(0.9).css() }}
@@ -1738,21 +1704,22 @@ export const ImageTemplate19: ImageTemplate = {
           </div>
 
           {/* Footer */}
-          <div className="mt-auto flex justify-between items-center">
-            <div 
-              className="h-2 w-32"
-              style={{ color: chroma(primaryColor).alpha(0.8).css() }}
-            />
-            
+          <div className="absolute bottom-8 w-full flex justify-between items-center z-10 px-8">
             <a
               href={slide.websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xl font-bold"
-               style={{ color: chroma(primaryColor).alpha(0.8).css() }}
+              className="text-xl font-medium tracking-wide hover:underline"
+              style={{ color: chroma(textColor).alpha(0.9).css() }}
             >
-              {slide.footer}
+              {slide.websiteUrl}
             </a>
+            <p
+              className="text-xl font-medium tracking-wide"
+              style={{ color: chroma(textColor).alpha(0.9).css(), paddingRight: "102px" }}
+            >
+              @{slide.footer}
+            </p>
           </div>
         </div>
       </div>
@@ -1769,7 +1736,7 @@ export const ImageTemplate20: ImageTemplate = {
     {
       title: 'TIMELESS',
       description: 'Inspired by the classics',
-      imageUrl: '/images/',
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1747125324/hdwulgzqmmmqtpxzsuoh.png',
       footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
@@ -1795,7 +1762,7 @@ export const ImageTemplate20: ImageTemplate = {
     const textColor = chroma('#2a2522').hex(); // Vintage dark brown
 
     const titleColor = ensureContrast(
-      chroma(complementaryGlowColor).luminance(0.8).hex(), 
+      chroma(complementaryGlowColor).luminance(0.8).hex(),
       hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
     );
     const descriptionColor = ensureContrast(
@@ -1820,10 +1787,11 @@ export const ImageTemplate20: ImageTemplate = {
           fontFamily: typography.fontFamily,
           color: textColor,
           overflow: 'hidden',
+
         }}
       >
         {/* Vintage texture overlay */}
-        <div 
+        <div
           className="absolute inset-0"
           style={{
             backgroundImage: 'url(https://images.unsplash.com/photo-1581377342297-a09d6bf2eea1?q=80&w=1000)',
@@ -1834,7 +1802,7 @@ export const ImageTemplate20: ImageTemplate = {
         />
 
         {/* Vintage border */}
-        <div 
+        <div
           className="absolute inset-12 border-8 border-double"
           style={{ borderColor: chroma(primaryColor).alpha(0.3).css() }}
         />
@@ -1849,11 +1817,12 @@ export const ImageTemplate20: ImageTemplate = {
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 filter: 'sepia(0.3) contrast(0.9)',
+                opacity: 0.7,
               }}
             />
-            
+
             {/* Vignette effect */}
-            <div 
+            <div
               className="absolute inset-0"
               style={{
                 boxShadow: 'inset 0 0 100px rgba(0,0,0,0.5)',
@@ -1866,13 +1835,8 @@ export const ImageTemplate20: ImageTemplate = {
         <div className="relative z-10 flex flex-col h-full p-32">
           {/* Logo */}
           {addLogo && (
-            <div className="mb-12 flex justify-center">
-              <img
-                src={defaultLogoUrl}
-                alt="Logo"
-                className="w-40 h-20 object-contain"
-                style={{ filter: 'sepia(0.3)' }}
-              />
+            <div className="absolute top-22 right-13 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
             </div>
           )}
 
@@ -1893,21 +1857,21 @@ export const ImageTemplate20: ImageTemplate = {
                 'text-5xl': titleLength > 10 && titleLength <= 15,
                 'text-4xl': titleLength > 15,
               })}
-              style={{ 
+              style={{
                 color: textColor,
                 letterSpacing: '0.15em',
               }}
             >
               {slide.title}
             </h2>
-            
+
             <p
               className="text-2xl font-normal mx-auto max-w-xl"
               style={{
-              color: descriptionColor,
-              fontSize: `calc(${typography.fontSize} * 0.6)`,
-              textShadow: `0 2px 4px ${chroma(complementaryGlowColor).alpha(0.3).css()}`,
-            }}
+                color: descriptionColor,
+                fontSize: `calc(${typography.fontSize} * 0.6)`,
+                textShadow: `0 2px 4px ${chroma(complementaryGlowColor).alpha(0.3).css()}`,
+              }}
             >
               {slide.description}
             </p>
@@ -1923,18 +1887,26 @@ export const ImageTemplate20: ImageTemplate = {
           </div>
 
           {/* Footer */}
-          <div className="mt-auto text-center">
+          <div className="mt-auto flex justify-between items-center ">
             <a
               href={slide.websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg"
-              style={{ color: chroma(primaryColor).alpha(0.8).css(),
-                letterSpacing: '0.1em', }}
-              
+              style={{
+                color: chroma(titleColor).alpha(0.8).css(),
+                letterSpacing: '0.1em',
+              }}
+
             >
-              {slide.footer}
+              {slide.websiteUrl}
             </a>
+            <p
+              className="text-xl font-medium tracking-wide"
+              style={{ color: chroma(titleColor).alpha(0.9).css() }}
+            >
+              @{slide.footer}
+            </p>
           </div>
         </div>
       </div>
@@ -1951,8 +1923,8 @@ export const ImageTemplate21: ImageTemplate = {
     {
       title: 'NATURAL HARMONY',
       description: 'In balance with the world around us',
-      imageUrl: '/images/background5.jpg',
-       footer: 'bitrox.tech',
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1747125324/hdwulgzqmmmqtpxzsuoh.png',
+      footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
@@ -2005,36 +1977,36 @@ export const ImageTemplate21: ImageTemplate = {
         {/* Organic shapes */}
         <div className="absolute inset-0">
           {/* Leaf-like shape */}
-          <svg 
+          <svg
             className="absolute top-0 right-0 w-1/2 h-1/2 opacity-10"
-            viewBox="0 0 200 200" 
+            viewBox="0 0 200 200"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path 
+            <path
               fill={usePrimary}
-              d="M44.7,-76.4C58.9,-69.8,71.8,-59.2,79.6,-45.3C87.4,-31.3,90.2,-14.1,88.1,2C86,18.2,79,33.3,69.3,46.5C59.7,59.7,47.4,71,33.2,77.7C19,84.3,2.8,86.3,-12.4,83.5C-27.7,80.8,-42,73.3,-54.3,63C-66.7,52.7,-77.1,39.7,-82.6,24.7C-88.1,9.7,-88.7,-7.3,-83.8,-22C-78.9,-36.7,-68.4,-49.2,-55.6,-56.1C-42.7,-63,-27.5,-64.3,-13.2,-70.5C1.1,-76.7,30.5,-83,44.7,-76.4Z" 
-              transform="translate(100 100)" 
+              d="M44.7,-76.4C58.9,-69.8,71.8,-59.2,79.6,-45.3C87.4,-31.3,90.2,-14.1,88.1,2C86,18.2,79,33.3,69.3,46.5C59.7,59.7,47.4,71,33.2,77.7C19,84.3,2.8,86.3,-12.4,83.5C-27.7,80.8,-42,73.3,-54.3,63C-66.7,52.7,-77.1,39.7,-82.6,24.7C-88.1,9.7,-88.7,-7.3,-83.8,-22C-78.9,-36.7,-68.4,-49.2,-55.6,-56.1C-42.7,-63,-27.5,-64.3,-13.2,-70.5C1.1,-76.7,30.5,-83,44.7,-76.4Z"
+              transform="translate(100 100)"
             />
           </svg>
-          
+
           {/* Wave-like shape */}
-          <svg 
+          <svg
             className="absolute bottom-0 left-0 w-full h-1/3 opacity-10"
-            viewBox="0 0 1200 120" 
+            viewBox="0 0 1200 120"
             preserveAspectRatio="none"
           >
-            <path 
-              d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" 
-              opacity=".25" 
+            <path
+              d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
+              opacity=".25"
               fill={useSecondary}
             />
-            <path 
-              d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" 
-              opacity=".5" 
+            <path
+              d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z"
+              opacity=".5"
               fill={usePrimary}
             />
-            <path 
-              d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" 
+            <path
+              d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"
               fill={useSecondary}
             />
           </svg>
@@ -2052,9 +2024,9 @@ export const ImageTemplate21: ImageTemplate = {
                 opacity: 0.8,
               }}
             />
-            
+
             {/* Natural gradient overlay */}
-            <div 
+            <div
               className="absolute inset-0"
               style={{
                 background: `linear-gradient(to bottom, ${chroma(usePrimary).alpha(0.4).css()} 0%, transparent 100%)`,
@@ -2067,7 +2039,7 @@ export const ImageTemplate21: ImageTemplate = {
         <div className="relative z-20 flex flex-col h-full p-16">
           {/* Logo */}
           {addLogo && (
-            <div className="mb-auto">
+            <div className="absolute top-8 right-8 z-20">
               <img
                 src={defaultLogoUrl}
                 alt="Logo"
@@ -2079,28 +2051,28 @@ export const ImageTemplate21: ImageTemplate = {
           {/* Main content */}
           <div className="mb-auto mt-auto max-w-2xl">
             {/* Accent element */}
-            <div 
+            <div
               className="w-24 h-1 mb-8 rounded-full"
               style={{ backgroundColor: accentColor }}
             />
-            
+
             <h2
               className={cn('font-semibold mb-6', {
                 'text-6xl': titleLength <= 15,
                 'text-5xl': titleLength > 15 && titleLength <= 25,
                 'text-4xl': titleLength > 25,
               })}
-              style={{ 
+              style={{
                 color: hasImage ? '#fff' : textColor,
                 textShadow: hasImage ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
               }}
             >
               {slide.title}
             </h2>
-            
+
             <p
               className="text-2xl font-light"
-              style={{ 
+              style={{
                 color: hasImage ? chroma('#fff').alpha(0.9).css() : chroma(textColor).alpha(0.8).css(),
                 textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
               }}
@@ -2110,18 +2082,24 @@ export const ImageTemplate21: ImageTemplate = {
           </div>
 
           {/* Footer */}
-          <div className="mt-auto">
+          <div className="mt-auto flex justify-between">
             <a
               href={slide.websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg inline-flex items-center"
-              style={{ color: hasImage ? chroma('#fff').alpha(0.8).css():  chroma(accentColor).alpha(0.8).css(), textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.3)' : 'none', }}
-             
+              style={{ color: hasImage ? chroma('#fff').alpha(0.8).css() : chroma(accentColor).alpha(0.8).css(), textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.3)' : 'none', }}
+
             >
               <span className="mr-2">•</span>
-              {slide.footer}
+              {slide.websiteUrl}
             </a>
+            <p
+            className="text-lg inline-flex items-center"
+            style={{ color: hasImage ? chroma('#fff').alpha(0.8).css() : chroma(accentColor).alpha(0.8).css(), textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.3)' : 'none', }}
+          >
+            @{slide.footer}
+          </p>
           </div>
         </div>
       </div>
@@ -2138,8 +2116,8 @@ export const ImageTemplate22: ImageTemplate = {
     {
       title: 'DIGITAL FRONTIER',
       description: 'Exploring the future of technology',
-      imageUrl: '/images/background17.jpg',
-       footer: 'bitrox.tech',
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1747125324/hdwulgzqmmmqtpxzsuoh.png',
+      footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
@@ -2180,24 +2158,24 @@ export const ImageTemplate22: ImageTemplate = {
         <div className="absolute inset-0">
           {/* Horizontal lines */}
           {Array.from({ length: 20 }).map((_, i) => (
-            <div 
+            <div
               key={`h-${i}`}
               className="absolute w-full h-px"
-              style={{ 
-                top: `${(i + 1) * 5}%`, 
+              style={{
+                top: `${(i + 1) * 5}%`,
                 backgroundColor: gridColor,
                 boxShadow: i % 5 === 0 ? `0 0 8px ${gridColor}` : 'none',
               }}
             />
           ))}
-          
+
           {/* Vertical lines */}
           {Array.from({ length: 20 }).map((_, i) => (
-            <div 
+            <div
               key={`v-${i}`}
               className="absolute h-full w-px"
-              style={{ 
-                left: `${(i + 1) * 5}%`, 
+              style={{
+                left: `${(i + 1) * 5}%`,
                 backgroundColor: gridColor,
                 boxShadow: i % 5 === 0 ? `0 0 8px ${gridColor}` : 'none',
               }}
@@ -2207,18 +2185,18 @@ export const ImageTemplate22: ImageTemplate = {
 
         {/* Glowing accent elements */}
         <div className="absolute inset-0">
-          <div 
+          <div
             className="absolute w-64 h-64 rounded-full blur-3xl"
-            style={{ 
+            style={{
               backgroundColor: chroma(primaryColor).alpha(0.2).css(),
               top: '20%',
               right: '10%',
             }}
           />
-          
-          <div 
+
+          <div
             className="absolute w-96 h-96 rounded-full blur-3xl"
-            style={{ 
+            style={{
               backgroundColor: chroma(secondaryColor).alpha(0.15).css(),
               bottom: '10%',
               left: '5%',
@@ -2246,12 +2224,12 @@ export const ImageTemplate22: ImageTemplate = {
         <div className="relative z-20 flex flex-col h-full p-16">
           {/* Logo */}
           {addLogo && (
-            <div className="mb-auto">
+            <div className="absolute top-8 right-8 z-20">
               <img
                 src={defaultLogoUrl}
                 alt="Logo"
                 className="w-40 h-20 object-contain"
-                style={{ 
+                style={{
                   filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.5))',
                 }}
               />
@@ -2262,25 +2240,25 @@ export const ImageTemplate22: ImageTemplate = {
           <div className="mb-auto mt-auto max-w-2xl">
             {/* Tech-inspired decorative element */}
             <div className="flex items-center mb-8">
-              <div 
+              <div
                 className="w-12 h-1"
                 style={{ backgroundColor: primaryColor, boxShadow: `0 0 10px ${primaryColor}` }}
               />
-              <div 
+              <div
                 className="ml-4 text-sm font-mono opacity-70"
                 style={{ color: primaryColor }}
               >
-                01 // VISION
+              
               </div>
             </div>
-            
+
             <h2
               className={cn('font-bold uppercase tracking-wider mb-6', {
                 'text-6xl': titleLength <= 15,
                 'text-5xl': titleLength > 15 && titleLength <= 25,
                 'text-4xl': titleLength > 25,
               })}
-              style={{ 
+              style={{
                 color: textColor,
                 textShadow: `0 0 10px ${chroma(primaryColor).alpha(0.5).css()}`,
                 letterSpacing: '0.05em',
@@ -2288,10 +2266,10 @@ export const ImageTemplate22: ImageTemplate = {
             >
               {slide.title}
             </h2>
-            
+
             <p
               className="text-2xl font-light"
-              style={{ 
+              style={{
                 color: chroma(textColor).alpha(0.8).css(),
               }}
             >
@@ -2301,35 +2279,24 @@ export const ImageTemplate22: ImageTemplate = {
 
           {/* Footer */}
           <div className="mt-auto flex justify-between items-center">
-            <div className="flex items-center">
-              <div 
-                className="w-3 h-3 rounded-full mr-3"
-                style={{ 
-                  backgroundColor: primaryColor,
-                  boxShadow: `0 0 10px ${primaryColor}`,
-                }}
-              />
-              <div 
-                className="w-3 h-3 rounded-full mr-3"
-                style={{ 
-                  backgroundColor: secondaryColor,
-                  boxShadow: `0 0 10px ${secondaryColor}`,
-                }}
-              />
-            </div>
             
+
             <a
               href={slide.websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg font-mono"
-              style={{ 
-                color: chroma(primaryColor).alpha(0.8).css(),
-                textShadow: `0 0 8px ${chroma(primaryColor).alpha(0.5).css()}`,
-              }}
+              style={{ color: chroma(textColor).alpha(0.9).css() }}
             >
-              @{slide.footer}
+              {slide.websiteUrl}
             </a>
+
+            <p
+            className="text-xl font-medium tracking-wide"
+            style={{ color: chroma(textColor).alpha(0.9).css() }}
+          >
+            @{slide.footer}
+          </p>
           </div>
         </div>
       </div>
@@ -2338,28 +2305,28 @@ export const ImageTemplate22: ImageTemplate = {
 };
 
 export const imageTemplates: ImageTemplate[] = [
-    // ImageTemplate1,
- 
-    // ImageTemplate3,
-    // ImageTemplate4,
-    // ImageTemplate5,
-    // ImageTemplate6,
-    // ImageTemplate7,
-    // ImageTemplate8,
-    // ImageTemplate9,
+  // ImageTemplate1,
 
-    // ImageTemplate11,
-    // ImageTemplate12,
-    // ImageTemplate13,
-    // ImageTemplate14,
-    // ImageTemplate15,
-    // ImageTemplate16
+  // ImageTemplate3,
+  // ImageTemplate4,
+  // ImageTemplate5,
+  // ImageTemplate6,
+  // ImageTemplate7,
+  // ImageTemplate8,
+  // ImageTemplate9,
 
-    ImageTemplate17,
-    ImageTemplate18,
-    ImageTemplate19,
-    ImageTemplate20,
-    ImageTemplate21,
-    ImageTemplate22
+  // ImageTemplate11,
+  // ImageTemplate12,
+  // ImageTemplate13,
+  // ImageTemplate14,
+  // ImageTemplate15,
+  // ImageTemplate16
+
+  ImageTemplate17,
+  ImageTemplate18,
+  ImageTemplate19,
+  ImageTemplate20,
+  ImageTemplate21,
+  ImageTemplate22
 ];
 

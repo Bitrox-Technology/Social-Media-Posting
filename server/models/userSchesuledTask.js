@@ -21,8 +21,8 @@ const scheduleTaskSchema = new mongoose.Schema(
       enum: PLATFORM_ENUM,
       default: 'linkedin',
     },
-    imageUrl: {
-      type: String,
+    imagesUrl: {
+      type: [String],
       trim: true,
     },
     title: {

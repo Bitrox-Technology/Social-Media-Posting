@@ -155,7 +155,7 @@ export const TopicSelector: React.FC = () => {
           expiresAt: saveResponse.data.csrfExpiresAt,
         }))
         console.log('Post saved successfully:', saveResponse);
-        navigate('/auto', { state: { postContentId: saveResponse.data._id, fromTopicSelector: true } });
+        navigate('/auto', { state: { postContentId: saveResponse.data.user._id, fromTopicSelector: true } });
         return;
       }
 

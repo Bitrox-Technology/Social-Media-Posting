@@ -43,6 +43,7 @@ const userSchema = new mongoose.Schema(
     isBlocked: { type: Boolean, default: false },
     refreshToken: { type: String, default: "" },
     sessionExpiry: { type: Number, default: null },
+    uniqueIdentifier: {type: String, default: ""}
 
   },
   {

@@ -230,7 +230,7 @@ export const generateImagePost = async (
   },
   dispatch: React.Dispatch<any>,
   setCsrfToken: (token: { token: string; expiresAt: string }) => void,
-  userLogo?: string,
+  userData?: any,
   brandStyle: BrandStyle = 'Modern',
   showAlert?: ReturnType<typeof useAlert>['showAlert']
 ): Promise<Post> => {
@@ -238,7 +238,7 @@ export const generateImagePost = async (
   let screenshotUrl: string | undefined;
 
   try {
-    console.log('Starting generateImagePost', { topic, postContentId, type, userLogo, brandStyle });
+    console.log('Starting generateImagePost', { topic, postContentId, type, userData, brandStyle });
 
     // Validate imageTemplates
     console.log('Available templates:', validatedImageTemplates.map(t => t.id));
@@ -260,17 +260,21 @@ export const generateImagePost = async (
     const generatedContent = contentRes.data;
     console.log('Generated content:', generatedContent);
 
-    const imageUrl = await mutations.generateImage({ prompt: topic }).unwrap();
-    console.log("Generated Image: ", imageUrl.data)
-
-    // const imageUrl = 'https://res.cloudinary.com/deuvfylc5/image/upload/v1747125324/hdwulgzqmmmqtpxzsuoh.png';
+    let imageUrl;
+    if (userData.index === 3) {
+      imageUrl = userData.productCategories[0].image;
+      console.log("Image Url", imageUrl)
+    } else {
+      imageUrl = await mutations.generateImage({ prompt: topic }).unwrap();
+      console.log("Generated Image: ", imageUrl.data)
+    }
 
     const newImageSlide: ImageContent = {
       title: generatedContent.title || randomTemplate.slides[0].title || 'Default Title',
       description: generatedContent.description || randomTemplate.slides[0].description || 'Default Description',
-      footer: randomTemplate.slides[0].footer || 'bitrox.tech',
-      websiteUrl: randomTemplate.slides[0].websiteUrl || 'https://bitrox.tech',
-      imageUrl: imageUrl.data,
+      footer: userData.uniqueIdentifier|| randomTemplate.slides[0].footer || 'bitrox.tech',
+      websiteUrl: userData.websiteUrl || randomTemplate.slides[0].websiteUrl || 'https://bitrox.tech',
+      imageUrl: userData.index === 3 ? imageUrl : imageUrl.data,
     };
 
     // Save image content
@@ -295,10 +299,11 @@ export const generateImagePost = async (
       content: newImageSlide,
       templateId: randomTemplate.id,
       status: 'success',
-      contentId: imageResult.data._id,
+      contentId: imageResult?.data?.user._id,
       contentType: 'ImageContent',
     };
-
+    
+    console.log("New Post", newPost)
     // Color extraction
     const tempContainer = document.createElement('div');
     tempContainer.style.position = 'absolute';
@@ -378,8 +383,8 @@ export const generateImagePost = async (
       const tempRoot = createRoot(tempContainer);
       tempRoot.render(
         <ColorExtractor
-          logoUrl={userLogo || '/images/Logo1.png'}
-          imageUrl={imageUrl.data}
+          logoUrl={userData.logo || '/images/Logo1.png'}
+          imageUrl={userData.index === 3 ? imageUrl: imageUrl.data}
           onColorsExtracted={(extractedColors) => {
             console.log('Extracted Colors:', extractedColors);
             resolve(extractedColors);
@@ -456,7 +461,7 @@ export const generateImagePost = async (
 
     console.log('Slide Data:', slide);
 
-    const defaultLogoUrl = userLogo || '/images/Logo1.png';
+    const defaultLogoUrl = userData.logo || '/images/Logo1.png';
 
     let slideElement: JSX.Element;
     try {
@@ -528,6 +533,7 @@ export const generateImagePost = async (
       const savePostResult = await mutations.savePosts({
         postContentId,
         topic,
+        topicSetId: userData.topicSetId,
         type: 'image',
         status: 'success',
         images: [{ url: screenshotUrl, label: 'Image Post' }],
@@ -560,7 +566,6 @@ export const generateImagePost = async (
   }
 };
 
-
 export const generateDoYouKnowPost = async (
   topic: string,
   type: 'doyouknow',
@@ -574,7 +579,7 @@ export const generateDoYouKnowPost = async (
   dispatch: React.Dispatch<any>,
   setCsrfToken: (token: { token: string; expiresAt: string }) => void,
   showAlert: ReturnType<typeof useAlert>['showAlert'],
-  userLogo?: string,
+  userData?: any,
   brandStyle: BrandStyle = 'Modern'
 ): Promise<Post> => {
   let newPost: Post;
@@ -585,7 +590,7 @@ export const generateDoYouKnowPost = async (
   let tempRootDYK: ReturnType<typeof createRoot> | null = null;
 
   try {
-    console.log(`Generating Do You Know post with topic: ${topic}, postContentId: ${postContentId}, userLogo: ${userLogo}`);
+    console.log(`Generating Do You Know post with topic: ${topic}, postContentId: ${postContentId}, userData: ${userData}`);
 
     // Validate doYouKnowTemplates
     if (!doYouKnowTemplates.length) {
@@ -604,8 +609,8 @@ export const generateDoYouKnowPost = async (
     const newDoYouKnowSlide: DoYouKnowSlide = {
       title: generatedDoYouKnowContent.title || randomDoYouKnowTemplate.slides[0].title || 'Did You Know?',
       fact: generatedDoYouKnowContent.description || randomDoYouKnowTemplate.slides[0].fact || 'Interesting fact here.',
-      footer: randomDoYouKnowTemplate.slides[0].footer || 'bitrox.tech',
-      websiteUrl: randomDoYouKnowTemplate.slides[0].websiteUrl || 'https://bitrox.tech',
+      footer: userData.uniqueIdentifier || randomDoYouKnowTemplate.slides[0].footer || 'bitrox.tech',
+      websiteUrl: userData.websiteUrl ||  randomDoYouKnowTemplate.slides[0].websiteUrl || 'https://bitrox.tech',
       imageUrl: randomDoYouKnowTemplate.slides[0].imageUrl || 'https://via.placeholder.com/1080',
       slideNumber: 1,
     };
@@ -634,7 +639,7 @@ export const generateDoYouKnowPost = async (
       content: newDoYouKnowSlide,
       templateId: randomDoYouKnowTemplate.id,
       status: 'success',
-      contentId: dykResult.data._id,
+      contentId: dykResult?.data?.user._id,
       contentType: 'DoyouknowContent',
     };
     console.log('New Post:', newPost);
@@ -761,7 +766,7 @@ export const generateDoYouKnowPost = async (
         tempRootColor = createRoot(tempContainerColor!);
         tempRootColor.render(
           <ColorExtractor
-            logoUrl={userLogo || 'https://via.placeholder.com/150'}
+            logoUrl={userData.logo || 'https://via.placeholder.com/150'}
             imageUrl={newDoYouKnowSlide.imageUrl || 'https://via.placeholder.com/1080'}
             onColorsExtracted={(extractedColors) => {
               console.log('Extracted Colors:', extractedColors);
@@ -866,7 +871,7 @@ export const generateDoYouKnowPost = async (
       doYouKnowSlideElement = doYouKnowTemplate.renderSlide(
         newDoYouKnowSlide,
         true,
-        userLogo || 'https://via.placeholder.com/150',
+        userData.logo || 'https://via.placeholder.com/150',
         {
           logoColors: colors.logoColors,
           imageColors: colors.imageColors,
@@ -913,6 +918,7 @@ export const generateDoYouKnowPost = async (
         topic,
         type: 'doyouknow',
         status: 'success',
+        topicSetId: userData.topicSetId,
         images: [{ url: screenshotUrl, label: 'Did You Know?' }],
         contentId: dykResult.data.user._id,
         contentType: 'DYKContent',
@@ -968,7 +974,7 @@ export const generateCarouselPost = async (
   dispatch: React.Dispatch<any>,
   setCsrfToken: (token: { token: string; expiresAt: string }) => void,
   showAlert: ReturnType<typeof useAlert>['showAlert'],
-  userLogo?: string,
+  userData?: any,
   brandStyle: BrandStyle = 'Modern'
 ): Promise<Post> => {
   let newPost: Post;
@@ -976,7 +982,7 @@ export const generateCarouselPost = async (
   let tempRoot: ReturnType<typeof createRoot> | null = null;
 
   try {
-    console.log(`Generating carousel post with topic: ${topic}, postContentId: ${postContentId}`);
+    console.log(`Generating carousel post with topic: ${topic}, postContentId: ${postContentId} , userData : ${userData}`);
 
     // Validate carouselTemplates
     if (!carouselTemplates.length) {
@@ -1013,8 +1019,8 @@ export const generateCarouselPost = async (
         title: content.title || slide.title || '',
         description: formattedDescription,
         imageUrl: slide.imageUrl || 'https://via.placeholder.com/1080',
-        footer: slide.footer || 'example',
-        websiteUrl: slide.websiteUrl || 'https://example.com',
+        footer: userData.uniqueIdentifier || slide.footer || 'example',
+        websiteUrl: userData.websiteUrl || slide.websiteUrl || 'https://example.com',
       };
     });
     console.log('New Slides:', newSlides);
@@ -1050,7 +1056,7 @@ export const generateCarouselPost = async (
       })),
       templateId: randomCarouselTemplate.id,
       status: 'success',
-      contentId: carouselResult.data._id,
+      contentId: carouselResult?.data?.user._id,
       contentType: 'CarouselContent',
     };
     console.log('New Post:', newPost);
@@ -1078,7 +1084,7 @@ export const generateCarouselPost = async (
 
     const imageUrls = newSlides
       .map((slide) => slide.imageUrl || 'https://via.placeholder.com/1080')
-      .concat(userLogo || 'https://via.placeholder.com/150');
+      .concat(userData.logo || 'https://via.placeholder.com/150');
     console.log('Preloading images:', imageUrls);
     await preloadImages(imageUrls);
     console.log('Images preloaded');
@@ -1185,7 +1191,7 @@ export const generateCarouselPost = async (
         tempRoot = createRoot(tempContainer!);
         tempRoot.render(
           <ColorExtractor
-            logoUrl={userLogo || 'https://via.placeholder.com/150'}
+            logoUrl={userData.logo || 'https://via.placeholder.com/150'}
             imageUrls={newSlides.map((slide) => slide.imageUrl || 'https://via.placeholder.com/1080')}
             onColorsExtracted={(extractedColors) => {
               console.log('Extracted Colors:', extractedColors);
@@ -1300,7 +1306,7 @@ export const generateCarouselPost = async (
         slideElement = template.renderSlide(
           { ...slide, imageUrl: slide.imageUrl || 'https://via.placeholder.com/1080' },
           true,
-          userLogo || 'https://via.placeholder.com/150',
+          userData.logo || 'https://via.placeholder.com/150',
           {
             logoColors: validatedColors.logoColors,
             imageColors: slideImageColors,
@@ -1414,6 +1420,7 @@ export const generateCarouselPost = async (
       let savePosts = await mutations.savePosts({
         postContentId,
         topic,
+        topicSetId: userData.topicSetId,
         type: 'carousel',
         status: 'success',
         images,
@@ -1456,6 +1463,7 @@ type FestivalData = {
   description?: string;
   festivalDate?: string;
   websiteUrl?: string;
+  uniqueIdentifier?: string;
   imageUrl?: string;
   logo?: string
 };
@@ -1493,7 +1501,7 @@ export const generateFestivalPost = async (
       title: data.festivalName || randomFestivalTemplate.slides[0].title,
       description: data.description || randomFestivalTemplate.slides[0].description || 'Festival of Lightening.',
       date: data.festivalDate || randomFestivalTemplate.slides[0].date,
-      footer: randomFestivalTemplate.slides[0].footer || 'bitrox.tech',
+      footer: data.uniqueIdentifier || randomFestivalTemplate.slides[0].footer || 'bitrox.tech',
       websiteUrl: data.websiteUrl || 'https://bitrox.tech',
       imageUrl: data.imageUrl || randomFestivalTemplate.slides[0].imageUrl || 'https://via.placeholder.com/1080',
     };
@@ -1785,6 +1793,7 @@ export const generateFestivalPost = async (
         postContentId: data._id || "",
         topic: data?.festivalName || "festival Post",
         type: 'festival',
+        topicSetId: "",
         status: 'success',
         images: [{ url: screenshotUrl, label: 'Festival' }],
         contentId: data._id,
@@ -1833,7 +1842,7 @@ type ProductData = {
   _id?: string;
   productName: string,
   description: string,
-  footer: string,
+  uniqueIdentifier: string,
   websiteUrl: string,
   price: string,
   postTypes: [],
@@ -1885,7 +1894,7 @@ export const generateProductPost = async (
       description: data.description || randomProductTemplate.slides[0].description,
       price: data.price || randomProductTemplate.slides[0].price,
       websiteUrl: data.websiteUrl || 'https://bitrox.tech',
-      footer: data.footer || randomProductTemplate.slides[0].footer || 'bitrox.tech',
+      footer: data.uniqueIdentifier || randomProductTemplate.slides[0].footer || 'bitrox.tech',
       imagesUrl: data.imagesUrl || randomProductTemplate.slides[0].imagesUrl,
     };
     console.log('New Product Slide:', newProductSlide);
@@ -2187,7 +2196,7 @@ export const generateProductPost = async (
         offer: (data.discount && data.discount.percentage) || randomOfferTemplate.slides[0].offer,
         description: (data.discount && data.discount.description) || randomOfferTemplate.slides[0].description,
         websiteUrl: data.websiteUrl || 'https://bitrox.tech',
-        footer: data.footer || randomOfferTemplate.slides[0].footer || 'bitrox.tech',
+        footer: data.uniqueIdentifier || randomOfferTemplate.slides[0].footer || 'bitrox.tech',
         imagesUrl: data.imagesUrl || randomOfferTemplate.slides[0].imagesUrl,
       };
       console.log('New Product Slide:', newOfferSlide);
@@ -2302,7 +2311,7 @@ export const generateProductPost = async (
         pricesStartingAt: (data.flashSale && data.flashSale.pricesStartingAt) || randomFlashSaleTemplate.slides[0].pricesStartingAt,
         description: (data.flashSale && data.flashSale.description) || randomFlashSaleTemplate.slides[0].description,
         websiteUrl: data.websiteUrl || 'https://bitrox.tech',
-        footer: data.footer || randomFlashSaleTemplate.slides[0].footer || 'bitrox.tech',
+        footer: data.uniqueIdentifier || randomFlashSaleTemplate.slides[0].footer || 'bitrox.tech',
         imagesUrl: data.imagesUrl || randomFlashSaleTemplate.slides[0].imagesUrl,
       };
       console.log('New Flash Sale Slide:', newFlashSaleSlide);
@@ -2408,6 +2417,7 @@ export const generateProductPost = async (
         topic: data?.productName || "Product Post",
         type: 'product',
         status: 'success',
+        topicSetId: "",
         images: [{ url: screenshotUrl || '', label: 'Product' }, { url: screenshotUrl1 || '', label: 'Offer' }, { url: screenshotUrl2 || '', label: 'FlashSale' }],
         contentId: data._id,
         contentType: 'ProductContent',

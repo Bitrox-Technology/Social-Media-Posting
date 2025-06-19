@@ -22,6 +22,10 @@ const savePostsSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
+    topicSetId: {
+        type: String,
+        default: ""
+    },
     type: {
         type: String,
         enum: POST_TYPE_ENUM,

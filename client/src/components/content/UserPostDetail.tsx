@@ -366,32 +366,39 @@ export const UserPostDetail: React.FC = () => {
       return;
     }
 
+    console.log("Post Data: ==== ", post)
+
     // Determine which image and description to use based on selectedPostType
-    let imageUrl = '';
+    let imagesUrl = [];
     let postTitle = post.title;
     let postDescription = post.description;
 
     if (post.contentType === 'ProductContent') {
       if (selectedPostType === 'product') {
-        imageUrl = post.images[0].url;
+        imagesUrl.push(post.images[0].url);
       } else if (selectedPostType === 'discount') {
-        imageUrl = post.images[1].url;
+        imagesUrl.push(post.images[1].url);
         postTitle = post.discount?.title || post.title;
         postDescription = post.discount?.description || post.description;
       } else if (selectedPostType === 'flashSale') {
-        imageUrl = post.images[2].url;
+        imagesUrl.push(post.images[2].url);
         postTitle = post.flashSale?.title || post.title;
         postDescription = post.flashSale?.description || post.description;
       }
-    } else {
-      imageUrl = post.images[0]?.url || '';
+    } else if (post.contentType === 'CarouselContent' ) {
+       post.images.forEach(element => {
+         console.log(element)
+         imagesUrl.push(element.url)
+       });
+    }else{
+       imagesUrl.push(post?.images[0]?.url)
     }
 
     try {
       let response;
       if (schedule.platform === 'linkedin') {
         const payload = {
-          imageUrl,
+          imagesUrl,
           title: postTitle,
           description: postDescription,
           hashTags: post.hashtags.join(', '),
@@ -399,28 +406,31 @@ export const UserPostDetail: React.FC = () => {
           accessToken: tokenData.accessToken,
           person_urn: tokenData.profilePage || '',
         };
+        console.log("payload---", payload)
         response = await linkedInPost(payload).unwrap();
       } else if (schedule.platform === 'facebook') {
         const payload = {
           title: postTitle,
           description: postDescription,
           hashTags: post.hashtags.join(', '),
-          imageUrl,
+          imagesUrl,
           scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
           pageId: schedule.selectedPage!.id,
           pageAccessToken: schedule.selectedPage!.accessToken,
         };
+        console.log("payload---", payload)
         response = await facebookPagePost(payload).unwrap();
       } else if (schedule.platform === 'instagram') {
         const payload = {
           igBusinessId: schedule.selectedInstagramAccount!.id,
           pageAccessToken: schedule.selectedInstagramAccount!.accessToken,
-          imageUrl,
+          imagesUrl,
           title: postTitle,
           description: postDescription,
           hashTags: post.hashtags.join(', '),
           scheduleTime: schedule.dateTime ? schedule.dateTime.toISOString() : '',
         };
+        console.log("payload---", payload)
         response = await instagramBusinessPost(payload).unwrap();
       }
 

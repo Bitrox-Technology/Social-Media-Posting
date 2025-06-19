@@ -224,10 +224,12 @@ const getUserProfile = async (user) => {
 const postContent = async (inputs, user) => {
 
     let postContent = await PostTopic.findOne({ userId: user._id })
+    let topicSetId = uuidv4()
+    console.log("Topic set Id", topicSetId)
     if (postContent) {
-        postContent = await PostTopic.findByIdAndUpdate({ _id: postContent._id }, { topics: inputs.topics }, { new: true })
+        postContent = await PostTopic.findByIdAndUpdate({ _id: postContent._id }, { topics: inputs.topics, topicSetId: topicSetId, status:"pending" }, { new: true })
     } else {
-        postContent = await PostTopic.create({ userId: user._id, topics: inputs.topics })
+        postContent = await PostTopic.create({ userId: user._id, topics: inputs.topics, topicSetId: topicSetId,  status:"pending"})
     }
     if (!postContent) throw new ApiError(BAD_REQUEST, "Unable to save topics")
     return postContent;
@@ -266,7 +268,11 @@ const getPostContent = async (user, postcontentid) => {
                 status: 1,
                 topics: 1,
                 userId: 1,
-                logo: '$userData.logo', // Assuming logo is a field in the user document
+                topicSetId: 1,
+                logo: '$userData.logo', 
+                websiteUrl: '$userData.websiteUrl',
+                uniqueIdentifier: "$userData.uniqueIdentifier",
+                productCategories: "$userData.productCategories",
                 _id: 1
             }
         }
@@ -326,6 +332,8 @@ const savePosts = async (inputs, user) => {
     } else {
         let postContent = await PostTopic.findById({ _id: inputs.postContentId, userId: user._id })
         if (!postContent) throw new ApiError(BAD_REQUEST, "No topics found")
+        console.log("Post Topic set Id: ", postContent)
+        inputs.topicSetId=postContent.topicSetId
     }
     inputs.userId = user._id
     let post = await SavePosts.create(inputs)
@@ -336,7 +344,7 @@ const savePosts = async (inputs, user) => {
 
 const getSavePosts = async (postContentId, user) => {
 
-    const topic = await PostTopic.findOne({ _id: postContentId, status: 'success', userId: user._id });
+    const topic = await PostTopic.findOne({ _id: postContentId,  userId: user._id });
     if (!topic) {
         console.log('No topic found');
         return [];
@@ -345,10 +353,10 @@ const getSavePosts = async (postContentId, user) => {
     // Find saved posts that match user, postContentId, topic, and one of the topics in PostTopic.topics
     const savedPosts = await SavePosts.find({
         postContentId: postContentId,
+        topicSetId: topic.topicSetId,
         userId: user._id,
         topic: { $in: topic.topics } // Match any topic from PostTopic.topics
     });
-
 
     // Array to store final results
     const results = [];
@@ -550,7 +558,6 @@ const updatePostTopics = async (postId, user, inputs) => {
     update = await PostTopic.findByIdAndUpdate({ _id: postId, userId: user._id }, { status: inputs.status }, { new: true })
     if (!update) throw new ApiError(BAD_REQUEST, "Unable to update Status")
 
-    update = await PostTopic.findById({ _id: update._id })
     return update
 
 }
@@ -804,7 +811,8 @@ const getFestivalContent = async (user, params) => {
                     {
                         $project: {
                             logo: 1,
-                            websiteUrl: 1 // Include only the logo field
+                            websiteUrl: 1,
+                            uniqueIdentifier: 1,
                         },
                     },
                 ],
@@ -825,13 +833,14 @@ const getFestivalContent = async (user, params) => {
                 imageUrl: 1,
                 userId: 1,
                 logo: '$userData.logo',
-                websiteUrl: '$userData.websiteUrl',// Project the logo from userData
+                websiteUrl: '$userData.websiteUrl',
+                uniqueIdentifier: "$userData.uniqueIdentifier",// Project the logo from userData
                 _id: 1,
             },
         },
     ]);
-
-    console.log('Festival Content ==========', content);
+   
+    console.log("Festival Content: ", content)
 
     if (!content || content.length === 0) {
         throw new ApiError(BAD_REQUEST, 'No post content found');
@@ -919,7 +928,8 @@ const getProductContent = async (user, params) => {
                     {
                         $project: {
                             logo: 1,
-                            websiteUrl: 1 // Include only the logo field
+                            websiteUrl: 1,
+                            uniqueIdentifier: 1 
                         },
                     },
                 ],
@@ -940,12 +950,11 @@ const getProductContent = async (user, params) => {
                 imagesUrl: 1,
                 userId: 1,
                 logo: '$userData.logo',
-                websiteUrl: '$userData.websiteUrl',// Project the logo from userData
+                websiteUrl: '$userData.websiteUrl',
+                uniqueIdentifier: "$userData.uniqueIdentifier",// Project the logo from userData
                 postTypes: 1,
                 discount: 1,
                 flashSale: 1,
-                footer: 1,
-                websiteUrl: 1,
                 _id: 1,
             },
         },

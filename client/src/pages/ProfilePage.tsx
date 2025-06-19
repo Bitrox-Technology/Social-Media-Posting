@@ -12,6 +12,7 @@ import {
   Target,
   Edit2,
   Camera,
+  Indent,
 } from 'lucide-react';
 import { useLazyGetUserProfileQuery } from '../store/api';
 import { toast } from 'react-toastify';
@@ -54,6 +55,7 @@ const ProfilePage = () => {
             keyProducts: ['Product Not Set'],
             targetMarket: 'Market Not Set',
             websiteUrl: 'https://example.com',
+            uniqueIdentifier: '@example.com'
           });
         }
         toast.error(
@@ -161,6 +163,16 @@ const ProfilePage = () => {
                   />
                   <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
                     {userDetails.location}
+                  </span>
+                </div>
+              )}
+              {userDetails.uniqueIdentifier && (
+                <div className="flex items-center">
+                  <Indent
+                    className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mr-3`}
+                  />
+                  <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
+                    @{userDetails.uniqueIdentifier}
                   </span>
                 </div>
               )}

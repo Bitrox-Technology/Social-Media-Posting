@@ -50,6 +50,7 @@ export interface PaymentInitiateRequest {
 interface SavePostRequest {
   postContentId: string;
   topic: string;
+  topicSetId: string;
   type: 'image' | 'carousel' | 'doyouknow' | 'festival' | 'product';
   status?: 'pending' | 'error' | 'success';
   images?: { url: string; label: string }[];
@@ -547,21 +548,21 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
-    linkedInPost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imageUrl: string; scheduleTime: string, person_urn: string, accessToken: string }>({
+    linkedInPost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imagesUrl: string[]; scheduleTime: string, person_urn: string, accessToken: string }>({
       query: (body) => ({
         url: '/social/linkedin/post',
         method: 'POST',
         body
       }),
     }),
-    facebookPagePost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imageUrl: string; scheduleTime: string, pageAccessToken: string, pageId: string}>({
+    facebookPagePost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imagesUrl: string[]; scheduleTime: string, pageAccessToken: string, pageId: string}>({
       query: (body) => ({
         url: '/social/facebook/post',
         method: 'POST',
         body
       }),
     }),
-    instagramBusinessPost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imageUrl: string; scheduleTime: string, pageAccessToken: string, igBusinessId: string}>({
+    instagramBusinessPost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imagesUrl: string[]; scheduleTime: string, pageAccessToken: string, igBusinessId: string}>({
       query: (body) => ({
         url: '/social/instagram/post',
         method: 'POST',

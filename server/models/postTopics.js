@@ -6,6 +6,10 @@ const postTopicsSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
+    topicSetId: {
+      type: String,
+      unique: true, 
+    },
     topics: { 
         type: [String]
     },

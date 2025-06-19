@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
+import { Navigation, Pagination as SwiperPagination } from 'swiper/modules';
 import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import {
@@ -18,6 +18,8 @@ import {
   Tag,
   Clock,
   Eye,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useLazyGetUserAllPostsQuery } from '../../store/api';
 import { useTheme } from '../../context/ThemeContext';
@@ -45,11 +47,13 @@ interface Post {
 }
 
 export const UserAllPosts: React.FC = () => {
-  const { theme } = useTheme(); // Access theme from ThemeContext
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 7;
   const [getUserAllPosts, { data: rawPosts, isLoading, isError, error }] = useLazyGetUserAllPostsQuery();
 
   // Theme-based styles
@@ -86,10 +90,21 @@ export const UserAllPosts: React.FC = () => {
   const currentTheme = themeStyles[theme as keyof typeof themeStyles] || themeStyles.dark;
 
   const posts = Array.isArray(rawPosts?.data)
-    ? rawPosts.data.map((post) => ({
-        ...post,
-        type: post.contentType === 'DYKContent' ? 'doyouknow' : post.contentType === 'CarouselContent' ? 'carousel' : 'image',
-      }))
+    ? rawPosts.data
+        .map((post) => ({
+          ...post,
+          type:
+            post.contentType === 'DYKContent'
+              ? 'doyouknow'
+              : post.contentType === 'CarouselContent'
+              ? 'carousel'
+              : post.contentType === 'FestivalContent'
+              ? 'festival'
+              : post.contentType === 'ProductContent'
+              ? 'product'
+              : 'image',
+        }))
+        .reverse() // Reverse the order of posts
     : [];
 
   const filteredPosts = posts.filter((post) => {
@@ -102,9 +117,19 @@ export const UserAllPosts: React.FC = () => {
     return true;
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
+
   useEffect(() => {
     getUserAllPosts();
   }, [getUserAllPosts]);
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page when filters or search change
+  }, [searchQuery, selectedFilter]);
 
   const renderImage = (image: Image) => (
     <motion.div
@@ -133,7 +158,7 @@ export const UserAllPosts: React.FC = () => {
       return (
         <div className="w-full">
           <Swiper
-            modules={[Navigation, Pagination]}
+            modules={[Navigation, SwiperPagination]}
             navigation
             pagination={{ clickable: true }}
             spaceBetween={20}
@@ -151,6 +176,12 @@ export const UserAllPosts: React.FC = () => {
     return renderImage(post.images[0]);
   };
 
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={`min-h-screen ${currentTheme.background} flex items-center justify-center`}>
@@ -163,7 +194,7 @@ export const UserAllPosts: React.FC = () => {
     return (
       <div className={`min-h-screen ${currentTheme.background} p-6`}>
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className={`text-3xl font-bold text-red-400 mb-ometer4`}>Error Loading Posts</h1>
+          <h1 className={`text-3xl font-bold text-red-400 mb-4`}>Error Loading Posts</h1>
           <p className={currentTheme.textSecondary}>{JSON.stringify(error)}</p>
         </div>
       </div>
@@ -225,7 +256,7 @@ export const UserAllPosts: React.FC = () => {
 
         {/* Content Type Filters */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {['all', 'image', 'carousel', 'doyouknow'].map((filter) => (
+          {['all', 'image', 'carousel', 'doyouknow', 'festival', 'product'].map((filter) => (
             <button
               key={filter}
               onClick={() => setSelectedFilter(filter)}
@@ -246,7 +277,7 @@ export const UserAllPosts: React.FC = () => {
             viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
           }`}
         >
-          {filteredPosts.map((post) => (
+          {currentPosts.map((post) => (
             <motion.div
               key={post._id}
               initial={{ opacity: 0, y: 20 }}
@@ -261,6 +292,10 @@ export const UserAllPosts: React.FC = () => {
                         ? 'bg-purple-500/20 text-purple-400'
                         : post.type === 'doyouknow'
                         ? 'bg-yellow-500/20 text-yellow-400'
+                        : post.type === 'festival'
+                        ? 'bg-pink-500/20 text-pink-400'
+                        : post.type === 'product'
+                        ? 'bg-green-500/20 text-green-400'
                         : 'bg-blue-500/20 text-blue-400'
                     }`}
                   >
@@ -316,6 +351,51 @@ export const UserAllPosts: React.FC = () => {
           <div className={`text-center ${currentTheme.textSecondary} mt-12`}>
             <p className="text-xl">No posts found</p>
             <p className="text-sm mt-2">Try adjusting your search or filters</p>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {filteredPosts.length > 0 && (
+          <div className="flex items-center justify-center mt-8 gap-4">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`p-2 rounded-lg ${
+                currentPage === 1
+                  ? 'bg-gray-600 cursor-not-allowed'
+                  : `${currentTheme.buttonBg} ${currentTheme.buttonHover}`
+              }`}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-4 py-2 rounded-lg ${
+                    currentPage === page
+                      ? `${currentTheme.buttonBg} ${currentTheme.textPrimary}`
+                      : `${currentTheme.filterBg} ${currentTheme.filterText} hover:bg-gray-700`
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`p-2 rounded-lg ${
+                currentPage === totalPages
+                  ? 'bg-gray-600 cursor-not-allowed'
+                  : `${currentTheme.buttonBg} ${currentTheme.buttonHover}`
+              }`}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
         )}
       </div>

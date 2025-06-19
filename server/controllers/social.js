@@ -2,6 +2,7 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { OK } from "../utils/apiResponseCode.js"
 import SocialServices from "../services/social.js"
 import i18n from "../utils/i18n.js"
+import SocialValidation from "../validations/social.js"
 
 const LinkedInAuthentication = async (req, res, next) => {
   try {
@@ -155,9 +156,9 @@ const FacebookCallback = async (req, res, next) => {
 
 
 const FacebookPost = async (req, res, next) => {
-  console.log("Req.body --------------", req.body)
   try {
-    let result = await SocialServices.facebookPostOnPage(req.body)
+    await SocialValidation.validateFacebookPostOnPage(req.body)
+    let result = await SocialServices.scheduledFacebookPosts(req.body, req.user)
     return res.status(OK).json(new ApiResponse(OK, result, "Facebook Post URL generated successfully"))
   } catch (error) {
     next(error)
@@ -189,7 +190,7 @@ const InstagramCallback = async (req, res, next) => {
 
 const GetIGAccount = async (req, res, next) => {
   try {
-    let result = await SocialServices.getIGAccount(req.body)
+    let result = await SocialServices.scheduledInstagramPosts(req.body, req.user)
     return res.status(OK).json(new ApiResponse(OK, result, "Instagram Account fetched successfully"))
   } catch (error) {
     next(error)

@@ -2890,7 +2890,7 @@ export const Template2: CarouselTemplate = {
       description: '',
       imageUrl: '/images/background3.png',
       footer: 'bitrox.tech',
-      socialHandle: '@bitroxtech',
+      socialHandle: '',
       websiteUrl: 'https://bitrox.tech',
       slideNumber: 5,
     },
@@ -2935,19 +2935,19 @@ export const Template2: CarouselTemplate = {
           'rounded-lg': graphicStyle.borderRadius !== '0px',
         })}
         style={{
-          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundColor: accentColor,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           fontFamily: typography.fontFamily,
           fontWeight: typography.fontWeight,
-          boxShadow: `0 0 20px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect for slide
+
         }}
       >
         {/* Background Overlay */}
         <div
           className="absolute inset-0"
           style={{
-            backgroundColor: chroma(backgroundColor).alpha(0.6).css(),
+            backgroundColor: chroma(backgroundColor).alpha(0.2).css(),
           }}
         />
 
@@ -2957,11 +2957,6 @@ export const Template2: CarouselTemplate = {
             src={defaultLogoUrl}
             alt="Logo"
             className="absolute top-20 right-16 w-48 h-24 object-contain z-30"
-            style={{
-              borderRadius: graphicStyle.borderRadius,
-              boxShadow: `0 4px 12px ${chroma(glowColor).alpha(0.7).css()}`, // Glow effect
-            }}
-            onError={() => console.warn(`Failed to load logo: ${defaultLogoUrl}`)}
           />
         )}
 
@@ -2976,7 +2971,7 @@ export const Template2: CarouselTemplate = {
             style={{
               color: textColor,
               fontSize: typography.fontSize,
-              textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
+
             }}
           >
             {slide.title}
@@ -2990,7 +2985,7 @@ export const Template2: CarouselTemplate = {
               style={{
                 color: textColor,
                 fontSize: `calc(${typography.fontSize} * 0.6)`,
-                textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
+
               }}
             >
               {slide.description}
@@ -2999,7 +2994,7 @@ export const Template2: CarouselTemplate = {
         </div>
 
         {/* Bottom Section */}
-        <div className="relative z-10 flex flex-col items-end pb-16 px-16">
+        <div className="relative z-10 flex flex-col items-end pb-14 px-16">
           {/* Navigation Button (Right-Aligned) */}
           <button
             className={cn('px-6 py-3 rounded-full flex items-center justify-center mb-8 transition-colors', {
@@ -3051,8 +3046,8 @@ export const Template2: CarouselTemplate = {
               href={slide.websiteUrl}
               className="text-2xl hover:underline"
               style={{
-                color: footerTextColor,
-                textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
+                color: textColor,
+
               }}
             >
               {slide.websiteUrl}
@@ -3060,17 +3055,17 @@ export const Template2: CarouselTemplate = {
             <span
               className="text-2xl"
               style={{
-                color: footerTextColor,
-                textShadow: `0 2px 4px ${chroma(glowColor).alpha(0.5).css()}`, // Glow effect
+                color: textColor,
+
               }}
             >
-              {slide.footer}
+              @{slide.footer}
             </span>
           </div>
         </div>
 
         {/* Slide Number (Bottom-Left) */}
-        <div className="absolute bottom-16 left-16 z-20">
+        <div className="absolute bottom-10 left-16 z-20 mb-16">
           <span
             className="text-2xl font-bold px-6 py-3 rounded-full"
             style={{
@@ -3210,15 +3205,8 @@ export const Template3: CarouselTemplate = {
 
         {/* Logo */}
         {addLogo && (
-          <div className="relative z-10 p-12">
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="w-40 h-20 object-contain"
-              style={{
-                filter: `drop-shadow(0 4px 6px ${chroma(glowColor).alpha(0.3).css()})`,
-              }}
-            />
+          <div className="absolute top-8 right-8 z-20">
+            <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
           </div>
         )}
 
@@ -3285,7 +3273,7 @@ export const Template3: CarouselTemplate = {
             className="text-lg font-medium"
             style={{ color: textColor }}
           >
-            {slide.footer}
+            @{slide.footer}
           </span>
         </div>
       </div>
@@ -3385,26 +3373,16 @@ export const Template4: CarouselTemplate = {
         >
           {/* Logo */}
           {addLogo && (
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="h-12 object-contain"
-            />
+            <div className="absolute top-8 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
           )}
 
-          {/* If no logo, show slide number */}
-          {!addLogo && (
-            <span
-              className="text-xl font-bold"
-              style={{ color: '#FFFFFF' }}
-            >
-              {slide.slideNumber.toString().padStart(2, '0')}
-            </span>
-          )}
+
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex">
+        <div className="flex-1 flex px-12">
           {/* Left Column - Content */}
           <div className="w-1/2 p-16 flex flex-col justify-center">
             {/* Accent Line */}
@@ -3462,26 +3440,7 @@ export const Template4: CarouselTemplate = {
           </div>
 
           {/* Right Column - Image */}
-          {hasImage && (
-            <div className="w-1/2 relative">
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `url(${slide.imageUrl})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              />
 
-              {/* Overlay */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: `linear-gradient(135deg, ${chroma(primaryColor).alpha(0.7).css()} 0%, transparent 100%)`,
-                }}
-              />
-            </div>
-          )}
         </div>
 
         {/* Footer */}
@@ -3495,7 +3454,7 @@ export const Template4: CarouselTemplate = {
             className="text-lg"
             style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
-            {slide.footer}
+            @{slide.footer}
           </span>
 
           <a
@@ -3503,7 +3462,7 @@ export const Template4: CarouselTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-lg"
-            style={{ color: primaryColor }}
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
             {slide.websiteUrl}
           </a>
@@ -3518,53 +3477,53 @@ export const Template5: CarouselTemplate = {
   id: 'creative-portfolio',
   name: 'Creative Portfolio',
   coverImageUrl: '/images/carousel-cover/cover3.png',
- slides: [
-  {
-    title: 'Visual Storytelling',
-    description: 'Crafting narratives through compelling imagery and thoughtful design elements.',
-    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 1,
-  },
-  {
-    title: 'Power of Imagery',
-    description: 'Use striking visuals to evoke emotions and convey your story without words.',
-    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 2,
-  },
-  {
-    title: 'Design with Intent',
-    description: 'Choose colors, fonts, and layouts that align with your narrative and enhance impact.',
-    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 3,
-  },
-  {
-    title: 'Engage Your Audience',
-    description: 'Create interactive or dynamic visuals to captivate viewers and deepen their connection.',
-    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 4,
-  },
-  {
-    title: 'FOLLOW FOR MORE CREATIVE TIPS',
-    description: '',
-    imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
-    footer: 'bitrox.tech',
-    socialHandle: '@bitroxtech',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 5,
-  },
-],
+  slides: [
+    {
+      title: 'Visual Storytelling',
+      description: 'Crafting narratives through compelling imagery and thoughtful design elements.',
+      imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      title: 'Power of Imagery',
+      description: 'Use striking visuals to evoke emotions and convey your story without words.',
+      imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      title: 'Design with Intent',
+      description: 'Choose colors, fonts, and layouts that align with your narrative and enhance impact.',
+      imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      title: 'Engage Your Audience',
+      description: 'Create interactive or dynamic visuals to captivate viewers and deepen their connection.',
+      imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      title: 'FOLLOW FOR MORE CREATIVE TIPS',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const {
       logoColors,
@@ -3617,18 +3576,6 @@ export const Template5: CarouselTemplate = {
               right: '10%',
             }}
           />
-
-          {/* Small Dots Pattern */}
-          <div className="absolute inset-0">
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="smallDots" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <circle cx="2" cy="2" r="1" fill={chroma(accentColor).alpha(0.3).css()} />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#smallDots)" />
-            </svg>
-          </div>
         </div>
 
         {/* Main Content */}
@@ -3690,34 +3637,7 @@ export const Template5: CarouselTemplate = {
             </div>
 
             {/* Right Column - Image */}
-            {hasImage && (
-              <div className="w-1/2 relative">
-                <div
-                  className={cn('w-full h-full overflow-hidden', {
-                    'rounded-lg': graphicStyle.borderRadius !== '0px',
-                  })}
-                  style={{
-                    border: `1px solid ${chroma(primaryColor).alpha(0.3).css()}`,
-                    transform: 'rotate(2deg)',
-                  }}
-                >
-                  <img
-                    src={slide.imageUrl}
-                    alt="Creative visual"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
 
-                {/* Decorative Element */}
-                <div
-                  className="absolute -bottom-4 -left-4 w-32 h-32"
-                  style={{
-                    backgroundColor: secondaryColor,
-                    zIndex: -1,
-                  }}
-                />
-              </div>
-            )}
           </div>
 
           {/* Footer */}
@@ -3726,7 +3646,7 @@ export const Template5: CarouselTemplate = {
               className="text-lg"
               style={{ color: chroma(textColor).alpha(0.7).css() }}
             >
-              {slide.footer}
+              @{slide.footer}
             </span>
 
             <a
@@ -3734,7 +3654,7 @@ export const Template5: CarouselTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg"
-              style={{ color: accentColor }}
+              style={{ color: chroma(textColor).alpha(0.7).css() }}
             >
               {slide.websiteUrl}
             </a>
@@ -3751,52 +3671,52 @@ export const Template6: CarouselTemplate = {
   name: 'Educational Series',
   coverImageUrl: '/images/carousel-cover/cover4.png',
   slides: [
-  {
-    title: 'The Science of Learning',
-    description: 'Understanding how our brains process and retain information can help us develop more effective study strategies.',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 1,
-  },
-  {
-    title: 'Spaced Repetition',
-    description: 'Review material at increasing intervals to strengthen memory retention and improve long-term recall.',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 2,
-  },
-  {
-    title: 'Active Recall',
-    description: 'Test yourself regularly to reinforce knowledge and identify gaps in understanding.',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 3,
-  },
-  {
-    title: 'Interleaved Practice',
-    description: 'Mix different topics or skills during study sessions to enhance flexibility and problem-solving.',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 4,
-  },
-  {
-    title: 'FOLLOW FOR MORE LEARNING TIPS',
-    description: '',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
-    footer: 'bitrox.tech',
-    socialHandle: '@bitroxtech',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 5,
-  },
-],
+    {
+      title: 'The Science of Learning',
+      description: 'Understanding how our brains process and retain information can help us develop more effective study strategies.',
+      imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      title: 'Spaced Repetition',
+      description: 'Review material at increasing intervals to strengthen memory retention and improve long-term recall.',
+      imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      title: 'Active Recall',
+      description: 'Test yourself regularly to reinforce knowledge and identify gaps in understanding.',
+      imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      title: 'Interleaved Practice',
+      description: 'Mix different topics or skills during study sessions to enhance flexibility and problem-solving.',
+      imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      title: 'FOLLOW FOR MORE LEARNING TIPS',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const {
       logoColors,
@@ -3839,21 +3759,14 @@ export const Template6: CarouselTemplate = {
         >
           {/* Logo */}
           {addLogo && (
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="h-16 object-contain"
-            />
+            <div className="absolute top-4 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
           )}
 
           {/* Course/Series Title */}
           <div className="flex items-center">
-            <span
-              className="text-xl font-medium mr-4"
-              style={{ color: primaryColor }}
-            >
-              Educational Series
-            </span>
+
 
             <div
               className="px-3 py-1 text-sm font-bold"
@@ -3869,7 +3782,7 @@ export const Template6: CarouselTemplate = {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex p-16">
+        <div className="flex-1 flex p-16 justify-center">
           {/* Left Column - Content */}
           <div className="w-1/2 flex flex-col justify-center pr-16">
             <h2
@@ -3894,62 +3807,9 @@ export const Template6: CarouselTemplate = {
               </p>
             )}
 
-            {/* Key Points */}
-            <div className="mt-12">
-              <div className="flex items-center mb-4">
-                <div
-                  className="w-4 h-4 mr-4 flex-shrink-0"
-                  style={{
-                    backgroundColor: primaryColor,
-                    borderRadius: '50%',
-                  }}
-                />
-                <span
-                  className="text-lg"
-                  style={{ color: chroma(textColor).alpha(0.8).css() }}
-                >
-                  Key learning point
-                </span>
-              </div>
-
-              <div className="flex items-center">
-                <div
-                  className="w-4 h-4 mr-4 flex-shrink-0"
-                  style={{
-                    backgroundColor: secondaryColor,
-                    borderRadius: '50%',
-                  }}
-                />
-                <span
-                  className="text-lg"
-                  style={{ color: chroma(textColor).alpha(0.8).css() }}
-                >
-                  Important concept
-                </span>
-              </div>
-            </div>
           </div>
 
-          {/* Right Column - Image */}
-          {hasImage && (
-            <div className="w-1/2">
-              <div
-                className={cn('w-full h-full overflow-hidden', {
-                  'rounded-lg': graphicStyle.borderRadius !== '0px',
-                })}
-                style={{
-                  boxShadow: `0 8px 24px ${chroma(textColor).alpha(0.1).css()}`,
-                  border: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
-                }}
-              >
-                <img
-                  src={slide.imageUrl}
-                  alt="Educational visual"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          )}
+
         </div>
 
         {/* Footer */}
@@ -3964,7 +3824,7 @@ export const Template6: CarouselTemplate = {
             className="text-lg"
             style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
-            {slide.footer}
+            @{slide.footer}
           </span>
 
           <a
@@ -3972,7 +3832,7 @@ export const Template6: CarouselTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-lg"
-            style={{ color: primaryColor }}
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
             {slide.websiteUrl}
           </a>
@@ -3987,53 +3847,53 @@ export const Template7: CarouselTemplate = {
   id: 'product-showcase',
   name: 'Product Showcase',
   coverImageUrl: '/images/carousel-cover/cover5.png',
- slides: [
-  {
-    title: 'Premium Wireless Headphones',
-    description: 'Experience immersive sound with our noise-cancelling technology and premium materials for all-day comfort.',
-    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 1,
-  },
-  {
-    title: 'Crystal-Clear Audio',
-    description: 'Enjoy high-fidelity sound with advanced drivers for crisp highs and deep bass.',
-    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 2,
-  },
-  {
-    title: 'All-Day Comfort',
-    description: 'Designed with soft, breathable materials to ensure comfort during extended listening sessions.',
-    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 3,
-  },
-  {
-    title: 'Seamless Connectivity',
-    description: 'Effortless Bluetooth pairing and long-lasting battery life keep you connected on the go.',
-    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 4,
-  },
-  {
-    title: 'FOLLOW FOR MORE AUDIO INNOVATIONS',
-    description: '',
-    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
-    footer: 'bitrox.tech',
-    socialHandle: '@bitroxtech',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 5,
-  },
-],
+  slides: [
+    {
+      title: 'Premium Wireless Headphones',
+      description: 'Experience immersive sound with our noise-cancelling technology and premium materials for all-day comfort.',
+      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      title: 'Crystal-Clear Audio',
+      description: 'Enjoy high-fidelity sound with advanced drivers for crisp highs and deep bass.',
+      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      title: 'All-Day Comfort',
+      description: 'Designed with soft, breathable materials to ensure comfort during extended listening sessions.',
+      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      title: 'Seamless Connectivity',
+      description: 'Effortless Bluetooth pairing and long-lasting battery life keep you connected on the go.',
+      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      title: 'FOLLOW FOR MORE AUDIO INNOVATIONS',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const {
       logoColors,
@@ -4083,11 +3943,9 @@ export const Template7: CarouselTemplate = {
         <div className="relative z-10 p-16 flex justify-between items-start">
           {/* Logo */}
           {addLogo && (
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="h-16 object-contain"
-            />
+            <div className="absolute top-8 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
           )}
 
           {/* Product Label */}
@@ -4099,139 +3957,41 @@ export const Template7: CarouselTemplate = {
               borderRadius: '999px',
             }}
           >
-            NEW ARRIVAL
+            {slide.slideNumber}
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="relative z-10 flex-1 flex p-16">
-          {/* Left Column - Product Image */}
-          {hasImage && (
-            <div className="w-1/2 flex items-center justify-center">
-              <div
-                className="relative w-full h-full"
-                style={{
-                  background: `radial-gradient(circle, ${chroma(primaryColor).alpha(0.1).css()} 0%, transparent 70%)`,
-                }}
-              >
-                <img
-                  src={slide.imageUrl}
-                  alt="Product"
-                  className="w-full h-full object-contain"
-                  style={{
-                    filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))',
-                  }}
-                />
+        <div className="relative z-10 flex-1 flex flex-col justify-center pl-64 pr-16">
+          {/* Title */}
+          <h2
+            className={cn('font-bold mb-8 leading-tight', {
+              'text-6xl': !isLongText,
+              'text-5xl': isLongText,
+            })}
+            style={{ color: textColor }}
+          >
+            {slide.title}
+          </h2>
 
-                {/* Price Tag */}
-                <div
-                  className="absolute top-8 left-8 w-24 h-24 flex items-center justify-center rounded-full"
-                  style={{
-                    backgroundColor: secondaryColor,
-                    color: ensureContrast('#FFFFFF', secondaryColor),
-                    boxShadow: `0 4px 12px ${chroma(secondaryColor).alpha(0.3).css()}`,
-                  }}
-                >
-                  <div className="text-center">
-                    <div className="text-sm">From</div>
-                    <div className="text-xl font-bold">$299</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Description */}
+          {hasDescription && (
+            <p
+              className={cn('leading-relaxed mb-12 max-w-2xl', {
+                'text-2xl': !isLongText,
+                'text-xl': isLongText,
+              })}
+              style={{ color: chroma(textColor).alpha(0.8).css() }}
+            >
+              {slide.description}
+            </p>
           )}
 
-          {/* Right Column - Product Details */}
-          <div className="w-1/2 flex flex-col justify-center pl-16">
-            {/* Slide Number */}
-            <div
-              className="mb-4 text-sm font-medium"
-              style={{ color: chroma(textColor).alpha(0.6).css() }}
-            >
-              {slide.slideNumber.toString().padStart(2, '0')} / FEATURED PRODUCT
-            </div>
 
-            {/* Title */}
-            <h2
-              className={cn('font-bold mb-6 leading-tight', {
-                'text-5xl': !isLongText,
-                'text-4xl': isLongText,
-              })}
-              style={{ color: textColor }}
-            >
-              {slide.title}
-            </h2>
-
-            {/* Description */}
-            {hasDescription && (
-              <p
-                className={cn('leading-relaxed mb-8', {
-                  'text-xl': !isLongText,
-                  'text-lg': isLongText,
-                })}
-                style={{ color: chroma(textColor).alpha(0.8).css() }}
-              >
-                {slide.description}
-              </p>
-            )}
-
-            {/* Features */}
-            <div className="mb-8">
-              <div className="flex items-center mb-3">
-                <div
-                  className="w-3 h-3 mr-3 flex-shrink-0"
-                  style={{
-                    backgroundColor: primaryColor,
-                    borderRadius: '50%',
-                  }}
-                />
-                <span className="text-lg">Premium Feature</span>
-              </div>
-
-              <div className="flex items-center mb-3">
-                <div
-                  className="w-3 h-3 mr-3 flex-shrink-0"
-                  style={{
-                    backgroundColor: primaryColor,
-                    borderRadius: '50%',
-                  }}
-                />
-                <span className="text-lg">High Quality</span>
-              </div>
-
-              <div className="flex items-center">
-                <div
-                  className="w-3 h-3 mr-3 flex-shrink-0"
-                  style={{
-                    backgroundColor: primaryColor,
-                    borderRadius: '50%',
-                  }}
-                />
-                <span className="text-lg">Exclusive Design</span>
-              </div>
-            </div>
-
-            {/* CTA Button */}
-            <button
-              className="px-8 py-4 text-lg font-bold self-start"
-              style={{
-                backgroundColor: primaryColor,
-                color: ensureContrast('#FFFFFF', primaryColor),
-                borderRadius: graphicStyle.borderRadius,
-              }}
-            >
-              Shop Now
-            </button>
-          </div>
         </div>
 
         {/* Footer */}
-        <div
-          className="relative z-10 py-8 px-16 flex justify-between items-center"
-          style={{
-            borderTop: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
-          }}
-        >
+        <div className="relative z-10 pb-16 px-16 flex justify-between items-center">
           <span
             className="text-lg"
             style={{ color: chroma(textColor).alpha(0.7).css() }}
@@ -4244,7 +4004,7 @@ export const Template7: CarouselTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-lg"
-            style={{ color: primaryColor }}
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
             {slide.websiteUrl}
           </a>
@@ -4260,52 +4020,52 @@ export const Template8: CarouselTemplate = {
   name: 'Minimalist Timeline',
   coverImageUrl: '/images/carousel-cover/cover6.png',
   slides: [
-  {
-    title: 'The Evolution of Design',
-    description: 'From Bauhaus to Digital: How design principles have evolved while maintaining core fundamentals.',
-    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 1,
-  },
-  {
-    title: 'Bauhaus Beginnings',
-    description: 'Discover how Bauhaus emphasized function, simplicity, and geometric forms, shaping modern design.',
-    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 2,
-  },
-  {
-    title: 'Mid-Century Modern',
-    description: 'Explore the clean lines and organic shapes that defined post-war design and continue to inspire.',
-    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 3,
-  },
-  {
-    title: 'Digital Design Era',
-    description: 'Learn how digital tools and user-centered design revolutionized interfaces and experiences.',
-    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 4,
-  },
-  {
-    title: 'FOLLOW FOR MORE DESIGN HISTORY',
-    description: '',
-    imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
-    footer: 'bitrox.tech',
-    socialHandle: '@bitroxtech',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 5,
-  },
-],
+    {
+      title: 'The Evolution of Design',
+      description: 'From Bauhaus to Digital: How design principles have evolved while maintaining core fundamentals.',
+      imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      title: 'Bauhaus Beginnings',
+      description: 'Discover how Bauhaus emphasized function, simplicity, and geometric forms, shaping modern design.',
+      imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      title: 'Mid-Century Modern',
+      description: 'Explore the clean lines and organic shapes that defined post-war design and continue to inspire.',
+      imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      title: 'Digital Design Era',
+      description: 'Learn how digital tools and user-centered design revolutionized interfaces and experiences.',
+      imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      title: 'FOLLOW FOR MORE DESIGN HISTORY',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const {
       logoColors,
@@ -4357,11 +4117,9 @@ export const Template8: CarouselTemplate = {
         <div className="relative z-10 pt-16 px-16 flex justify-between items-start">
           {/* Logo */}
           {addLogo && (
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="h-12 object-contain"
-            />
+            <div className="absolute top-8 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
           )}
 
           {/* Slide Number */}
@@ -4400,19 +4158,7 @@ export const Template8: CarouselTemplate = {
           )}
 
           {/* Image */}
-          {hasImage && (
-            <div
-              className={cn('w-3/4 h-64 overflow-hidden', {
-                'rounded-lg': graphicStyle.borderRadius !== '0px',
-              })}
-            >
-              <img
-                src={slide.imageUrl}
-                alt="Timeline visual"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+
         </div>
 
         {/* Footer */}
@@ -4421,7 +4167,7 @@ export const Template8: CarouselTemplate = {
             className="text-lg"
             style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
-            {slide.footer}
+            @{slide.footer}
           </span>
 
           <a
@@ -4429,7 +4175,7 @@ export const Template8: CarouselTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-lg"
-            style={{ color: accentColor }}
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
             {slide.websiteUrl}
           </a>
@@ -4445,57 +4191,57 @@ export const Template9: CarouselTemplate = {
   name: 'Magazine Style',
   coverImageUrl: '/images/carousel-cover/cover7.png',
   slides: [
-  {
-    tagline: 'FEATURE STORY',
-    title: 'The Future of Sustainable Fashion',
-    description: 'How innovative designers are reimagining the industry with eco-friendly materials and ethical practices.',
-    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 1,
-  },
-  {
-    tagline: 'ECO INNOVATION',
-    title: 'Recycled Materials in Fashion',
-    description: 'Designers are transforming plastic waste and upcycled fabrics into stunning, sustainable collections.',
-    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 2,
-  },
-  {
-    tagline: 'ETHICAL PRACTICES',
-    title: 'Fair Trade Fashion',
-    description: 'Support brands that prioritize fair wages and safe working conditions for garment workers.',
-    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 3,
-  },
-  {
-    tagline: 'GREEN TRENDS',
-    title: 'Slow Fashion Movement',
-    description: 'Embrace quality over quantity with timeless pieces designed to last, reducing environmental impact.',
-    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 4,
-  },
-  {
-    tagline: 'STAY INSPIRED',
-    title: 'FOLLOW FOR MORE FASHION TIPS',
-    description: '',
-    imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
-    footer: 'bitrox.tech',
-    socialHandle: '@bitroxtech',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 5,
-  },
-],
+    {
+      tagline: 'FEATURE STORY',
+      title: 'The Future of Sustainable Fashion',
+      description: 'How innovative designers are reimagining the industry with eco-friendly materials and ethical practices.',
+      imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      tagline: 'ECO INNOVATION',
+      title: 'Recycled Materials in Fashion',
+      description: 'Designers are transforming plastic waste and upcycled fabrics into stunning, sustainable collections.',
+      imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      tagline: 'ETHICAL PRACTICES',
+      title: 'Fair Trade Fashion',
+      description: 'Support brands that prioritize fair wages and safe working conditions for garment workers.',
+      imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      tagline: 'GREEN TRENDS',
+      title: 'Slow Fashion Movement',
+      description: 'Embrace quality over quantity with timeless pieces designed to last, reducing environmental impact.',
+      imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      tagline: 'STAY INSPIRED',
+      title: 'FOLLOW FOR MORE FASHION TIPS',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const {
       logoColors,
@@ -4694,52 +4440,52 @@ export const Template10: CarouselTemplate = {
   name: 'Tech Showcase',
   coverImageUrl: '/images/carousel-cover/cover8.png',
   slides: [
-  {
-    title: 'Next-Gen AI Solutions',
-    description: 'Leveraging machine learning algorithms to solve complex business challenges with unprecedented accuracy.',
-    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 1,
-  },
-  {
-    title: 'Automate with Intelligence',
-    description: 'Use AI to streamline workflows, reduce manual tasks, and boost operational efficiency.',
-    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 2,
-  },
-  {
-    title: 'Data-Driven Decisions',
-    description: 'Harness AI analytics to uncover insights and make informed, strategic business choices.',
-    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 3,
-  },
-  {
-    title: 'Scale with AI Innovation',
-    description: 'Adopt cutting-edge AI tools to stay competitive and drive growth in your industry.',
-    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
-    footer: 'bitrox.tech',
-    socialHandle: '',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 4,
-  },
-  {
-    title: 'FOLLOW FOR MORE AI INSIGHTS',
-    description: '',
-    imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
-    footer: 'bitrox.tech',
-    socialHandle: '@bitroxtech',
-    websiteUrl: 'https://bitrox.tech',
-    slideNumber: 5,
-  },
-],
+    {
+      title: 'Next-Gen AI Solutions',
+      description: 'Leveraging machine learning algorithms to solve complex business challenges with unprecedented accuracy.',
+      imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 1,
+    },
+    {
+      title: 'Automate with Intelligence',
+      description: 'Use AI to streamline workflows, reduce manual tasks, and boost operational efficiency.',
+      imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 2,
+    },
+    {
+      title: 'Data-Driven Decisions',
+      description: 'Harness AI analytics to uncover insights and make informed, strategic business choices.',
+      imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 3,
+    },
+    {
+      title: 'Scale with AI Innovation',
+      description: 'Adopt cutting-edge AI tools to stay competitive and drive growth in your industry.',
+      imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+      footer: 'bitrox.tech',
+      socialHandle: '',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 4,
+    },
+    {
+      title: 'FOLLOW FOR MORE AI INSIGHTS',
+      description: '',
+      imageUrl: 'https://images.unsplash.com/photo-1535378917042-10a22c95931a',
+      footer: 'bitrox.tech',
+      socialHandle: '@bitroxtech',
+      websiteUrl: 'https://bitrox.tech',
+      slideNumber: 5,
+    },
+  ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const {
       logoColors,
@@ -4818,14 +4564,9 @@ export const Template10: CarouselTemplate = {
         <div className="relative z-10 p-16 flex justify-between items-start">
           {/* Logo */}
           {addLogo && (
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="h-16 object-contain"
-              style={{
-                filter: 'brightness(1.2) contrast(1.1)',
-              }}
-            />
+            <div className="absolute top-8 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
           )}
 
           {/* Tech-inspired Slide Number */}
@@ -4860,7 +4601,7 @@ export const Template10: CarouselTemplate = {
                 className="ml-4 text-sm font-mono opacity-70"
                 style={{ color: primaryColor }}
               >
-                01 // INNOVATION
+                01 
               </div>
             </div>
 
@@ -4892,75 +4633,12 @@ export const Template10: CarouselTemplate = {
               </p>
             )}
 
-            {/* Tech Specs */}
-            <div className="flex flex-wrap">
-              <div
-                className="mr-4 mb-4 px-4 py-2 text-sm font-mono"
-                style={{
-                  backgroundColor: chroma(primaryColor).alpha(0.2).css(),
-                  color: primaryColor,
-                  borderRadius: '4px',
-                }}
-              >
-                #AI
-              </div>
-
-              <div
-                className="mr-4 mb-4 px-4 py-2 text-sm font-mono"
-                style={{
-                  backgroundColor: chroma(secondaryColor).alpha(0.2).css(),
-                  color: secondaryColor,
-                  borderRadius: '4px',
-                }}
-              >
-                #MACHINELEARNING
-              </div>
-
-              <div
-                className="mr-4 mb-4 px-4 py-2 text-sm font-mono"
-                style={{
-                  backgroundColor: chroma(accentColor).alpha(0.2).css(),
-                  color: accentColor,
-                  borderRadius: '4px',
-                }}
-              >
-                #INNOVATION
-              </div>
-            </div>
+           
+      
           </div>
 
           {/* Right Column - Image */}
-          {hasImage && (
-            <div className="w-1/2">
-              <div
-                className={cn('w-full h-full overflow-hidden', {
-                  'rounded-lg': graphicStyle.borderRadius !== '0px',
-                })}
-                style={{
-                  border: `1px solid ${chroma(primaryColor).alpha(0.3).css()}`,
-                  boxShadow: `0 0 30px ${chroma(primaryColor).alpha(0.2).css()}`,
-                }}
-              >
-                <img
-                  src={slide.imageUrl}
-                  alt="Tech visual"
-                  className="w-full h-full object-cover"
-                  style={{
-                    filter: 'brightness(0.8) saturate(1.2)',
-                  }}
-                />
-
-                {/* Tech Overlay */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(135deg, ${chroma(primaryColor).alpha(0.2).css()} 0%, transparent 50%)`,
-                    mixBlendMode: 'overlay',
-                  }}
-                />
-              </div>
-            </div>
-          )}
+          
         </div>
 
         {/* Footer */}
@@ -4987,12 +4665,12 @@ export const Template10: CarouselTemplate = {
             />
           </div>
 
-          <div className="flex items-center">
+          <div className=" relative flex items-center justify-between">
             <span
               className="text-lg font-mono mr-8"
               style={{ color: chroma(textColor).alpha(0.7).css() }}
             >
-              {slide.footer}
+              @{slide.footer}
             </span>
 
             <a
@@ -5000,10 +4678,7 @@ export const Template10: CarouselTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg font-mono"
-              style={{
-                color: primaryColor,
-                textShadow: `0 0 8px ${chroma(primaryColor).alpha(0.5).css()}`,
-              }}
+               style={{ color: chroma(textColor).alpha(0.7).css() }}
             >
               {slide.websiteUrl}
             </a>
@@ -5141,16 +4816,14 @@ export const Template11: CarouselTemplate = {
         <div className="relative z-10 p-16 flex justify-between items-start">
           {/* Logo */}
           {addLogo && (
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="h-16 object-contain"
-            />
+            <div className="absolute top-8 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
           )}
 
           {/* Leaf-inspired slide number */}
           <div
-            className="w-16 h-16 flex items-center justify-center"
+            className="w-12 h-12 flex items-center justify-center"
             style={{
               backgroundColor: accentColor,
               borderRadius: '50% 0 50% 50%', // Leaf-like shape
@@ -5170,7 +4843,7 @@ export const Template11: CarouselTemplate = {
         </div>
 
         {/* Main Content */}
-        <div className="relative z-10 flex-1 flex p-16">
+        <div className="relative z-10 flex-1 flex px-12">
           {/* Left Column - Content */}
           <div className="w-1/2 flex flex-col justify-center pr-16">
             {/* Title with Nature-inspired Accent */}
@@ -5223,43 +4896,12 @@ export const Template11: CarouselTemplate = {
                   strokeLinecap="round"
                 />
               </svg>
-              <span
-                className="text-lg italic"
-                style={{ color: chroma(textColor).alpha(0.7).css() }}
-              >
-                Nature's wisdom
-              </span>
+             
             </div>
           </div>
 
           {/* Right Column - Image */}
-          {hasImage && (
-            <div className="w-1/2">
-              <div
-                className={cn('w-full h-full overflow-hidden', {
-                  'rounded-lg': graphicStyle.borderRadius !== '0px',
-                })}
-                style={{
-                  boxShadow: `0 8px 24px ${chroma(textColor).alpha(0.1).css()}`,
-                  border: `1px solid ${chroma(primaryColor).alpha(0.2).css()}`,
-                }}
-              >
-                <img
-                  src={slide.imageUrl}
-                  alt="Nature visual"
-                  className="w-full h-full object-cover"
-                />
-
-                {/* Natural gradient overlay */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(to bottom, ${chroma(primaryColor).alpha(0.2).css()} 0%, transparent 100%)`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
+         
         </div>
 
         {/* Footer */}
@@ -5281,9 +4923,8 @@ export const Template11: CarouselTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-lg inline-flex items-center"
-            style={{ color: primaryColor }}
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
-            <span className="mr-2">•</span>
             {slide.websiteUrl}
           </a>
         </div>
@@ -5394,11 +5035,9 @@ export const Template12: CarouselTemplate = {
         <div className="relative z-10 p-16 flex justify-between items-start">
           {/* Logo */}
           {addLogo && (
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="h-16 object-contain"
-            />
+            <div className="absolute top-8 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
           )}
 
           {/* Quote Number */}
@@ -5410,7 +5049,7 @@ export const Template12: CarouselTemplate = {
               borderRadius: '999px',
             }}
           >
-            QUOTE {slide.slideNumber.toString().padStart(2, '0')}
+         {slide.slideNumber.toString().padStart(2, '0')}
           </div>
         </div>
 
@@ -5431,7 +5070,7 @@ export const Template12: CarouselTemplate = {
               className="text-4xl font-bold mb-12 leading-tight"
               style={{ color: textColor }}
             >
-              {slide.title.replace(/"/g, '')}
+              {slide.title}
             </h2>
 
             {/* Attribution */}
@@ -5446,38 +5085,7 @@ export const Template12: CarouselTemplate = {
           </div>
 
           {/* Right Column - Image */}
-          {hasImage && (
-            <div className="w-1/2 relative">
-              <div
-                className={cn('w-full h-full overflow-hidden', {
-                  'rounded-lg': graphicStyle.borderRadius !== '0px',
-                })}
-              >
-                <img
-                  src={slide.imageUrl}
-                  alt="Quote visual"
-                  className="w-full h-full object-cover"
-                  style={{
-                    filter: 'grayscale(30%)',
-                  }}
-                />
-
-                {/* Overlay */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(to right, ${bgColor} 0%, transparent 20%)`,
-                  }}
-                />
-              </div>
-
-              {/* Decorative Element */}
-              <div
-                className="absolute bottom-16 right-16 w-32 h-1"
-                style={{ backgroundColor: accentColor }}
-              />
-            </div>
-          )}
+          
         </div>
 
         {/* Footer */}
@@ -5491,7 +5099,7 @@ export const Template12: CarouselTemplate = {
             className="text-lg"
             style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
-            {slide.footer}
+            @{slide.footer}
           </span>
 
           <a
@@ -5499,7 +5107,7 @@ export const Template12: CarouselTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-lg"
-            style={{ color: primaryColor }}
+            style={{ color: chroma(textColor).alpha(0.7).css() }}
           >
             {slide.websiteUrl}
           </a>
@@ -5516,9 +5124,9 @@ export const carouselTemplates: CarouselTemplate[] = [
   Template4,
   Template5,
   Template6,
-  Template7,
+
   Template8,
-  Template9,
+
   Template10,
   Template11,
   Template12

@@ -98,7 +98,7 @@ export const config = {
 
   rateLimit: {
     global: {
-      max: parseInt(process.env.GLOBAL_RATE_LIMIT_MAX, 10) || 100,
+      max: parseInt(process.env.GLOBAL_RATE_LIMIT_MAX, 10) || 300,
       windowMs: parseInt(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
     },
     otp: {

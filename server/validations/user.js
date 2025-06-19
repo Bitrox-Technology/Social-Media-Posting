@@ -77,6 +77,7 @@ const validateUserProfile = async (inputs) => {
         websiteUrl: joi.string().uri().trim().optional(),
         logo: joi.string().trim().optional(),
         bio: joi.string().trim().optional(),
+        uniqueIdentifier: joi.string().trim().optional(),
     });
 
     VALIDATE_SCHEMA(schema, inputs);
@@ -165,6 +166,7 @@ const validateSavePost = async (inputs) => {
     schema = joi.object({
         postContentId: joi.string().allow('').optional(),
         contentId: joi.string().required(),
+        topicSetId: joi.string().allow('').optional(),
         contentType: joi.string().valid(...CONTENT_TYPE_ENUM).required(),
         topic: joi.string().trim().min(1).optional(),
         type: joi.string().valid(...POST_TYPE_ENUM).optional(),
@@ -298,8 +300,6 @@ const validateProductContent = async (inputs) => {
         description: joi.string().trim().min(1).max(300).required(),
         imagesUrl: joi.array().items(joi.any()).min(3).max(3).optional(),
         postTypes: joi.array().items(joi.string().valid(...PRODUCT_POST_TYPE_ENUM)).min(1).required(),
-        footer: joi.string().trim().min(1).optional(),
-        websiteUrl: joi.string().uri({ scheme: ['http', 'https'] }).optional(),
         price: joi.string().trim().min(1).required(),
         discount: joi.object({
             title: joi.string().trim().min(1).optional(),
@@ -348,6 +348,7 @@ const UserValidation = {
     validateBlogPost,
     validateFestivalContent,
     validateProductContent,
+
     validateWordpressAuth
 }
 

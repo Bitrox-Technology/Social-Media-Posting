@@ -50,7 +50,7 @@ export const AutoPostCreator: React.FC = () => {
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [topicsError, setTopicsError] = useState<string | null>(null);
   const [postsError, setPostsError] = useState<string | null>(null);
-  const [userLogo, setUserLogo] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   const { isOpen, config, showAlert, closeAlert, handleConfirm, confirm: showConfirmAlert } = useAlert()
 
   // API hooks
@@ -82,102 +82,104 @@ export const AutoPostCreator: React.FC = () => {
   ];
 
   const isLoading = isLoadingTopics || isFetchingPostContent || isLoadingPosts || isFetchingPosts;
+  const fetchData = async () => {
+    if (!postContentId) {
+      navigate('/topic');
+      return;
+    }
 
-  // Fetch topics and posts on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!postContentId) {
-        navigate('/topic');
-        return;
-      }
+    setPostContentId(postContentId);
+    setIsLoadingTopics(true);
+    setIsLoadingPosts(true);
+    setTopicsError(null);
+    setPostsError(null);
 
-      setPostContentId(postContentId);
-      setIsLoadingTopics(true);
-      setIsLoadingPosts(true);
-      setTopicsError(null);
-      setPostsError(null);
+    try {
+      const topicsResponse = await getPostContent({ postContentId }).unwrap();
+      if (topicsResponse.data.topics && topicsResponse.data.topics.length > 0) {
+        const fetchedTopics = topicsResponse.data.topics.slice(0, 7);
+        setTopics(fetchedTopics);
+        let data = {
+          logo: topicsResponse?.data.logo,
+          websiteUrl: topicsResponse?.data.websiteUrl,
+          topicSetId: topicsResponse?.data.topicSetId,
+          productCategories: topicsResponse?.data.productCategories,
+          uniqueIdentifier: topicsResponse?.data.uniqueIdentifier,
+        }
+        setUserData(data);
 
-      try {
-        const topicsResponse = await getPostContent({ postContentId }).unwrap();
-        if (topicsResponse.data.topics && topicsResponse.data.topics.length > 0) {
-          const fetchedTopics = topicsResponse.data.topics.slice(0, 7);
-          setTopics(fetchedTopics);
-          setUserLogo(topicsResponse?.data?.logo);
+        try {
+          const postsResponse = await getSavePosts({ postContentId }).unwrap();
+          const savedPosts = postsResponse.data || [];
 
+          // Filter saved posts that match fetched topics
+          const topicSet = new Set(fetchedTopics);
+          interface SavedPost {
+            topic: string;
+            type: 'image' | 'carousel' | 'doyouknow';
+            images?: { url: string; label: string }[];
+            status: 'success' | 'error' | 'pending';
+            contentId?: string;
+            contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent';
+          }
 
-          try {
-            const postsResponse = await getSavePosts({ postContentId }).unwrap();
-            const savedPosts = postsResponse.data || [];
+          const completed: Post[] = (savedPosts as SavedPost[])
+            .filter((post) => topicSet.has(post.topic))
+            .map((post): Post => ({
+              topic: post.topic,
+              type: post.type,
+              content: '',
+              images: post.images,
+              templateId: undefined,
+              status: post.status,
+              contentId: post.contentId,
+              contentType: post.contentType,
+            }));
 
-            // Filter saved posts that match fetched topics
-            const topicSet = new Set(fetchedTopics);
-            interface SavedPost {
-              topic: string;
-              type: 'image' | 'carousel' | 'doyouknow';
-              images?: { url: string; label: string }[];
-              status: 'success' | 'error' | 'pending';
-              contentId?: string;
-              contentType?: 'ImageContent' | 'CarouselContent' | 'DoyouknowContent';
-            }
-
-            const completed: Post[] = (savedPosts as SavedPost[])
-              .filter((post) => topicSet.has(post.topic))
-              .map((post): Post => ({
-                topic: post.topic,
-                type: post.type,
-                content: '',
-                images: post.images,
-                templateId: undefined,
-                status: post.status,
-                contentId: post.contentId,
-                contentType: post.contentType,
-              }));
-
-            // Initialize pending posts for unmatched topics
-            const savedTopicTypeKeys = new Set(completed.map((p) => `${p.topic}-${p.type}`));
-            const pending: Post[] = fetchedTopics
-              .map((topic: string, index: number): Post => ({
-                topic,
-                type: postTypes[index % postTypes.length],
-                content: '',
-                status: 'pending' as const,
-              }))
-              .filter((post: Post) => !savedTopicTypeKeys.has(`${post.topic}-${post.type}`));
-
-            setCompletedPosts(completed);
-            setLocalPosts(pending);
-            setCurrentIndex(completed.length - 1);
-          } catch (postError) {
-
-            setPostsError('Failed to load saved posts. You can still generate new posts.');
-            const initialPosts: Post[] = fetchedTopics.map((topic: string, index: number): Post => ({
+          // Initialize pending posts for unmatched topics
+          const savedTopicTypeKeys = new Set(completed.map((p) => `${p.topic}-${p.type}`));
+          const pending: Post[] = fetchedTopics
+            .map((topic: string, index: number): Post => ({
               topic,
               type: postTypes[index % postTypes.length],
               content: '',
-              status: 'pending',
-            }));
-            setLocalPosts(initialPosts);
-            setCompletedPosts([]);
-            setCurrentIndex(-1);
-          }
-        } else {
-          throw new Error('No topics found');
+              status: 'pending' as const,
+            }))
+            .filter((post: Post) => !savedTopicTypeKeys.has(`${post.topic}-${post.type}`));
+
+          setCompletedPosts(completed);
+          setLocalPosts(pending);
+          setCurrentIndex(completed.length - 1);
+        } catch (postError) {
+
+          setPostsError('Failed to load saved posts. You can still generate new posts.');
+          const initialPosts: Post[] = fetchedTopics.map((topic: string, index: number): Post => ({
+            topic,
+            type: postTypes[index % postTypes.length],
+            content: '',
+            status: 'pending',
+          }));
+          setLocalPosts(initialPosts);
+          setCompletedPosts([]);
+          setCurrentIndex(-1);
         }
-      } catch (error) {
-        console.error('Error fetching topics:', error);
-        setTopicsError('Failed to load topics. Please go back and try again.');
-      } finally {
-        setIsLoadingTopics(false);
-        setIsLoadingPosts(false);
+      } else {
+        throw new Error('No topics found');
       }
-    };
-
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+      setTopicsError('Failed to load topics. Please go back and try again.');
+    } finally {
+      setIsLoadingTopics(false);
+      setIsLoadingPosts(false);
+    }
+  };
+  // Fetch topics and posts on mount
+  useEffect(() => {
     fetchData();
-
-    // Reset generation state on mount
     setIsGenerating(false);
     setGeneratingTopic(null);
-  }, [getPostContent, getSavePosts, navigate, postContentId]);
+  }, []);
 
   // Handle updated post from location state
   useEffect(() => {
@@ -196,11 +198,14 @@ export const AutoPostCreator: React.FC = () => {
 
   const generatePost = async (topic: string, index: number) => {
 
+    console.log("Topic: ", topic, index)
+
     if (!postContentId) {
       throw new Error('No postContentId available');
     }
 
     const type = postTypes[index % postTypes.length];
+    console.log("Type: ", type)
     setGeneratingTopic(`${topic}`);
     setLocalPosts((prev) =>
       prev.map((p) =>
@@ -213,25 +218,47 @@ export const AutoPostCreator: React.FC = () => {
 
       switch (type) {
         case 'image':
-          newPost = await generateImagePost(
-            topic,
-            type,
-            postContentId,
-            {
-              generateImageContent,
-              generateImage,
-              imageContent,
-              savePosts,
-              uploadImageToCloudinary,
-            },
-            dispatch,
-            (token: { token: string; expiresAt: string }) =>
-              dispatch(setCsrfToken({ token: token.token, expiresAt: Number(token.expiresAt) })),
-            userLogo || '/images/Logo1.png',
-            'Modern',
-            showAlert
+          if (index === 3) {
+            userData.index = index
+            newPost = await generateImagePost(
+              topic,
+              type,
+              postContentId,
+              {
+                generateImageContent,
+                generateImage,
+                imageContent,
+                savePosts,
+                uploadImageToCloudinary,
+              },
+              dispatch,
+              (token: { token: string; expiresAt: string }) =>
+                dispatch(setCsrfToken({ token: token.token, expiresAt: Number(token.expiresAt) })),
+              userData,
+              'Modern',
+              showAlert
+            );
+          } else {
+            newPost = await generateImagePost(
+              topic,
+              type,
+              postContentId,
+              {
+                generateImageContent,
+                generateImage,
+                imageContent,
+                savePosts,
+                uploadImageToCloudinary,
+              },
+              dispatch,
+              (token: { token: string; expiresAt: string }) =>
+                dispatch(setCsrfToken({ token: token.token, expiresAt: Number(token.expiresAt) })),
+              userData,
+              'Modern',
+              showAlert
+            );
+          }
 
-          );
           console.log('Generated Image Post:', newPost);
           break;
 
@@ -250,7 +277,7 @@ export const AutoPostCreator: React.FC = () => {
             (token: { token: string; expiresAt: string }) =>
               dispatch(setCsrfToken({ token: token.token, expiresAt: Number(token.expiresAt) })),
             showAlert,
-            userLogo || '/images/Logo1.png',
+            userData,
           );
           console.log('Generated Carousel Post:', newPost);
           break;
@@ -270,7 +297,7 @@ export const AutoPostCreator: React.FC = () => {
             (token: { token: string; expiresAt: string }) =>
               dispatch(setCsrfToken({ token: token.token, expiresAt: Number(token.expiresAt) })),
             showAlert,
-            userLogo || '/images/Logo1.png'
+            userData
           );
           console.log('Generated Do You Know Post:', newPost);
           break;
@@ -355,9 +382,10 @@ export const AutoPostCreator: React.FC = () => {
       async () => {
         if (postContentId) {
           console.log(postContentId)
-          let response = await updatePostTopicStatus({ postTopicId: postContentId, status: "success" });
-          if (response.data && response.data.data && response.data.data._id) {
-            navigate('/select-media', { state: { postContentId: response.data.data._id } });
+          let response = await updatePostTopicStatus({ postTopicId: postContentId, status: "success" }).unwrap();
+          console.log("Update Response: ", response.data)
+          if (response.data) {
+            navigate('/select-media', { state: { postContentId: response?.data?.user?._id } });
           } else {
             showAlert({ type: 'error', title: 'Error', message: 'Failed to update post topic status.' });
           }

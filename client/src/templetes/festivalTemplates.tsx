@@ -475,24 +475,11 @@ export const HoliTemplate: FestivalTemplate = {
             className="text-lg font-medium mb-8"
             style={{ color: accentColor, textAlign: 'left' }}
           >
-            Few days to go!
+            Celebrate with us!
           </p>
 
           {/* Call-to-Action Button */}
-          <a
-            href={slide.websiteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-8 py-4 rounded-full text-xl font-medium transition-all duration-300 hover:scale-105"
-            style={{
-              backgroundColor: useSecondary,
-              color: accentColor,
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-              textAlign: 'center',
-            }}
-          >
-            Celebrate Now
-          </a>
+          
         </div>
 
         {/* Bottom Section: Website URL and Footer */}
@@ -628,15 +615,15 @@ export const DussehraTemplate: FestivalTemplate = {
 
 // 6. Raksha Bandhan: Threaded Affection
 export const RakshaBandhanTemplate: FestivalTemplate = {
-  id: 'raksha-bandhan-threaded-affection',
-  name: 'Raksha Bandhan - Threaded Affection',
+  id: 'raksha-bandhan-sacred-thread',
+  name: 'Raksha Bandhan - Sacred Thread',
   coverImageUrl: '/images/festival-covers/rakhi-cover.png',
   slides: [
     {
-      title: 'Happy Raksha Bandhan',
-      description: 'Celebrating the unbreakable bond of siblings',
-      date: '2025-06-10',
-      imageUrl: '/images/festival-backgrounds/rakhi-bg.jpg', // Example: soft focus background with traditional elements
+      title: 'Happy Rakhi',
+      description: 'Celebrating the unbreakable bond of love between siblings!',
+      date: '2025-08-15', // Approximate Rakhi date in 2025
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1750150785/festival_images/festival_image_1750150783593.jpg',// Example: Rakhi thread and hands background
       footer: 'Ludhiana Celebrates',
       websiteUrl: 'https://bitrox.tech',
     },
@@ -644,11 +631,11 @@ export const RakshaBandhanTemplate: FestivalTemplate = {
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
     const { typography, graphicStyle } = colors;
 
-    const primaryColor = '#E91E63'; // Pink (for affection)
-    const secondaryColor = '#81C784'; // Light Green (for harmony)
-    const accentColor = '#FFC107'; // Amber (for warmth)
-    const bgColor = '#FFF8E1'; // Very Light Yellow/Cream
-    const textColor = '#3E2723'; // Dark Brown
+    const primaryColor = '#FF69B4'; // Hot Pink (for Rakhi)
+    const secondaryColor = '#FFD700'; // Gold (for thread)
+    const accentColor = '#FFFFFF'; // White (for purity)
+    const bgColor = '#F8EDEB'; // Light Pink
+    const textColor = '#8B4513'; // Saddle Brown
 
     return (
       <div
@@ -664,12 +651,12 @@ export const RakshaBandhanTemplate: FestivalTemplate = {
           backgroundColor: bgColor,
         }}
       >
-        {/* Soft, swirling patterns reminiscent of threads */}
-        <div className="absolute inset-0 opacity-50" style={{
-          background: `radial-gradient(circle at top left, ${chroma(primaryColor).alpha(0.2).css()}, transparent 50%),
-                         radial-gradient(circle at bottom right, ${chroma(secondaryColor).alpha(0.2).css()}, transparent 50%)`
-        }} />
-        <div className="absolute inset-0" style={{ backgroundColor: chroma(bgColor).alpha(0.3).css() }} />
+        {/* Subtle overlay for text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-transparent opacity-50" />
+
+        {/* Thread-like elements */}
+        <div className="absolute top-1/3 left-1/4 w-[300px] h-[300px] rounded-full bg-yellow-300 blur-2xl opacity-40" style={{ backgroundColor: secondaryColor }} />
+        <div className="absolute bottom-1/3 right-1/4 w-[250px] h-[250px] rounded-full bg-pink-400 blur-2xl opacity-30" style={{ backgroundColor: primaryColor }} />
 
         {/* Content Section */}
         <div className="relative z-10 flex flex-col items-center text-center p-16">
@@ -679,14 +666,14 @@ export const RakshaBandhanTemplate: FestivalTemplate = {
               src={defaultLogoUrl}
               alt="Logo"
               className="mb-12 w-48 h-24 object-contain"
-              style={{ filter: `drop-shadow(0 0 10px ${accentColor})` }}
+              style={{ filter: 'drop-shadow(0 0 5px white)' }}
             />
           )}
 
           {/* Title */}
           <h2
-            className="text-7xl font-bold uppercase mb-6 tracking-wide"
-            style={{ color: ensureContrast(textColor, bgColor) }}
+            className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
+            style={{ color: ensureContrast(textColor, bgColor), textShadow: `0 0 10px ${chroma(primaryColor).alpha(0.4).css()}` }}
           >
             {slide.title}
           </h2>
@@ -694,29 +681,30 @@ export const RakshaBandhanTemplate: FestivalTemplate = {
           {/* Description */}
           <p
             className="text-3xl font-light max-w-3xl leading-relaxed mb-12"
-            style={{ color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor) }}
+            style={{ color: ensureContrast(chroma(textColor).alpha(0.9).hex(), bgColor) }}
           >
             {slide.description}
           </p>
 
-          {/* Rakhi/Bracelet Icon */}
-          <span className="text-9xl mt-12 mb-16" style={{ color: primaryColor }}>🎗️</span>
+          {/* Decorative Thread */}
+          <div className="flex items-center space-x-6 mb-12">
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: secondaryColor }} />
+            <span className="text-5xl" style={{ color: primaryColor }}>💞</span> {/* Heart unicode */}
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: secondaryColor }} />
+          </div>
         </div>
 
         {/* Footer */}
         <div
           className="relative z-10 w-full p-8 text-center"
-          style={{
-            backgroundColor: chroma(primaryColor).alpha(0.1).css(),
-            borderTop: `1px solid ${chroma(secondaryColor).alpha(0.3).css()}`,
-          }}
+          style={{ backgroundColor: chroma(bgColor).alpha(0.7).css() }}
         >
           <a
             href={slide.websiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xl font-medium tracking-wider"
-            style={{ color: ensureContrast(textColor, chroma(primaryColor).alpha(0.1).hex()) }}
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(textColor, bgColor) }}
           >
             @{slide.footer}
           </a>
@@ -1517,7 +1505,381 @@ export const NetworkingEventTemplate: FestivalTemplate = {
   },
 };
 
+// export const DoYouKnowTemplate2: DoYouKnowTemplate = {
+//   id: 'do-you-know-modern-split',
+//   name: 'Modern Split',
+//   coverImageUrl: '/images/doyouknow-cover/cover2.png',
+//   slides: [
+//     {
+//       title: 'DO YOU KNOW?',
+//       fact: 'Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still perfectly good to eat.',
+//       imageUrl: 'https://images.unsplash.com/photo-1587049352851-8d4e89133924',
+//       footer: 'bitrox.tech',
+//       websiteUrl: 'https://bitrox.tech',
+//       slideNumber: 1,
+//     },
+//   ],
+//   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+//     const {
+//       logoColors,
+//       glowColor,
+//       complementaryTextColor,
+//       ensureContrast,
+//       vibrantAccentColor,
+//       backgroundColor,
+//       typography,
+//       graphicStyle,
+//     } = colors;
 
+//     // Color setup
+//     const primaryColor = logoColors.primary;
+//     const accentColor = vibrantAccentColor;
+//     const bgColor = backgroundColor;
+//     const textColor = ensureContrast(complementaryTextColor, bgColor);
+    
+//     const hasImage = !!slide.imageUrl && slide.imageUrl !== 'https://via.placeholder.com/1080';
+//     const isLongFact = slide.fact.length > 120;
+
+//     return (
+//       <div
+//         className={cn('relative w-[1080px] h-[1080px] flex', {
+//           'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+//         })}
+//         style={{
+//           fontFamily: typography.fontFamily,
+//           backgroundColor: chroma(bgColor).darken(0.5).hex(),
+//         }}
+//       >
+//         {/* Left Panel - Image or Color */}
+//         <div 
+//           className="w-1/2 h-full relative"
+//           style={{
+//             backgroundImage:  `linear-gradient(135deg, ${primaryColor} 0%, ${chroma(primaryColor).brighten(1).hex()} 100%)`,
+//             backgroundSize: 'cover',
+//             backgroundPosition: 'center',
+//           }}
+//         >
+//           {/* Subtle overlay for better text contrast */}
+//           <div 
+//             className="absolute inset-0"
+//             style={{
+//               backgroundColor: hasImage ? chroma(bgColor).alpha(0.2).css() : 'transparent',
+//             }}
+//           />
+          
+//           {/* Slide Number */}
+//           <div 
+//             className="absolute top-8 left-8 w-16 h-16 flex items-center justify-center rounded-full"
+//             style={{
+//               backgroundColor: chroma(accentColor).alpha(0.9).css(),
+//               boxShadow: `0 4px 12px ${chroma(accentColor).alpha(0.5).css()}`,
+//             }}
+//           >
+//             <span 
+//               className="text-3xl font-bold"
+//               style={{
+//                 color: ensureContrast('#FFFFFF', accentColor),
+//               }}
+//             >
+//               {slide.slideNumber}
+//             </span>
+//           </div>
+          
+          
+//         </div>
+        
+//         {/* Right Panel - Content */}
+//         <div 
+//           className="w-1/2 h-full flex flex-col justify-center p-16"
+//           style={{
+//             backgroundColor: chroma(bgColor).hex(),
+//           }}
+//         >
+//           {/* Question Mark Icon */}
+//           <div 
+//             className="w-16 h-16 mb-8 flex items-center justify-center rounded-full"
+//             style={{
+//               backgroundColor: chroma(accentColor).alpha(0.15).css(),
+//             }}
+//           >
+//             <span 
+//               className="text-3xl font-bold"
+//               style={{
+//                 color: accentColor,
+//               }}
+//             >
+//               ?
+//             </span>
+//           </div>
+
+//            {addLogo && (
+//             <div className="absolute top-8 right-8 z-20">
+//               <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+//             </div>
+//           )}
+          
+//           {/* Title */}
+//           <h2
+//             className="text-4xl font-bold mb-8"
+//             style={{
+//               color: chroma(textColor).alpha(0.5).css(),
+//             }}
+//           >
+//             {slide.title}
+//           </h2>
+          
+//           {/* Accent Line */}
+//           <div 
+//             className="w-24 h-1 mb-8"
+//             style={{
+//               backgroundColor: accentColor,
+//             }}
+//           />
+          
+//           {/* Fact */}
+//           <p
+//             className={cn('leading-relaxed mb-12', {
+//               'text-2xl': !isLongFact,
+//               'text-xl': isLongFact,
+//             })}
+//             style={{
+//               color: chroma(textColor).alpha(0.9).css(),
+//             }}
+//           >
+//             {slide.fact}
+//           </p>
+          
+//           {/* Footer */}
+//           <div className="mt-auto flex justify-between items-center">
+//             <span
+//               className="text-lg"
+//               style={{
+//                 color: chroma(textColor).alpha(0.6).css(),
+//               }}
+//             >
+//               @{slide.footer}
+//             </span>
+            
+//             <a
+//               href={slide.websiteUrl}
+//               target="_blank"
+//               rel="noopener noreferrer"
+//               className="text-lg"
+//               style={{
+//                 color: accentColor,
+//               }}
+//             >
+//               {slide.websiteUrl}
+//             </a>
+//           </div>
+//         </div>
+//       </div>
+//     );
+//   },
+// };
+
+
+export const EidTemplate: FestivalTemplate = {
+  id: 'eid-crescent-glow',
+  name: 'Eid - Crescent Glow',
+  coverImageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1750150785/festival_images/festival_image_1750150783593.jpg',
+  slides: [
+    {
+      title: 'Eid Mubarak',
+      description: 'Wishing you peace, joy, and prosperity on this blessed occasion!',
+      date: '2025-06-30', // Approximate Eid date in 2025
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1750150785/festival_images/festival_image_1750150783593.jpg', // Example: a crescent moon and mosque background
+      footer: 'Ludhiana Celebrates',
+      websiteUrl: 'https://bitrox.tech',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#FFD700'; // Gold (for moon glow)
+    const secondaryColor = '#4A2C2A'; // Dark Red (for richness)
+    const accentColor = '#FFFFFF'; // White (for purity)
+    const bgColor = '#1C2520'; // Dark Teal
+    const textColor = '#F5F5F5'; // Light Gray
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+          fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* Gradient overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+
+        {/* Crescent Moon Glow */}
+        <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-yellow-300 blur-3xl opacity-40" style={{ backgroundColor: primaryColor }} />
+        <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] rounded-full bg-red-800 blur-2xl opacity-30" style={{ backgroundColor: secondaryColor }} />
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: 'brightness(1.5)' }}
+            />
+          )}
+
+          {/* Title */}
+          <h2
+            className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
+            style={{ color: ensureContrast(textColor, bgColor), textShadow: `0 0 15px ${chroma(primaryColor).alpha(0.6).css()}` }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-3xl font-light max-w-3xl leading-relaxed mb-12"
+            style={{ color: ensureContrast(chroma(textColor).alpha(0.9).hex(), bgColor) }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Decorative Crescent */}
+          <div className="flex items-center space-x-6 mb-12">
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
+            <span className="text-5xl" style={{ color: accentColor }}>🌙</span> {/* Crescent moon unicode */}
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{ backgroundColor: chroma(bgColor).alpha(0.6).css() }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(accentColor, bgColor) }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
+
+
+export const ChristmasTemplate: FestivalTemplate = {
+  id: 'christmas-winter-sparkle',
+  name: 'Christmas - Winter Sparkle',
+  coverImageUrl: '/images/festival-covers/christmas-cover.png',
+  slides: [
+    {
+      title: 'Merry Christmas',
+      description: 'Wishing you a season filled with love, joy, and festive cheer!',
+      date: '2025-12-25',
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1750150785/festival_images/festival_image_1750150783593.jpg',// Example: snowy landscape with lights
+      footer: 'Ludhiana Celebrates',
+      websiteUrl: 'https://bitrox.tech',
+    },
+  ],
+  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
+    const { typography, graphicStyle } = colors;
+
+    const primaryColor = '#FF0000'; // Red (for Christmas)
+    const secondaryColor = '#00CED1'; // Dark Turquoise (for snow)
+    const accentColor = '#FFD700'; // Gold (for lights)
+    const bgColor = '#E0F7FA'; // Light Cyan
+    const textColor = '#2F4F4F'; // Dark Slate Gray
+
+    return (
+      <div
+        className={cn(
+          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center bg-cover bg-center overflow-hidden',
+          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+        )}
+        style={{
+          backgroundImage: `url(${slide.imageUrl})`,
+          backgroundSize: 'cover',
+          fontFamily: typography.fontFamily,
+          fontWeight: typography.fontWeight,
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* Snowfall effect overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-20 animate-pulse" />
+
+        {/* Light Sparkles */}
+        <div className="absolute top-1/3 left-1/4 w-[200px] h-[200px] rounded-full bg-yellow-300 blur-2xl opacity-50" style={{ backgroundColor: accentColor }} />
+        <div className="absolute bottom-1/3 right-1/4 w-[250px] h-[250px] rounded-full bg-red-500 blur-2xl opacity-40" style={{ backgroundColor: primaryColor }} />
+
+        {/* Content Section */}
+        <div className="relative z-10 flex flex-col items-center text-center p-16">
+          {/* Logo */}
+          {addLogo && (
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="mb-12 w-48 h-24 object-contain"
+              style={{ filter: 'drop-shadow(0 0 10px white)' }}
+            />
+          )}
+
+          {/* Title */}
+          <h2
+            className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
+            style={{ color: ensureContrast(textColor, bgColor), textShadow: `0 0 10px ${chroma(accentColor).alpha(0.5).css()}` }}
+          >
+            {slide.title}
+          </h2>
+
+          {/* Description */}
+          <p
+            className="text-3xl font-light max-w-3xl leading-relaxed mb-12"
+            style={{ color: ensureContrast(chroma(textColor).alpha(0.9).hex(), bgColor) }}
+          >
+            {slide.description}
+          </p>
+
+          {/* Decorative Elements */}
+          <div className="flex items-center space-x-6 mb-12">
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
+            <span className="text-5xl" style={{ color: secondaryColor }}>❄️</span> {/* Snowflake unicode */}
+            <span className="text-5xl" style={{ color: accentColor }}>🎄</span> {/* Christmas tree unicode */}
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-10 w-full p-8 text-center"
+          style={{ backgroundColor: chroma(bgColor).alpha(0.7).css() }}
+        >
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-2xl font-semibold tracking-wider"
+            style={{ color: ensureContrast(textColor, bgColor) }}
+          >
+            @{slide.footer}
+          </a>
+        </div>
+      </div>
+    );
+  },
+};
 export const FestivalTemplates: FestivalTemplate[] = [
   // DiwaliTemplate,
   // ChristmasTemplate,
@@ -1526,6 +1888,8 @@ export const FestivalTemplates: FestivalTemplate[] = [
   // LohriTemplate,
   // DussehraTemplate,
   // RakshaBandhanTemplate,
+  // EidTemplate,
+  // ChristmasTemplate
   // KarwaChauthTemplate,
   // PunjabiSpiritTemplate,
   // BusinessEventTemplate,

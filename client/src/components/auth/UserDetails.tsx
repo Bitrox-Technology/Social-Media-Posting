@@ -1,24 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { Formik, Form, Field, FieldArray, ErrorMessage } from 'formik';
+import { Formik, Form, Field, FieldArray, ErrorMessage, FormikProps } from 'formik';
 import * as Yup from 'yup';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  Trash2,
-  Plus,
-  Upload,
-  Building2,
-  Globe,
-  Target,
-  Box,
-  Phone,
-  MapPin,
-  FileText,
-} from 'lucide-react';
+import { Trash2, Plus, Building2, Globe, Target, Box, Phone, MapPin, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useUserDetailsMutation } from '../../store/api';
+import { useDropzone } from 'react-dropzone';
+import { Upload } from '@mui/icons-material';
+
+// Define the shape of initialValues
+interface FormValues {
+  userName: string;
+  email: string;
+  bio: string;
+  uniqueIdentifier: string;
+  countryCode: string;
+  phone: string;
+  location: string;
+  logo: File | null;
+  companyName: string;
+  productCategories: { category: string; productName: string; image: File | null }[];
+  services: string[];
+  keyProducts: string[];
+  targetMarket: string;
+  websiteUrl: string;
+}
+
+// Custom component for product image dropzone
+const ProductImageDropzone: React.FC<{ index: number; setFieldValue: (field: string, value: any) => void; value: File | null }> = ({ index, setFieldValue, value }) => {
+  const onDrop = (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) setFieldValue(`productCategories.${index}.image`, file);
+  };
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: { 'image/*': ['.png', '.jpg', '.jpeg'] },
+    maxFiles: 1,
+  });
+
+  return (
+    <div
+      {...getRootProps()}
+      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 transition-colors flex items-center justify-center h-32 border-dashed"
+    >
+      <input {...getInputProps()} />
+      {value ? (
+        <p className="text-sm text-gray-600 dark:text-gray-400">Selected: {value.name}</p>
+      ) : (
+        <p className="text-sm text-gray-500 dark:text-gray-400">Drag and drop an image here, or click to select</p>
+      )}
+    </div>
+  );
+};
 
 const UserDetail = () => {
   const { theme } = useTheme();
@@ -28,7 +65,6 @@ const UserDetail = () => {
 
   const [userDetails] = useUserDetailsMutation();
 
-  // Predefined country codes and locations
   const countryCodes = [
     { code: '+1', name: 'United States' },
     { code: '+91', name: 'India' },
@@ -51,16 +87,17 @@ const UserDetail = () => {
     'Australia',
   ];
 
-  const [initialValues, setInitialValues] = useState({
+  const [initialValues, setInitialValues] = useState<FormValues>({
     userName: '',
     email: email || '',
-    bio: '', // New bio field
+    bio: '',
+    uniqueIdentifier: '',
     countryCode: '',
     phone: '',
     location: '',
-    logo: null as File | null,
+    logo: null,
     companyName: '',
-    productCategories: [{ category: '', productName: '', image: null as File | null }],
+    productCategories: [{ category: '', productName: '', image: null }],
     services: [''],
     keyProducts: [''],
     targetMarket: '',
@@ -70,14 +107,13 @@ const UserDetail = () => {
   useEffect(() => {
     const savedData = localStorage.getItem('userDetails');
     if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      // Ensure productCategories includes image field
-      parsedData.productCategories = parsedData.productCategories.map((item: any) => ({
+      const parsedData = JSON.parse(savedData) as FormValues;
+      parsedData.productCategories = parsedData.productCategories.map((item) => ({
         ...item,
-        image: null, // Images can't be persisted in localStorage, reset to null
+        image: null,
       }));
-      // Ensure bio is included if not present in saved data
       parsedData.bio = parsedData.bio || '';
+      parsedData.uniqueIdentifier = parsedData.uniqueIdentifier || '';
       setInitialValues(parsedData);
     }
   }, []);
@@ -92,7 +128,10 @@ const UserDetail = () => {
     bio: Yup.string()
       .trim()
       .required('Bio is required')
-      .max(500, 'Bio must be 500 characters or less'), // New validation for bio
+      .max(500, 'Bio must be 500 characters or less'),
+    uniqueIdentifier: Yup.string()
+      .trim()
+      .required('Unique identifier is required'),
     countryCode: Yup.string().trim().required('Country code is required'),
     phone: Yup.string()
       .trim()
@@ -105,7 +144,7 @@ const UserDetail = () => {
         Yup.object({
           category: Yup.string().trim().required('Category is required'),
           productName: Yup.string().trim().required('Product name is required'),
-          image: Yup.mixed().nullable(), // Image is optional
+          image: Yup.mixed().nullable(),
         })
       )
       .min(1, 'At least one product category is required'),
@@ -122,13 +161,14 @@ const UserDetail = () => {
       .required('Website URL is required'),
   });
 
-  const handleSubmit = async (values: typeof initialValues, { setSubmitting, setErrors }: any) => {
+  const handleSubmit = async (values: FormValues, { setSubmitting, setErrors }: { setSubmitting: (isSubmitting: boolean) => void; setErrors: (errors: Partial<Record<keyof FormValues, string>>) => void }) => {
     try {
       const cleanedValues = {
         ...values,
         userName: values.userName.trim(),
         email: values.email.trim().toLowerCase(),
-        bio: values.bio.trim(), // Clean bio
+        bio: values.bio.trim(),
+        uniqueIdentifier: values.uniqueIdentifier.trim(),
         countryCode: values.countryCode.trim(),
         phone: values.phone.trim(),
         location: values.location.trim(),
@@ -146,13 +186,12 @@ const UserDetail = () => {
         websiteUrl: values.websiteUrl.trim(),
       };
 
-      console.log('Cleaned values:', cleanedValues);
       const formData = new FormData();
 
-      // Append simple fields
       formData.append('userName', cleanedValues.userName);
       formData.append('email', cleanedValues.email);
-      formData.append('bio', cleanedValues.bio); // Append bio
+      formData.append('bio', cleanedValues.bio);
+      formData.append('uniqueIdentifier', cleanedValues.uniqueIdentifier);
       formData.append('countryCode', cleanedValues.countryCode);
       formData.append('phone', cleanedValues.phone);
       formData.append('location', cleanedValues.location);
@@ -160,7 +199,6 @@ const UserDetail = () => {
       formData.append('targetMarket', cleanedValues.targetMarket);
       formData.append('websiteUrl', cleanedValues.websiteUrl);
 
-      // Append productCategories with images
       cleanedValues.productCategories.forEach((item, index) => {
         formData.append(`productCategories[${index}][category]`, item.category);
         formData.append(`productCategories[${index}][productName]`, item.productName);
@@ -169,26 +207,23 @@ const UserDetail = () => {
         }
       });
 
-      // Append services as individual array elements
       cleanedValues.services.forEach((service, index) => {
         formData.append(`services[${index}]`, service);
       });
 
-      // Append keyProducts as individual array elements
       cleanedValues.keyProducts.forEach((product, index) => {
         formData.append(`keyProducts[${index}]`, product);
       });
 
-      // Append logo file if present
       if (cleanedValues.logo) {
         formData.append('logo', cleanedValues.logo);
       }
 
-      // Log FormData for debugging
       for (const [key, value] of formData.entries()) {
         console.log(`${key}:`, value);
       }
-
+     
+      console.log("Form data: ", formData)
       const response = await userDetails(formData).unwrap();
       console.log('API response:', response);
 
@@ -205,7 +240,6 @@ const UserDetail = () => {
       }, 2000);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      setErrors({ submit: errorMessage });
       toast.error(errorMessage, {
         position: 'bottom-right',
         autoClose: 3000,
@@ -252,87 +286,38 @@ const UserDetail = () => {
               onSubmit={handleSubmit}
               enableReinitialize
             >
-              {({ isSubmitting, setFieldValue, values }) => (
-                <Form className="space-y-8">
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                      Basic Information
-                    </h3>
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Username
-                        </label>
-                        <Field
-                          type="text"
-                          name="userName"
-                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                          placeholder="Enter your username"
-                        />
-                        <ErrorMessage
-                          name="userName"
-                          component="p"
-                          className="mt-1 text-sm text-red-500"
-                        />
-                      </div>
+              {({ isSubmitting, setFieldValue, values }) => {
+                // Dropzone for logo
+                const onDropLogo = (acceptedFiles: File[]) => {
+                  const file = acceptedFiles[0];
+                  if (file) setFieldValue('logo', file);
+                };
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Email
-                        </label>
-                        <Field
-                          type="email"
-                          name="email"
-                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                          placeholder="Enter your email"
-                        />
-                        <ErrorMessage
-                          name="email"
-                          component="p"
-                          className="mt-1 text-sm text-red-500"
-                        />
-                      </div>
+                const { getRootProps: getLogoRootProps, getInputProps: getLogoInputProps } = useDropzone({
+                  onDrop: onDropLogo,
+                  accept: { 'image/*': ['.png', '.jpg', '.jpeg'] },
+                  maxFiles: 1,
+                });
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <FileText className="inline-block w-4 h-4 mr-2" />
-                          Bio
-                        </label>
-                        <Field
-                          as="textarea"
-                          name="bio"
-                          rows={4}
-                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                          placeholder="Tell us about yourself or your company (max 500 characters)"
-                        />
-                        <ErrorMessage
-                          name="bio"
-                          component="p"
-                          className="mt-1 text-sm text-red-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                      Company Information
-                    </h3>
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                return (
+                  <Form className="space-y-8">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                        Basic Information
+                      </h3>
+                      <div className="space-y-6">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            <Building2 className="inline-block w-4 h-4 mr-2" />
-                            Company Name
+                            Username
                           </label>
                           <Field
                             type="text"
-                            name="companyName"
+                            name="userName"
                             className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                            placeholder="Enter company name"
+                            placeholder="Enter your username"
                           />
                           <ErrorMessage
-                            name="companyName"
+                            name="userName"
                             component="p"
                             className="mt-1 text-sm text-red-500"
                           />
@@ -340,321 +325,396 @@ const UserDetail = () => {
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            <MapPin className="inline-block w-4 h-4 mr-2" />
-                            Location
+                            Email
+                          </label>
+                          <Field
+                            type="email"
+                            name="email"
+                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                            placeholder="Enter your email"
+                          />
+                          <ErrorMessage
+                            name="email"
+                            component="p"
+                            className="mt-1 text-sm text-red-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <FileText className="inline-block w-4 h-4 mr-2" />
+                            Bio
+                          </label>
+                          <Field
+                            as="textarea"
+                            name="bio"
+                            rows={4}
+                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                            placeholder="Tell us about yourself or your company (max 500 characters)"
+                          />
+                          <ErrorMessage
+                            name="bio"
+                            component="p"
+                            className="mt-1 text-sm text-red-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Unique Identifier
+                          </label>
+                          <Field
+                            type="text"
+                            name="uniqueIdentifier"
+                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                            placeholder="bitrox.tech"
+                          />
+                          <ErrorMessage
+                            name="uniqueIdentifier"
+                            component="p"
+                            className="mt-1 text-sm text-red-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                        Company Information
+                      </h3>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              <Building2 className="inline-block w-4 h-4 mr-2" />
+                              Company Name
+                            </label>
+                            <Field
+                              type="text"
+                              name="companyName"
+                              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                              placeholder="Enter company name"
+                            />
+                            <ErrorMessage
+                              name="companyName"
+                              component="p"
+                              className="mt-1 text-sm text-red-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              <MapPin className="inline-block w-4 h-4 mr-2" />
+                              Location
+                            </label>
+                            <Field
+                              as="select"
+                              name="location"
+                              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors appearance-none"
+                            >
+                              <option value="">Select a location</option>
+                              {locations.map((loc) => (
+                                <option key={loc} value={loc}>
+                                  {loc}
+                                </option>
+                              ))}
+                            </Field>
+                            <ErrorMessage
+                              name="location"
+                              component="p"
+                              className="mt-1 text-sm text-red-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <Upload className="inline-block w-4 h-4 mr-2" />
+                            Company Logo
+                          </label>
+                          <div
+                            {...getLogoRootProps()}
+                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 transition-colors flex items-center justify-center h-32 border-dashed"
+                          >
+                            <input {...getLogoInputProps()} />
+                            {values.logo ? (
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Selected: {values.logo.name}
+                              </p>
+                            ) : (
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Drag and drop a logo here, or click to select
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                        Contact Information
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <Phone className="inline-block w-4 h-4 mr-2" />
+                            Country Code
                           </label>
                           <Field
                             as="select"
-                            name="location"
+                            name="countryCode"
                             className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors appearance-none"
                           >
-                            <option value="">Select a location</option>
-                            {locations.map((loc) => (
-                              <option key={loc} value={loc}>
-                                {loc}
+                            <option value="">Select country code</option>
+                            {countryCodes.map((code) => (
+                              <option key={code.code} value={code.code}>
+                                {code.code} ({code.name})
                               </option>
                             ))}
                           </Field>
                           <ErrorMessage
-                            name="location"
+                            name="countryCode"
+                            component="p"
+                            className="mt-1 text-sm text-red-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Phone Number
+                          </label>
+                          <Field
+                            type="text"
+                            name="phone"
+                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                            placeholder="Enter phone number"
+                          />
+                          <ErrorMessage
+                            name="phone"
                             component="p"
                             className="mt-1 text-sm text-red-500"
                           />
                         </div>
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <Upload className="inline-block w-4 h-4 mr-2" />
-                          Company Logo
-                        </label>
-                        <input
-                          type="file"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) setFieldValue('logo', file);
-                          }}
-                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 transition-colors"
-                          accept="image/*"
-                        />
-                      </div>
                     </div>
-                  </div>
 
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                      Contact Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <Phone className="inline-block w-4 h-4 mr-2" />
-                          Country Code
-                        </label>
-                        <Field
-                          as="select"
-                          name="countryCode"
-                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors appearance-none"
-                        >
-                          <option value="">Select country code</option>
-                          {countryCodes.map((code) => (
-                            <option key={code.code} value={code.code}>
-                              {code.code} ({code.name})
-                            </option>
-                          ))}
-                        </Field>
-                        <ErrorMessage
-                          name="countryCode"
-                          component="p"
-                          className="mt-1 text-sm text-red-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Phone Number
-                        </label>
-                        <Field
-                          type="text"
-                          name="phone"
-                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                          placeholder="Enter phone number"
-                        />
-                        <ErrorMessage
-                          name="phone"
-                          component="p"
-                          className="mt-1 text-sm text-red-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                      <Box className="inline-block w-5 h-5 mr-2" />
-                      Product Categories
-                    </h3>
-                    <FieldArray name="productCategories">
-                      {({ remove, push }) => (
-                        <div className="space-y-6">
-                          {values.productCategories.map((category, index) => (
-                            <div key={index} className="space-y-4">
-                              <div className="flex gap-4">
-                                <div className="flex-1">
-                                  <Field
-                                    name={`productCategories.${index}.category`}
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                                    placeholder="Category name"
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                        <Box className="inline-block w-5 h-5 mr-2" />
+                        Product Categories
+                      </h3>
+                      <FieldArray name="productCategories">
+                        {({ remove, push }) => (
+                          <div className="space-y-6">
+                            {values.productCategories.map((category, index) => (
+                              <div key={index} className="space-y-4">
+                                <div className="flex gap-4">
+                                  <div className="flex-1">
+                                    <Field
+                                      name={`productCategories.${index}.category`}
+                                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                                      placeholder="Category name"
+                                    />
+                                    <ErrorMessage
+                                      name={`productCategories.${index}.category`}
+                                      component="p"
+                                      className="mt-1 text-sm text-red-500"
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <Field
+                                      name={`productCategories.${index}.productName`}
+                                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                                      placeholder="Product name"
+                                    />
+                                    <ErrorMessage
+                                      name={`productCategories.${index}.productName`}
+                                      component="p"
+                                      className="mt-1 text-sm text-red-500"
+                                    />
+                                  </div>
+                                  <motion.button
+                                    type="button"
+                                    onClick={() => remove(index)}
+                                    className="p-2 text-red-500 hover:text-red-600 transition-colors"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    disabled={values.productCategories.length === 1}
+                                  >
+                                    <Trash2 size={20} />
+                                  </motion.button>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <Upload className="inline-block w-4 h-4 mr-2" />
+                                    Product Image
+                                  </label>
+                                  <ProductImageDropzone
+                                    index={index}
+                                    setFieldValue={setFieldValue}
+                                    value={values.productCategories[index].image}
                                   />
                                   <ErrorMessage
-                                    name={`productCategories.${index}.category`}
+                                    name={`productCategories.${index}.image`}
                                     component="p"
                                     className="mt-1 text-sm text-red-500"
                                   />
                                 </div>
-                                <div className="flex-1">
-                                  <Field
-                                    name={`productCategories.${index}.productName`}
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                                    placeholder="Product name"
-                                  />
-                                  <ErrorMessage
-                                    name={`productCategories.${index}.productName`}
-                                    component="p"
-                                    className="mt-1 text-sm text-red-500"
-                                  />
-                                </div>
+                              </div>
+                            ))}
+                            <motion.button
+                              type="button"
+                              onClick={() => push({ category: '', productName: '', image: null })}
+                              className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <Plus size={20} className="mr-2" />
+                              Add Category
+                            </motion.button>
+                          </div>
+                        )}
+                      </FieldArray>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                        <FileText className="inline-block w-5 h-5 mr-2" />
+                        Services
+                      </h3>
+                      <FieldArray name="services">
+                        {({ remove, push }) => (
+                          <div className="space-y-4">
+                            {values.services.map((_, index) => (
+                              <div key={index} className="flex gap-4">
+                                <Field
+                                  name={`services.${index}`}
+                                  className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                                  placeholder="Enter a service"
+                                />
                                 <motion.button
                                   type="button"
                                   onClick={() => remove(index)}
                                   className="p-2 text-red-500 hover:text-red-600 transition-colors"
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
-                                  disabled={values.productCategories.length === 1}
+                                  disabled={values.services.length === 1}
                                 >
                                   <Trash2 size={20} />
                                 </motion.button>
                               </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                  <Upload className="inline-block w-4 h-4 mr-2" />
-                                  Product Image
-                                </label>
-                                <input
-                                  type="file"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      setFieldValue(`productCategories.${index}.image`, file);
-                                    }
-                                  }}
-                                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 transition-colors"
-                                  accept="image/*"
+                            ))}
+                            <motion.button
+                              type="button"
+                              onClick={() => push('')}
+                              className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <Plus size={20} className="mr-2" />
+                              Add Service
+                            </motion.button>
+                          </div>
+                        )}
+                      </FieldArray>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                        <Box className="inline-block w-5 h-5 mr-2" />
+                        Key Products
+                      </h3>
+                      <FieldArray name="keyProducts">
+                        {({ remove, push }) => (
+                          <div className="space-y-4">
+                            {values.keyProducts.map((_, index) => (
+                              <div key={index} className="flex gap-4">
+                                <Field
+                                  name={`keyProducts.${index}`}
+                                  className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                                  placeholder="Enter a key product"
                                 />
-                                {values.productCategories[index].image && (
-                                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                    Selected: {values.productCategories[index].image!.name}
-                                  </p>
-                                )}
-                                <ErrorMessage
-                                  name={`productCategories.${index}.image`}
-                                  component="p"
-                                  className="mt-1 text-sm text-red-500"
-                                />
+                                <motion.button
+                                  type="button"
+                                  onClick={() => remove(index)}
+                                  className="p-2 text-red-500 hover:text-red-600 transition-colors"
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  disabled={values.keyProducts.length === 1}
+                                >
+                                  <Trash2 size={20} />
+                                </motion.button>
                               </div>
-                            </div>
-                          ))}
-                          <motion.button
-                            type="button"
-                            onClick={() => push({ category: '', productName: '', image: null })}
-                            className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <Plus size={20} className="mr-2" />
-                            Add Category
-                          </motion.button>
-                        </div>
-                      )}
-                    </FieldArray>
-                  </div>
+                            ))}
+                            <motion.button
+                              type="button"
+                              onClick={() => push('')}
+                              className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <Plus size={20} className="mr-2" />
+                              Add Key Product
+                            </motion.button>
+                          </div>
+                        )}
+                      </FieldArray>
+                    </div>
 
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                      <FileText className="inline-block w-5 h-5 mr-2" />
-                      Services
-                    </h3>
-                    <FieldArray name="services">
-                      {({ remove, push }) => (
-                        <div className="space-y-4">
-                          {values.services.map((_, index) => (
-                            <div key={index} className="flex gap-4">
-                              <Field
-                                name={`services.${index}`}
-                                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                                placeholder="Enter a service"
-                              />
-                              <motion.button
-                                type="button"
-                                onClick={() => remove(index)}
-                                className="p-2 text-red-500 hover:text-red-600 transition-colors"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                disabled={values.services.length === 1}
-                              >
-                                <Trash2 size={20} />
-                              </motion.button>
-                            </div>
-                          ))}
-                          <motion.button
-                            type="button"
-                            onClick={() => push('')}
-                            className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <Plus size={20} className="mr-2" />
-                            Add Service
-                          </motion.button>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                        Market Information
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <Target className="inline-block w-4 h-4 mr-2" />
+                            Target Market
+                          </label>
+                          <Field
+                            type="text"
+                            name="targetMarket"
+                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                            placeholder="e.g., Young professionals"
+                          />
+                          <ErrorMessage
+                            name="targetMarket"
+                            component="p"
+                            className="mt-1 text-sm text-red-500"
+                          />
                         </div>
-                      )}
-                    </FieldArray>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                      <Box className="inline-block w-5 h-5 mr-2" />
-                      Key Products
-                    </h3>
-                    <FieldArray name="keyProducts">
-                      {({ remove, push }) => (
-                        <div className="space-y-4">
-                          {values.keyProducts.map((_, index) => (
-                            <div key={index} className="flex gap-4">
-                              <Field
-                                name={`keyProducts.${index}`}
-                                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                                placeholder="Enter a key product"
-                              />
-                              <motion.button
-                                type="button"
-                                onClick={() => remove(index)}
-                                className="p-2 text-red-500 hover:text-red-600 transition-colors"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                disabled={values.keyProducts.length === 1}
-                              >
-                                <Trash2 size={20} />
-                              </motion.button>
-                            </div>
-                          ))}
-                          <motion.button
-                            type="button"
-                            onClick={() => push('')}
-                            className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <Plus size={20} className="mr-2" />
-                            Add Key Product
-                          </motion.button>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <Globe className="inline-block w-4 h-4 mr-2" />
+                            Website URL
+                          </label>
+                          <Field
+                            type="url"
+                            name="websiteUrl"
+                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
+                            placeholder="https://yourcompany.com"
+                          />
+                          <ErrorMessage
+                            name="websiteUrl"
+                            component="p"
+                            className="mt-1 text-sm text-red-500"
+                          />
                         </div>
-                      )}
-                    </FieldArray>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                      Market Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <Target className="inline-block w-4 h-4 mr-2" />
-                          Target Market
-                        </label>
-                        <Field
-                          type="text"
-                          name="targetMarket"
-                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                          placeholder="e.g., Young professionals"
-                        />
-                        <ErrorMessage
-                          name="targetMarket"
-                          component="p"
-                          className="mt-1 text-sm text-red-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <Globe className="inline-block w-4 h-4 mr-2" />
-                          Website URL
-                        </label>
-                        <Field
-                          type="url"
-                          name="websiteUrl"
-                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-colors"
-                          placeholder="https://yourcompany.com"
-                        />
-                        <ErrorMessage
-                          name="websiteUrl"
-                          component="p"
-                          className="mt-1 text-sm text-red-500"
-                        />
                       </div>
                     </div>
-                  </div>
 
-                  <motion.button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full flex justify-center items-center px-6 py-3 text-base font-medium rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                  </motion.button>
-                </Form>
-              )}
+                    <motion.button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full flex justify-center items-center px-6 py-3 text-base font-medium rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {isSubmitting ? 'Saving...' : 'Save Changes'}
+                    </motion.button>
+                  </Form>
+                );
+              }}
             </Formik>
           </div>
         </motion.div>

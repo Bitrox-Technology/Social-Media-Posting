@@ -19,8 +19,6 @@ interface ProductInfo {
   description: string;
   images: File[];
   postTypes: ('discount' | 'flashSale' | 'product')[];
-  footer: string;
-  websiteUrl: string;
   price: string;
   discount: {
     title: string;
@@ -61,10 +59,6 @@ export const ProductPostCreator: React.FC = () => {
     postTypes: Yup.array()
       .of(Yup.string().oneOf(['discount', 'flashSale', 'product']))
       .min(1, 'Select at least one post type (Discount, Flash Sale, or Product)'),
-    footer: Yup.string().required('Footer is required'),
-    websiteUrl: Yup.string()
-      .url('Must be a valid URL')
-      .required('Website URL is required'),
     price: Yup.string().required('Price is required'),
     discount: Yup.object().when('postTypes', {
       is: (postTypes: string[]) => postTypes.includes('discount'),
@@ -99,8 +93,6 @@ export const ProductPostCreator: React.FC = () => {
       description: '',
       images: [],
       postTypes: [],
-      footer: '',
-      websiteUrl: '',
       price: '',
       discount: {
         title: '',
@@ -123,8 +115,6 @@ export const ProductPostCreator: React.FC = () => {
         ...values,
         name: values.name.trim(),
         description: values.description.trim(),
-        footer: values.footer.trim(),
-        websiteUrl: values.websiteUrl.trim(),
         price: values.price.trim(),
         postTypes: values.postTypes
           .map((type) => type.trim())
@@ -160,12 +150,6 @@ export const ProductPostCreator: React.FC = () => {
         formData.append('postTypes[]', type);
       });
 
-      if (cleanedValues.footer) {
-        formData.append('footer', cleanedValues.footer);
-      }
-      if (cleanedValues.websiteUrl) {
-        formData.append('websiteUrl', cleanedValues.websiteUrl);
-      }
       if (cleanedValues.price) {
         formData.append('price', cleanedValues.price);
       }
@@ -401,44 +385,6 @@ export const ProductPostCreator: React.FC = () => {
                     <p className="text-red-500 text-sm mt-1">
                       {typeof formik.errors.images === 'string' ? formik.errors.images : 'Invalid images'}
                     </p>
-                  )}
-                </div>
-
-                {/* Footer */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Footer
-                  </label>
-                  <input
-                    type="text"
-                    name="footer"
-                    value={formik.values.footer}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    placeholder="Enter footer (e.g., bitrox.tech)..."
-                    className="w-full px-4 py-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {formik.touched.footer && formik.errors.footer && (
-                    <p className="text-red-500 text-sm mt-1">{formik.errors.footer}</p>
-                  )}
-                </div>
-
-                {/* Website URL */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Website URL
-                  </label>
-                  <input
-                    type="text"
-                    name="websiteUrl"
-                    value={formik.values.websiteUrl}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    placeholder="Enter website URL (e.g., https://bitrox.tech)..."
-                    className="w-full px-4 py-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {formik.touched.websiteUrl && formik.errors.websiteUrl && (
-                    <p className="text-red-500 text-sm mt-1">{formik.errors.websiteUrl}</p>
                   )}
                 </div>
 

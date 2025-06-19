@@ -26,7 +26,7 @@ const linkedInAuthentication = (user) => {
       client_id: process.env.LINKEDIN_CLIENT_ID,
       redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
       scope: "openid profile email w_member_social",
-      state: JSON.stringify({ platform:"linkedin", userId: user._id }),
+      state: JSON.stringify({ platform: "linkedin", userId: user._id }),
     });
   return authUrl;
 };
@@ -381,92 +381,104 @@ const linkedInPagePost = async (inputs, accessToken, organizationUrn) => {
 const linkedInPost = async (inputs) => {
   let post;
 
-  let PERSON_URN = "urn:li:person:5mrk23kx86";
-
-  let ACCESS_TOKEN =
-    "AQVxEM_roHvTrj66D6lsIrX-lHePZ5NMF6pge5fVp1hzLbE_B4PlhsGaFRpySurTONIS4Dxcc-BChSt5CZLG46Yp1hc91qGro6DddZimFppgSw4fwp44JMnsXAaTv7cF7UMNsNglOaYml0FiMocoSd8NFlhtqR9d3Pu89IFdPVQ6MFNKvOOJEZ2fE5ADq89YJSywpt2Fm2373WvoEbaxOFq-2KtpdMh6rbUGQTsEXwyZsQHNuaJn0We2Mv2M-UHwg7BjaM0RtgAd4PkiFpg5FfVyGgT9Qmp-LcIDowhx1CmX91pZqsFtfkkuqOhPTkhg_VPp7gAdy7wAdVvZxFrpAV1X0L4vyg";
-
   inputs.accessToken = decryptToken(inputs.accessToken);
 
-  const TEMP_IMAGE_PATH = `./uploads/temp_image_${Date.now()}.png`;
-  await downloadImage(inputs.imageUrl, TEMP_IMAGE_PATH);
+  // Array to store uploaded asset IDs and temporary file paths
+  const mediaAssets = [];
+  const tempImagePaths = [];
 
-  const registerPayload = {
-    registerUploadRequest: {
-      recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
-      owner: inputs.person_urn,
-      serviceRelationships: [
-        {
-          relationshipType: "OWNER",
-          identifier: "urn:li:userGeneratedContent",
-        },
-      ],
-    },
-  };
-
-  let response;
-
-  try {
-    response = await axios.post(
-      "https://api.linkedin.com/v2/assets?action=registerUpload",
-      registerPayload,
-      {
-        headers: {
-          Authorization: `Bearer ${inputs.accessToken}`,
-          "X-Restli-Protocol-Version": "2.0.0",
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  } catch (error) { }
-
-  let uploadUrl =
-    response.data.value.uploadMechanism[
-      "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
-    ].uploadUrl;
-  let asset = response.data.value.asset;
-
-  try {
-    const fileStream = createReadStream(TEMP_IMAGE_PATH);
-
-    // Send PUT request with binary data
-    await axios.put(uploadUrl, fileStream, {
-      headers: {
-        Authorization: `Bearer ${inputs.accessToken}`,
-        "Content-Type": "image/png", // Adjust based on file type (e.g., image/jpeg, video/mp4)
-      },
-    });
-    console.log("Image uploaded successfully");
-  } catch (error) {
-    throw new ApiError(
-      error.response?.status || BAD_REQUEST,
-      `Failed to upload image: ${error.response?.data?.message || error.message
-      }`
-    );
+  // Validate imagesUrl
+  if (!inputs.imagesUrl || !Array.isArray(inputs.imagesUrl) || inputs.imagesUrl.length === 0) {
+    throw new ApiError(BAD_REQUEST, "At least one image URL is required");
   }
 
+  // Upload each image
+  for (const [index, imageUrl] of inputs.imagesUrl.entries()) {
+    const TEMP_IMAGE_PATH = `./Uploads/temp_image_${Date.now()}_${index}.png`;
+    tempImagePaths.push(TEMP_IMAGE_PATH);
+    await downloadImage(imageUrl, TEMP_IMAGE_PATH);
+
+    const registerPayload = {
+      registerUploadRequest: {
+        recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+        owner: inputs.person_urn,
+        serviceRelationships: [
+          {
+            relationshipType: "OWNER",
+            identifier: "urn:li:userGeneratedContent",
+          },
+        ],
+      },
+    };
+
+    let response;
+    try {
+      response = await axios.post(
+        "https://api.linkedin.com/v2/assets?action=registerUpload",
+        registerPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${inputs.accessToken}`,
+            "X-Restli-Protocol-Version": "2.0.0",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } catch (error) {
+      throw new ApiError(
+        error.response?.status || BAD_REQUEST,
+        `Failed to register upload for image ${index + 1}: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+
+    const uploadUrl =
+      response.data.value.uploadMechanism[
+        "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
+      ].uploadUrl;
+    const asset = response.data.value.asset;
+
+    try {
+      const fileStream = createReadStream(TEMP_IMAGE_PATH);
+      await axios.put(uploadUrl, fileStream, {
+        headers: {
+          Authorization: `Bearer ${inputs.accessToken}`,
+          "Content-Type": "image/png", // Adjust based on file type if needed
+        },
+      });
+      console.log(`Image ${index + 1} uploaded successfully`);
+      mediaAssets.push(asset);
+    } catch (error) {
+      throw new ApiError(
+        error.response?.status || BAD_REQUEST,
+        `Failed to upload image ${index + 1}: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+  }
+
+  // Create share payload
   const sharePayload = {
     author: inputs.person_urn,
     lifecycleState: "PUBLISHED",
     specificContent: {
       "com.linkedin.ugc.ShareContent": {
         shareCommentary: {
-          text:
-            inputs.title + "\n" + inputs.description + "\n" + inputs.hashTags,
+          text: inputs.title + "\n" + inputs.description + "\n" + inputs.hashTags,
         },
         shareMediaCategory: "IMAGE",
-        media: [
-          {
-            status: "READY",
-            description: {
-              text: inputs.description,
-            },
-            media: asset,
-            title: {
-              text: inputs.title,
-            },
+        media: mediaAssets.map((asset, index) => ({
+          status: "READY",
+          description: {
+            text: inputs.description,
           },
-        ],
+          media: asset,
+          title: {
+            text: inputs.imagesUrl.length === 1 ? inputs.title : `${inputs.title} ${index + 1}`,
+          },
+        })),
       },
     },
     visibility: {
@@ -475,7 +487,7 @@ const linkedInPost = async (inputs) => {
   };
 
   try {
-    response = await axios.post(
+    const response = await axios.post(
       "https://api.linkedin.com/v2/ugcPosts",
       sharePayload,
       {
@@ -486,20 +498,21 @@ const linkedInPost = async (inputs) => {
         },
       }
     );
+    post = response.headers["x-restli-id"];
   } catch (error) {
     throw new ApiError(
       error.response?.status || BAD_REQUEST,
-      `Failed to create share: ${error.response?.data?.message || error.message
-      }`
+      `Failed to create share: ${error.response?.data?.message || error.message}`
     );
   }
-  post = response.headers["x-restli-id"];
 
-  await fs.unlink(TEMP_IMAGE_PATH).catch(() => { });
+  // Clean up temporary files
+  for (const tempPath of tempImagePaths) {
+    await fs.unlink(tempPath).catch(() => {});
+  }
 
   return post;
 };
-
 const scheduledLinkedPosts = async (inputs, user) => {
   let postResult;
 
@@ -520,7 +533,7 @@ const scheduledLinkedPosts = async (inputs, user) => {
       taskId,
       task: "Post to LinkedIn",
       platform: "linkedin",
-      imageUrl: inputs.imageUrl,
+      imagesUrl: inputs.imagesUrl,
       title: inputs.title,
       description: inputs.description,
       scheduleTime: scheduledDate,
@@ -788,8 +801,6 @@ const fetchPagesAlternative = async (userAccessToken, userId) => {
   return managedPages;
 };
 
-
-
 const facebookCallback = async (query, user) => {
   console.log('Callback query:', query); // Log the entire query object
 
@@ -974,52 +985,222 @@ const facebookCallback = async (query, user) => {
   return { profileData, managedPages };
 };
 
+
+const uploadUnpublishedPhoto = async (pageId, accessToken, imageUrl, caption, index) => {
+  const uploadEndpoint = `https://graph.facebook.com/v23.0/${pageId}/photos`;
+  const postData = {
+    access_token: accessToken,
+    url: imageUrl,
+    caption,
+    published: false, // don't publish directly
+  };
+
+  try {
+    console.log(`Uploading image ${index + 1} (unpublished):`, imageUrl);
+    const response = await axios.post(uploadEndpoint, postData, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data.id; // media_fbid
+  } catch (error) {
+    const errorMessage = error.response?.data?.error?.message || error.message;
+    const errorCode = error.response?.status || BAD_REQUEST;
+    console.error(`Failed to upload image ${index + 1}:`, error.response?.data || error);
+    throw new ApiError(errorCode, `Image ${index + 1} upload failed: ${errorMessage}`);
+  }
+};
+
+// Main function
 const facebookPostOnPage = async (inputs) => {
   if (!inputs.pageId || !inputs.pageAccessToken) {
     throw new ApiError(BAD_REQUEST, "Page ID and access token are required");
   }
 
-  // Decrypt the access token
   const accessToken = decryptToken(inputs.pageAccessToken);
+  const imagesUrl = Array.isArray(inputs.imagesUrl)
+    ? inputs.imagesUrl
+    : inputs.imagesUrl
+    ? [inputs.imagesUrl]
+    : [];
 
+  const message = `${inputs.title || ''}\n\n${inputs.description || ''}\n\n${inputs.hashTags || ''}`.trim();
+
+  // 🧩 Case 1: Carousel (multi-image)
+  if (imagesUrl.length > 1) {
+    const mediaFbids = [];
+
+    for (const [index, imageUrl] of imagesUrl.entries()) {
+      const mediaFbid = await uploadUnpublishedPhoto(
+        inputs.pageId,
+        accessToken,
+        imageUrl,
+        message,
+        index
+      );
+      mediaFbids.push({ media_fbid: mediaFbid });
+    }
+
+    const feedEndpoint = `https://graph.facebook.com/v23.0/${inputs.pageId}/feed`;
+    const postData = {
+      access_token: accessToken,
+      attached_media: JSON.stringify(mediaFbids),
+      message,
+    };
+
+    try {
+      console.log("Posting carousel to feed endpoint:", feedEndpoint);
+      const post = await axios.post(feedEndpoint, postData, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      console.log("Carousel post response:", post.data);
+      return post.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.error?.message || error.message;
+      const errorCode = error.response?.status || BAD_REQUEST;
+      console.error("Facebook API Error (carousel):", error.response?.data || error);
+      throw new ApiError(errorCode, `Failed to post carousel on Facebook: ${errorMessage}`);
+    }
+  }
+
+  // 🧩 Case 2: Single image
+  if (imagesUrl.length === 1) {
+    const photoEndpoint = `https://graph.facebook.com/v23.0/${inputs.pageId}/photos`;
+    const postData = {
+      access_token: accessToken,
+      url: imagesUrl[0],
+      caption: message,
+    };
+
+    try {
+      console.log("Posting single image to photo endpoint:", photoEndpoint);
+      const post = await axios.post(photoEndpoint, postData, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      console.log("Single image post response:", post.data);
+      return post.data;
+    } catch (error) {
+      const errorMessage = error.response?.data?.error?.message || error.message;
+      const errorCode = error.response?.status || BAD_REQUEST;
+      console.error("Facebook API Error (single image):", error.response?.data || error);
+      throw new ApiError(errorCode, `Failed to post image on Facebook: ${errorMessage}`);
+    }
+  }
+
+  // 🧩 Case 3: Text-only post
+  if (!message) {
+    throw new ApiError(BAD_REQUEST, "Post content (title, description, or hashtags) is required");
+  }
+
+  const feedEndpoint = `https://graph.facebook.com/v23.0/${inputs.pageId}/feed`;
   const postData = {
     access_token: accessToken,
+    message,
   };
 
-  let endpoint = `https://graph.facebook.com/v23.0/${inputs.pageId}/feed`;
-  if (inputs.imageUrl) {
-    endpoint = `https://graph.facebook.com/v23.0/${inputs.pageId}/photos`;
-    postData.url = inputs.imageUrl;
-    postData.caption = `${inputs.title || ''}\n\n${inputs.description || ''}\n\n${inputs.hashTags || ''}`;
-  } else {
-    postData.message = `${inputs.title || ''}\n\n${inputs.description || ''}\n\n${inputs.hashTags || ''}`;
-    if (!postData.message.trim()) {
-      throw new ApiError(BAD_REQUEST, "Post content (title, description, or hashtags) is required");
-    }
-  }
-
-  if (inputs.scheduleTime && inputs.scheduleTime !== "") {
-    const scheduledTime = Math.floor(new Date(inputs.scheduleTime).getTime() / 1000);
-    if (scheduledTime <= Math.floor(Date.now() / 1000)) {
-      throw new ApiError(BAD_REQUEST, "Scheduled time must be in the future");
-    }
-    postData.scheduled_publish_time = scheduledTime;
-    postData.published = false;
-  }
-
-  console.log("Posting to endpoint:", endpoint);
-  console.log("Post data:", { ...postData, access_token: "REDACTED" });
-
-  const post = await axios.post(endpoint, postData).catch((error) => {
+  try {
+    console.log("Posting text-only content to feed:", feedEndpoint);
+    const post = await axios.post(feedEndpoint, postData, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    console.log("Text post response:", post.data);
+    return post.data;
+  } catch (error) {
     const errorMessage = error.response?.data?.error?.message || error.message;
     const errorCode = error.response?.status || BAD_REQUEST;
-    console.error("Facebook API Error:", error.response?.data || error);
-    throw new ApiError(errorCode, `Failed to post on Facebook: ${errorMessage}`);
-  });
-
-  console.log("Post response:", post.data);
-  return post.data;
+    console.error("Facebook API Error (text-only):", error.response?.data || error);
+    throw new ApiError(errorCode, `Failed to post text on Facebook: ${errorMessage}`);
+  }
 };
+
+const scheduledFacebookPosts = async (inputs, user) => {
+  let postResult;
+
+  if (inputs.scheduleTime && inputs.scheduleTime !== "") {
+    const cronExpression = convertToCron(inputs.scheduleTime);
+    console.log("Generated cron expression:", cronExpression);
+
+    const scheduledDate = new Date(inputs.scheduleTime);
+    const now = new Date();
+    if (scheduledDate <= now) {
+      throw new ApiError(BAD_REQUEST, i18n.__("INVALID_SCHEDULED_TIME"));
+    }
+
+    const taskId = uuidv4();
+
+    const scheduledTask = new UserScheduledTask({
+      userId: user._id,
+      taskId,
+      task: "Post to Facebook",
+      platform: "facebook",
+      imagesUrl: inputs.imagesUrl,
+      title: inputs.title,
+      description: inputs.description,
+      scheduleTime: scheduledDate,
+      cronExpression,
+      status: "pending",
+      postId: null,
+    });
+
+    await scheduledTask.save();
+
+    // Schedule the task using node-cron
+    const task = cron.schedule(
+      cronExpression,
+      async () => {
+        try {
+          postResult = await facebookPostOnPage(inputs);
+          console.log(
+            `Scheduled post executed successfully with post ID: ${postResult.id}`
+          );
+
+          // Update the scheduled task with the postId and status
+          await UserScheduledTask.updateOne(
+            { taskId },
+            {
+              $set: {
+                status: "completed",
+                postId: postResult.id,
+              },
+            }
+          );
+        } catch (error) {
+          console.error("Scheduled Facebook post failed:", error.message);
+
+          // Update the scheduled task status to 'failed'
+          await UserScheduledTask.updateOne(
+            { taskId },
+            {
+              $set: {
+                status: "failed",
+              },
+            }
+          );
+        }
+      },
+      {
+        scheduled: true,
+        timezone: "Asia/Kolkata", // Use IST timezone as per the current date
+      }
+    );
+
+    return {
+      message: `Post scheduled successfully for ${scheduledDate.toLocaleString(
+        "en-IN",
+        { timeZone: "Asia/Kolkata" }
+      )}`,
+      taskId,
+      postId: null,
+    };
+  } else {
+    postResult = await facebookPostOnPage(inputs);
+    console.log(`Post executed immediately with post ID: ${postResult}`);
+    if (!postResult) throw new ApiError(BAD_REQUEST, i18n.__("POST_FAILED"));
+    return {
+      message: "Post published immediately",
+      postId: postResult,
+    };
+  }
+};
+
 
 const instagramAuthentication = (user) => {
   const InstaAuthUrl = `https://www.instagram.com/oauth/authorize?` +
@@ -1027,7 +1208,7 @@ const instagramAuthentication = (user) => {
       response_type: "code",
       client_id: process.env.INSTAGRAM_APP_ID,
       redirect_uri: process.env.INSTAGRAM_REDIRECT_URI,
-      scope: "instagram_business_basic,instagram_business_manage_messages, instagram_business_manage_comments,instagram_business_content_publish",
+      scope: "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments, instagram_business_content_publish",
       state: JSON.stringify({ platform: 'instagram', userId: user._id }),
     });
 
@@ -1087,39 +1268,237 @@ const instagramCallback = async (query) => {
 
 
 const getIGAccount = async (inputs) => {
-  const pageAccessToken = decryptToken(inputs.pageAccessToken);
-  const igPostData = {
-    image_url: inputs.imageUrl,
-    caption: `${inputs.title || ''}\n\n${inputs.description || ''}\n\n${inputs.hashTags || ''}`,
-    access_token: pageAccessToken
-  };
-  const igResponse = await axios.post(
-    `https://graph.facebook.com/v23.0/${inputs.igBusinessId}/media`,
-    igPostData
-  ).catch((error) => {
-    throw new ApiError(
-      error.response?.status || BAD_REQUEST,
-      `Failed to get Instagram account: ${error.response?.data?.error_description || error.message
-      }`
-    );
-  });
+  console.log("Inputs: ----", inputs);
+  if (!inputs.igBusinessId || !inputs.pageAccessToken) {
+    throw new ApiError(BAD_REQUEST, "Instagram Business ID and access token are required");
+  }
 
-  console.log("IgResponse: ", igResponse.data)
-  const creationId = igResponse.data.id;
+  const accessToken = decryptToken(inputs.pageAccessToken);
+  let creationId;
+
+  // Validate inputs
+  if (!accessToken || !inputs.igBusinessId.match(/^\d+$/)) {
+    throw new ApiError(BAD_REQUEST, "Invalid access token or Instagram Business ID");
+  }
+
+  // Determine if it's a carousel (multiple images) or single image
+  const imagesUrl = Array.isArray(inputs.imagesUrl) ? inputs.imagesUrl : inputs.imageUrl ? [inputs.imageUrl] : [];
+  const caption = `${inputs.title || ''}\n\n${inputs.description || ''}\n\n${inputs.hashTags || ''}`;
+  if (caption.length > 2200) {
+    throw new ApiError(BAD_REQUEST, "Caption exceeds 2,200 character limit");
+  }
+
+  // Utility function to check media status
+  const checkMediaStatus = async (mediaId) => {
+    try {
+      const response = await axios.get(
+        `https://graph.facebook.com/v23.0/${mediaId}`,
+        { params: { access_token: accessToken, fields: 'status_code,status' } }
+      );
+      const status = response.data.status || response.data.status_code || 'IN_PROGRESS';
+      console.log(`Media ${mediaId} status: ${status}`);
+      return status;
+    } catch (error) {
+      console.error(`Error checking status for ${mediaId}:`, error.response?.data?.error);
+      throw new Error(`Status check failed: ${error.response?.data?.error?.message || error.message}`);
+    }
+  };
+
+  // Utility function to delay
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  if (imagesUrl.length === 1) {
+    // Single image post
+    const postData = {
+      image_url: imagesUrl[0],
+      access_token: accessToken,
+      caption: caption
+    
+    };
+    const igResponse = await axios.post(
+      `https://graph.facebook.com/v23.0/${inputs.igBusinessId}/media`,
+      postData,
+      {
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+      }
+    ).catch((error) => {
+      console.error("Single media creation error response:", error.response?.data);
+      throw new ApiError(
+        error.response?.status || BAD_REQUEST,
+        `Failed to create Instagram media: ${error.response?.data?.error_description || error.message}`
+      );
+    });
+    creationId = igResponse.data.id;
+    console.log("Single media created:", igResponse.data);
+    
+  } else if (imagesUrl.length > 1 && imagesUrl.length <= 10) {
+    // Carousel post
+    // Step 1: Create children (images)
+    const childrenCreationIds = [];
+    for (const imageUrl of imagesUrl) {
+      const childData = {
+        image_url: imageUrl,
+      };
+      const childResponse = await axios.post(
+        `https://graph.facebook.com/v23.0/${inputs.igBusinessId}/media`,
+        childData,
+        {
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        }
+      ).catch((error) => {
+        console.error("Child media creation error response:", error.response?.data);
+        throw new ApiError(
+          error.response?.status || BAD_REQUEST,
+          `Failed to create child media for ${imageUrl}: ${error.response?.data?.error_description || error.message}`
+        );
+      });
+      const childId = childResponse.data.id;
+      console.log("Child id: ", childId)
+      childrenCreationIds.push(childId);
+      console.log(`Child media created for ${imageUrl}:`, childId);
+
+      // Poll status for each child
+    }
+    
+    console.log("Carousel ids", childrenCreationIds)
+    // Step 2: Create carousel container
+    const containerData = {
+      access_token: accessToken,
+      media_type: 'CAROUSEL',
+      caption: caption,
+      children: childrenCreationIds, // Array of child IDs
+    };
+    console.log("Container request data:", containerData);
+    const containerResponse = await axios.post(
+      `https://graph.facebook.com/v23.0/${inputs.igBusinessId}/media`,
+      containerData,
+      { headers: { 'Content-Type': 'application/json' } }
+    ).catch((error) => {
+      console.error("Carousel container creation error response:", error.response?.data);
+      throw new ApiError(
+        error.response?.status || BAD_REQUEST,
+        `Failed to create Instagram carousel container: ${error.response?.data?.error_description || error.message}`
+      );
+    });
+    creationId = containerResponse.data.id;
+    console.log("Carousel container created:", containerResponse.data);
+    
+  } else if (imagesUrl.length === 0) {
+    throw new ApiError(BAD_REQUEST, "At least one image URL is required for Instagram post");
+  } else {
+    throw new ApiError(BAD_REQUEST, "Maximum 10 images allowed for Instagram carousel");
+  }
+
+  // Step 3: Publish the media (carousel or single image)
+  const publishData = {
+    creation_id: creationId,
+    access_token: accessToken,
+  };
   const publishResponse = await axios.post(
     `https://graph.facebook.com/v23.0/${inputs.igBusinessId}/media_publish`,
-    { creation_id: creationId, access_token: pageAccessToken }
+    publishData,
+    { headers: { 'Content-Type': 'application/json' } }
   ).catch((error) => {
+    console.error("Publish error response:", error.response?.data);
     throw new ApiError(
       error.response?.status || BAD_REQUEST,
-      `Failed to publish on Instagram account: ${error.response?.data?.error_description || error.message
-      }`
+      `Failed to publish on Instagram account: ${error.response?.data?.error_description || error.message}`
     );
   });
   console.log("Instagram Post Published:", publishResponse.data);
 
   return publishResponse.data;
 };
+const scheduledInstagramPosts = async (inputs, user) => {
+  let postResult;
+
+  if (inputs.scheduleTime && inputs.scheduleTime !== "") {
+    const cronExpression = convertToCron(inputs.scheduleTime);
+    console.log("Generated cron expression:", cronExpression);
+
+    const scheduledDate = new Date(inputs.scheduleTime);
+    const now = new Date();
+    if (scheduledDate <= now) {
+      throw new ApiError(BAD_REQUEST, i18n.__("INVALID_SCHEDULED_TIME"));
+    }
+
+    const taskId = uuidv4();
+
+    const scheduledTask = new UserScheduledTask({
+      userId: user._id,
+      taskId,
+      task: "Post to Instagram",
+      platform: "instagram",
+      imagesUrl: inputs.imagesUrl,
+      title: inputs.title,
+      description: inputs.description,
+      scheduleTime: scheduledDate,
+      cronExpression,
+      status: "pending",
+      postId: null,
+    });
+
+    await scheduledTask.save();
+
+    // Schedule the task using node-cron
+    const task = cron.schedule(
+      cronExpression,
+      async () => {
+        try {
+          postResult = await getIGAccount(inputs);
+          console.log(
+            `Scheduled post executed successfully with post ID: ${postResult}`
+          );
+
+          // Update the scheduled task with the postId and status
+          await UserScheduledTask.updateOne(
+            { taskId },
+            {
+              $set: {
+                status: "completed",
+                postId: postResult.id,
+              },
+            }
+          );
+        } catch (error) {
+          console.error("Scheduled Instagram post failed:", error.message);
+
+          // Update the scheduled task status to 'failed'
+          await UserScheduledTask.updateOne(
+            { taskId },
+            {
+              $set: {
+                status: "failed",
+              },
+            }
+          );
+        }
+      },
+      {
+        scheduled: true,
+        timezone: "Asia/Kolkata", // Use IST timezone as per the current date
+      }
+    );
+
+    return {
+      message: `Post scheduled successfully for ${scheduledDate.toLocaleString(
+        "en-IN",
+        { timeZone: "Asia/Kolkata" }
+      )}`,
+      taskId,
+      postId: null,
+    };
+  } else {
+    postResult = await getIGAccount(inputs);
+    console.log(`Post executed immediately with post ID: ${postResult}`);
+    if (!postResult) throw new ApiError(BAD_REQUEST, i18n.__("POST_FAILED"));
+    return {
+      message: "Post published immediately",
+      postId: postResult,
+    };
+  }
+};
+
 
 const instagramCreateMedia = async (inputs) => {
   const mediaRes = await axios.post(
@@ -1166,6 +1545,8 @@ const SocialServices = {
   instagramCreateMedia,
   instagramPublishMedia,
   getSocialAuthDetail,
+  scheduledFacebookPosts,
+  scheduledInstagramPosts
 };
 
 export default SocialServices;
