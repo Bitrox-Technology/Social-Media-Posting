@@ -45,7 +45,8 @@ const PaytmPayment: React.FC<PaytmPaymentProps> = ({ plan, isAnnual }) => {
       email: user?.email || 'user@example.com',
       mobileNumber:  '7777777777',
     };
-
+    
+    console.log("Payment Data: ", paymentData)
     try {
       await initiatePayment(paymentData).unwrap();
     } catch (err: any) {

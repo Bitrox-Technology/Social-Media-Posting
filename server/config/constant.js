@@ -77,6 +77,31 @@ const serctionTypes = Object.freeze({
   article: 'article'
 })
 
+const planTitleTypes = Object.freeze({
+  starter:'Starter',
+  professional: 'Professional', 
+  business: 'Business'
+})
+
+const billingTypes = Object.freeze({
+  monthlly: 'monthly',
+  annual:  'annual'
+})
+
+const paymentStatusTypes = Object.freeze({
+  pending: 'PENDING',
+  completed:  'COMPLETED',
+  failed: 'FAILED',
+  cancelled: 'CANCELLED'
+})
+
+const subscriptionStatusTypes = Object.freeze({
+  pending: 'PENDING',
+  active:  'ACTIVE',
+  expired: 'EXPIRED',
+  cancelled: 'CANCELLED'
+})
+
 export const SUBSCRIPTION_ENUM = Object.values(subscriptionTypes);
 export const ROLE_ENUM = Object.values(roleTypes);
 export const STATUS_ENUM = Object.values(statusTypes);
@@ -88,6 +113,10 @@ export const POST_TYPE_ENUM = Object.values(postTypeTypes);
 export const CONTENT_TYPE_ENUM = Object.values(contentTypeTypes);
 export const PRODUCT_POST_TYPE_ENUM = Object.values(productPostTypes);
 export const SECTION_TYPE_ENUM = Object.values(serctionTypes);
+export const PLAN_TITLE_TYPES = Object.values(planTitleTypes)
+export const BILLING_TYPES = Object.values(billingTypes)
+export const PAYMENT_STATUS_TYPES = Object.values(paymentStatusTypes)
+export const SUBSCRIPTION_STATUS_TYPES = Object.values(subscriptionStatusTypes)
 
 export const config = {
   port: process.env.PORT || 3000,

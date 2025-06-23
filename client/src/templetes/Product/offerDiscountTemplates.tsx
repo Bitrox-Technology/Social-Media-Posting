@@ -495,5 +495,10 @@ export const OfferTemplate5: OfferTemplate = {
   },
 };
 export const OfferTemplates: OfferTemplate[] = [
-  OfferTemplate5
+  // OfferTemplate1,
+  // OfferTemplate2,
+  // OfferTemplate3,
+  // OfferTemplate4,
+  OfferTemplate5,
+
 ];

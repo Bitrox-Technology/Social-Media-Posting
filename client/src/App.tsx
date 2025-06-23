@@ -53,7 +53,9 @@ import { EventTemplateSelector } from './components/ui/EventTemplates';
 import PostBlog from './components/content/PostBlog';
 import BlogList from './components/content/SavedBlogs';
 import { FestivalPostCreator } from './components/content/festivalInfo';
-import { PaymentPage } from './components/price/PaymentPage';
+import PaymentPage from './components/price/PaymentPage';
+import PaymentStatusPage from './components/price/PaymentStatusPage';
+
 
 
 function App() {
@@ -255,6 +257,7 @@ function App() {
                         element={<UserDetail />}
                       />
                       <Route path="/payment/:planTitle" element={<PaymentPage />} />
+                      <Route path='/payment-status/:transactionId' element={<PaymentStatusPage/>} />
                       <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                     <SessionWarning />

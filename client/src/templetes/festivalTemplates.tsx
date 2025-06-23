@@ -43,115 +43,132 @@ const ensureContrast = (color1: string, color2: string) => {
 };
 
 // 1. Updated Diwali Template - Aligned with New Aesthetic
-export const DiwaliTemplate: FestivalTemplate = {
-  id: 'diwali-happy-ludhiana',
-  name: 'Diwali - Happy Ludhiana',
+export const DiwaliGlowTemplate: FestivalTemplate = {
+  id: 'diwali-glow-elegance',
+  name: 'Diwali - Glow Elegance',
   coverImageUrl: '/images/festival-covers/diwali-cover.png',
   slides: [
     {
       title: 'Happy Diwali',
-      description: 'May your life be filled with endless light!',
-      date: '2025-06-10',
-      imageUrl: '/images/festival-backgrounds/diwali-bg.jpg', // Example: a bokeh light background
-      footer: 'Ludhiana Celebrates',
+      description: 'Illuminate your life with the light of joy and prosperity! Celebrate the festival of lights with us.',
+      date: '2026-11-08', // Diwali 2026 (future date)
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1750150785/festival_images/festival_image_1750150783593.jpg',
+      footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, graphicStyle } = colors;
+  renderSlide: (slide: FestivalSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => {
+    const { logoColors, glowColor, complementaryTextColor, ensureContrast, vibrantTextColor, backgroundColor, typography, graphicStyle } = colors;
 
-    const primaryColor = '#FFD700'; // Gold
-    const secondaryColor = '#FF4500'; // Orange-Red
-    const bgColor = '#1A1A1A'; // Deep Dark
-    const textColor = '#FFFFFF'; // White
-    const accentColor = '#FFC107'; // Amber
+    const primaryColor = chroma('#ff6f61').hex(); // Coral pink (used in FlashSaleTemplate1)
+    const secondaryColor = chroma('#1b263b').hex(); // Navy blue (for the button)
+    const accentColor = chroma('#fff').hex(); // White for text
+    const bgColor = chroma('#f5f5f5').hex(); // Light gray for the overall background
+    const textColor = chroma('#1b263b').hex(); 
 
     return (
       <div
-        className={cn(
-          'relative w-[1080px] h-[1080px] flex flex-col items-center justify-center bg-cover bg-center overflow-hidden',
-          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
-        )}
+        className={cn('relative w-[1080px] h-[1080px] flex', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
         style={{
-          backgroundImage: `url(${slide.imageUrl})`,
-          backgroundSize: 'cover',
           fontFamily: typography.fontFamily,
-          fontWeight: typography.fontWeight,
           backgroundColor: bgColor,
-          boxShadow: `0 0 40px ${chroma(primaryColor).alpha(0.7).css()}`,
         }}
       >
-        {/* Subtle overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
-        <div className="absolute inset-0" style={{ backgroundColor: chroma(bgColor).alpha(0.4).css() }} />
+        {/* Left Panel - Image with Glow Overlay */}
+        <div
+          className="w-1/2 h-full relative"
+          style={{
+            backgroundImage: slide.imageUrl ? `url(${slide.imageUrl})` : `linear-gradient(135deg, ${primaryColor} 0%, ${chroma(primaryColor).darken(1).hex()} 100%)`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundColor: chroma(glowColor || '#FFD700').alpha(0.3).css(),
+              
+            }}
+          />
+        </div>
 
-        {/* Decorative Light Glows (layered) */}
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-50" style={{ backgroundColor: primaryColor }} />
-        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full blur-3xl opacity-40" style={{ backgroundColor: secondaryColor }} />
-        <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] rounded-full blur-3xl opacity-60" style={{ backgroundColor: accentColor }} />
-
-        {/* Central Content */}
-        <div className="relative z-10 flex flex-col items-center text-center p-16">
-          {/* Logo */}
+        {/* Right Panel - Content */}
+        <div
+          className="w-1/2 h-full flex flex-col justify-center p-16"
+          style={{
+            backgroundColor: chroma(bgColor).brighten(0.2).hex(),
+          }}
+        >
+          {/* Logo in Top-Right */}
           {addLogo && (
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="mb-12 w-48 h-24 object-contain"
-              style={{ filter: 'brightness(1.5)', boxShadow: `0 0 20px ${chroma(primaryColor).alpha(0.8).css()}` }}
-            />
+            <div className="absolute top-8 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
           )}
 
-          {/* Title with extra glow */}
+          {/* Title */}
           <h2
-            className="text-8xl font-black uppercase mb-6 tracking-wide"
+            className="text-5xl font-bold mb-6 "
             style={{
-              color: ensureContrast(textColor, bgColor),
-              textShadow: `0 0 20px ${chroma(accentColor).alpha(0.8).css()}, 0 0 30px ${chroma(primaryColor).alpha(0.6).css()}`,
+              color: chroma(textColor).alpha(0.9).css(),
+              marginTop: '10rem'
             }}
           >
             {slide.title}
           </h2>
 
+          {/* Accent Line */}
+          <div
+            className="w-24 h-1 mb-8"
+            style={{
+              backgroundColor: chroma(textColor).alpha(0.9).css(),
+            }}
+          />
+
           {/* Description */}
           <p
-            className="text-4xl font-light max-w-3xl mb-12"
+            className="text-xl leading-relaxed mb-6"
             style={{
-              color: ensureContrast(chroma(textColor).alpha(0.8).hex(), bgColor),
-              textShadow: `0 0 10px ${chroma(primaryColor).alpha(0.4).css()}`,
+              color: chroma(textColor).alpha(0.9).css(),
             }}
           >
             {slide.description}
           </p>
 
-          {/* Decorative Diya Line */}
-          <div className="flex items-center space-x-4 mb-12">
-            <div className="w-20 h-1 rounded-full" style={{ backgroundColor: primaryColor }} />
-            <span className="text-5xl" style={{ color: accentColor }}>🪔</span> {/* Diya unicode character */}
-            <div className="w-20 h-1 rounded-full" style={{ backgroundColor: primaryColor }} />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div
-          className="relative z-10 w-full p-8 text-right"
-          style={{
-            backgroundColor: chroma(bgColor).alpha(0.6).css(),
-            borderTop: `1px solid ${chroma(primaryColor).alpha(0.3).css()}`,
-          }}
-        >
-          <a
-            href={slide.websiteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-2xl font-medium tracking-wider"
+          {/* Date */}
+          <p
+            className="text-lg font-medium mb-8"
             style={{
-              color: ensureContrast(accentColor, bgColor),
-              textShadow: `0 0 8px ${chroma(accentColor).alpha(0.5).css()}`,
+              color: chroma(textColor).alpha(0.8).css(),
             }}
           >
-            @{slide.footer}
-          </a>
+            Date: {slide.date}
+          </p>
+
+          {/* Footer */}
+          <div className="mt-auto flex justify-between items-center">
+            <span
+              className="text-lg"
+              style={{
+                color: chroma(textColor).alpha(0.9).css(),
+              }}
+            >
+              @{slide.footer}
+            </span>
+            <a
+              href={slide.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg hover:underline"
+              style={{
+                color: chroma(textColor).alpha(0.9).css(),
+              }}
+            >
+              {slide.websiteUrl}
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -1780,109 +1797,132 @@ export const EidTemplate: FestivalTemplate = {
 };
 
 
-export const ChristmasTemplate: FestivalTemplate = {
-  id: 'christmas-winter-sparkle',
-  name: 'Christmas - Winter Sparkle',
+export const ChristmasCheerTemplate: FestivalTemplate = {
+  id: 'christmas-cheer-modern',
+  name: 'Christmas - Cheer Modern',
   coverImageUrl: '/images/festival-covers/christmas-cover.png',
   slides: [
     {
       title: 'Merry Christmas',
-      description: 'Wishing you a season filled with love, joy, and festive cheer!',
-      date: '2025-12-25',
-      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1750150785/festival_images/festival_image_1750150783593.jpg',// Example: snowy landscape with lights
-      footer: 'Ludhiana Celebrates',
+      description: 'Spread joy and warmth this holiday season! Join us for a festive celebration filled with love and cheer.',
+      date: '2025-12-25', // Christmas 2025
+      imageUrl: 'https://res.cloudinary.com/deuvfylc5/image/upload/v1750150785/festival_images/festival_image_1750150783593.jpg',
+      footer: 'bitrox.tech',
       websiteUrl: 'https://bitrox.tech',
     },
   ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, graphicStyle } = colors;
+  renderSlide: (slide: FestivalSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => {
+    const { logoColors, glowColor, complementaryTextColor, ensureContrast, vibrantLogoColor, backgroundColor, typography, graphicStyle } = colors;
 
-    const primaryColor = '#FF0000'; // Red (for Christmas)
-    const secondaryColor = '#00CED1'; // Dark Turquoise (for snow)
-    const accentColor = '#FFD700'; // Gold (for lights)
-    const bgColor = '#E0F7FA'; // Light Cyan
-    const textColor = '#2F4F4F'; // Dark Slate Gray
+    // Color setup for Christmas theme
+   const primaryColor = chroma('#ff6f61').hex(); // Coral pink (used in FlashSaleTemplate1)
+    const secondaryColor = chroma('#1b263b').hex(); // Navy blue (for the button)
+    const accentColor = chroma('#fff').hex(); // White for text
+    const bgColor = chroma('#f5f5f5').hex(); // Light gray for the overall background
+    const textColor = chroma('#1b263b').hex(); 
 
     return (
       <div
-        className={cn(
-          'relative w-[1080px] h-[1080px] flex flex-col justify-center items-center bg-cover bg-center overflow-hidden',
-          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
-        )}
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+        })}
         style={{
-          backgroundImage: `url(${slide.imageUrl})`,
-          backgroundSize: 'cover',
           fontFamily: typography.fontFamily,
-          fontWeight: typography.fontWeight,
           backgroundColor: bgColor,
         }}
       >
-        {/* Snowfall effect overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-20 animate-pulse" />
-
-        {/* Light Sparkles */}
-        <div className="absolute top-1/3 left-1/4 w-[200px] h-[200px] rounded-full bg-yellow-300 blur-2xl opacity-50" style={{ backgroundColor: accentColor }} />
-        <div className="absolute bottom-1/3 right-1/4 w-[250px] h-[250px] rounded-full bg-red-500 blur-2xl opacity-40" style={{ backgroundColor: primaryColor }} />
-
-        {/* Content Section */}
-        <div className="relative z-10 flex flex-col items-center text-center p-16">
-          {/* Logo */}
+        {/* Top Section - Image */}
+        <div
+          className="w-full h-1/2 relative"
+          style={{
+            backgroundImage: slide.imageUrl ? `url(${slide.imageUrl})` : `linear-gradient(135deg, ${primaryColor} 0%, ${chroma(primaryColor).darken(1).hex()} 100%)`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundColor: chroma(glowColor || '#FFFFFF').alpha(0.2).css(),
+              boxShadow: `inset 0 0 30px ${chroma(glowColor || '#FFFFFF').alpha(0.4).css()}`,
+            }}
+          />
+          {/* Logo in Top-Right */}
           {addLogo && (
-            <img
-              src={defaultLogoUrl}
-              alt="Logo"
-              className="mb-12 w-48 h-24 object-contain"
-              style={{ filter: 'drop-shadow(0 0 10px white)' }}
-            />
+            <div className="absolute top-8 right-8 z-20">
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+            </div>
           )}
+        </div>
 
+        {/* Bottom Section - Content */}
+        <div
+          className="w-full h-1/2 flex flex-col justify-center p-16"
+          style={{
+            backgroundColor: chroma(bgColor).darken(0.1).hex(),
+          }}
+        >
           {/* Title */}
           <h2
-            className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
-            style={{ color: ensureContrast(textColor, bgColor), textShadow: `0 0 10px ${chroma(accentColor).alpha(0.5).css()}` }}
+            className="text-5xl font-bold mb-6"
+            style={{
+              color: primaryColor,
+              textShadow: `0 0 8px ${chroma(accentColor).alpha(0.5).css()}`,
+            }}
           >
             {slide.title}
           </h2>
 
           {/* Description */}
           <p
-            className="text-3xl font-light max-w-3xl leading-relaxed mb-12"
-            style={{ color: ensureContrast(chroma(textColor).alpha(0.9).hex(), bgColor) }}
+            className="text-xl leading-relaxed mb-6"
+            style={{
+              color: chroma(textColor).alpha(0.9).css(),
+            }}
           >
             {slide.description}
           </p>
 
-          {/* Decorative Elements */}
-          <div className="flex items-center space-x-6 mb-12">
-            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
-            <span className="text-5xl" style={{ color: secondaryColor }}>❄️</span> {/* Snowflake unicode */}
-            <span className="text-5xl" style={{ color: accentColor }}>🎄</span> {/* Christmas tree unicode */}
-            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div
-          className="relative z-10 w-full p-8 text-center"
-          style={{ backgroundColor: chroma(bgColor).alpha(0.7).css() }}
-        >
-          <a
-            href={slide.websiteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-2xl font-semibold tracking-wider"
-            style={{ color: ensureContrast(textColor, bgColor) }}
+          {/* Date */}
+          <p
+            className="text-lg font-medium mb-8"
+            style={{
+              color: chroma(textColor).alpha(0.9).css(),
+            }}
           >
-            @{slide.footer}
-          </a>
+            Date: {slide.date}
+          </p>
+
+          {/* Footer */}
+          <div className="mt-auto flex justify-between items-center">
+            <span
+              className="text-lg"
+              style={{
+                color: chroma(textColor).alpha(0.6).css(),
+              }}
+            >
+              @{slide.footer}
+            </span>
+            <a
+              href={slide.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg hover:underline"
+              style={{
+                color: chroma(textColor).alpha(0.6).css(),
+              }}
+            >
+              {slide.websiteUrl}
+            </a>
+          </div>
         </div>
       </div>
     );
   },
 };
 export const FestivalTemplates: FestivalTemplate[] = [
-  // DiwaliTemplate,
-  // ChristmasTemplate,
+  DiwaliGlowTemplate,
+  ChristmasCheerTemplate,
   HoliTemplate,
   // BaisakhiTemplate,
   // LohriTemplate,

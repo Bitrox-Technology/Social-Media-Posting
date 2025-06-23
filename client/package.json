@@ -53,9 +53,11 @@
     "recharts": "^2.15.3",
     "redux-persist": "^6.0.0",
     "sanitize-html": "^2.17.0",
+    "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.17",
     "swiper": "^11.2.5",
     "tesseract.js": "^6.0.1",
+    "uuid": "^11.1.0",
     "yup": "^1.6.1"
   },
   "devDependencies": {

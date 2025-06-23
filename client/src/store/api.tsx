@@ -40,11 +40,14 @@ interface ApiResponse<T> {
 }
 
 export interface PaymentInitiateRequest {
-  orderId: string;
-  amount: number;
-  customerId: string;
-  email: string;
-  mobileNumber: string;
+  amount: number,
+  planTitle: string,
+  billing: string,
+  phone: string,
+  name: string,
+  email: string,
+  transactionId: string,
+  subscriptionId: string,
 }
 
 interface SavePostRequest {
@@ -391,7 +394,7 @@ export const api = createApi({
         body,
       }),
     }),
-    generateBlog: builder.mutation<ApiResponse<any>, {topic: string}>({
+    generateBlog: builder.mutation<ApiResponse<any>, { topic: string }>({
       query: (topic) => ({
         url: '/generate-blog',
         method: 'POST',
@@ -504,22 +507,22 @@ export const api = createApi({
         body: formData
       }),
     }),
-    saveBlog: builder.mutation<ApiResponse<any>, {title: string, content: string, metaDescription: string, categories:  string[]; tags:  string[]; slug: string; focusKeyword: string; excerpt: string; imageUrl: string, imageAltText: string}>({
+    saveBlog: builder.mutation<ApiResponse<any>, { title: string, content: string, metaDescription: string, categories: string[]; tags: string[]; slug: string; focusKeyword: string; excerpt: string; imageUrl: string, imageAltText: string }>({
       query: (body) => ({
         url: '/user/save-blog',
         method: 'POST',
         body: body
       }),
     }),
-    postBlog: builder.mutation<ApiResponse<any>, {title: string, content: string, metaDescription: string, categories:  string[]; tags:  string[]; slug: string; focusKeyword: string; excerpt: string; imageUrl: string, imageAltText: string; section: string; scheduleTime: string, wordpress_username: string; wordpress_password: string}>({
+    postBlog: builder.mutation<ApiResponse<any>, { title: string, content: string, metaDescription: string, categories: string[]; tags: string[]; slug: string; focusKeyword: string; excerpt: string; imageUrl: string, imageAltText: string; section: string; scheduleTime: string, wordpress_username: string; wordpress_password: string }>({
       query: (body) => ({
         url: '/user/blog-post',
         method: 'POST',
         body: body
       }),
     }),
-    getBlogById: builder.query<ApiResponse<any>, {blogId: string}>({
-      query: ({blogId}) => ({
+    getBlogById: builder.query<ApiResponse<any>, { blogId: string }>({
+      query: ({ blogId }) => ({
         url: `/user/get-blog/${blogId}`,
         method: 'GET',
       }),
@@ -555,14 +558,14 @@ export const api = createApi({
         body
       }),
     }),
-    facebookPagePost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imagesUrl: string[]; scheduleTime: string, pageAccessToken: string, pageId: string}>({
+    facebookPagePost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imagesUrl: string[]; scheduleTime: string, pageAccessToken: string, pageId: string }>({
       query: (body) => ({
         url: '/social/facebook/post',
         method: 'POST',
         body
       }),
     }),
-    instagramBusinessPost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imagesUrl: string[]; scheduleTime: string, pageAccessToken: string, igBusinessId: string}>({
+    instagramBusinessPost: builder.mutation<ApiResponse<any>, { title: string; description: string, hashTags: string, imagesUrl: string[]; scheduleTime: string, pageAccessToken: string, igBusinessId: string }>({
       query: (body) => ({
         url: '/social/instagram/post',
         method: 'POST',
@@ -588,19 +591,34 @@ export const api = createApi({
         body: formData
       }),
     }),
-    getFestivalContent: builder.query<ApiResponse<any>, {contentId: String}>({
-      query: ({contentId}) => ({
+    getFestivalContent: builder.query<ApiResponse<any>, { contentId: String }>({
+      query: ({ contentId }) => ({
         url: `/user/get-festival-content/${contentId}`,
         method: 'GET',
       }),
     }),
-    initiatePayment: builder.mutation<ApiResponse<any>, PaymentInitiateRequest>({
+    phonePeInitiatePayment: builder.mutation<ApiResponse<any>, PaymentInitiateRequest>({
       query: (body) => ({
-        url: '/paymenet/payment-initiate',
+        url: '/payment/phone-pe/payment-initiate',
         method: 'POST',
         body,
       }),
     }),
+    phonePeCheckStatus: builder.mutation<ApiResponse<any>, {transactionId: string;}>({
+      query: (body) => ({
+        url: '/payment/phone-pe/status',
+        method: 'POST',
+        body,
+      }),
+    }),
+    createSubscription: builder.mutation<ApiResponse<any>, {planTitle: string; billing: string; amount: number}>({
+      query: (body) => ({
+        url: '/user/phone-pe/subscription',
+        method: 'POST',
+        body,
+      }),
+    }),
+    
     verifyPayment: builder.query<ApiResponse<any>, { orderId: string }>({
       query: ({ orderId }) => ({
         url: `/payment/verify?orderId=${orderId}`,
@@ -614,7 +632,7 @@ export const api = createApi({
 
       }),
     }),
-    wordpressAuth: builder.mutation<ApiResponse<any>, {wordpress_username: string, wordpress_password: string}>({
+    wordpressAuth: builder.mutation<ApiResponse<any>, { wordpress_username: string, wordpress_password: string }>({
       query: (body) => ({
         url: '/user/wordpress-auth',
         method: 'POST',
@@ -634,8 +652,8 @@ export const api = createApi({
         body: formData
       }),
     }),
-    getProductContent: builder.query<ApiResponse<any>, {contentId: String}>({
-      query: ({contentId}) => ({
+    getProductContent: builder.query<ApiResponse<any>, { contentId: String }>({
+      query: ({ contentId }) => ({
         url: `/user/get-product-content/${contentId}`,
         method: 'GET',
       }),
@@ -721,11 +739,14 @@ export const {
   useLazyGetUserScheduledPostsQuery,
   useFestivalContentMutation,
   useLazyGetFestivalContentQuery,
-  useInitiatePaymentMutation,
   useVerifyPaymentQuery,
   useLazyHolidaysQuery,
   useWordpressAuthMutation,
   useLazyGetWordpressAuthQuery,
   useProductContentMutation,
   useLazyGetProductContentQuery,
+
+  usePhonePeInitiatePaymentMutation,
+  usePhonePeCheckStatusMutation,
+  useCreateSubscriptionMutation,
 } = api;

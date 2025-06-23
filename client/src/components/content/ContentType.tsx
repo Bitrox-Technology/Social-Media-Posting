@@ -23,10 +23,9 @@ export const ContentTypeSelector: React.FC = () => {
   const typeMap: Record<string, "carousel" | "doyouknow" | "topic" | "blog" | "promotional" | "informative" | "engagement" | "brand" | "event" | "testimonial" | "festivals"> = {
     "Social Media 1 Week Post": "topic",
     "Blog Article": "blog",
-    "Promotional/Sales Post": "promotional",
+    "Product Post": "promotional",
     "Informative/Educational Post": "informative",
     "News Post": "engagement",
-    "Product Post": "brand",
     "Event-Related Post": "event",
     "Holidays/Festival Greetings Post": "festivals",
   };
@@ -57,7 +56,7 @@ export const ContentTypeSelector: React.FC = () => {
       iconColor: 'text-purple-600 dark:text-purple-400',
     },
     {
-      type: 'Promotional/Sales Post',
+      type: 'Product Post',
       icon: Tag,
       description: 'Drive sales with compelling promotional content and offers',
       gradient: 'from-blue-500 to-purple-600',
@@ -79,14 +78,6 @@ export const ContentTypeSelector: React.FC = () => {
       gradient: 'from-pink-500 to-red-600',
       iconBg: 'bg-pink-100 dark:bg-pink-900/30',
       iconColor: 'text-pink-600 dark:text-pink-400',
-    },
-    {
-      type: 'Product Post',
-      icon: Building,
-      description: 'Strengthen your brand identity with storytelling content',
-      gradient: 'from-purple-500 to-indigo-600',
-      iconBg: 'bg-purple-100 dark:bg-purple-900/30',
-      iconColor: 'text-purple-600 dark:text-purple-400',
     },
     {
       type: 'Event-Related Post',

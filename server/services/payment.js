@@ -1,9 +1,13 @@
 import PaytmChecksum from 'paytm-pg-node-sdk';
 import axios from 'axios';
 import { ApiError } from '../utils/ApiError.js';
-import { BAD_REQUEST, INTERNAL_SERVER_ERROR } from '../utils/apiResponseCode.js';
+import { BAD_REQUEST, INTERNAL_SERVER_ERROR, PAGE_NOT_FOUND } from '../utils/apiResponseCode.js';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { StandardCheckoutPayRequest } from 'pg-sdk-node';
+import PhonePeClient from '../config/phonePe.js';
+import Payment from '../models/payment.js';
+import Subscription from '../models/subscription.js';
 
 const paymentInitiate = async (inputs, user) => {
     const paytmParams = {
@@ -24,6 +28,8 @@ const paymentInitiate = async (inputs, user) => {
             },
         },
     };
+
+    console.log("Payment params", paytmParams)
 
     try {
         // Generate checksum
@@ -117,120 +123,150 @@ const paymentCallback = async (inputs, user) => {
     }
 }
 
-const generateChecksum = (payload, endpoint) => {
-    if (!payload || !endpoint) {
-        throw new Error('Payload and endpoint are required for checksum generation');
-    }
-    const stringToHash = payload + endpoint + process.env.PHONEPE_SALT_KEY;
-    console.log("String Hash", stringToHash)
-    const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
-    console.log("Sha256", sha256)
-    return `${sha256}###${process.env.PHONEPE_SALT_INDEX}`;
-};
 
-const phonePePaymentInitiate = async (inputs, user) => {
-    if (!inputs.phone || !inputs.amount || !inputs.name || !inputs.email) {
-        throw new ApiError(BAD_REQUEST, 'Missing required fields');
+const phonePePaymentInitiate = async (inputs, user, { updatePaymentStatus }) => {
+
+    let subscription = await Subscription.findById({ _id: inputs.subscriptionId }).lean();
+    if (!subscription) {
+        console.log('Invalid subscription', { subscriptionId: inputs.subscriptionId, userId: user._id });
+        throw new ApiError(BAD_REQUEST, 'Invalid subscription');
     }
 
-    const transactionId = `TXN_${uuidv4()}`;
+    const transactionId = inputs.transactionId || `TXN_${uuidv4()}`;
+    const request = StandardCheckoutPayRequest.builder()
+        .merchantOrderId(transactionId)
+        .amount(inputs.amount * 100) // Convert to paise
+        .redirectUrl(`${process.env.FRONTEND_URL}/payment-status/${transactionId}`)
+        .metaInfo({ planTitle: inputs.planTitle, billing: inputs.billing })
+        .expireAfter(1800) // Set to 30 minutes
+        .build();
 
-    const paymentPayload = {
-        merchantId: process.env.PHONEPE_MERCHANT_ID,
-        merchantUserId: `MUID_${uuidv4()}`,
-        mobileNumber: inputs.phone,
-        amount: Number(inputs.amount) * 100, // Convert to paise
-        merchantTransactionId: transactionId,
-        redirectUrl: `${process.env.REDIRECT_URL}?transactionId=${transactionId}`,
-        redirectMode: 'POST',
-        paymentInstrument: { type: 'PAY_PAGE' },
-    };
 
-    console.log("Payment Payload", paymentPayload)
+    const phonePeClient = PhonePeClient()
 
-    try {
-        const payload = Buffer.from(JSON.stringify(paymentPayload)).toString('base64');
-        const checksum = generateChecksum(payload, '/pg/v1/pay');
+    const response = await phonePeClient.pay(request);
+    if (!response) throw new ApiError(INTERNAL_SERVER_ERROR, `Payment initiation failed`);
 
-        const response = await axios.post(
-            process.env.PHONEPE_API_URL,
-            { request: payload },
+    const checkoutPageUrl = response.redirectUrl;
+    const payment = await Payment.create({
+        transactionId,
+        merchantOrderId: transactionId,
+        userId: user.id,
+        subscriptionId: subscription._id,
+        amount: inputs.amount,
+        planTitle: inputs.planTitle,
+        billing: inputs.billing,
+        phone: inputs.phone,
+        name: inputs.name,
+        email: inputs.email,
+        status: 'PENDING',
+    })
+
+    if (!payment) throw new ApiError(INTERNAL_SERVER_ERROR, 'Failed to create payment')
+    await updatePaymentStatus(transactionId, { status: 'PENDING', transactionId });
+
+    subscription = await Subscription.findByIdAndUpdate({ _id: subscription._id }, { transactionId: payment.transactionId });
+    if (!subscription) throw new ApiError(INTERNAL_SERVER_ERROR, 'Failed to update subscription')
+
+    return { success: true, paymentUrl: checkoutPageUrl, transactionId };
+
+
+
+}
+
+const phonePeStatus = async (inputs, user, { updatePaymentStatus }) => {
+    console.log("Inputs: ", inputs)
+
+    let payment = await Payment.findOne({ transactionId: inputs.transactionId, userId: user._id }).lean();
+    console.log("Payment: ", payment)
+    if (!payment) {
+        throw new ApiError(BAD_REQUEST, 'Payment not found');
+    }
+
+    const phonePeClient = PhonePeClient()
+    const response = await phonePeClient.getOrderStatus(inputs.transactionId);
+    if (!response) throw new ApiError(INTERNAL_SERVER_ERROR, `Status check failed`);
+    console.log("Response: ", response)
+
+    payment = await Payment.findByIdAndUpdate(
+        { _id: payment._id },
+        { status: response.state, paymentDetails: response, updatedAt: new Date() },
+        { new: true }
+    );
+    let subscription;
+    if (response.state === 'COMPLETED') {
+        const expiryDate = new Date();
+        expiryDate.setDate(
+            expiryDate.getDate() + (payment.billing === 'annual' ? 365 : 30)
+        );
+        subscription = await Subscription.findOneAndUpdate(
+            { transactionId: inputs.transactionId },
             {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-VERIFY': checksum,
-                },
+                status: 'ACTIVE',
+                startDate: new Date(),
+                expiryDate,
+                updatedAt: new Date(),
             }
         );
+        console.log('Subscription activated', subscription);
+    }
 
-        if (!response.data.success || !response.data.data?.instrumentResponse?.redirectInfo?.url) {
-            throw new ApiError(INTERNAL_SERVER_ERROR, 'Invalid response from PhonePe API');
+    await updatePaymentStatus(inputs.transactionId, {
+        status: response.state,
+        transactionId: inputs.transactionId,
+        data: response,
+    });
+
+    return  response
+
+
+
+}
+
+const phonePePaymentCallback = async (params, inputs, { updatePaymentStatus }) => {
+    const status = inputs.state || 'PENDING';
+
+    try {
+        const payment = await Payment.findOne({ transactionId: params.transactionId }).lean();
+        if (payment) {
+            payment.status = status;
+            payment.paymentDetails = inputs;
+            await payment.save();
+
+            if (status === 'COMPLETED') {
+                const subscription = await Subscription.findOne({ transactionId: params.transactionId });
+                if (subscription) {
+                    const expiryDate = new Date();
+                    expiryDate.setDate(
+                        expiryDate.getDate() + (subscription.billing === 'annual' ? 365 : 30)
+                    );
+                    subscription.status = 'ACTIVE';
+                    subscription.startDate = new Date();
+                    subscription.expiryDate = expiryDate;
+                    await subscription.save();
+                    console.log('Subscription activated via callback', { transactionId: params.transactionId, expiryDate });
+                }
+            }
+
+            await updatePaymentStatus(params.transactionId, { status, transactionId: params.transactionId, data: inputs });
+            console.log('Payment callback processed', { transactionId: params.transactionId, status });
+
+        } else {
+            console.log('Payment not found for callback', { transactionId: params.transactionId });
+            throw new ApiError(PAGE_NOT_FOUND, null, 'Payment not found');
         }
-
-        return {
-            success: true,
-            message: 'Payment initiated successfully',
-            redirectUrl: response.data.data.instrumentResponse.redirectInfo.url,
-            transactionId,
-        };
     } catch (error) {
-        if (error.response) {
-            // Handle specific PhonePe API errors
-            const { code, message } = error.response.data;
-            throw new ApiError(
-                error.response.status,
-                `PhonePe API Error: ${code || 'UNKNOWN'} - ${message || 'Unknown error'}`
-            );
-        }
-        throw new ApiError(INTERNAL_SERVER_ERROR, `Payment initiation failed: ${error.message}`);
+        throw new ApiError(INTERNAL_SERVER_ERROR, ('Callback processing failed'));
     }
 }
 
-const phonePeStatus = async (query) => {
-    if (!query.transactionId) {
-        throw new ApiError(BAD_REQUEST, 'Transaction ID required');
-    }
 
-    const stringToHash = `/pg/v1/status/${process.env.PHONEPE_MERCHANT_ID}/${query.transactionId}${process.env.PHONEPE_SALT_KEY}`;
-    const checksum = generateChecksum(stringToHash, '');
-
-    try {
-        const response = await axios.get(
-            `${process.env.PHONEPE_STATUS_URL}/${process.env.PHONEPE_MERCHANT_ID}/${transactionId}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-VERIFY': checksum,
-                    'X-MERCHANT-ID': process.env.PHONEPE_MERCHANT_ID,
-                },
-            }
-        );
-
-        const { success, data } = response.data;
-        return {
-            success,
-            status: data.responseCode,
-            transactionId,
-            redirectUrl: success && data.responseCode === 'SUCCESS'
-                ? process.env.FRONTEND_SUCCESS_URL
-                : process.env.FRONTEND_FAILURE_URL,
-        };
-    } catch (error) {
-        if (error.response) {
-            const { code, message } = error.response.data;
-            throw new ApiError(
-                error.response.status,
-                `PhonePe Status Error: ${code || 'UNKNOWN'} - ${message || 'Unknown error'}`
-            );
-        }
-        throw new ApiError(INTERNAL_SERVER_ERROR, `Status check failed: ${error.message}`);
-    }
-}
 const PaymentServices = {
     paymentInitiate,
     paymentCallback,
     phonePePaymentInitiate,
-    phonePeStatus
+    phonePeStatus,
+    phonePePaymentCallback
 
 }
 

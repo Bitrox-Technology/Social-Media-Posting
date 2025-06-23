@@ -239,6 +239,7 @@ export const AutoPostCreator: React.FC = () => {
               showAlert
             );
           } else {
+            userData.index = 0;
             newPost = await generateImagePost(
               topic,
               type,

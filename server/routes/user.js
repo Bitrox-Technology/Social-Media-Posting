@@ -42,6 +42,7 @@ userRouter.post("/product-content", AuthMiddleware, uploadMemory.any(), UserCont
 userRouter.get("/get-product-content/:contentid", AuthMiddleware, UserControllers.GetProductContent)
 userRouter.post("/wordpress-auth", AuthMiddleware, UserControllers.WordpressAuth)
 userRouter.get("/get-wordpress-auth", AuthMiddleware, UserControllers.GetWordpressAuth)
+userRouter.post('/phone-pe/subscription', AuthMiddleware, UserControllers.CreateUserSubscription);
 // userRouter.post("/update-profile", AuthMiddleware, upload.single("avatar"), UserControllers.UpdateProfile)
 // userRouter.get("/get-profile", AuthMiddleware, UserControllers.GetProfile)
 // userRouter.post("/logout", AuthMiddleware, UserControllers.Logout)

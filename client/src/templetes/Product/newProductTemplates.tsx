@@ -146,7 +146,7 @@ export const NewProductTemplate1: NewProductTemplate = {
         {/* Text Panel */}
         <div
           className="w-1/3 h-full flex flex-col justify-center p-8"
-          style={{ backgroundColor:  chroma(usePrimary).alpha(0.8).css() }}
+          style={{ backgroundColor: chroma(usePrimary).alpha(0.8).css() }}
         >
           <h2
             className="text-6xl font-extrabold mb-6 text-center leading-tight"
@@ -227,7 +227,9 @@ export const NewProductTemplate2: NewProductTemplate = {
     {
       title: 'THE NEW PRODUCT',
       description: 'Chase and get our new product which is very high quality and limited.',
-      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
+      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750084381/product_images/imagesUrl_image_1750084379003.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084382/product_images/imagesUrl_image_1750084381218.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084383/product_images/imagesUrl_image_1750084382556.jpg",],
       price: '599',
       footer: 'reallygreatsite.com',
       websiteUrl: 'https://reallygreatsite.com',
@@ -310,78 +312,178 @@ export const NewProductTemplate3: NewProductTemplate = {
   slides: [
     {
       title: 'RAIN FOREST EAU DE PERFUME',
-      description: 'Introducing Rain Forest Eau de Perfume',
+      description: 'Discover the essence of nature with our new fragrance.',
       price: '399',
-      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
-      footer: 'reallygreatsite.com',
-      websiteUrl: 'https://reallygreatsite.com',
+      imagesUrl: [
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084381/product_images/imagesUrl_image_1750084379003.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084382/product_images/imagesUrl_image_1750084381218.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084383/product_images/imagesUrl_image_1750084382556.jpg",
+      ],
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
     },
   ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { logoColors, materialTheme, typography, graphicStyle } = colors;
+  renderSlide: (slide: NewProductSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => {
+    const { logoColors, materialTheme, typography, graphicStyle, ensureContrast } = colors;
 
-    const primaryColor = chroma('#4a7c59').hex(); // Forest green
-    const secondaryColor = chroma('#e8d7c5').hex(); // Beige
+    // Color setup
+    const primaryColor = chroma(logoColors.primary || '#4a7c59').hex(); // Forest green
+    const secondaryColor = chroma(logoColors.secondary || '#e8d7c5').hex(); // Beige
     const accentColor = chroma('#2d3033').hex(); // Dark slate
     const bgColor = chroma('#f8f4e9').hex(); // Cream
-    const textColor = chroma('#2d3033').hex(); // Dark slate
-
-    const usePrimary = logoColors.primary || primaryColor;
-    const useSecondary = logoColors.secondary || secondaryColor;
+    const textColor = ensureContrast('#2d3033', bgColor); // Dark slate with contrast check
 
     return (
       <div
-        className={cn('relative w-[1080px] h-[1080px] flex flex-col items-center justify-center', {
-          'rounded-lg': graphicStyle.borderRadius !== '0px',
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
         })}
         style={{
           backgroundColor: bgColor,
           fontFamily: typography.fontFamily,
           color: textColor,
-          overflow: 'hidden',
         }}
       >
-        {/* Natural Elements */}
-        <div className="absolute inset-0">
+        {/* Background Gradient Overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(135deg, ${chroma(primaryColor).alpha(0.2).css()} 0%, ${chroma(secondaryColor).alpha(0.2).css()} 100%)`,
+            opacity: 0.5,
+          }}
+        >
           <svg
             className="absolute top-0 left-0 w-1/2 h-1/2 opacity-20"
             viewBox="0 0 200 200"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              fill={usePrimary}
+              fill={primaryColor}
               d="M44.7,-76.4C58.9,-69.8,71.8,-59.2,79.6,-45.3C87.4,-31.3,90.2,-14.1,88.1,2C86,18.2,79,33.3,69.3,46.5C59.7,59.7,47.4,71,33.2,77.7C19,84.3,2.8,86.3,-12.4,83.5C-27.7,80.8,-42,73.3,-54.3,63C-66.7,52.7,-77.1,39.7,-82.6,24.7C-88.1,9.7,-88.7,-7.3,-83.8,-22C-78.9,-36.7,-68.4,-49.2,-55.6,-56.1C-42.7,-63,-27.5,-64.3,-13.2,-70.5C1.1,-76.7,30.5,-83,44.7,-76.4Z"
               transform="translate(100 100)"
             />
           </svg>
         </div>
 
-        {/* Product Image */}
-        <div className="relative z-10">
-          <img src={slide.imagesUrl[0]} alt="Product" className="w-48 h-64 object-contain mb-8" />
+        {/* Logo in Top-Right */}
+        {addLogo && (
+          <div className="absolute top-4 right-4 z-20">
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="w-32 h-16 object-contain"
+              style={{ filter: graphicStyle.filter }}
+            />
+          </div>
+        )}
+
+        {/* Image Section */}
+        <div className="relative w-full h-[70%] flex items-center justify-center">
+          {slide.imagesUrl && slide.imagesUrl.length >= 3 && (
+            <div className="relative flex items-center justify-center">
+              {/* Center Hexagon */}
+              <div
+                className="absolute w-80 h-80 transition-transform hover:scale-105"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[0]}
+                  alt="Product 1"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Top-Right Hexagon */}
+              <div
+                className="absolute w-64 h-64 translate-x-48 -translate-y-48 transition-transform hover:scale-105"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[1]}
+                  alt="Product 2"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Bottom-Left Hexagon */}
+              <div
+                className="absolute w-64 h-64 -translate-x-48 translate-y-48 transition-transform hover:scale-105"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[2]}
+                  alt="Product 3"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Text Content */}
-        <h2 className="text-4xl font-bold mb-4 text-center">{slide.title}</h2>
-        <p className="text-lg mb-6 text-center" style={{ color: chroma(textColor).alpha(0.8).css() }}>{slide.description}</p>
-        <a
-          href={slide.websiteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-6 py-2 rounded-full text-white text-lg"
-          style={{ backgroundColor: usePrimary }}
+        {/* Content Section */}
+        <div
+          className="w-full h-[30%] flex flex-col justify-center items-center bg-white bg-opacity-90 p-8"
+          style={{
+            backgroundColor: chroma(bgColor).darken(0.1).alpha(0.9).css(),
+          }}
         >
-          Shop Now
-        </a>
-        <a
-          href={slide.websiteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 text-sm"
-          style={{ color: textColor }}
-        >
-          {slide.footer}
-        </a>
+          <h2
+            className="text-4xl font-bold mb-2 text-center"
+            style={{ color: accentColor }}
+          >
+            {slide.title}
+          </h2>
+          <p
+            className="text-lg mb-4 text-center"
+            style={{ color: chroma(textColor).alpha(0.8).css() }}
+          >
+            {slide.description}
+          </p>
+          <p
+            className="text-xl font-bold mb-4"
+            style={{ color: primaryColor }}
+          >
+            ${slide.price}
+          </p>
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-8 py-3 rounded-full text-white text-lg font-semibold transition-transform hover:scale-105"
+            style={{ backgroundColor: accentColor }}
+          >
+            Shop Now
+          </a>
+        </div>
+
+        {/* Footer Section */}
+        <div className="absolute bottom-4 w-full flex justify-between items-center z-10 px-8">
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg font-semibold tracking-wider hover:underline"
+            style={{ color: chroma(textColor).alpha(0.8).css() }}
+          >
+            {slide.websiteUrl}
+          </a>
+          <p
+            className="text-lg font-semibold tracking-wider"
+            style={{ color: chroma(textColor).alpha(0.8).css() }}
+          >
+            @{slide.footer}
+          </p>
+        </div>
       </div>
     );
   },
@@ -393,79 +495,178 @@ export const NewProductTemplate4: NewProductTemplate = {
   coverImageUrl: '/images/image-cover/discount-highlight.png',
   slides: [
     {
-      title: 'NEW PRODUCT',
-      description: 'Get Discount Up to 50%',
+      title: 'NEW PRODUCT LAUNCH',
+      description: 'Grab up to 50% off on our latest collection!',
       price: '449',
-      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
-      footer: 'reallygreatsite.com',
-      websiteUrl: 'https://reallygreatsite.com',
+      imagesUrl: [
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084381/product_images/imagesUrl_image_1750084379003.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084382/product_images/imagesUrl_image_1750084381218.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084383/product_images/imagesUrl_image_1750084382556.jpg",
+      ],
+      footer: 'bitrox.tech',
+      websiteUrl: 'https://bitrox.tech',
     },
   ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { logoColors, materialTheme, typography, graphicStyle } = colors;
+  renderSlide: (slide: NewProductSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => {
+    const { logoColors, materialTheme, typography, graphicStyle, ensureContrast } = colors;
 
-    const primaryColor = chroma('#4a7c59').hex(); // Forest green
-    const secondaryColor = chroma('#e8d7c5').hex(); // Beige
-    const accentColor = chroma('#2d3033').hex(); // Dark slate
-    const bgColor = chroma('#fff').hex(); // White
-    const textColor = chroma('#2d3033').hex(); // Dark slate
-
-    const usePrimary = logoColors.primary || primaryColor;
-    const useSecondary = logoColors.secondary || secondaryColor;
+    // Color setup
+    const primaryColor = chroma(logoColors.primary || '#4a7c59').hex(); // Forest green
+    const secondaryColor = chroma(logoColors.secondary || '#e8d7c5').hex(); // Beige
+    const accentColor = chroma('#FF5733').hex(); // Vibrant orange for discount highlight
+    const bgColor = chroma('#FFFFFF').hex(); // White
+    const textColor = ensureContrast('#2d3033', bgColor); // Dark slate
 
     return (
       <div
-        className={cn('relative w-[1080px] h-[1080px] flex flex-col items-center justify-center', {
-          'rounded-lg': graphicStyle.borderRadius !== '0px',
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
         })}
         style={{
           backgroundColor: bgColor,
           fontFamily: typography.fontFamily,
           color: textColor,
-          overflow: 'hidden',
         }}
       >
-        {/* Natural Elements */}
-        <div className="absolute inset-0">
+        {/* Background Decor */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(circle at top right, ${chroma(accentColor).alpha(0.3).css()} 0%, transparent 70%)`,
+          }}
+        >
           <svg
             className="absolute top-0 left-0 w-1/3 h-1/3 opacity-20"
             viewBox="0 0 200 200"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              fill={usePrimary}
+              fill={primaryColor}
               d="M44.7,-76.4C58.9,-69.8,71.8,-59.2,79.6,-45.3C87.4,-31.3,90.2,-14.1,88.1,2C86,18.2,79,33.3,69.3,46.5C59.7,59.7,47.4,71,33.2,77.7C19,84.3,2.8,86.3,-12.4,83.5C-27.7,80.8,-42,73.3,-54.3,63C-66.7,52.7,-77.1,39.7,-82.6,24.7C-88.1,9.7,-88.7,-7.3,-83.8,-22C-78.9,-36.7,-68.4,-49.2,-55.6,-56.1C-42.7,-63,-27.5,-64.3,-13.2,-70.5C1.1,-76.7,30.5,-83,44.7,-76.4Z"
               transform="translate(100 100)"
             />
           </svg>
         </div>
 
-        {/* Product Image */}
-        <div className="relative z-10">
-          <img src={slide.imagesUrl[0]} alt="Product" className="w-48 h-64 object-contain mb-8" />
+        {/* Logo in Top-Right */}
+        {addLogo && (
+          <div className="absolute top-4 right-4 z-20">
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="w-32 h-16 object-contain"
+              style={{ filter: graphicStyle.filter }}
+            />
+          </div>
+        )}
+
+        {/* Image Section */}
+        <div className="relative w-full h-[65%] flex items-center justify-center">
+          {slide.imagesUrl && slide.imagesUrl.length >= 3 && (
+            <div className="relative flex items-center justify-center">
+              {/* Center Hexagon */}
+              <div
+                className="absolute w-80 h-80 transition-transform hover:scale-105"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[0]}
+                  alt="Product 1"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Top-Right Hexagon */}
+              <div
+                className="absolute w-64 h-64 translate-x-48 -translate-y-48 transition-transform hover:scale-105"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[1]}
+                  alt="Product 2"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Bottom-Left Hexagon */}
+              <div
+                className="absolute w-64 h-64 -translate-x-48 translate-y-48 transition-transform hover:scale-105"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[2]}
+                  alt="Product 3"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Text Content */}
-        <h2 className="text-4xl font-bold mb-4 text-center">{slide.title}</h2>
-        <p className="text-2xl font-semibold mb-6 text-center" style={{ color: usePrimary }}>{slide.description}</p>
-        <a
-          href={slide.websiteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-6 py-2 rounded-full text-white text-lg"
-          style={{ backgroundColor: accentColor }}
+        {/* Content Section */}
+        <div
+          className="w-full h-[35%] flex flex-col justify-center items-center bg-white bg-opacity-95 p-8"
+          style={{
+            backgroundColor: chroma(bgColor).alpha(0.95).css(),
+          }}
         >
-          Shop Now
-        </a>
-        <a
-          href={slide.websiteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 text-sm"
-          style={{ color: textColor }}
-        >
-          {slide.footer}
-        </a>
+          <h2
+            className="text-4xl font-bold mb-2 text-center"
+            style={{ color: accentColor }}
+          >
+            {slide.title}
+          </h2>
+          <p
+            className="text-2xl font-semibold mb-4 text-center"
+            style={{ color: chroma(textColor).alpha(0.8).css() }}
+          >
+            {slide.description}
+          </p>
+          <p
+            className="text-xl font-bold mb-4"
+            style={{ color: primaryColor }}
+          >
+            ${slide.price}
+          </p>
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-8 py-3 rounded-full text-white text-lg font-semibold transition-transform hover:scale-105"
+            style={{ backgroundColor: accentColor }}
+          >
+            Shop Now
+          </a>
+        </div>
+
+        {/* Footer Section */}
+        <div className="absolute bottom-4 w-full flex justify-between items-center z-10 px-8">
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg font-semibold tracking-wider hover:underline"
+            style={{ color: chroma(textColor).alpha(0.8).css() }}
+          >
+            {slide.websiteUrl}
+          </a>
+          <p
+            className="text-lg font-semibold tracking-wider"
+            style={{ color: chroma(textColor).alpha(0.8).css() }}
+          >
+            @{slide.footer}
+          </p>
+        </div>
       </div>
     );
   },
@@ -478,38 +679,39 @@ export const NewProductTemplate5: NewProductTemplate = {
   slides: [
     {
       title: 'NATURAL ESSENCE',
-      description: 'Pure and simple beauty',
+      description: 'Embrace simplicity with our eco-friendly fragrance.',
       price: '299',
-      imagesUrl: ["https://res.cloudinary.com/deuvfylc5/image/upload/v1750066968/product_images/imagesUrl_image_1750066964249.jpg",],
-      footer: 'reallygreatsite.com',
-      websiteUrl: 'https://reallygreatsite.com',
+      imagesUrl: [
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084381/product_images/imagesUrl_image_1750084379003.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084382/product_images/imagesUrl_image_1750084381218.jpg",
+        "https://res.cloudinary.com/deuvfylc5/image/upload/v1750084383/product_images/imagesUrl_image_1750084382556.jpg",
+      ],
+      footer: 'bitrox.com',
+      websiteUrl: 'https://bitrox.tech',
     },
   ],
-  renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { logoColors, materialTheme, typography, graphicStyle } = colors;
+  renderSlide: (slide: NewProductSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => {
+    const { logoColors, materialTheme, typography, graphicStyle, ensureContrast } = colors;
 
-    const primaryColor = chroma('#4a7c59').hex(); // Forest green
-    const secondaryColor = chroma('#e8d7c5').hex(); // Beige
+    // Color setup
+    const primaryColor = chroma(logoColors.primary || '#4a7c59').hex(); // Forest green
+    const secondaryColor = chroma(logoColors.secondary || '#e8d7c5').hex(); // Beige
     const accentColor = chroma('#2d3033').hex(); // Dark slate
     const bgColor = chroma('#f8f4e9').hex(); // Cream
-    const textColor = chroma('#2d3033').hex(); // Dark slate
-
-    const usePrimary = logoColors.primary || primaryColor;
-    const useSecondary = logoColors.secondary || secondaryColor;
+    const textColor = ensureContrast('#2d3033', bgColor); // Dark slate
 
     return (
       <div
-        className={cn('relative w-[1080px] h-[1080px] flex flex-col items-center justify-center', {
-          'rounded-lg': graphicStyle.borderRadius !== '0px',
+        className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
+          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
         })}
         style={{
           backgroundColor: bgColor,
           fontFamily: typography.fontFamily,
           color: textColor,
-          overflow: 'hidden',
         }}
       >
-        {/* Natural Elements */}
+        {/* Background Decor */}
         <div className="absolute inset-0">
           <svg
             className="absolute bottom-0 left-0 w-full h-1/3 opacity-20"
@@ -519,37 +721,130 @@ export const NewProductTemplate5: NewProductTemplate = {
             <path
               d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
               opacity=".25"
-              fill={usePrimary}
+              fill={primaryColor}
             />
           </svg>
         </div>
 
-        {/* Product Image */}
-        <div className="relative z-10">
-          <img src={slide.imagesUrl[0]} alt="Product" className="w-48 h-64 object-contain mb-8" />
+        {/* Logo in Top-Right */}
+        {addLogo && (
+          <div className="absolute top-4 right-4 z-20">
+            <img
+              src={defaultLogoUrl}
+              alt="Logo"
+              className="w-32 h-16 object-contain"
+              style={{ filter: graphicStyle.filter }}
+            />
+          </div>
+        )}
+
+        {/* Image Section */}
+        <div className="relative w-full h-[70%] flex items-center justify-center">
+          {slide.imagesUrl && slide.imagesUrl.length >= 3 && (
+            <div className="relative flex items-center justify-center">
+              {/* Center Hexagon */}
+              <div
+                className="absolute w-80 h-80 transition-transform hover:scale-105"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[0]}
+                  alt="Product 1"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Top-Right Hexagon */}
+              <div
+                className="absolute w-64 h-64 translate-x-48 -translate-y-48 transition-transform hover:scale-105"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[1]}
+                  alt="Product 2"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Bottom-Left Hexagon */}
+              <div
+                className="absolute w-64 h-64 -translate-x-48 translate-y-48 transition-transform hover:scale-105"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${chroma(primaryColor).alpha(0.3).css()}`,
+                }}
+              >
+                <img
+                  src={slide.imagesUrl[2]}
+                  alt="Product 3"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Text Content */}
-        <h2 className="text-4xl font-bold mb-4 text-center">{slide.title}</h2>
-        <p className="text-lg mb-6 text-center" style={{ color: chroma(textColor).alpha(0.8).css() }}>{slide.description}</p>
-        <a
-          href={slide.websiteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-6 py-2 rounded-full text-white text-lg"
-          style={{ backgroundColor: usePrimary }}
+        {/* Content Section */}
+        <div
+          className="w-full h-[30%] flex flex-col justify-center items-center bg-white bg-opacity-90 p-8"
+          style={{
+            backgroundColor: chroma(bgColor).darken(0.1).alpha(0.9).css(),
+          }}
         >
-          Shop Now
-        </a>
-        <a
-          href={slide.websiteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 text-sm"
-          style={{ color: textColor }}
-        >
-          {slide.footer}
-        </a>
+          <h2
+            className="text-4xl font-bold mb-2 text-center"
+            style={{ color: accentColor }}
+          >
+            {slide.title}
+          </h2>
+          <p
+            className="text-lg mb-4 text-center"
+            style={{ color: chroma(textColor).alpha(0.8).css() }}
+          >
+            {slide.description}
+          </p>
+          <p
+            className="text-xl font-bold mb-4"
+            style={{ color: primaryColor }}
+          >
+            ${slide.price}
+          </p>
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-8 py-3 rounded-full text-white text-lg font-semibold transition-transform hover:scale-105"
+            style={{ backgroundColor: accentColor }}
+          >
+            Shop Now
+          </a>
+        </div>
+
+        {/* Footer Section */}
+        <div className="absolute bottom-4 w-full flex justify-between items-center z-10 px-8">
+          <a
+            href={slide.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg font-semibold tracking-wider hover:underline"
+            style={{ color: chroma(textColor).alpha(0.8).css() }}
+          >
+            {slide.websiteUrl}
+          </a>
+          <p
+            className="text-lg font-semibold tracking-wider"
+            style={{ color: chroma(textColor).alpha(0.8).css() }}
+          >
+            @{slide.footer}
+          </p>
+        </div>
       </div>
     );
   },
@@ -711,5 +1006,11 @@ export const NewProductTemplate7: NewProductTemplate = {
 
 export const NewProductTemplates: NewProductTemplate[] = [
   NewProductTemplate1,
+  // NewProductTemplate2,
+  NewProductTemplate3,
+  NewProductTemplate4,
+  NewProductTemplate5,
+  // NewProductTemplate6,
+  // NewProductTemplate7
 
 ];

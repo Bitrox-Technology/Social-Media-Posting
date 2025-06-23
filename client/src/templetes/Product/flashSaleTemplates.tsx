@@ -35,6 +35,8 @@ export interface FlashSaleTemplate {
     coverImageUrl?: string;
 }
 
+
+
 export const FlashSaleTemplate1: FlashSaleTemplate = {
     id: 'fashion-flash-sale',
     name: 'Fashion Flash Sale',
@@ -520,5 +522,6 @@ export const FlashSaleTemplate5: FlashSaleTemplate = {
 
 export const FlashSaleTemplates: FlashSaleTemplate[] = [
     FlashSaleTemplate1,
+
     
 ];

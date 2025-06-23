@@ -1,6 +1,6 @@
 import joi from "joi"
 import VALIDATE_SCHEMA from "./validateSchema.js";
-import { CONTENT_TYPE_ENUM, POST_STATUS_ENUM, POST_TYPE_ENUM, PRODUCT_POST_TYPE_ENUM, PROVIDER_ENUM, SECTION_TYPE_ENUM } from "../config/constant.js";
+import { BILLING_TYPES, CONTENT_TYPE_ENUM, PLAN_TITLE_TYPES, POST_STATUS_ENUM, POST_TYPE_ENUM, PRODUCT_POST_TYPE_ENUM, PROVIDER_ENUM, SECTION_TYPE_ENUM } from "../config/constant.js";
 
 const validateSignup = async (inputs) => {
     let schema = {};
@@ -328,6 +328,17 @@ const validateWordpressAuth = async (inputs) => {
     VALIDATE_SCHEMA(schema, inputs);
 };
 
+const validateCreateUserSubscription = async (inputs) => {
+    let schema = {}
+    schema = joi.object({
+        planTitle: joi.string().valid(...PLAN_TITLE_TYPES).required(),
+        billing: joi.string().valid(...BILLING_TYPES).required(),
+        amount: joi.number().positive().required(),
+    });
+
+    VALIDATE_SCHEMA(schema, inputs);
+};
+
 
 const UserValidation = {
     validateSignup,
@@ -348,6 +359,7 @@ const UserValidation = {
     validateBlogPost,
     validateFestivalContent,
     validateProductContent,
+    validateCreateUserSubscription,
 
     validateWordpressAuth
 }

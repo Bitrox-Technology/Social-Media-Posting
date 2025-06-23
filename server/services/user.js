@@ -20,6 +20,7 @@ import { publishBlogPost, publishContent1 } from "./blogPost.js";
 import FestivalContent from "../models/festivalContent.js";
 import WordpressCredentials from "../models/wordpress.js";
 import ProductContent from "../models/productContent.js";
+import Subscription from "../models/subscription.js";
 
 const signup = async (inputs) => {
     let user;
@@ -967,6 +968,22 @@ const getProductContent = async (user, params) => {
     return content[0]; 
 }
 
+const createUserSubscription = async(inputs, user) => {
+    let subscription;
+
+    subscription = await Subscription.findOne({userId: user._id}).lean()
+    if(subscription){
+        subscription = await Subscription.findByIdAndUpdate({_id: subscription._id}, inputs, {new: true})
+    }else{
+        inputs.userId = user._id
+        subscription = await Subscription.create(inputs)
+    }
+
+    console.log('Subscription created', { subscriptionId: subscription._id, userId: user.id });
+
+    return subscription;
+}
+
 const UserServices = {
     signup,
     signupSigninByProvider,
@@ -1002,6 +1019,7 @@ const UserServices = {
     wordpressAuth,
     getWordpressAuth,
     productContent,
-    getProductContent
+    getProductContent,
+    createUserSubscription
 }
 export default UserServices;

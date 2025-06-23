@@ -1,6 +1,7 @@
 import { configDotenv } from "dotenv";
 import express from "express";
 import cors from "cors";
+import http from 'http';
 import router from "./routes/index.js";
 import morgan from "morgan";
 import helmet from "helmet";
@@ -22,6 +23,8 @@ import MongoStore from 'connect-mongo';
 import { csrfSynchronisedProtection, generateToken } from './utils/csrf.js';
 import { INTERNAL_SERVER_ERROR } from "./utils/apiResponseCode.js";
 import { ApiResponse } from "./utils/ApiResponse.js";
+import initSocket from "./socket/socket.js";
+import { checkExpiredSubscriptions } from "./config/scheduler.js";
 
 
 // Get the equivalent of __dirname in ESM
@@ -32,6 +35,15 @@ configDotenv();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const server = http.createServer(app);
+const corsOptions = {
+  origin: [process.env.FRONTEND_CLIENT_URL || 'http://localhost:5173', process.env.FRONTEND_ADMIN_URL || 'http://localhost:5174', 'https://mercury-uat.phonepe.com'],
+  methods: ["GET", "POST", "PUT", "DELETE", 'OPTIONS'],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", 'X-Requested-With', 'X-Merchant-Id', 'X-Transaction-Id'],
+  credentials: true,
+  exposedHeaders: ['Set-Cookie'],
+}
+const { updatePaymentStatus } = initSocket(server, corsOptions);
 
 // Enable trust proxy for proper IP extraction
 app.set('trust proxy', 1);
@@ -62,15 +74,9 @@ app.use(
   })
 );
 
-app.use(
-  cors({
-    origin: [process.env.FRONTEND_CLIENT_URL || 'http://localhost:5173', process.env.FRONTEND_ADMIN_URL || 'http://localhost:5174'],
-    methods: ["GET", "POST", "PUT", "DELETE", 'OPTIONS'],
-    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", 'X-Requested-With'],
-    credentials: true,
-    exposedHeaders: ['Set-Cookie'],
-  })
-);
+app.use(cors(corsOptions));
+
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
@@ -89,23 +95,23 @@ app.use((req, res, next) => {
         // Allow HTML in specified fields (e.g., content)
         const options = allowHtmlFields.includes(key)
           ? {
-              allowedTags: [
-                'h2', 'h3', 'p', 'ul', 'ol', 'li', 'a', 'b', 'i', 'strong', 'em',
-                'br', 'div', 'span', 'img', 'blockquote', 'code', 'pre',
-              ],
-              allowedAttributes: {
-                a: ['href', 'title', 'target'],
-                img: ['src', 'alt', 'title'],
-                div: ['class'],
-                span: ['class'],
-              },
-              // Prevent XSS by disallowing scripts and unsafe attributes
-              disallowedTagsMode: 'discard',
-            }
+            allowedTags: [
+              'h2', 'h3', 'p', 'ul', 'ol', 'li', 'a', 'b', 'i', 'strong', 'em',
+              'br', 'div', 'span', 'img', 'blockquote', 'code', 'pre',
+            ],
+            allowedAttributes: {
+              a: ['href', 'title', 'target'],
+              img: ['src', 'alt', 'title'],
+              div: ['class'],
+              span: ['class'],
+            },
+            // Prevent XSS by disallowing scripts and unsafe attributes
+            disallowedTagsMode: 'discard',
+          }
           : {
-              allowedTags: [], // Strip all tags for other fields
-              allowedAttributes: {},
-            };
+            allowedTags: [], // Strip all tags for other fields
+            allowedAttributes: {},
+          };
         obj[key] = sanitizeHtml(obj[key], options);
       } else if (typeof obj[key] === 'object') {
         sanitizeObject(obj[key], allowHtmlFields);
@@ -276,6 +282,7 @@ app.use('/images', express.static(path.join(__dirname, 'public/images')));
 // Routes
 app.use("/api/v1", router);
 
+app.set('updatePaymentStatus', updatePaymentStatus);
 // Error handling middleware
 app.use(function (err, req, res, next) {
   // Log the error with Winston
@@ -348,7 +355,8 @@ process.on('SIGINT', async () => {
 // Connect to MongoDB and start the server
 connectDB()
   .then(() => {
-    app.listen(PORT, () => {
+    checkExpiredSubscriptions();
+    server.listen(PORT, () => {
       logger.info(`Server is running at port: ${PORT}`);
     });
   })

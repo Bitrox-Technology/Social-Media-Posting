@@ -385,13 +385,25 @@ const GetWordpressAuth = async (req, res, next) => {
     }
 }
 
+const CreateUserSubscription = async (req, res, next) => {
+    try {
+        await UserValidation.validateCreateUserSubscription(req.body)
+        let user = await UserServices.createUserSubscription(req.body, req.user)
+        const { newCsrfToken, expiresAt } = RevokeToken(req);
+        return res.status(OK).json(new ApiResponse(OK, { user, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("SUBSCRIPTION_CREATED_SUCCESS")))
+
+    } catch (error) {
+        next(error)
+    }
+}
+
 const UserControllers = {
     Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus, GetUserPostDetailById,
     ForgetPassword, Logout, GetPendingTopics, GetUserAllPosts, SignupSigninByProvider, GetAllBlogs,
     Login, SavePosts, PostContent, GetPostContent, SaveImageContent, SaveProductInfo, FestivalContent, GetFestivalContent,
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts, SaveBlog, GetBlogById, BlogPost, GetProductContent,
     GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile, GetUserScheduledPosts, SaveProductContent,
-    WordpressAuth, GetWordpressAuth
+    WordpressAuth, GetWordpressAuth, CreateUserSubscription
 }
 
 export default UserControllers
