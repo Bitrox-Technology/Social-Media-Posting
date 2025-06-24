@@ -21,17 +21,11 @@ function hexToRgb(hex: string): RgbColor {
   };
 }
 
-interface RgbToHexFunction {
-  (r: number, g: number, b: number): string;
-}
 
 function rgbToHex(r: number, g: number, b: number): string {
   return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
 }
 
-interface BlendColorsFunction {
-  (c1: string, c2: string): string;
-}
 
 function blendColors(c1: string, c2: string): string {
   const rgb1: RgbColor = hexToRgb(c1);
@@ -163,5 +157,8 @@ const selectTextColor = (backgroundColor: string, textOptions: string[] = ['#000
   console.log(`Best text color for ${backgroundColor}: ${textColor} with ratio ${maxRatio.toFixed(2)}:1`);
   return textColor;
 };
+
+
+
 
 export { selectTextColor, ensureContrast,  blendColors}

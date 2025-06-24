@@ -97,6 +97,7 @@ const graphicStyles: Record<BrandStyle, { borderRadius: string; iconStyle: strin
   },
 };
 
+
 // Helper Functions
 const generateM3Theme = (sourceColor: string) => {
   try {

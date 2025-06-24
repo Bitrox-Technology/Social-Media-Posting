@@ -3353,7 +3353,6 @@ export const Template4: CarouselTemplate = {
     const {
       logoColors,
       complementaryTextColor,
-      ensureContrast,
       backgroundColor,
       typography,
       graphicStyle,
@@ -3363,11 +3362,20 @@ export const Template4: CarouselTemplate = {
     const primaryColor = chroma.valid(logoColors?.primary) ? logoColors.primary : '#003366';
     const accentColor = '#E0A526'; // Gold accent
     const bgColor = '#FFFFFF';
-    const textColor = '#1A2A3A';
+    
 
     const hasDescription = !!slide.description;
     const isLongText = slide.description && slide.description.length > 100;
     const hasImage = !!slide.imageUrl;
+
+    
+    let c1 = blendColors('#000000', colors.backgroundColor[0]);
+    let c2 = blendColors('#ffffff', colors.backgroundColor[1]);
+
+    console.log("C1: ", c1, " C2: ", c2)
+
+   let textColor = ensureContrast(c1, c2)
+    console.log("Text Color", textColor)
 
     return (
       <div
@@ -3377,7 +3385,7 @@ export const Template4: CarouselTemplate = {
         style={{
           backgroundColor: bgColor,
           fontFamily: '"Inter", sans-serif',
-          color: textColor,
+          color: textColor.suggestedTextColor,
         }}
       >
         {/* Header Bar */}
@@ -3413,7 +3421,7 @@ export const Template4: CarouselTemplate = {
                 'text-5xl': !isLongText,
                 'text-4xl': isLongText,
               })}
-              style={{ color: textColor }}
+              style={{ color: textColor.suggestedTextColor }}
             >
               {slide.title}
             </h2>
@@ -3425,7 +3433,7 @@ export const Template4: CarouselTemplate = {
                   'text-2xl': !isLongText,
                   'text-xl': isLongText,
                 })}
-                style={{ color: chroma(textColor).alpha(0.8).css() }}
+                style={{ color: textColor.suggestedTextColor }}
               >
                 {slide.description}
               </p>
@@ -3442,7 +3450,7 @@ export const Template4: CarouselTemplate = {
               >
                 <span
                   className="text-lg font-bold"
-                  style={{ color: '#FFFFFF' }}
+                  style={{ color: textColor.suggestedTextColor }}
                 >
                   {slide.slideNumber}
                 </span>
@@ -3450,7 +3458,7 @@ export const Template4: CarouselTemplate = {
 
               <div
                 className="h-px w-24 ml-4"
-                style={{ backgroundColor: chroma(textColor).alpha(0.2).css() }}
+                style={{ backgroundColor: textColor.suggestedTextColor }}
               />
             </div>
           </div>
@@ -3463,12 +3471,12 @@ export const Template4: CarouselTemplate = {
         <div
           className="p-8 flex justify-between items-center"
           style={{
-            borderTop: `1px solid ${chroma(textColor).alpha(0.1).css()}`,
+            borderTop: `1px solid ${chroma(textColor.suggestedTextColor).alpha(0.1).css()}`,
           }}
         >
           <span
             className="text-lg"
-            style={{ color: chroma(textColor).alpha(0.7).css() }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             @{slide.footer}
           </span>
@@ -3478,7 +3486,7 @@ export const Template4: CarouselTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-lg"
-            style={{ color: chroma(textColor).alpha(0.7).css() }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.websiteUrl}
           </a>
@@ -3544,7 +3552,6 @@ export const Template5: CarouselTemplate = {
     const {
       logoColors,
       complementaryTextColor,
-      ensureContrast,
       vibrantAccentColor,
       backgroundColor,
       typography,
@@ -3556,12 +3563,19 @@ export const Template5: CarouselTemplate = {
     const secondaryColor = chroma.valid(logoColors?.secondary) ? logoColors.secondary : '#6B66FF';
     const accentColor = chroma.valid(vibrantAccentColor) ? vibrantAccentColor : '#FFD166';
     const bgColor = '#111111';
-    const textColor = '#FFFFFF';
 
     const hasDescription = !!slide.description;
     const isLongText = slide.description && slide.description.length > 100;
     const hasImage = !!slide.imageUrl;
+    
+    
+    let c1 = blendColors('#000000', colors.backgroundColor[0]);
+    let c2 = blendColors('#ffffff', colors.backgroundColor[1]);
 
+    console.log("C1: ", c1, " C2: ", c2)
+
+   let textColor = ensureContrast(c1, c2)
+    console.log("Text Color", textColor)
     return (
       <div
         className={cn('relative w-[1080px] h-[1080px]', {
@@ -3570,7 +3584,7 @@ export const Template5: CarouselTemplate = {
         style={{
           backgroundColor: bgColor,
           fontFamily: '"Montserrat", sans-serif',
-          color: textColor,
+          color: textColor.suggestedTextColor,
         }}
       >
         {/* Creative Background Elements */}
@@ -3612,7 +3626,7 @@ export const Template5: CarouselTemplate = {
               className="px-4 py-2 text-sm font-bold"
               style={{
                 backgroundColor: primaryColor,
-                color: ensureContrast('#FFFFFF', primaryColor),
+                color:textColor.suggestedTextColor,
               }}
             >
               {slide.slideNumber.toString().padStart(2, '0')}
@@ -3628,7 +3642,7 @@ export const Template5: CarouselTemplate = {
                   'text-6xl': !isLongText,
                   'text-5xl': isLongText,
                 })}
-                style={{ color: textColor }}
+                style={{ color: textColor.suggestedTextColor }}
               >
                 {slide.title}
               </h2>
@@ -3639,7 +3653,7 @@ export const Template5: CarouselTemplate = {
                     'text-2xl': !isLongText,
                     'text-xl': isLongText,
                   })}
-                  style={{ color: chroma(textColor).alpha(0.8).css() }}
+                  style={{ color: textColor.suggestedTextColor }}
                 >
                   {slide.description}
                 </p>
@@ -3660,7 +3674,7 @@ export const Template5: CarouselTemplate = {
           <div className="mt-16 flex justify-between items-center">
             <span
               className="text-lg"
-              style={{ color: chroma(textColor).alpha(0.7).css() }}
+              style={{ color: textColor.suggestedTextColor }}
             >
               @{slide.footer}
             </span>
@@ -3670,7 +3684,7 @@ export const Template5: CarouselTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg"
-              style={{ color: chroma(textColor).alpha(0.7).css() }}
+              style={{ color: textColor.suggestedTextColor }}
             >
               {slide.websiteUrl}
             </a>
