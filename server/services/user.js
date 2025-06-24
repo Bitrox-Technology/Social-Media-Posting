@@ -213,12 +213,151 @@ const userDetails = async (inputs, user, files) => {
 }
 
 const getUserProfile = async (user) => {
-    const userProfile = await User.findById(user._id).lean();
+    // Aggregation pipeline to fetch user, subscription, and payments
+    const userProfile = await User.aggregate([
+      // Match the user by _id
+      {
+        $match: {
+          _id: user._id,
+        },
+      },
+      // Lookup subscriptions for the user
+      {
+        $lookup: {
+          from: 'subscriptions', // Collection name (adjust if different)
+          let: { userId: '$_id' }, // Define variable for pipeline
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ['$userId', '$$userId'], // Match subscriptions for this user
+                },
+              },
+            },
+            {
+              $sort: { createdAt: -1 }, // Sort by latest subscription
+            },
+            {
+              $limit: 1, // Get the most recent subscription (optional, adjust as needed)
+            },
+            {
+              $project: {
+                _id: 1,
+                planTitle: 1,
+                billing: 1,
+                status: 1,
+                startDate: 1,
+                endDate: 1,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            },
+          ],
+          as: 'subscription', // Output array field
+        },
+      },
+      // Unwind subscription (optional, if you want a single object instead of array)
+      {
+        $unwind: {
+          path: '$subscription',
+          preserveNullAndEmptyArrays: true, // Keep users without subscriptions
+        },
+      },
+      // Lookup payments for the user
+      {
+        $lookup: {
+          from: 'payments', // Collection name (adjust if different)
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ['$userId', '$$userId'], // Match payments for this user
+                },
+              },
+            },
+            {
+              $sort: { createdAt: -1 }, // Sort by latest payment
+            },
+            {
+              $project: {
+                _id: 1,
+                transactionId: 1,
+                merchantOrderId: 1,
+                amount: 1,
+                status: 1,
+                planTitle: 1,
+                billing: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                paymentDetails: {
+                  orderId: 1,
+                  state: 1,
+                  amount: 1,
+                },
+              },
+            },
+          ],
+          as: 'payments', // Output array field
+        },
+      },
+      // Add aggregated data (e.g., total payments, payment count)
+      {
+        $addFields: {
+          paymentSummary: {
+            totalPayments: { $size: '$payments' }, // Count of payments
+            totalAmountPaid: {
+              $sum: '$payments.amount', // Sum of payment amounts
+            },
+            successfulPayments: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: { $eq: ['$$payment.status', 'COMPLETED'] },
+                },
+              },
+            },
+          },
+        },
+      },
+      // Project final fields to shape the output
+      {
+        $project: {
+          _id: 1,
+          userName: 1,
+          email: 1,
+          countryCode: 1,
+          location: 1,
+          logo: 1,
+          companyName: 1,
+          productCategories: 1,
+          services: 1,
+          keyProducts: 1,
+          targetMarket: 1,
+          websiteUrl: 1,
+          isProfileCompleted: 1,
+          role: 1,
+          bio: 1,
+          isEmailVerify: 1,
+          uniqueIdentifier: 1,
+          phone: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          subscription: 1,
+          payments: 1,
+          paymentSummary: 1,
+        },
+      },
+    ]);
 
-    if (!userProfile) {
-        throw new ApiError(BAD_REQUEST, 'User not found');
+    // Check if user was found
+    if (!userProfile || userProfile.length === 0) {
+      throw new ApiError(BAD_REQUEST, 'User not found');
     }
-    return userProfile;
+
+    // Return the first (and only) document from the aggregation
+    return userProfile[0];
 }
 
 
@@ -973,6 +1112,7 @@ const createUserSubscription = async(inputs, user) => {
 
     subscription = await Subscription.findOne({userId: user._id}).lean()
     if(subscription){
+        inputs.status = "PENDING"
         subscription = await Subscription.findByIdAndUpdate({_id: subscription._id}, inputs, {new: true})
     }else{
         inputs.userId = user._id
@@ -981,6 +1121,11 @@ const createUserSubscription = async(inputs, user) => {
 
     console.log('Subscription created', { subscriptionId: subscription._id, userId: user.id });
 
+    return subscription;
+}
+
+const getUserSubscription = async(user) => {
+    const subscription = await findOne({userId: user._id} ).lean();
     return subscription;
 }
 
@@ -1020,6 +1165,7 @@ const UserServices = {
     getWordpressAuth,
     productContent,
     getProductContent,
-    createUserSubscription
+    createUserSubscription,
+    getUserSubscription
 }
 export default UserServices;

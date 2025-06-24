@@ -128,7 +128,6 @@ const phonePePaymentInitiate = async (inputs, user, { updatePaymentStatus }) => 
 
     let subscription = await Subscription.findById({ _id: inputs.subscriptionId }).lean();
     if (!subscription) {
-        console.log('Invalid subscription', { subscriptionId: inputs.subscriptionId, userId: user._id });
         throw new ApiError(BAD_REQUEST, 'Invalid subscription');
     }
 
@@ -170,13 +169,10 @@ const phonePePaymentInitiate = async (inputs, user, { updatePaymentStatus }) => 
 
     return { success: true, paymentUrl: checkoutPageUrl, transactionId };
 
-
-
 }
 
 const phonePeStatus = async (inputs, user, { updatePaymentStatus }) => {
-    console.log("Inputs: ", inputs)
-
+  
     let payment = await Payment.findOne({ transactionId: inputs.transactionId, userId: user._id }).lean();
     console.log("Payment: ", payment)
     if (!payment) {
@@ -186,7 +182,6 @@ const phonePeStatus = async (inputs, user, { updatePaymentStatus }) => {
     const phonePeClient = PhonePeClient()
     const response = await phonePeClient.getOrderStatus(inputs.transactionId);
     if (!response) throw new ApiError(INTERNAL_SERVER_ERROR, `Status check failed`);
-    console.log("Response: ", response)
 
     payment = await Payment.findByIdAndUpdate(
         { _id: payment._id },
@@ -208,7 +203,7 @@ const phonePeStatus = async (inputs, user, { updatePaymentStatus }) => {
                 updatedAt: new Date(),
             }
         );
-        console.log('Subscription activated', subscription);
+        response.subscriptionStatus= subscription.status
     }
 
     await updatePaymentStatus(inputs.transactionId, {
@@ -260,14 +255,19 @@ const phonePePaymentCallback = async (params, inputs, { updatePaymentStatus }) =
     }
 }
 
+const getPayemntById = async(params, user)=> {
+    const payment  = await Payment.findOne({transactionId: params.transactionId, userId: user._id}).lean()
+    return payment
+}
+
 
 const PaymentServices = {
     paymentInitiate,
     paymentCallback,
     phonePePaymentInitiate,
     phonePeStatus,
-    phonePePaymentCallback
-
+    phonePePaymentCallback,
+    getPayemntById
 }
 
 export default PaymentServices;

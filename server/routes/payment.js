@@ -11,4 +11,5 @@ paymentRouter.post("/phone-pe/payment-initiate", AuthMiddleware, PaymentControll
 paymentRouter.post('/phone-pe/status', AuthMiddleware, PaymentController.PhonePeStatus);
 // paymentRouter.post('/phone-pe/refund', AuthMiddleware, PaymentController.InitiateRequest);
 paymentRouter.post('/phone-pe/callback/:transactionId', PaymentController.PhonePePaymentCallback) 
+paymentRouter.get('/phone-pe/get-payment/:transactionId', AuthMiddleware, PaymentController.GetPaymentById)
 export default paymentRouter;

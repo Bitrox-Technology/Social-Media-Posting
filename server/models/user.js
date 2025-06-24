@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { PLATFORM_ENUM, PROVIDER_ENUM, ROLE_ENUM, SCHEDULE_STATUS_ENUM, STATUS_ENUM, SUBSCRIPTION_ENUM } from "../config/constant.js";
+import { PROVIDER_ENUM, ROLE_ENUM} from "../config/constant.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -32,8 +32,6 @@ const userSchema = new mongoose.Schema(
     websiteUrl: { type: String, default: '' },
     isProfileCompleted: { type: Boolean, default: false },
     role: { type: String, enum: ROLE_ENUM, default: 'USER' },
-    subscription: { type: String, enum: SUBSCRIPTION_ENUM, default: 'FREE' },
-    status: { type: String, enum: STATUS_ENUM, default: 'ACTIVE' },
     bio: { type: String, default: '' },
     password: { type: String, select: false, default: "" },
     provider: { type: String, enum: PROVIDER_ENUM, default: '' },
@@ -41,10 +39,7 @@ const userSchema = new mongoose.Schema(
     isEmailVerify: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
-    refreshToken: { type: String, default: "" },
-    sessionExpiry: { type: Number, default: null },
     uniqueIdentifier: {type: String, default: ""}
-
   },
   {
     timestamps: true,

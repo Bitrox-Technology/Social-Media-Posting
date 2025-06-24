@@ -396,6 +396,15 @@ const CreateUserSubscription = async (req, res, next) => {
         next(error)
     }
 }
+const GetUserSubscription = async (req, res, next) => {
+    try {
+        let user = await UserServices.getUserSubscription(req.user)
+        return res.status(OK).json(new ApiResponse(OK, user, i18n.__("SUBSCRIPTION_FETCHED_SUCCESS")))
+
+    } catch (error) {
+        next(error)
+    }
+}
 
 const UserControllers = {
     Signup, VerifyOTP, ResendOTP, UserDetails, UpdatePostTopicsStatus, GetUserPostDetailById,
@@ -403,7 +412,7 @@ const UserControllers = {
     Login, SavePosts, PostContent, GetPostContent, SaveImageContent, SaveProductInfo, FestivalContent, GetFestivalContent,
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts, SaveBlog, GetBlogById, BlogPost, GetProductContent,
     GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile, GetUserScheduledPosts, SaveProductContent,
-    WordpressAuth, GetWordpressAuth, CreateUserSubscription
+    WordpressAuth, GetWordpressAuth, CreateUserSubscription, GetUserSubscription
 }
 
 export default UserControllers

@@ -1,5 +1,6 @@
 import chroma from "chroma-js";
 import cn from 'classnames';
+import { blendColors, ensureContrast } from "../Utilities/colorContraxt";
 
 export interface ImageSlide {
   title: string;
@@ -1337,10 +1338,11 @@ export const ImageTemplate17: ImageTemplate = {
       materialTheme,
       typography,
       graphicStyle,
-      ensureContrast,
       glowColor,
       complementaryGlowColor,
     } = colors;
+
+    console.log("Colors: ", colors)
 
     // Responsive layout adjustments
     const isLongText = slide.description.length > 100;
@@ -1350,20 +1352,28 @@ export const ImageTemplate17: ImageTemplate = {
     // Dynamic font size based on title length
     const titleFontSize = titleLength > 20 ? `calc(${typography.fontSize} * 0.8)` : typography.fontSize;
 
-    // Compute font colors based on complementaryGlowColor
-    const titleColor = ensureContrast(
-      chroma(complementaryGlowColor).luminance(0.8).hex(),
-      hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
-    );
-    const descriptionColor = ensureContrast(
-      chroma(complementaryGlowColor).luminance(0.7).hex(),
-      hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
-    );
-    const footerColor = ensureContrast(
-      chroma(complementaryGlowColor).set('hsl.s', '*0.5').luminance(0.6).hex(),
-      chroma(materialTheme.surface).alpha(0.2).hex()
-    );
+    // // Compute font colors based on complementaryGlowColor
+    // const titleColor = ensureContrast(
+    //   chroma(complementaryGlowColor).luminance(0.8).hex(),
+    //   hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
+    // );
+    // const descriptionColor = ensureContrast(
+    //   chroma(complementaryGlowColor).luminance(0.7).hex(),
+    //   hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
+    // );
+    // const footerColor = ensureContrast(
+    //   chroma(complementaryGlowColor).set('hsl.s', '*0.5').luminance(0.6).hex(),
+    //   chroma(materialTheme.surface).alpha(0.2).hex()
+    // );
 
+    let c1 = blendColors('#000000', colors.imageColors[0]);
+    let c2 = blendColors('#ffffff', colors.imageColors[1]);
+
+    console.log("C1: ", c1, " C2: ", c2)
+
+    let textColor = ensureContrast(c1, c2)
+    // textColor = '#000000'
+    console.log("Text Color", textColor)
     return (
       <div
         className={cn(
@@ -1430,9 +1440,9 @@ export const ImageTemplate17: ImageTemplate = {
               'text-5xl': isLongText || titleLength > 20,
             })}
             style={{
-              color: titleColor,
+              color: textColor,
               fontSize: titleFontSize,
-              textShadow: `0 2px 4px ${chroma(complementaryGlowColor).alpha(0.3).css()}`,
+
             }}
           >
             {slide.title}
@@ -1445,9 +1455,9 @@ export const ImageTemplate17: ImageTemplate = {
               'text-2xl': isLongText,
             })}
             style={{
-              color: descriptionColor,
+              color: textColor,
               fontSize: `calc(${typography.fontSize} * 0.6)`,
-              textShadow: `0 2px 4px ${chroma(complementaryGlowColor).alpha(0.3).css()}`,
+
             }}
           >
             {slide.description}
@@ -1468,8 +1478,8 @@ export const ImageTemplate17: ImageTemplate = {
             rel="noopener noreferrer"
             className="text-lg font-medium"
             style={{
-              color: footerColor,
-              textShadow: `0 2px 4px ${chroma(complementaryGlowColor).alpha(0.3).css()}`,
+              color: textColor,
+
             }}
           >
             @{slide.websiteUrl}
@@ -1477,7 +1487,7 @@ export const ImageTemplate17: ImageTemplate = {
 
           <p
             className="text-xl font-medium tracking-wide"
-            style={{ color: chroma(footerColor).alpha(0.9).css() }}
+            style={{ color: textColor }}
           >
             @{slide.footer}
           </p>
@@ -1507,7 +1517,6 @@ export const ImageTemplate18: ImageTemplate = {
       materialTheme,
       typography,
       graphicStyle,
-      ensureContrast,
     } = colors;
 
     const hasImage = !!slide.imageUrl;
@@ -1515,8 +1524,16 @@ export const ImageTemplate18: ImageTemplate = {
 
     // Clean, high-contrast colors
     const bgColor = chroma(materialTheme.background).luminance(0.95).hex();
-    const textColor = chroma(materialTheme.onBackground).luminance(0.1).hex();
+    let textColor = chroma(materialTheme.onBackground).luminance(0.1).hex();
     const accentColor = chroma(logoColors.primary).saturate(1).hex();
+
+    let c1 = blendColors('#000000', colors.imageColors[0]);
+    let c2 = blendColors('#ffffff', colors.imageColors[1]);
+
+    console.log("C1: ", c1, " C2: ", c2)
+
+    textColor = ensureContrast(c1, c2)
+    console.log("Text Color", textColor)
 
     return (
       <div
@@ -1585,7 +1602,7 @@ export const ImageTemplate18: ImageTemplate = {
 
             <p
               className="text-2xl font-light"
-              style={{ color: chroma(textColor).alpha(0.8).css() }}
+              style={{ color: textColor }}
             >
               {slide.description}
             </p>
@@ -1598,10 +1615,16 @@ export const ImageTemplate18: ImageTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg"
-              style={{ color: chroma(accentColor).alpha(0.8).css() }}
+              style={{ color: textColor }}
             >
-              {slide.footer}
+              {slide.websiteUrl}
             </a>
+            <p
+              className="text-xl font-medium tracking-wide"
+              style={{ color: textColor }}
+            >
+              @{slide.footer}
+            </p>
           </div>
         </div>
       </div>
@@ -1638,7 +1661,15 @@ export const ImageTemplate19: ImageTemplate = {
     const primaryColor = chroma(logoColors.primary).saturate(1.5).hex();
     const secondaryColor = chroma(logoColors.secondary).saturate(1.5).hex();
     const bgColor = chroma(materialTheme.background).luminance(0.05).hex();
-    const textColor = chroma(materialTheme.onBackground).luminance(0.95).hex();
+    let textColor = chroma(materialTheme.onBackground).luminance(0.95).hex();
+
+    let c1 = blendColors('#000000', colors.imageColors[0]);
+    let c2 = blendColors('#ffffff', colors.imageColors[1]);
+
+    console.log("C1: ", c1, " C2: ", c2)
+
+    textColor = ensureContrast(c1, c2)
+    console.log("Text Color", textColor)
 
     return (
       <div
@@ -1691,13 +1722,14 @@ export const ImageTemplate19: ImageTemplate = {
                 'text-6xl': titleLength > 10 && titleLength <= 20,
                 'text-5xl': titleLength > 20,
               })}
+              style={{ color: textColor }}
             >
               {slide.title}
             </h2>
 
             <p
               className="text-3xl font-medium max-w-2xl"
-              style={{ color: chroma(textColor).alpha(0.9).css() }}
+              style={{ color: textColor }}
             >
               {slide.description}
             </p>
@@ -1710,13 +1742,13 @@ export const ImageTemplate19: ImageTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-xl font-medium tracking-wide hover:underline"
-              style={{ color: chroma(textColor).alpha(0.9).css() }}
+              style={{ color: textColor }}
             >
               {slide.websiteUrl}
             </a>
             <p
               className="text-xl font-medium tracking-wide"
-              style={{ color: chroma(textColor).alpha(0.9).css(), paddingRight: "102px" }}
+              style={{ color: textColor }}
             >
               @{slide.footer}
             </p>
@@ -1759,20 +1791,28 @@ export const ImageTemplate20: ImageTemplate = {
     const primaryColor = chroma(logoColors.primary).desaturate(0.5).hex();
     const secondaryColor = chroma(logoColors.secondary).desaturate(0.3).hex();
     const bgColor = chroma('#f5f2e9').hex(); // Vintage paper color
-    const textColor = chroma('#2a2522').hex(); // Vintage dark brown
+    let textColor = chroma('#2a2522').hex(); // Vintage dark brown
 
-    const titleColor = ensureContrast(
-      chroma(complementaryGlowColor).luminance(0.8).hex(),
-      hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
-    );
-    const descriptionColor = ensureContrast(
-      chroma(complementaryGlowColor).luminance(0.7).hex(),
-      hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
-    );
-    const footerColor = ensureContrast(
-      chroma(complementaryGlowColor).set('hsl.s', '*0.5').luminance(0.6).hex(),
-      chroma(materialTheme.surface).alpha(0.2).hex()
-    );
+    // const titleColor = ensureContrast(
+    //   chroma(complementaryGlowColor).luminance(0.8).hex(),
+    //   hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
+    // );
+    // const descriptionColor = ensureContrast(
+    //   chroma(complementaryGlowColor).luminance(0.7).hex(),
+    //   hasImage ? chroma(materialTheme.background).alpha(0.3).hex() : materialTheme.background
+    // );
+    // const footerColor = ensureContrast(
+    //   chroma(complementaryGlowColor).set('hsl.s', '*0.5').luminance(0.6).hex(),
+    //   chroma(materialTheme.surface).alpha(0.2).hex()
+    // );
+
+    let c1 = blendColors('#000000', colors.imageColors[0]);
+    let c2 = blendColors('#ffffff', colors.imageColors[1]);
+
+    console.log("C1: ", c1, " C2: ", c2)
+
+    textColor = ensureContrast(c1, c2)
+    console.log("Text Color", textColor)
 
     return (
       <div
@@ -1868,9 +1908,9 @@ export const ImageTemplate20: ImageTemplate = {
             <p
               className="text-2xl font-normal mx-auto max-w-xl"
               style={{
-                color: descriptionColor,
+                color: textColor,
                 fontSize: `calc(${typography.fontSize} * 0.6)`,
-                textShadow: `0 2px 4px ${chroma(complementaryGlowColor).alpha(0.3).css()}`,
+
               }}
             >
               {slide.description}
@@ -1894,7 +1934,7 @@ export const ImageTemplate20: ImageTemplate = {
               rel="noopener noreferrer"
               className="text-lg"
               style={{
-                color: chroma(titleColor).alpha(0.8).css(),
+                color: textColor,
                 letterSpacing: '0.1em',
               }}
 
@@ -1903,7 +1943,7 @@ export const ImageTemplate20: ImageTemplate = {
             </a>
             <p
               className="text-xl font-medium tracking-wide"
-              style={{ color: chroma(titleColor).alpha(0.9).css() }}
+              style={{ color: textColor }}
             >
               @{slide.footer}
             </p>
@@ -1944,7 +1984,7 @@ export const ImageTemplate21: ImageTemplate = {
     const secondaryColor = chroma('#8a9b68').hex(); // Sage
     const accentColor = chroma('#e8c547').hex(); // Sunflower
     const bgColor = chroma('#f8f4e9').hex(); // Cream
-    const textColor = chroma('#2d3033').hex(); // Dark slate
+    let textColor = chroma('#2d3033').hex(); // Dark slate
 
     // Use brand colors if they're nature-like (green/brown tones)
     interface IsNatureColorFn {
@@ -1958,6 +1998,15 @@ export const ImageTemplate21: ImageTemplate = {
 
     const usePrimary = isNatureColor(logoColors.primary) ? logoColors.primary : primaryColor;
     const useSecondary = isNatureColor(logoColors.secondary) ? logoColors.secondary : secondaryColor;
+
+    let c1 = blendColors('#000000', colors.imageColors[0]);
+    let c2 = blendColors('#ffffff', colors.imageColors[1]);
+
+    console.log("C1: ", c1, " C2: ", c2)
+
+    textColor = ensureContrast(c1, c2)
+    textColor = '#000000'
+    console.log("Text Color", textColor)
 
     return (
       <div
@@ -2063,8 +2112,8 @@ export const ImageTemplate21: ImageTemplate = {
                 'text-4xl': titleLength > 25,
               })}
               style={{
-                color: hasImage ? '#fff' : textColor,
-                textShadow: hasImage ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
+                color: textColor,
+
               }}
             >
               {slide.title}
@@ -2073,8 +2122,8 @@ export const ImageTemplate21: ImageTemplate = {
             <p
               className="text-2xl font-light"
               style={{
-                color: hasImage ? chroma('#fff').alpha(0.9).css() : chroma(textColor).alpha(0.8).css(),
-                textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                color: textColor,
+
               }}
             >
               {slide.description}
@@ -2088,18 +2137,18 @@ export const ImageTemplate21: ImageTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg inline-flex items-center"
-              style={{ color: hasImage ? chroma('#fff').alpha(0.8).css() : chroma(accentColor).alpha(0.8).css(), textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.3)' : 'none', }}
+              style={{ color: textColor }}
 
             >
               <span className="mr-2">•</span>
               {slide.websiteUrl}
             </a>
             <p
-            className="text-lg inline-flex items-center"
-            style={{ color: hasImage ? chroma('#fff').alpha(0.8).css() : chroma(accentColor).alpha(0.8).css(), textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.3)' : 'none', }}
-          >
-            @{slide.footer}
-          </p>
+              className="text-lg inline-flex items-center"
+              style={{ color: textColor }}
+            >
+              @{slide.footer}
+            </p>
           </div>
         </div>
       </div>
@@ -2136,8 +2185,16 @@ export const ImageTemplate22: ImageTemplate = {
     const primaryColor = chroma(logoColors.primary).brighten(0.2).saturate(0.5).hex();
     const secondaryColor = chroma(logoColors.secondary).brighten(0.2).saturate(0.5).hex();
     const bgColor = chroma('#0a0e17').hex(); // Dark tech blue
-    const textColor = chroma('#ffffff').hex(); // White
+    let textColor = chroma('#ffffff').hex(); // White
     const gridColor = chroma('#3a4cb9').alpha(0.15).css(); // Glowing blue
+
+    let c1 = blendColors('#000000', colors.imageColors[0]);
+    let c2 = blendColors('#ffffff', colors.imageColors[1]);
+
+    console.log("C1: ", c1, " C2: ", c2)
+
+    textColor = ensureContrast(c1, c2)
+    console.log("Text Color", textColor)
 
     return (
       <div
@@ -2248,7 +2305,7 @@ export const ImageTemplate22: ImageTemplate = {
                 className="ml-4 text-sm font-mono opacity-70"
                 style={{ color: primaryColor }}
               >
-              
+
               </div>
             </div>
 
@@ -2260,7 +2317,6 @@ export const ImageTemplate22: ImageTemplate = {
               })}
               style={{
                 color: textColor,
-                textShadow: `0 0 10px ${chroma(primaryColor).alpha(0.5).css()}`,
                 letterSpacing: '0.05em',
               }}
             >
@@ -2270,7 +2326,7 @@ export const ImageTemplate22: ImageTemplate = {
             <p
               className="text-2xl font-light"
               style={{
-                color: chroma(textColor).alpha(0.8).css(),
+                color: textColor,
               }}
             >
               {slide.description}
@@ -2279,24 +2335,24 @@ export const ImageTemplate22: ImageTemplate = {
 
           {/* Footer */}
           <div className="mt-auto flex justify-between items-center">
-            
+
 
             <a
               href={slide.websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg font-mono"
-              style={{ color: chroma(textColor).alpha(0.9).css() }}
+              style={{ color: textColor }}
             >
               {slide.websiteUrl}
             </a>
 
             <p
-            className="text-xl font-medium tracking-wide"
-            style={{ color: chroma(textColor).alpha(0.9).css() }}
-          >
-            @{slide.footer}
-          </p>
+              className="text-xl font-medium tracking-wide"
+              style={{ color: textColor }}
+            >
+              @{slide.footer}
+            </p>
           </div>
         </div>
       </div>

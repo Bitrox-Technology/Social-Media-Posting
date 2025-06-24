@@ -86,13 +86,24 @@ const PhonePePaymentCallback = async (req, res, next) => {
     next(error);
   }
 }
+
+const GetPaymentById = async (req, res, next) => {
+
+  try {
+    const result = await PaymentServices.getPayemntById(req.params, req.user);
+    return res.status(OK).json( new ApiResponse(OK, result, i18n.__('PAYMENT_FETCHED_SUCCESS')))
+  } catch (error) {
+    next(error);
+  }
+}
 const PaymentController = {
   PaymentInitiate,
   PaymentCallback,
   VerifyPayment,
   PhonePePaymentInitaite,
   PhonePeStatus,
-  PhonePePaymentCallback
+  PhonePePaymentCallback,
+  GetPaymentById
 }
 
 export default PaymentController;

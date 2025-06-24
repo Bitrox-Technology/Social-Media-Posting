@@ -7,7 +7,6 @@ import { useAlert } from '../hooks/useAlert';
 import { Alert } from '../ui/Alert';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../store/hooks';
-import Cookies from 'js-cookie';
 
 const SessionWarning: React.FC = () => {
   const sessionWarning = useSelector(selectSessionWarning);
@@ -20,7 +19,7 @@ const SessionWarning: React.FC = () => {
 
   // Handle session expiration
 
-  if  (sessionWarningToExpire) {
+  if(sessionWarningToExpire) {
     dispatch(setSessionWarningToExpire(false));
     confirm(
       'Session Expiring Soon',

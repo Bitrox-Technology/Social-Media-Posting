@@ -5,7 +5,6 @@ import {
   FetchArgs,
   FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
-import Cookies from 'js-cookie';
 import { setUser, clearUser, setCsrfToken, clearCsrfToken, setSessionWarning, setSessionWarningToExpire } from './appSlice';
 import { backendURL } from '../constants/urls';
 import logger from '../Utilities/logger';
@@ -21,11 +20,6 @@ interface CarouselContent {
   tagline?: string;
   title: string;
   description?: string;
-}
-
-interface GenerateDoYouKnowResponse {
-  title: string;
-  description: string;
 }
 
 interface GenerateTopicsResponse {
@@ -618,7 +612,18 @@ export const api = createApi({
         body,
       }),
     }),
-    
+    getSubscription: builder.query<ApiResponse<any>, void>({
+      query: () => ({
+        url: `/user/phone-pe/get-subscription`,
+        method: 'GET',
+      }),
+    }),
+    getPayment: builder.query<ApiResponse<any>, {transactionId: string}>({
+      query: ({transactionId}) => ({
+        url: `/payment/phone-pe/get-payment/${transactionId}`,
+        method: 'GET',
+      }),
+    }),
     verifyPayment: builder.query<ApiResponse<any>, { orderId: string }>({
       query: ({ orderId }) => ({
         url: `/payment/verify?orderId=${orderId}`,
@@ -749,4 +754,6 @@ export const {
   usePhonePeInitiatePaymentMutation,
   usePhonePeCheckStatusMutation,
   useCreateSubscriptionMutation,
+  useLazyGetPaymentQuery,
+  useLazyGetSubscriptionQuery
 } = api;

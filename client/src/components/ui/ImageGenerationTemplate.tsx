@@ -9,7 +9,7 @@ import chroma from 'chroma-js';
 
 const defaultColors: Colors = {
   logoColors: { primary: '#4A90E2', secondary: '#50E3C2', accent: ['#50E3C2', '#F5A623'] },
-  imageColors: ['#4A90E2', '#50E3C2'],
+  imageColors: ['#798496', '#dce4ef', '#191f2c' , '#314760', '#3c4444'],
   ensureContrast: (textColor: string, bgColor: string) => {
     try {
       const contrast = chroma.contrast(textColor, bgColor);

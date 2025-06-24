@@ -91,7 +91,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   // Handle session validation
   useEffect(() => {
-    if (sessionData?.success) {
+    if (sessionData?.success && sessionData.data.sessionValid) {
       dispatch(
         setUser({
           email: sessionData.data.user.email,
@@ -101,7 +101,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         })
       );
     }
-  }, [sessionData, sessionError, isPublicRoute, dispatch, navigate]);
+  }, []);
 
   // Handle cross-tab communication
   useEffect(() => {
