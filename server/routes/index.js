@@ -6,6 +6,7 @@ import aiRouters from "./ai.js";
 import csrfRouter from "./csrf.js";
 import authRouter from "./auth.js"
 import paymentRouter from "./payment.js";
+import googleRouter from "./google.js";
 const router = Router()
 router.use("/auth", authRouter)
 router.use("/csrf", csrfRouter)
@@ -13,6 +14,7 @@ router.use("/user", userRouter)
 router.use("/admin", adminRouter)
 router.use("/social", socialRouter)
 router.use("/payment", paymentRouter)
+router.use("/google", googleRouter)
 router.use("/", aiRouters)
 
 export default router

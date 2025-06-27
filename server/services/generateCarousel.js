@@ -1,6 +1,9 @@
 import { Ollama } from "ollama";
+import { OpenAI } from "openai";
 import { ApiError } from "../utils/ApiError.js";
 import fs from "fs";
+
+import { GoogleGenAI } from "@google/genai";
 
 const ollama = new Ollama({ host: process.env.OLLAMA_API_URL });
 
@@ -430,7 +433,7 @@ Rules:
     console.log('Parsed Response:', parsedResponse);
 
     // Unescape HTML tags in content
-     const unescapedContent = parsedResponse.content
+    const unescapedContent = parsedResponse.content
       .replace(/\\</g, '<')
       .replace(/\\>/g, '>')
       .replace(/\\"/g, '"')
@@ -487,6 +490,109 @@ const generateCode = async (input, file) => {
 
   return generatedCode;
 };
+
+const generateContentWithGrok = async (inputs) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new ApiError(400, "XAI API key is not configured");
+  }
+  const ai = new GoogleGenAI({ apiKey: apiKey });
+
+  // Make the API call
+  const completion = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: inputs.topic
+  });
+
+  return completion.text;
+
+}
+
+
+const generateBlogUsingGemini = async (inputs) => {
+
+  const topicString = inputs.topic && typeof inputs.topic === 'object' ? inputs.topic.topic : inputs.topic;
+  if (!topicString || typeof topicString !== 'string' || topicString.trim() === '') {
+    throw new ApiError(400, 'Invalid topic provided for blog generation');
+  }
+
+  // Generate primary keyword and year
+  const primaryKeyword = topicString.toLowerCase().replace(/\s+/g, '-');
+  const year = new Date().getFullYear(); // 2025
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new ApiError(400, "GEMINI API key is not configured");
+  }
+  const ai = new GoogleGenAI({ apiKey: apiKey });
+
+  const prompt = `
+You are an expert content generator. Generate a 3,000–5,000-word SEO-optimized blog post about "${topicString}" in **valid JSON format** with the following structure:
+{
+  "title": "A 50-60 character title including '${primaryKeyword}' and '${year}'",
+  "content": "<p>Introduction (3-4 sentences introducing '${topicString}' with '${primaryKeyword}', its relevance in ${year}, and a hook to engage readers).</p><h2>Factors Influencing Costs</h2><p>400-600 words on factors affecting costs, written in short paragraphs (2-3 sentences). Include 1-2 external links (e.g., <a href='https://www.statista.com' target='_blank' rel='noopener nofollow'>Statistics</a>, <a href='https://maps.google.com' target='_blank' rel='noopener nofollow'>Maps</a>) and 1 internal link (e.g., <a href='https://example.com/consult'>Consultation</a>).</p><h2>Core Components and Models</h2><p>400-600 words on components and engagement models (e.g., fixed-price, time & material).</p><ul><li><strong>Discovery and Feasibility:</strong> Description in 1-2 sentences.</li><li><strong>UI/UX Design:</strong> Description in 1-2 sentences.</li><li><strong>Smart Contracts:</strong> Description in 1-2 sentences.</li></ul><h2>Cost Breakdown</h2><p>400-600 words with a detailed table comparing costs.</p><table><thead><tr><th>Project Type</th><th>Description</th><th>Estimated Cost (Region 1)</th><th>Estimated Cost (Region 2)</th><th>Estimated Cost (Region 3)</th></tr></thead><tbody><tr><td>Simple Project</td><td>Basic features (3-5 months)</td><td>$25,000 - $70,000</td><td>$20,000 - $60,000</td><td>$22,000 - $65,000</td></tr><tr><td>Mid-Complexity</td><td>Moderate features (6-10 months)</td><td>$70,000 - $180,000</td><td>$55,000 - $150,000</td><td>$60,000 - $160,000</td></tr><tr><td>Complex Project</td><td>Advanced features (10+ months)</td><td>$180,000 - $500,000+</td><td>$150,000 - $450,000+</td><td>$160,000 - $480,000+</td></tr></tbody></table><h2>Real-World Applications</h2><p>400-600 words with examples of blockchain use cases.</p><h2>Cost Optimization Strategies</h2><p>400-600 words with actionable tips.</p><ol><li><strong>Start with MVP:</strong> Description in 1-2 sentences.</li><li><strong>Define Scope:</strong> Description in 1-2 sentences.</li><li><strong>Use Open-Source:</strong> Description in 1-2 sentences.</li></ol><h2>Future Trends</h2><p>400-600 words with industry trends or forecasts.</p><h3>FAQs</h3><p><strong>What is the average cost?</strong> 1-2 sentence answer.</p><p><strong>Why is it more expensive in some regions?</strong> 1-2 sentence answer.</p><p><strong>How can costs be reduced?</strong> 1-2 sentence answer.</p><p><strong>What increases project costs?</strong> 1-2 sentence answer.</p><p><strong>How do government initiatives impact costs?</strong> 1-2 sentence answer.</p><p>Conclusion (3-4 sentences summarizing key points, with a strong call-to-action like 'Get a free consultation at <a href='https://example.com/consult'>https://example.com/consult</a>!' and social sharing encouragement).</p>",
+  "metaDescription": "50-100 character description with '${primaryKeyword}'",
+  "categories": ["Blockchain", "Development Costs", "GCC Tech"],
+  "tags": ["${primaryKeyword}", "blockchain development", "UAE", "KSA", "Kuwait", "Web3"],
+  "focusKeyword": "${primaryKeyword}",
+  "excerpt": "100-160 character excerpt with '${primaryKeyword}'",
+  "image": {
+    "altText": "80-100 character alt text for an image related to '${topicString}'",
+    "description": "1-2 sentence image description"
+  }
+}
+Rules:
+- Ensure 1-2% '${primaryKeyword}' density in 'content', avoiding keyword stuffing.
+- Use only the following HTML tags in 'content': <h2>, <h3>, <p>, <ul>, <ol>, <li>, <a>, <b>, <i>, <strong>, <em>, <br>, <div>, <span>, <img>, <blockquote>, <code>, <pre>, <table>, <thead>, <tr>, <th>, <td>, <tbody>. Ensure proper nesting and closure (e.g., <table> must have <thead> and <tbody>, <ul> must contain <li>).
+- Include exactly 2 distinct external links with <a href='URL' target='_blank' rel='noopener nofollow'> (e.g., https://www.statista.com and https://maps.google.com) and 1 unique internal link with <a href='URL'> (e.g., https://example.com/consult) to a different URL, placed within the 'Factors Influencing Costs' section.
+- Include a table in the 'Cost Breakdown' section with <table>, <thead>, <tr>, <th>, <tbody>, and <td> for a clear cost comparison across regions, matching the exact structure and data provided.
+- Use short paragraphs (2-3 sentences) in <p> tags, bullet points in <ul><li>, numbered lists in <ol><li>, and exactly 5 FAQs in <p><strong>Question?</strong> format.
+- Follow the exact section order and structure as provided in the 'content' field, including all headings (e.g., 'Factors Influencing Costs', 'Core Components and Models', etc.) and their corresponding content lengths (400-600 words each).
+- Output **only valid JSON** with no markdown, extra whitespace, or comments.
+- Ensure the JSON is a single object starting with '{' and ending with '}'.
+- Test the output JSON for validity to ensure it can be parsed by JSON.parse().
+`;
+
+  const completion = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt
+  });
+
+ 
+  let jsonString = completion.text.trim();
+  jsonString = jsonString.replace(/^```json\s*|\s*```$/g, "");
+
+  // Parse JSON string into an object
+  let parsedResponse = JSON.parse(jsonString);
+  console.log("Parsed Response:", parsedResponse);
+
+  // Unescape HTML tags in content for rendering
+  const unescapedContent = parsedResponse.content
+    .replace(/\\</g, '<')
+    .replace(/\\>/g, '>')
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, '\n')
+    .replace(/\\\\/g, '\\'); // Handle double backslashes
+
+
+    console.log("Unescaped Content:", unescapedContent);
+  return {
+    title: parsedResponse?.title,
+    content: unescapedContent,
+    metaDescription: parsedResponse?.metaDescription,
+    categories: parsedResponse?.categories,
+    tags: parsedResponse?.tags,
+    imageAltText: parsedResponse?.image?.altText,
+    imageDescription: parsedResponse?.image?.description,
+    excerpt: parsedResponse?.excerpt,
+    focusKeyword: parsedResponse?.focusKeyword,
+    slug: primaryKeyword,
+  };
+
+}
+
+
+
 export {
   generateCarouselContent,
   generateDoYouKnow,
@@ -494,5 +600,7 @@ export {
   generateImageContent,
   generateBlog,
   generateCode,
-  generateContent
+  generateContent,
+  generateContentWithGrok,
+  generateBlogUsingGemini
 };

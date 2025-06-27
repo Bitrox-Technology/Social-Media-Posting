@@ -328,7 +328,16 @@ const FestivalContent = async (req, res, next) => {
         await UserValidation.validateFestivalContent(req.body)
         let blog = await UserServices.festivalContent(req.body, req.file, req.user)
         const { newCsrfToken, expiresAt } = RevokeToken(req);
-        return res.status(CREATED).json(new ApiResponse(CREATED, { blog, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("SAVE_FESTIVAL_CONTENT_SUCCESSS")))
+        return res.status(CREATED).json(new ApiResponse(CREATED, { blog, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("SAVE_FESTIVAL_CONTENT_SUCCESS")))
+    } catch (error) {
+        next(error)
+    }
+}
+const UpdateFestivalContent = async (req, res, next) => {
+    try {
+        let festival = await UserServices.updateFestivalContent(req.body, req.params, req.user)
+        const { newCsrfToken, expiresAt } = RevokeToken(req);
+        return res.status(CREATED).json(new ApiResponse(CREATED, { festival, csrfToken: newCsrfToken, expiresAt: expiresAt }, i18n.__("UPDATED_FESTIVAL_CONTENT_SUCCESS")))
     } catch (error) {
         next(error)
     }
@@ -412,7 +421,7 @@ const UserControllers = {
     Login, SavePosts, PostContent, GetPostContent, SaveImageContent, SaveProductInfo, FestivalContent, GetFestivalContent,
     UpdatePost, SaveCarouselContent, SaveDYKContent, GetSavePosts, SaveBlog, GetBlogById, BlogPost, GetProductContent,
     GetImageContent, GetCarouselContent, GetDYKContent, GetUserProfile, GetUserScheduledPosts, SaveProductContent,
-    WordpressAuth, GetWordpressAuth, CreateUserSubscription, GetUserSubscription
+    WordpressAuth, GetWordpressAuth, CreateUserSubscription, GetUserSubscription, UpdateFestivalContent
 }
 
 export default UserControllers

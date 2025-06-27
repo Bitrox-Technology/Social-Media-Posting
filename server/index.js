@@ -97,7 +97,8 @@ app.use((req, res, next) => {
           ? {
             allowedTags: [
               'h2', 'h3', 'p', 'ul', 'ol', 'li', 'a', 'b', 'i', 'strong', 'em',
-              'br', 'div', 'span', 'img', 'blockquote', 'code', 'pre',
+              'br', 'div', 'span', 'img', 'blockquote', 'code', 'pre', 'table',
+              'thead', 'tr', 'th', 'td', 'tbody'
             ],
             allowedAttributes: {
               a: ['href', 'title', 'target'],

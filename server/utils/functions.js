@@ -16,9 +16,9 @@ const generateOTPForEmail = async (email, role) => {
             expiredAt: moment().add(10, "minutes").toDate()
         }
         if (role == "ADMIN") {
-            sendOtpForAdmin(email, otpCode)
+           await sendOtpForAdmin(email, otpCode)
         } else {
-            sendOtp(email, otpCode)
+           await sendOtp(email, otpCode)
         }
         let otp = await OTP.create(data)
         return otp

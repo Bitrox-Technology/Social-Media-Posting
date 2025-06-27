@@ -117,14 +117,14 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
               className={`font-bold text-xl ${theme === 'dark' ? 'text-white' : 'text-gray-900'
                 }`}
             >
-              Bitrox{' '}
+              
               <span
                 className={`bg-clip-text text-transparent bg-gradient-to-r ${theme === 'dark'
                     ? 'from-blue-400 to-purple-400'
                     : 'from-blue-600 to-purple-600'
                   }`}
               >
-                SocialAI
+                ASocialI
               </span>
             </span>
           </Link>
@@ -145,11 +145,11 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
             className="bg-indigo-100 text-indigo-600 dark:bg-indigo-900"
             alt={'User'}
           >
-            {user?.email?.charAt(0) || 'U'}
+            {user?.userName?.charAt(0) || 'U'}
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-gray-900 dark:text-white truncate">
-              {'User'}
+              {user?.userName || 'User'}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
               {user?.email || 'guest@example.com'}
@@ -254,7 +254,7 @@ const Slidebar: React.FC<SlidebarProps> = ({ isOpen, toggleDrawer }) => {
 
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Bitrox Tech © {new Date().getFullYear()}
+            ASocialI © {new Date().getFullYear()}
           </p>
         </div>
       </div>

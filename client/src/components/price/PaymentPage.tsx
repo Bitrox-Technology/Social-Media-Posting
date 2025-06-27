@@ -5,14 +5,14 @@ import { useAlert } from '../hooks/useAlert';
 import { Alert } from '../ui/Alert';
 import { toast } from 'react-toastify';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  usePhonePeInitiatePaymentMutation, 
+import {
+  usePhonePeInitiatePaymentMutation,
   usePhonePeCheckStatusMutation,
-  useLazyGetUserProfileQuery
+  // useLazyGetUserProfileQuery
 } from '../../store/api';
 import { socketURL } from '../../constants/urls';
 import { setCsrfToken } from '../../store/appSlice';
-import { useAppDispatch } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CreditCard,
@@ -30,6 +30,8 @@ import {
 const socket = io(socketURL, { withCredentials: true });
 
 const PaymentPage = () => {
+  const user = useAppSelector((state) => state.app.user);
+  console.log('User:', user);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { planTitle } = useParams();
@@ -43,41 +45,35 @@ const PaymentPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [initiatePayment, { isLoading, error }] = usePhonePeInitiatePaymentMutation();
   const [checkStatus] = usePhonePeCheckStatusMutation();
-  const [getUserProfile, { isLoading: userLoading }] = useLazyGetUserProfileQuery();
+  // const [getUserProfile, { isLoading: userLoading }] = useLazyGetUserProfileQuery();
   const { isOpen, config, showAlert, closeAlert, handleConfirm, confirm } = useAlert();
-  type UserData = {
-    phone?: string;
-    userName?: string;
-    email?: string;
-  };
-  
-  const [userData, setUserData] = useState<UserData>({});
+
 
   type PlanTitle = 'Starter' | 'Professional' | 'Business';
 
-  const plans: Record<PlanTitle, { 
-    monthly: number; 
+  const plans: Record<PlanTitle, {
+    monthly: number;
     annual: number;
     description: string;
     features: string[];
     icon: React.ReactNode;
   }> = {
-    Starter: { 
-      monthly: 29, 
+    Starter: {
+      monthly: 29,
       annual: 24,
       description: 'Perfect for individuals getting started',
       features: ['5 Projects', '10GB Storage', 'Basic Support', 'Core Features'],
       icon: <Zap className="w-6 h-6" />
     },
-    Professional: { 
-      monthly: 79, 
+    Professional: {
+      monthly: 79,
       annual: 64,
       description: 'Ideal for growing businesses',
       features: ['25 Projects', '100GB Storage', 'Priority Support', 'Advanced Features', 'Analytics'],
       icon: <Star className="w-6 h-6" />
     },
-    Business: { 
-      monthly: 149, 
+    Business: {
+      monthly: 149,
       annual: 119,
       description: 'For large teams and enterprises',
       features: ['Unlimited Projects', '1TB Storage', '24/7 Support', 'All Features', 'Custom Integrations', 'Dedicated Manager'],
@@ -95,29 +91,11 @@ const PaymentPage = () => {
       : selectedPlan.monthly
     : 0;
 
-  const savings = selectedPlan && billing === 'annual' 
+  const savings = selectedPlan && billing === 'annual'
     ? (selectedPlan.monthly * 12) - (selectedPlan.annual * 12)
     : 0;
 
-  // Fetch user profile
-  const fetchUser = async () => {
-    try {
-      const response = await getUserProfile().unwrap();
-      setUserData(response.data);
-    } catch (err) {
-      showAlert({
-        type: 'error',
-        title: 'Failed to Load User Data',
-        message: 'Unable to fetch user profile. Please try again.',
-      });
-    }
-  };
 
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
- 
 
   useEffect(() => {
     socket.emit('joinTransaction', transactionId);
@@ -126,7 +104,7 @@ const PaymentPage = () => {
       setPaymentStatus(data.status);
       setSubscriptionStatus(data.subscriptionStatus);
       setIsProcessing(false);
-      
+
       if (data.status === 'COMPLETED') {
         showAlert({
           type: 'success',
@@ -143,7 +121,7 @@ const PaymentPage = () => {
           message: 'Please try again or contact our support team.',
         });
       }
-      
+
       if (data.status === 'COMPLETED' || data.status === 'FAILED') {
         try {
           await checkStatus({ transactionId }).unwrap();
@@ -179,14 +157,14 @@ const PaymentPage = () => {
             setIsProcessing(false);
             return;
           }
-          
+
           const response = await initiatePayment({
             amount,
             planTitle,
             billing: billing ?? '',
-            phone: userData?.phone || '',
-            name: userData.userName || '',
-            email: userData.email || '',
+            phone: user?.phone || '',
+            name: user?.userName || '',
+            email: user?.email || '',
             transactionId,
             subscriptionId: subscriptionId ?? '',
           }).unwrap();
@@ -216,16 +194,7 @@ const PaymentPage = () => {
     );
   };
 
-  if (userLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-300">Loading your information...</p>
-        </div>
-      </div>
-    );
-  }
+
 
   if (!selectedPlan) {
     return (
@@ -347,7 +316,7 @@ const PaymentPage = () => {
                       Secure Payment Processing
                     </h4>
                     <p className="text-blue-700 dark:text-blue-300 text-sm">
-                      Your payment information is encrypted and processed securely through PhonePe. 
+                      Your payment information is encrypted and processed securely through PhonePe.
                       We never store your payment details on our servers.
                     </p>
                   </div>
@@ -361,6 +330,27 @@ const PaymentPage = () => {
               animate={{ opacity: 1, x: 0 }}
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700"
             >
+              {user && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Your Information
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-700 dark:text-gray-300">
+                        <strong>Name:</strong> {user.userName || 'N/A'
+                        }</span><br />
+                      <span className="text-gray-700 dark:text-gray-300">
+                        <strong>Phone:</strong> {user.phone || 'N/A'}
+                      </span><br />
+                      <span className="text-gray-700 dark:text-gray-300">
+                        <strong>Email:</strong> {user.email || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+              )}
               <div className="flex items-center space-x-3 mb-8">
                 <CreditCard className="w-6 h-6 text-blue-600" />
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -368,81 +358,79 @@ const PaymentPage = () => {
                 </h3>
               </div>
 
-                <motion.button
-                  type="button"
-                  onClick={handlePayment}
-                  disabled={isLoading || isProcessing || paymentStatus !== 'PENDING'}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 px-6 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {isLoading || isProcessing ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Processing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="w-5 h-5" />
-                      <span>Pay ₹{amount} Securely</span>
-                    </>
-                  )}
-                </motion.button>
+              <motion.button
+                type="button"
+                onClick={handlePayment}
+                disabled={isLoading || isProcessing || paymentStatus !== 'PENDING'}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 px-6 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {isLoading || isProcessing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    <span>Pay ₹{amount} Securely</span>
+                  </>
+                )}
+              </motion.button>
 
-                <AnimatePresence>
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <AlertCircle className="w-5 h-5 text-red-500" />
-                        <p className="text-red-700 dark:text-red-300 text-sm">
-                          {'data' in error && typeof error.data === 'object' && error.data && 'message' in error.data
-                            ? (error.data as { message?: string }).message || 'Payment failed'
-                            : 'Payment failed. Please try again.'}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {(paymentStatus !== 'PENDING' || subscriptionStatus !== 'PENDING') && (
+              <AnimatePresence>
+                {error && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600"
+                    exit={{ opacity: 0, y: -10 }}
+                    className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
                   >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Payment Status:
-                        </span>
-                        <span className={`text-sm font-semibold ${
-                          paymentStatus === 'COMPLETED' ? 'text-green-600' :
-                          paymentStatus === 'FAILED' ? 'text-red-600' :
-                          'text-yellow-600'
-                        }`}>
-                          {paymentStatus}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Subscription Status:
-                        </span>
-                        <span className={`text-sm font-semibold ${
-                          subscriptionStatus === 'ACTIVE' ? 'text-green-600' :
-                          subscriptionStatus === 'FAILED' ? 'text-red-600' :
-                          'text-yellow-600'
-                        }`}>
-                          {subscriptionStatus}
-                        </span>
-                      </div>
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <p className="text-red-700 dark:text-red-300 text-sm">
+                        {'data' in error && typeof error.data === 'object' && error.data && 'message' in error.data
+                          ? (error.data as { message?: string }).message || 'Payment failed'
+                          : 'Payment failed. Please try again.'}
+                      </p>
                     </div>
                   </motion.div>
                 )}
+              </AnimatePresence>
+
+              {(paymentStatus !== 'PENDING' || subscriptionStatus !== 'PENDING') && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Payment Status:
+                      </span>
+                      <span className={`text-sm font-semibold ${paymentStatus === 'COMPLETED' ? 'text-green-600' :
+                          paymentStatus === 'FAILED' ? 'text-red-600' :
+                            'text-yellow-600'
+                        }`}>
+                        {paymentStatus}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Subscription Status:
+                      </span>
+                      <span className={`text-sm font-semibold ${subscriptionStatus === 'ACTIVE' ? 'text-green-600' :
+                          subscriptionStatus === 'FAILED' ? 'text-red-600' :
+                            'text-yellow-600'
+                        }`}>
+                        {subscriptionStatus}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
               <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-4">

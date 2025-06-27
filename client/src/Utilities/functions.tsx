@@ -2,7 +2,7 @@ import React from 'react';
 import { imageTemplates } from '../templetes/ImageTemplate';
 import { carouselTemplates, Slide, defaultColors } from '../templetes/templetesDesign';
 import { doYouKnowTemplates, DoYouKnowSlide } from '../templetes/doYouKnowTemplates';
-import { useGenerateImageContentMutation, useImageContentMutation, useGenerateImageMutation, useSavePostsMutation, useUploadImageToCloudinaryMutation, useGenerateCarouselMutation, useCarouselContentMutation, useUploadCarouselToCloudinaryMutation, useGenerateDoYouKnowMutation, useDykContentMutation } from '../store/api';
+import { useGenerateImageContentMutation, useImageContentMutation, useGenerateImageMutation, useSavePostsMutation, useUploadImageToCloudinaryMutation, useGenerateCarouselMutation, useCarouselContentMutation, useUploadCarouselToCloudinaryMutation, useGenerateDoYouKnowMutation, useDykContentMutation, useFestivalContentMutation, useUpdateFestivalContentMutation } from '../store/api';
 import { ImageContent, Post, CarouselContent } from '../components/content/AutoPost/Types';
 import { usePalette } from 'color-thief-react';
 import chroma from 'chroma-js';
@@ -273,7 +273,7 @@ export const generateImagePost = async (
     const newImageSlide: ImageContent = {
       title: generatedContent.title || randomTemplate.slides[0].title || 'Default Title',
       description: generatedContent.description || randomTemplate.slides[0].description || 'Default Description',
-      footer: userData.uniqueIdentifier|| randomTemplate.slides[0].footer || 'bitrox.tech',
+      footer: userData.uniqueIdentifier || randomTemplate.slides[0].footer || 'bitrox.tech',
       websiteUrl: userData.websiteUrl || randomTemplate.slides[0].websiteUrl || 'https://bitrox.tech',
       imageUrl: userData.index === 3 ? imageUrl : imageUrl.data,
     };
@@ -303,7 +303,7 @@ export const generateImagePost = async (
       contentId: imageResult?.data?.user._id,
       contentType: 'ImageContent',
     };
-    
+
     console.log("New Post", newPost)
     // Color extraction
     const tempContainer = document.createElement('div');
@@ -385,7 +385,7 @@ export const generateImagePost = async (
       tempRoot.render(
         <ColorExtractor
           logoUrl={userData.logo || '/images/Logo1.png'}
-          imageUrl={userData.index === 3 ? imageUrl: imageUrl.data}
+          imageUrl={userData.index === 3 ? imageUrl : imageUrl.data}
           onColorsExtracted={(extractedColors) => {
             console.log('Extracted Colors:', extractedColors);
             resolve(extractedColors);
@@ -611,7 +611,7 @@ export const generateDoYouKnowPost = async (
       title: generatedDoYouKnowContent.title || randomDoYouKnowTemplate.slides[0].title || 'Did You Know?',
       fact: generatedDoYouKnowContent.description || randomDoYouKnowTemplate.slides[0].fact || 'Interesting fact here.',
       footer: userData.uniqueIdentifier || randomDoYouKnowTemplate.slides[0].footer || 'bitrox.tech',
-      websiteUrl: userData.websiteUrl ||  randomDoYouKnowTemplate.slides[0].websiteUrl || 'https://bitrox.tech',
+      websiteUrl: userData.websiteUrl || randomDoYouKnowTemplate.slides[0].websiteUrl || 'https://bitrox.tech',
       imageUrl: randomDoYouKnowTemplate.slides[0].imageUrl || 'https://via.placeholder.com/1080',
       slideNumber: 1,
     };
@@ -1474,6 +1474,7 @@ export const generateFestivalPost = async (
   mutations: {
     savePosts: ReturnType<typeof useSavePostsMutation>[0];
     uploadImageToCloudinary: ReturnType<typeof useUploadImageToCloudinaryMutation>[0];
+    updateFestivalContent: ReturnType<typeof useUpdateFestivalContentMutation>[0];
   },
   dispatch: React.Dispatch<any>,
   setCsrfToken: (token: { token: string; expiresAt: string }) => void,
@@ -1500,11 +1501,11 @@ export const generateFestivalPost = async (
 
     const newFestivalSlide: FestivalSlide = {
       title: data.festivalName || randomFestivalTemplate.slides[0].title,
-      description: data.description || randomFestivalTemplate.slides[0].description || 'Festival of Lightening.',
+      description: data.description || randomFestivalTemplate.slides[0].description,
       date: data.festivalDate || randomFestivalTemplate.slides[0].date,
-      footer: data.uniqueIdentifier || randomFestivalTemplate.slides[0].footer || 'bitrox.tech',
-      websiteUrl: data.websiteUrl || 'https://bitrox.tech',
-      imageUrl: data.imageUrl || randomFestivalTemplate.slides[0].imageUrl || 'https://via.placeholder.com/1080',
+      footer: data.uniqueIdentifier || randomFestivalTemplate.slides[0].footer,
+      websiteUrl: data.websiteUrl || randomFestivalTemplate.slides[0].websiteUrl,
+      imageUrl: data.imageUrl || randomFestivalTemplate.slides[0].imageUrl
     };
     console.log('New Festival Slide:', newFestivalSlide);
 
@@ -1787,6 +1788,32 @@ export const generateFestivalPost = async (
       console.error('Error during rendering or screenshot:', error);
       throw new Error(`Failed to render or capture screenshot: ${(error as Error).message}`);
     }
+
+    // Save Colors in FestivalContent
+    const colorsData = {
+      logoColors: colors.logoColors,
+      imageColors: colors.imageColors,
+      glowColor: colors.glowColor,
+      complementaryTextColor: colors.complementaryTextColor,
+      vibrantLogoColor,
+      vibrantTextColor,
+      footerColor,
+      backgroundColor,
+      typography,
+      graphicStyle,
+      materialTheme,
+    };
+    
+    const updateFestivalResult = await mutations.updateFestivalContent({
+     contentId: data._id || "",
+      colors: colorsData,
+    }).unwrap();
+
+    console.log('Festival Content Updated:', updateFestivalResult  );
+    dispatch(setCsrfToken({
+      token: updateFestivalResult.data.csrfToken,
+      expiresAt: updateFestivalResult.data.expiresAt,
+    }));
 
     // Save post with screenshot
     if (screenshotUrl) {

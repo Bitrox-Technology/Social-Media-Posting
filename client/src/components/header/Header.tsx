@@ -105,7 +105,7 @@ const Header: React.FC<{ toggleDrawer: (open: boolean) => (event: React.Keyboard
                     className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
                       }`}
                   >
-                    {user.email ? user.email.split('@')[0] : 'User'}
+                    {user.userName ? user.userName : 'User'}
                   </span>
                 </div>
               ) : (
@@ -229,7 +229,7 @@ const Header: React.FC<{ toggleDrawer: (open: boolean) => (event: React.Keyboard
                     className={`text-base font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
                       }`}
                   >
-                    {user.email ? user.email.split('@')[0] : 'User'}
+                    {user.userName ? user.userName : 'User'}
                   </span>
                 </div>
               )}

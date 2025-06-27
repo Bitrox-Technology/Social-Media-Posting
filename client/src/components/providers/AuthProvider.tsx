@@ -40,7 +40,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     '/features',
     '/signin',
     '/signup',
-    '/forgot-password',
+    '/otp-verification',
+    '/forget-password'
     
   ];
   const isPublicRoute = publicRoutes.includes(location.pathname);
@@ -71,7 +72,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           email: authData.data.user.email,
           expiresAt: authData.data.user.expiresAt,
           role: authData.data.user.role,
-          authenticate: true,
+          userName: authData.data.user.userName,
+          phone: authData.data.user.phone,
+          logo: authData.data.user.logo,
+          authenticate: authData.data.isAuthenticated,
         })
       );
     }
@@ -97,7 +101,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           email: sessionData.data.user.email,
           expiresAt: sessionData.data.user.expiresAt,
           role: sessionData.data.user.role,
-          authenticate: true,
+          userName: sessionData.data.user.userName,
+          phone: sessionData.data.user.phone,
+          logo: sessionData.data.user.logo,
+          sessionValid: sessionData.data.sessionValid,
         })
       );
     }

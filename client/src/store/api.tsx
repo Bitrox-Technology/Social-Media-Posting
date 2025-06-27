@@ -395,6 +395,13 @@ export const api = createApi({
         body: { topic },
       }),
     }),
+    generateBlogWithGemini: builder.mutation<ApiResponse<any>, { topic: string }>({
+      query: (topic) => ({
+        url: '/gemini-blog',
+        method: 'POST',
+        body: { topic },
+      }),
+    }),
     savePostContent: builder.mutation<ApiResponse<any>, { topics: string[] }>({
       query: (topics) => ({
         url: '/user/save-topics',
@@ -578,6 +585,13 @@ export const api = createApi({
         method: 'GET',
       }),
     }),
+    updateFestivalContent: builder.mutation<ApiResponse<any>, {contentId: string; colors: object}>({
+      query: ({contentId, colors}) => ({
+        url: `/user/update-festival-content//${contentId}`,
+        method: 'POST',
+        body: colors,
+      }),
+    }),
     festivalContent: builder.mutation<ApiResponse<any>, FormData>({
       query: (formData) => ({
         url: '/user/festival-content',
@@ -743,6 +757,7 @@ export const {
   useLazyGetSocialAuthQuery,
   useLazyGetUserScheduledPostsQuery,
   useFestivalContentMutation,
+  useUpdateFestivalContentMutation,
   useLazyGetFestivalContentQuery,
   useVerifyPaymentQuery,
   useLazyHolidaysQuery,
@@ -750,6 +765,7 @@ export const {
   useLazyGetWordpressAuthQuery,
   useProductContentMutation,
   useLazyGetProductContentQuery,
+  useGenerateBlogWithGeminiMutation,
 
   usePhonePeInitiatePaymentMutation,
   usePhonePeCheckStatusMutation,

@@ -4,20 +4,25 @@ import logger from '../middlewares/logger.js'; // Assuming this is your winston 
 const connectDB = async () => {
   try {
     // Log the connection attempt
+
+    const NODE_ENV = process.env.NODE_ENV || 'development';
+
+    const dbUrl = NODE_ENV === 'production' ? process.env.MONGODB_ATLAS_URL : process.env.MONGODB_URL;
+    const dbName = NODE_ENV === 'production' ? process.env.ATLAS_DB_NAME :  process.env.DB_NAME;
     logger.info('Attempting to connect to MongoDB', {
-      url: process.env.MONGODB_URL,
-      dbName: process.env.DB_NAME,
+      url: dbUrl,
+      dbName: dbName,
     });
 
     // Connect to MongoDB with connection pool settings
     const connectionInstance = await mongoose.connect(
-      `${process.env.MONGODB_URL}/${process.env.DB_NAME}`,
+      `${dbUrl}/${dbName}`,
       {
-        maxPoolSize: 50, 
-        minPoolSize: 5, 
-        connectTimeoutMS: 10000, 
-        socketTimeoutMS: 45000, 
-        serverSelectionTimeoutMS: 30000, 
+        maxPoolSize: 50,
+        minPoolSize: 5,
+        connectTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 30000,
       }
     );
 

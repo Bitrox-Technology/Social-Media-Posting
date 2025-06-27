@@ -10,7 +10,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
 import { toast } from 'react-toastify';
-import { useFestivalContentMutation, useLazyGetFestivalContentQuery, useSavePostsMutation, useUploadImageToCloudinaryMutation } from '../../store/api';
+import { useFestivalContentMutation, useLazyGetFestivalContentQuery, useSavePostsMutation, useUploadImageToCloudinaryMutation, useUpdateFestivalContentMutation } from '../../store/api';
 import { generateFestivalPost } from '../../Utilities/functions';
 import { useDispatch } from 'react-redux';
 import { setCsrfToken } from '../../store/appSlice';
@@ -37,6 +37,7 @@ export const FestivalPostCreator: React.FC = () => {
   const [getFestivalContent] = useLazyGetFestivalContentQuery();
   const [savePosts] = useSavePostsMutation();
   const [uploadImageToCloudinary] = useUploadImageToCloudinaryMutation();
+  const [updateFestivalContent] = useUpdateFestivalContentMutation();
 
   // Yup validation schema
   const validationSchema = Yup.object({
@@ -92,6 +93,7 @@ export const FestivalPostCreator: React.FC = () => {
           {
             savePosts,
             uploadImageToCloudinary,
+            updateFestivalContent,
           },
           dispatch,
           (token: { token: string; expiresAt: string }) =>
@@ -289,6 +291,16 @@ export const FestivalPostCreator: React.FC = () => {
               ) : (
                 <p className="text-gray-500 dark:text-gray-400 text-center">No image available for preview.</p>
               )}
+              <motion.button
+                onClick={() => navigate(`/edit-festival`, {state: newPost})}
+                className={`px-4 py-2 rounded-xl font-semibold bg-blue-500 text-white
+                    bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200
+                  `}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Edit
+              </motion.button>
               <motion.button
                 onClick={() => navigate(`/user-post/${newPost.postId}`)}
                 className={`px-4 py-2 rounded-xl font-semibold bg-blue-500 text-white

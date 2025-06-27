@@ -7,7 +7,7 @@ import { generateImage } from "../services/imageGenerator.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { carouselUploadOnCloudinary, uploadOnClodinary } from "../utils/cloudinary.js";
-import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent, generateBlog, generateCode, generateContent } from "../services/generateCarousel.js";
+import { generateCarouselContent, generateDoYouKnow, generateTopics, generateImageContent, generateBlog, generateCode, generateContent, generateContentWithGrok, generateBlogUsingGemini } from "../services/generateCarousel.js";
 import { postBlog, scheduledBlogPosts } from "../services/blogPost.js";
 import { OK } from "../utils/apiResponseCode.js";
 
@@ -528,6 +528,34 @@ const GenerateBlog = async (req, res, next) => {
   }
 };
 
+const GenerateContentWithGrok = async (req, res, next) => {
+
+  const { topic } = req.body;
+  if (!topic) {
+    throw new ApiError(400, "Topic is required");
+  }
+  try {
+    const result = await generateContentWithGrok(req.body);
+    return res.status(200).json(new ApiResponse(200, result, "Content generated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+const GenerateBlogWithGemini = async (req, res, next) => {
+
+  const { topic } = req.body;
+  if (!topic) {
+    throw new ApiError(400, "Topic is required");
+  }
+  try {
+    const result = await generateBlogUsingGemini(req.body);
+    return res.status(200).json(new ApiResponse(200, result, "Blog generated successfully"));
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 const GenerateContent = async (req, res, next) => {
 
@@ -577,6 +605,6 @@ const Holidays = async (req, res, next) => {
 const PostControllers = {
   Post, Content, Ideas, GenerateImage, GenerateCarousel, GenerateBlog, GenerateContent,
   UploadCarouselImages, UploadSingleImage, GenerateDoYouKnow, GenerateTopics, GenerateImageContent,
-  BlogPost, GenerateCode, Holidays
+  BlogPost, GenerateCode, Holidays, GenerateContentWithGrok, GenerateBlogWithGemini
 };
 export default PostControllers;

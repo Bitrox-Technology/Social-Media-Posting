@@ -37,6 +37,7 @@ userRouter.get("/get-all-blogs", AuthMiddleware, UserControllers.GetAllBlogs)
 userRouter.get("/get-blog/:blogid", AuthMiddleware, UserControllers.GetBlogById)
 userRouter.post("/blog-post", AuthMiddleware, UserControllers.BlogPost)
 userRouter.post("/festival-content", AuthMiddleware,uploadMemory.single("image"), UserControllers.FestivalContent);
+userRouter.put("/update-festival-content/:contentid", AuthMiddleware, UserControllers.UpdateFestivalContent)
 userRouter.get("/get-festival-content/:contentid", AuthMiddleware, UserControllers.GetFestivalContent)
 userRouter.post("/product-content", AuthMiddleware, uploadMemory.any(), UserControllers.SaveProductContent)
 userRouter.get("/get-product-content/:contentid", AuthMiddleware, UserControllers.GetProductContent)

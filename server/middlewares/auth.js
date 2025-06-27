@@ -26,9 +26,9 @@ const AuthMiddleware = async (req, res, next) => {
         let user;
 
         if (decodedToken.role === 'ADMIN') {
-            user = await Admin.findById(decodedToken._id).select('email role status isDeleted');
+            user = await Admin.findById(decodedToken._id).select('email role userName phone logo status isDeleted');
         } else {
-            user = await User.findById(decodedToken._id).select('email role status isDeleted');
+            user = await User.findById(decodedToken._id).select('email role userName phone logo status isDeleted');
         }
         if (!user || user.status === 'INACTIVE' || user.isDeleted) {
             clearAuthCookies(res);

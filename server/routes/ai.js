@@ -20,4 +20,6 @@ aiRouters.post('/generate-blog', PostControllers.GenerateBlog);
 aiRouters.post("/generate-code",upload.single('image'), PostControllers.GenerateCode)
 aiRouters.post("/generate-content", PostControllers.GenerateContent)
 aiRouters.get("/holidays", PostControllers.Holidays)
+aiRouters.post("/grok-content", PostControllers.GenerateContentWithGrok)
+aiRouters.post("/gemini-blog", PostControllers.GenerateBlogWithGemini)
 export default aiRouters;

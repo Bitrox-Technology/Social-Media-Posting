@@ -97,6 +97,8 @@ const verifyOTP = async (inputs) => {
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokenForUser(user)
 
+    user = await User.findByIdAndUpdate({id: user._id}, subObj, { new: true }).lean();
+
     user.accessToken = accessToken;
     user.refreshToken = refreshToken;
     return user;
@@ -200,8 +202,9 @@ const userDetails = async (inputs, user, files) => {
     }
 
     inputs.isProfileCompleted = true
+    console.log("Inputs: ", inputs)
 
-    let updatedUser = await User.findOneAndUpdate(
+    let updatedUser = await User.findByIdAndUpdate(
         { _id: user._id, isEmailVerify: true, isDeleted: false },
         inputs,
         { new: true, runValidators: true }
@@ -930,6 +933,20 @@ const festivalContent = async (inputs, file, user) => {
 
 }
 
+
+const updateFestivalContent = async(inputs, params, user) => {
+    const content = await FestivalContent.findByIdAndUpdate(
+        { _id: params.contentid, userId: user._id },
+        inputs,
+        { new: true }
+    );
+
+    if (!content) {
+        throw new ApiError(BAD_REQUEST, i18n.__("UNABLE_TO_UPDATE_CONTENT"));
+    }
+
+    return content;
+}
 const getFestivalContent = async (user, params) => {
     const content = await FestivalContent.aggregate([
         {
@@ -1129,6 +1146,7 @@ const getUserSubscription = async(user) => {
     return subscription;
 }
 
+
 const UserServices = {
     signup,
     signupSigninByProvider,
@@ -1166,6 +1184,7 @@ const UserServices = {
     productContent,
     getProductContent,
     createUserSubscription,
-    getUserSubscription
+    getUserSubscription,
+    updateFestivalContent
 }
 export default UserServices;

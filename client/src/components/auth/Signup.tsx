@@ -46,6 +46,7 @@ export const SignUp = () => {
   const handleSubmit = async (values: typeof initialValues, { setSubmitting, setErrors }: any) => {
     try {
       const response = await signUp({ email: values.email, password: values.password }).unwrap();
+      console.log("Response: ", response.data)
       if (response.success) {
         dispatch(setCsrfToken({
           token: response.data.csrfToken,

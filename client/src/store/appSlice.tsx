@@ -33,10 +33,14 @@ interface Post {
 }
 
 interface User {
+  userName?: string;
   email?: string;
+  phone?: string;
+  logo?: string;
   expiresAt?: number;
   role?: string;
   authenticate?: boolean;
+  sessionValid?: boolean;
 }
 
 interface CsrfState {

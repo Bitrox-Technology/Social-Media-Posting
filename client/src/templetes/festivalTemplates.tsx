@@ -1,6 +1,7 @@
 import chroma from "chroma-js";
 import cn from 'classnames';
 import { blendColors, ensureContrast } from "../Utilities/colorContraxt";
+import { checkLogoContrast } from "../Utilities/colorExtractor";
 
 
 export interface FestivalSlide {
@@ -52,30 +53,22 @@ export const DiwaliGlowTemplate: FestivalTemplate = {
     },
   ],
   renderSlide: (slide: FestivalSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => {
-    const { logoColors, glowColor, complementaryTextColor, vibrantTextColor, backgroundColor, typography, graphicStyle } = colors;
+    console.log("Colors on template: ", colors)
+    const bgColor = chroma('#f5f5f5').hex();
 
-    console.log("Colors-----------------from the template: ", colors)
-
-    const primaryColor = chroma('#ff6f61').hex(); // Coral pink (used in FlashSaleTemplate1)
-    const secondaryColor = chroma('#1b263b').hex(); // Navy blue (for the button)
-    const accentColor = chroma('#fff').hex(); // White for text
-    const bgColor = chroma('#f5f5f5').hex(); // Light gray for the overall background
-    // let textColor = chroma('#1b263b').hex();
-
-    let c1 = blendColors('#000000', colors.backgroundColor[0]);
-    let c2 = blendColors('#ffffff', colors.backgroundColor[1]);
-
-    console.log("C1: ", c1, " C2: ", c2)
+    let c1 = blendColors('#000000', bgColor);
+    let c2 = blendColors('#ffffff', bgColor);
 
     let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
+
     return (
       <div
         className={cn('relative w-[1080px] h-[1080px] flex', {
-          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+          'rounded-lg overflow-hidden': colors.graphicStyle.borderRadius !== '0px',
         })}
         style={{
-          fontFamily: typography.fontFamily,
+          fontFamily: colors.typography.fontFamily,
           backgroundColor: bgColor,
         }}
       >
@@ -83,17 +76,13 @@ export const DiwaliGlowTemplate: FestivalTemplate = {
         <div
           className="w-1/2 h-full relative"
           style={{
-            backgroundImage: slide.imageUrl ? `url(${slide.imageUrl})` : `linear-gradient(135deg, ${primaryColor} 0%, ${chroma(primaryColor).darken(1).hex()} 100%)`,
+            backgroundImage: `url(${slide.imageUrl})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
         >
           <div
             className="absolute inset-0"
-            style={{
-              backgroundColor: chroma(glowColor || '#FFD700').alpha(0.3).css(),
-
-            }}
           />
         </div>
 
@@ -101,7 +90,7 @@ export const DiwaliGlowTemplate: FestivalTemplate = {
         <div
           className="w-1/2 h-full flex flex-col justify-center p-16"
           style={{
-            backgroundColor: chroma(bgColor).brighten(0.2).hex(),
+            backgroundColor: bgColor,
           }}
         >
           {/* Logo in Top-Right */}
@@ -115,8 +104,9 @@ export const DiwaliGlowTemplate: FestivalTemplate = {
           <h2
             className="text-5xl font-bold mb-6 "
             style={{
-              color:  textColor.suggestedTextColor,
-              marginTop: '10rem'
+              color: textColor.suggestedTextColor,
+              fontFamily: colors.typography.fontFamily,
+              marginTop: '20rem'
             }}
           >
             {slide.title}
@@ -126,7 +116,8 @@ export const DiwaliGlowTemplate: FestivalTemplate = {
           <div
             className="w-24 h-1 mb-8"
             style={{
-              backgroundColor:  textColor.suggestedTextColor,
+              backgroundColor: textColor.suggestedTextColor,
+              fontFamily: colors.typography.fontFamily,
             }}
           />
 
@@ -134,7 +125,8 @@ export const DiwaliGlowTemplate: FestivalTemplate = {
           <p
             className="text-xl leading-relaxed mb-6"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
+              fontFamily: colors.typography.fontFamily,
             }}
           >
             {slide.description}
@@ -144,7 +136,8 @@ export const DiwaliGlowTemplate: FestivalTemplate = {
           <p
             className="text-lg font-medium mb-8"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
+              fontFamily: colors.typography.fontFamily,
             }}
           >
             Date: {slide.date}
@@ -155,7 +148,8 @@ export const DiwaliGlowTemplate: FestivalTemplate = {
             <span
               className="text-lg"
               style={{
-                color:  textColor.suggestedTextColor,
+                color: textColor.suggestedTextColor,
+                fontFamily: colors.typography.fontFamily,
               }}
             >
               @{slide.footer}
@@ -166,7 +160,8 @@ export const DiwaliGlowTemplate: FestivalTemplate = {
               rel="noopener noreferrer"
               className="text-lg hover:underline"
               style={{
-                color:  textColor.suggestedTextColor,
+                color: textColor.suggestedTextColor,
+                fontFamily: colors.typography.fontFamily,
               }}
             >
               {slide.websiteUrl}
@@ -194,39 +189,32 @@ export const BaisakhiTemplate: FestivalTemplate = {
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { typography, graphicStyle } = colors;
-
-    const primaryColor = '#FFD700'; // Gold (for wheat/sun)
-    const secondaryColor = '#4CAF50'; // Green (for fields)
-    const accentColor = '#FF9800'; // Amber (for warmth)
     const bgColor = '#F5F5DC'; // Khaki / Light Beige
-    // let textColor = '#3E2723'; // Dark Brown
+
 
     let c1 = blendColors('#000000', colors.imageColors[0]);
     let c2 = blendColors('#ffffff', colors.imageColors[1]);
 
-    console.log("C1: ", c1, " C2: ", c2)
-
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
       <div
         className={cn(
           'relative w-[1080px] h-[1080px] flex flex-col bg-cover bg-center overflow-hidden',
-          { 'rounded-lg': graphicStyle.borderRadius !== '0px' }
+          { 'rounded-lg': colors.graphicStyle.borderRadius !== '0px' }
         )}
         style={{
           backgroundImage: `url(${slide.imageUrl})`,
           backgroundSize: 'cover',
-          fontFamily: typography.fontFamily,
-          fontWeight: typography.fontWeight,
+          fontFamily: colors.typography.fontFamily,
+          fontWeight: colors.typography.fontWeight,
           backgroundColor: bgColor,
         }}
       >
         {/* Dynamic gradient overlay based on image presence */}
         <div className="absolute inset-0" style={{
-          background: `linear-gradient(180deg, ${chroma(secondaryColor).alpha(0.3).css()} 0%, ${chroma(primaryColor).alpha(0.2).css()} 100%)`,
+          background: `linear-gradient(180deg, ${chroma(colors.logoColors.secondary).alpha(0.3).css()} 0%, ${chroma(colors.logoColors.primary).alpha(0.2).css()} 100%)`,
           mixBlendMode: 'multiply',
           opacity: 0.8
         }} />
@@ -235,7 +223,7 @@ export const BaisakhiTemplate: FestivalTemplate = {
         {/* Abstract Wheat/Folk elements */}
         <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-yellow-400 rounded-full opacity-30 blur-2xl" />
         <div className="absolute -top-20 -right-20 w-60 h-60 bg-green-500 rounded-full opacity-30 blur-2xl" />
-        <div className="absolute bottom-10 right-10 w-24 h-24 transform rotate-45" style={{ backgroundColor: primaryColor, opacity: 0.4, borderRadius: graphicStyle.borderRadius }} />
+        <div className="absolute bottom-10 right-10 w-24 h-24 transform rotate-45" style={{ backgroundColor: colors.logoColors.primary, opacity: 0.4, borderRadius: colors.graphicStyle.borderRadius }} />
 
         {/* Content Section */}
         <div className="relative z-10 flex flex-col flex-1 p-16 justify-between items-center text-center">
@@ -246,7 +234,7 @@ export const BaisakhiTemplate: FestivalTemplate = {
                 src={defaultLogoUrl}
                 alt="Logo"
                 className="w-48 h-24 object-contain mb-12"
-                style={{ filter: 'grayscale(0.3)' }}
+
               />
             </div>
           )}
@@ -255,13 +243,17 @@ export const BaisakhiTemplate: FestivalTemplate = {
           <div className="flex-1 flex flex-col justify-center items-center">
             <h2
               className="text-8xl font-extrabold uppercase mb-6 tracking-tight"
-              style={{ color:  textColor.suggestedTextColor }}
+              style={{
+                color: textColor.suggestedTextColor,
+                fontFamily: colors.typography.fontFamily,
+              }}
+
             >
               {slide.title}
             </h2>
             <p
               className="text-3xl font-medium max-w-3xl leading-relaxed"
-              style={{ color:  textColor.suggestedTextColor }}
+              style={{ color: textColor.suggestedTextColor, fontFamily: colors.typography.fontFamily, }}
             >
               {slide.description}
             </p>
@@ -269,10 +261,10 @@ export const BaisakhiTemplate: FestivalTemplate = {
 
           {/* Decorative Harvest Line */}
           <div className="flex items-center space-x-6 mt-16">
-            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
-            <span className="text-4xl" style={{ color: secondaryColor }}>🌾</span> {/* Wheat ear unicode */}
-            <span className="text-4xl" style={{ color: accentColor }}>💃</span> {/* Dancing person unicode */}
-            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: colors.logoColors.primary }} />
+            <span className="text-4xl" style={{ color: colors.logoColors.secondary }}>🌾</span> {/* Wheat ear unicode */}
+            <span className="text-4xl" style={{ color: colors.logoColors.accent[0] }}>💃</span> {/* Dancing person unicode */}
+            <div className="w-24 h-2 rounded-full" style={{ backgroundColor: colors.logoColors.primary }} />
           </div>
 
           {/* Footer */}
@@ -281,7 +273,7 @@ export const BaisakhiTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-2xl font-semibold tracking-wider mt-12"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor, fontFamily: colors.typography.fontFamily, }}
           >
             @{slide.footer}
           </a>
@@ -318,7 +310,7 @@ export const LohriTemplate: FestivalTemplate = {
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -358,13 +350,13 @@ export const LohriTemplate: FestivalTemplate = {
           {/* Main Title & Description */}
           <h2
             className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.title}
           </h2>
           <p
             className="text-3xl font-normal max-w-3xl leading-relaxed mb-12"
-            style={{ color:  textColor.suggestedTextColor}}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.description}
           </p>
@@ -390,7 +382,7 @@ export const LohriTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-2xl font-semibold tracking-wider"
-            style={{ color: textColor.suggestedTextColor}}
+            style={{ color: textColor.suggestedTextColor }}
           >
             @{slide.footer}
           </a>
@@ -417,17 +409,9 @@ export const HoliTemplate: FestivalTemplate = {
     },
   ],
   renderSlide: (slide, addLogo, defaultLogoUrl, colors) => {
-    const { logoColors, materialTheme, typography, graphicStyle } = colors;
 
-    // Define colors for a vibrant Holi theme
-    const primaryColor = chroma('#ff6f61').hex(); // Coral pink (used in FlashSaleTemplate1)
-    const secondaryColor = chroma('#1b263b').hex(); // Navy blue (for the button)
-    const accentColor = chroma('#fff').hex(); // White for text
     const bgColor = chroma('#f5f5f5').hex(); // Light gray for the overall background
     // let textColor = chroma('#1b263b').hex(); // Navy blue for footer text
-
-    const usePrimary = logoColors.primary || primaryColor;
-    const useSecondary = logoColors.secondary || secondaryColor;
 
     const splashColors = [
       '#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3',
@@ -442,10 +426,8 @@ export const HoliTemplate: FestivalTemplate = {
     const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24)); // Convert to days
 
 
-    let c1 = blendColors('#000000', colors.backgroundColor[0]);
-    let c2 = blendColors('#ffffff', colors.backgroundColor[1]);
-
-    console.log("C1: ", c1, " C2: ", c2)
+    let c1 = blendColors('#000000', bgColor[0]);
+    let c2 = blendColors('#ffffff', bgColor[1]);
 
     let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
@@ -453,12 +435,12 @@ export const HoliTemplate: FestivalTemplate = {
     return (
       <div
         className={cn('relative w-[1080px] h-[1080px] flex', {
-          'rounded-lg': graphicStyle.borderRadius !== '0px',
+          'rounded-lg': colors.graphicStyle.borderRadius !== '0px',
         })}
         style={{
           backgroundColor: bgColor,
-          fontFamily: typography.fontFamily,
-          color:  textColor.suggestedTextColor,
+          fontFamily: colors.typography.fontFamily,
+          color: textColor.suggestedTextColor,
           overflow: 'hidden',
         }}
       >
@@ -473,14 +455,14 @@ export const HoliTemplate: FestivalTemplate = {
 
           <div
             className="absolute inset-0"
-            style={{ backgroundColor: chroma(materialTheme.background).alpha(0.3).css() }}
+
           />
         </div>
 
         {/* Right Side: Content */}
         <div
           className="w-1/2 h-full flex flex-col justify-center items-start p-20"
-          style={{ backgroundColor: chroma(usePrimary).alpha(0.9).css() }}
+          style={{ backgroundColor: bgColor }}
         >
           {/* Logo in Top-Right */}
           {addLogo && (
@@ -492,7 +474,7 @@ export const HoliTemplate: FestivalTemplate = {
           {/* Title */}
           <h2
             className="text-5xl font-bold mb-6 leading-tight"
-            style={{ color:  textColor.suggestedTextColor, maxWidth: '90%', textAlign: 'left' }}
+            style={{ color: textColor.suggestedTextColor, maxWidth: '90%', textAlign: 'left', fontFamily: colors.typography.fontFamily, }}
           >
             {slide.title}
           </h2>
@@ -500,7 +482,7 @@ export const HoliTemplate: FestivalTemplate = {
           {/* Description */}
           <p
             className="text-xl leading-relaxed mb-4"
-            style={{ color:  textColor.suggestedTextColor, maxWidth: '85%', textAlign: 'left' }}
+            style={{ color: textColor.suggestedTextColor, maxWidth: '85%', textAlign: 'left', fontFamily: colors.typography.fontFamily, }}
           >
             {slide.description}
           </p>
@@ -508,7 +490,7 @@ export const HoliTemplate: FestivalTemplate = {
           {/* Date */}
           <p
             className="text-lg font-medium mb-4"
-            style={{ color:  textColor.suggestedTextColor, textAlign: 'left' }}
+            style={{ color: textColor.suggestedTextColor, textAlign: 'left', fontFamily: colors.typography.fontFamily, }}
           >
             On the Date: {slide.date}
           </p>
@@ -516,7 +498,7 @@ export const HoliTemplate: FestivalTemplate = {
           {/* Days Remaining */}
           <p
             className="text-lg font-medium mb-8"
-            style={{ color:  textColor.suggestedTextColor, textAlign: 'left' }}
+            style={{ color: textColor.suggestedTextColor, textAlign: 'left', fontFamily: colors.typography.fontFamily, }}
           >
             Celebrate with us!
           </p>
@@ -532,13 +514,13 @@ export const HoliTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-xl font-medium tracking-wide hover:underline"
-            style={{ color:  textColor.suggestedTextColor}}
+            style={{ color: textColor.suggestedTextColor, fontFamily: colors.typography.fontFamily, }}
           >
             {slide.websiteUrl}
           </a>
           <p
             className="text-xl font-medium tracking-wide"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor, fontFamily: colors.typography.fontFamily, }}
           >
             @{slide.footer}
           </p>
@@ -574,7 +556,7 @@ export const DussehraTemplate: FestivalTemplate = {
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -624,13 +606,13 @@ export const DussehraTemplate: FestivalTemplate = {
           {/* Main Title & Description */}
           <h2
             className="text-8xl font-black uppercase mb-6 tracking-wide"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.title}
           </h2>
           <p
             className="text-3xl font-normal max-w-3xl leading-relaxed mb-12"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.description}
           </p>
@@ -652,7 +634,7 @@ export const DussehraTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-2xl font-semibold tracking-wider"
-            style={{ color: textColor.suggestedTextColor}}
+            style={{ color: textColor.suggestedTextColor }}
           >
             @{slide.footer}
           </a>
@@ -684,12 +666,12 @@ export const RakshaBandhanTemplate: FestivalTemplate = {
     const secondaryColor = '#FFD700'; // Gold (for thread)
     const accentColor = '#FFFFFF'; // White (for purity)
     const bgColor = '#F8EDEB'; // Light Pink
-   let c1 = blendColors('#000000', colors.imageColors[0]);
+    let c1 = blendColors('#000000', colors.imageColors[0]);
     let c2 = blendColors('#ffffff', colors.imageColors[1]);
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -728,7 +710,7 @@ export const RakshaBandhanTemplate: FestivalTemplate = {
           {/* Title */}
           <h2
             className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.title}
           </h2>
@@ -736,7 +718,7 @@ export const RakshaBandhanTemplate: FestivalTemplate = {
           {/* Description */}
           <p
             className="text-3xl font-light max-w-3xl leading-relaxed mb-12"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.description}
           </p>
@@ -796,7 +778,7 @@ export const KarwaChauthTemplate: FestivalTemplate = {
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -842,7 +824,7 @@ export const KarwaChauthTemplate: FestivalTemplate = {
           {/* Title */}
           <h2
             className="text-7xl font-bold uppercase mb-6 tracking-wide"
-            style={{ color: textColor.suggestedTextColor}}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.title}
           </h2>
@@ -850,7 +832,7 @@ export const KarwaChauthTemplate: FestivalTemplate = {
           {/* Description */}
           <p
             className="text-3xl font-light max-w-3xl leading-relaxed mb-12"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.description}
           </p>
@@ -875,7 +857,7 @@ export const KarwaChauthTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-xl font-medium tracking-wider"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             @{slide.footer}
           </a>
@@ -912,7 +894,7 @@ export const PunjabiSpiritTemplate: FestivalTemplate = {
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -953,7 +935,7 @@ export const PunjabiSpiritTemplate: FestivalTemplate = {
           {/* Title */}
           <h2
             className="text-7xl font-extrabold uppercase mb-6 tracking-wide"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             {slide.title}
           </h2>
@@ -1022,7 +1004,7 @@ export const BusinessEventTemplate: FestivalTemplate = {
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -1063,7 +1045,7 @@ export const BusinessEventTemplate: FestivalTemplate = {
           <h2
             className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               textShadow: `0 0 20px ${chroma(accentColor).alpha(0.8).css()}`,
               fontFamily: 'Montserrat, sans-serif',
             }}
@@ -1075,7 +1057,7 @@ export const BusinessEventTemplate: FestivalTemplate = {
           <p
             className="text-4xl font-light max-w-3xl mb-12"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 400,
             }}
@@ -1104,7 +1086,7 @@ export const BusinessEventTemplate: FestivalTemplate = {
             rel="noopener noreferrer"
             className="text-2xl font-medium tracking-wider"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               fontFamily: 'Poppins, sans-serif',
             }}
           >
@@ -1137,12 +1119,12 @@ export const ProductLaunchTemplate: FestivalTemplate = {
     const secondaryColor = '#64B5F6'; // Blue
     const accentColor = '#FFD700'; // Yellow
     const bgColor = '#FFFFFF'; // White
-   let c1 = blendColors('#000000', colors.imageColors[0]);
+    let c1 = blendColors('#000000', colors.imageColors[0]);
     let c2 = blendColors('#ffffff', colors.imageColors[1]);
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     const splashColors = ['#F44336', '#E91E63', '#2196F3', '#FFEB3B'];
@@ -1194,7 +1176,7 @@ export const ProductLaunchTemplate: FestivalTemplate = {
           <h2
             className="text-8xl font-bold uppercase mb-6 tracking-wide"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               textShadow: `3px 3px 0px ${primaryColor}`,
               fontFamily: 'Poppins, sans-serif',
             }}
@@ -1206,7 +1188,7 @@ export const ProductLaunchTemplate: FestivalTemplate = {
           <p
             className="text-4xl font-medium max-w-3xl leading-relaxed"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 400,
             }}
@@ -1242,7 +1224,7 @@ export const ProductLaunchTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-2xl font-semibold tracking-wider"
-            style={{ color:  textColor.suggestedTextColor}}
+            style={{ color: textColor.suggestedTextColor }}
           >
             @{slide.footer}
           </a>
@@ -1278,7 +1260,7 @@ export const WebinarInviteTemplate: FestivalTemplate = {
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -1316,7 +1298,7 @@ export const WebinarInviteTemplate: FestivalTemplate = {
           <h2
             className="text-8xl font-bold uppercase mb-6 tracking-wide"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               textShadow: `0 0 15px ${secondaryColor}`,
               fontFamily: 'Roboto, sans-serif',
             }}
@@ -1328,7 +1310,7 @@ export const WebinarInviteTemplate: FestivalTemplate = {
           argumentation <p
             className="text-3xl font-normal max-w-3xl leading-relaxed mb-12"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               fontFamily: 'Roboto, sans-serif',
               fontWeight: 400,
             }}
@@ -1353,7 +1335,7 @@ export const WebinarInviteTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-2xl font-semibold tracking-wider"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             @{slide.footer}
           </a>
@@ -1389,7 +1371,7 @@ export const SalesPromotionTemplate: FestivalTemplate = {
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -1433,7 +1415,7 @@ export const SalesPromotionTemplate: FestivalTemplate = {
           <h2
             className="text-8xl font-bold uppercase mb-6 tracking-wide"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               fontFamily: 'Montserrat, sans-serif',
             }}
           >
@@ -1444,7 +1426,7 @@ export const SalesPromotionTemplate: FestivalTemplate = {
           <p
             className="text-4xl font-medium max-w-3xl leading-relaxed"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               fontFamily: 'Montserrat, sans-serif',
               fontWeight: 400,
             }}
@@ -1460,7 +1442,7 @@ export const SalesPromotionTemplate: FestivalTemplate = {
             className="mt-12 px-8 py-4 rounded-full text-2xl font-semibold"
             style={{
               backgroundColor: secondaryColor,
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
             }}
           >
             Shop Now
@@ -1480,7 +1462,7 @@ export const SalesPromotionTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-2xl font-semibold tracking-wider"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             @{slide.footer}
           </a>
@@ -1516,7 +1498,7 @@ export const NetworkingEventTemplate: FestivalTemplate = {
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -1567,7 +1549,7 @@ export const NetworkingEventTemplate: FestivalTemplate = {
           <p
             className="text-4xl font-light max-w-3xl leading-relaxed mb-12"
             style={{
-              color:  textColor.suggestedTextColor,
+              color: textColor.suggestedTextColor,
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 400,
             }}
@@ -1592,7 +1574,7 @@ export const NetworkingEventTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-2xl font-semibold tracking-wider"
-            style={{ color:  textColor.suggestedTextColor}}
+            style={{ color: textColor.suggestedTextColor }}
           >
             @{slide.footer}
           </a>
@@ -1802,7 +1784,7 @@ export const EidTemplate: FestivalTemplate = {
 
     console.log("C1: ", c1, " C2: ", c2)
 
-   let  textColor = ensureContrast(c1, c2)
+    let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
 
     return (
@@ -1841,7 +1823,7 @@ export const EidTemplate: FestivalTemplate = {
           {/* Title */}
           <h2
             className="text-8xl font-extrabold uppercase mb-6 tracking-wide"
-            style={{ color:  textColor.suggestedTextColor, textShadow: `0 0 15px ${chroma(primaryColor).alpha(0.6).css()}` }}
+            style={{ color: textColor.suggestedTextColor, textShadow: `0 0 15px ${chroma(primaryColor).alpha(0.6).css()}` }}
           >
             {slide.title}
           </h2>
@@ -1872,7 +1854,7 @@ export const EidTemplate: FestivalTemplate = {
             target="_blank"
             rel="noopener noreferrer"
             className="text-2xl font-semibold tracking-wider"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor }}
           >
             @{slide.footer}
           </a>
@@ -1898,19 +1880,14 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
     },
   ],
   renderSlide: (slide: FestivalSlide, addLogo: boolean, defaultLogoUrl: string, colors: Colors) => {
-    const { logoColors, glowColor, complementaryTextColor, vibrantLogoColor, backgroundColor, typography, graphicStyle } = colors;
+    console.log("Colors: ", colors)
+    const bgColor = chroma('#f5f5f5').hex();
 
-    // Color setup for Christmas theme
-    const primaryColor = chroma('#ff6f61').hex(); // Coral pink (used in FlashSaleTemplate1)
-    const secondaryColor = chroma('#1b263b').hex(); // Navy blue (for the button)
-    const accentColor = chroma('#fff').hex(); // White for text
-    const bgColor = chroma('#f5f5f5').hex(); // Light gray for the overall background
-    // let textColor = chroma('#1b263b').hex();
+    let c1 = blendColors('#000000', bgColor);
+    let c2 = blendColors('#ffffff', bgColor);
 
-    let c1 = blendColors('#000000', colors.backgroundColor[0]);
-    let c2 = blendColors('#ffffff', colors.backgroundColor[1]);
-
-    console.log("C1: ", c1, " C2: ", c2)
+    let imageContast = checkLogoContrast(colors.imageColors, colors.logoColors.primary, colors.glowColor)
+    console.log("image contast", imageContast)
 
     let textColor = ensureContrast(c1, c2)
     console.log("Text Color", textColor)
@@ -1918,10 +1895,10 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
     return (
       <div
         className={cn('relative w-[1080px] h-[1080px] flex flex-col', {
-          'rounded-lg overflow-hidden': graphicStyle.borderRadius !== '0px',
+          'rounded-lg overflow-hidden': colors.graphicStyle.borderRadius !== '0px',
         })}
         style={{
-          fontFamily: typography.fontFamily,
+          fontFamily: colors.typography.fontFamily,
           backgroundColor: bgColor,
         }}
       >
@@ -1929,7 +1906,7 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
         <div
           className="w-full h-1/2 relative"
           style={{
-            backgroundImage: slide.imageUrl ? `url(${slide.imageUrl})` : `linear-gradient(135deg, ${primaryColor} 0%, ${chroma(primaryColor).darken(1).hex()} 100%)`,
+            backgroundImage: `url(${slide.imageUrl})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
@@ -1937,14 +1914,17 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
           <div
             className="absolute inset-0"
             style={{
-              backgroundColor: chroma(glowColor || '#FFFFFF').alpha(0.2).css(),
-              boxShadow: `inset 0 0 30px ${chroma(glowColor || '#FFFFFF').alpha(0.4).css()}`,
+              background: imageContast.needsEnhancement ? imageContast.suggestedGradient : 'none',
             }}
           />
           {/* Logo in Top-Right */}
           {addLogo && (
             <div className="absolute top-8 right-8 z-20">
-              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" />
+              <img src={defaultLogoUrl} alt="Logo" className="w-40 h-20 object-contain" style={{
+                background: imageContast.needsEnhancement ? imageContast.suggestedLogoEffect.background : 'none',
+                // border: imageContast.needsEnhancement ? imageContast.suggestedLogoEffect.border : 'none',
+                // boxShadow: imageContast.needsEnhancement ? imageContast.suggestedLogoEffect.shadow : 'none'
+              }} />
             </div>
           )}
         </div>
@@ -1953,13 +1933,13 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
         <div
           className="w-full h-1/2 flex flex-col justify-center p-16"
           style={{
-            backgroundColor: chroma(bgColor).darken(0.1).hex(),
+            backgroundColor: bgColor,
           }}
         >
           {/* Title */}
           <h2
             className="text-5xl font-bold mb-6"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor, fontFamily: colors.typography.fontFamily, }}
           >
             {slide.title}
           </h2>
@@ -1967,7 +1947,7 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
           {/* Description */}
           <p
             className="text-xl leading-relaxed mb-6"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor, fontFamily: colors.typography.fontFamily, }}
           >
             {slide.description}
           </p>
@@ -1975,7 +1955,7 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
           {/* Date */}
           <p
             className="text-lg font-medium mb-8"
-            style={{ color:  textColor.suggestedTextColor }}
+            style={{ color: textColor.suggestedTextColor, fontFamily: colors.typography.fontFamily, }}
           >
             Date: {slide.date}
           </p>
@@ -1984,7 +1964,7 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
           <div className="mt-auto flex justify-between items-center">
             <span
               className="text-lg"
-              style={{ color:  textColor.suggestedTextColor }}
+              style={{ color: textColor.suggestedTextColor, fontFamily: colors.typography.fontFamily, }}
             >
               @{slide.footer}
             </span>
@@ -1993,7 +1973,7 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
               target="_blank"
               rel="noopener noreferrer"
               className="text-lg hover:underline"
-              style={{ color:  textColor.suggestedTextColor }}
+              style={{ color: textColor.suggestedTextColor, fontFamily: colors.typography.fontFamily, }}
             >
               {slide.websiteUrl}
             </a>
@@ -2003,6 +1983,7 @@ export const ChristmasCheerTemplate: FestivalTemplate = {
     );
   },
 };
+
 export const FestivalTemplates: FestivalTemplate[] = [
   DiwaliGlowTemplate,
   ChristmasCheerTemplate,

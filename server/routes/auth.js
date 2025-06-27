@@ -16,7 +16,7 @@ authRouter.get("/auth-status", AuthMiddleware, async (req, res) => {
     try {
         if (!req.user) throw new ApiError(UN_AUTHORIZED, i18n.__('USER_NOT_FOUND'));
         res.status(OK).json(new ApiResponse(OK, {
-            user: { id: req.user._id, email: req.user.email, role: req.user.role, expiresAt: req.user.expiresAt },
+            user: { id: req.user._id, email: req.user.email, role: req.user.role, expiresAt: req.user.expiresAt, phone: req.user.phone, userName: req.user.userName, logo: req.user.logo},
             isAuthenticated: true,
         }, i18n.__('AUTH_STATUS_SUCCESS')));
     } catch (error) {
@@ -35,7 +35,7 @@ authRouter.get('/validate-session', AuthMiddleware, async (req, res) => {
             throw new ApiError(UN_AUTHORIZED, i18n.__('SESSION_INVALID'));
         }
         res.status(OK).json(new ApiResponse(OK, {
-            user: { id: req.user._id, email: req.user.email, role: req.user.role, expiresAt: req.user.expiresAt },
+            user: { id: req.user._id, email: req.user.email, role: req.user.role, expiresAt: req.user.expiresAt, phone: req.user.phone, userName: req.user.userName, logo: req.user.logo},
             sessionValid: true,
         }, i18n.__('SESSION_VALID')));
     } catch (error) {
