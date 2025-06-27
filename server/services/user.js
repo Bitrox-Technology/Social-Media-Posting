@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import User from "../models/user.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 import { generateAccessAndRefreshTokenForUser } from "../utils/generateToken.js";
 import { BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR } from "../utils/apiResponseCode.js";
 import { clearAuthCookies, comparePasswordUsingBcrypt, convertToCron, decryptToken, encryptToken, Hashed_Password, isEmail } from "../utils/utilities.js";

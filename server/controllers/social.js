@@ -1,4 +1,4 @@
-import { ApiResponse } from "../utils/ApiResponse.js"
+import { ApiResponse } from "../utils/apiResponse.js"
 import { OK } from "../utils/apiResponseCode.js"
 import SocialServices from "../services/social.js"
 import i18n from "../utils/i18n.js"

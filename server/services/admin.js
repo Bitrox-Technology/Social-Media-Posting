@@ -1,4 +1,4 @@
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 import { generateAccessAndRefreshTokenForAdmin, generateAccessAndRefreshTokenForUser } from "../utils/generateToken.js";
 import { BAD_REQUEST } from "../utils/apiResponseCode.js";
 import { comparePasswordUsingBcrypt, Hashed_Password, isEmail } from "../utils/utilities.js";

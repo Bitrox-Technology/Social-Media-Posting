@@ -1,6 +1,6 @@
 import i18n from "../utils/i18n.js"
 import { BAD_REQUEST } from "../utils/apiResponseCode.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 
 const VALIDATE_SCHEMA = async(schema, inputs) => {
 

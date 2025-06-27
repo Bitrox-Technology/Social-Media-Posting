@@ -1,6 +1,5 @@
 import { Ollama } from "ollama";
-import { OpenAI } from "openai";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 import fs from "fs";
 
 import { GoogleGenAI } from "@google/genai";

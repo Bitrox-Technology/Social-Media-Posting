@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 import { BAD_REQUEST } from "../utils/apiResponseCode.js";
 import querystring from "querystring";
 import { downloadImage } from "../utils/postUtils.js";

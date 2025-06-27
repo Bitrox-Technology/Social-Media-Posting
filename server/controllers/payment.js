@@ -1,5 +1,5 @@
 import PaymentServices from "../services/payment.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../utils/apiResponse.js";
 import { CREATED, OK } from "../utils/apiResponseCode.js";
 import { RevokeToken } from "../utils/csrf.js";
 import i18n from "../utils/i18n.js";

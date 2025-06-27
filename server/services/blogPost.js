@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ApiError } from '../utils/ApiError.js';
+import { ApiError } from '../utils/apiError.js';
 import { BAD_REQUEST } from '../utils/apiResponseCode.js';
 import { convertToCron } from '../utils/utilities.js';
 import { v4 as uuidv4 } from "uuid";

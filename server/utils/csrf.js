@@ -1,5 +1,5 @@
 import { csrfSync } from 'csrf-sync';
-import { ApiError } from './ApiError.js';
+import { ApiError } from './apiError.js';
 import { FORBIDDEN } from './apiResponseCode.js';
 import i18n from './i18n.js';
 

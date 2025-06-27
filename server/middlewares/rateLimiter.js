@@ -2,7 +2,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from '../config/constant.js';
 import getClientIp from '../utils/getClientIp.js';
 import logger from './logger.js';
-import {ApiError} from "../utils/ApiError.js"
+import {ApiError} from "../utils/apiError.js"
 
 
 const globalRateLimiter = rateLimit({

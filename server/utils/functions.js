@@ -1,7 +1,7 @@
 import { generateOTP } from "./utilities.js";
 import OTP from "../models/otp.js";
 import { sendOtp, sendOtpForAdmin } from "../services/sendOTP.js";
-import { ApiError } from "./ApiError.js";
+import { ApiError } from "./apiError.js";
 import { BAD_REQUEST } from "./apiResponseCode.js";
 import moment from "moment";
 

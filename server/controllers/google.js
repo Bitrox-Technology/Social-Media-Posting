@@ -1,6 +1,6 @@
 import { getAuthUrl, getTokens } from "../middlewares/google.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiError } from "../utils/apiError.js";
+import { ApiResponse } from "../utils/apiResponse.js";
 import { BAD_REQUEST, OK } from "../utils/apiResponseCode.js";
 import i18n from "../utils/i18n.js";
 

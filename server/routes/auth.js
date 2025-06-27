@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../utils/apiResponse.js";
 import { INTERNAL_SERVER_ERROR, OK, UN_AUTHORIZED } from "../utils/apiResponseCode.js";
 import i18n from "../utils/i18n.js";
 import jwt from "jsonwebtoken";
@@ -9,7 +9,7 @@ import { AuthMiddleware } from "../middlewares/auth.js";
 import User from "../models/user.js";
 import Admin from "../models/admin.js";
 import { clearAuthCookies, generateAccessToken } from "../utils/utilities.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 const authRouter = Router()
 
 authRouter.get("/auth-status", AuthMiddleware, async (req, res) => {

@@ -1,5 +1,5 @@
 import { OK } from "../utils/apiResponseCode.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../utils/apiResponse.js";
 import AdnminValidation from "../validations/admin.js";
 import AdminServices from "../services/admin.js";
 const Signup = async (req, res, next) => {

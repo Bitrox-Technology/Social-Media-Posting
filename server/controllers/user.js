@@ -1,5 +1,5 @@
 import UserServices from "../services/user.js"
-import { ApiResponse } from "../utils/ApiResponse.js"
+import { ApiResponse } from "../utils/apiResponse.js"
 import { OK, CREATED } from "../utils/apiResponseCode.js"
 import UserValidation from "../validations/user.js"
 import i18n from "../utils/i18n.js"

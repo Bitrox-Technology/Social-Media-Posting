@@ -1,9 +1,9 @@
 import { IgApiClient } from "instagram-private-api";
 import fs from "fs-extra";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 import cron from "node-cron";
 import { convertToCron } from "../utils/utilities.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../utils/apiResponse.js";
 
 let scheduledPosts = [];
 

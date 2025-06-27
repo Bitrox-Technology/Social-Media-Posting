@@ -1,6 +1,6 @@
 import User from "../models/user.js";
 import Admin from "../models/admin.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 import { EXPIRED_TOKEN, UN_AUTHORIZED } from "../utils/apiResponseCode.js";
 import jwt from "jsonwebtoken"
 import i18n from "../utils/i18n.js";

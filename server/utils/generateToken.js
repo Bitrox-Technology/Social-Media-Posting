@@ -1,5 +1,5 @@
 import { INTERNAL_SERVER_ERROR } from "./apiResponseCode.js";
-import { ApiError } from "./ApiError.js";
+import { ApiError } from "./apiError.js";
 import {generateAccessToken, generateRefershToken} from "./utilities.js"; 
 import Admin from "../models/admin.js";
 

@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../utils/apiResponse.js";
 import { INTERNAL_SERVER_ERROR, OK } from "../utils/apiResponseCode.js";
 import i18n from "../utils/i18n.js";
 import { generateToken } from "../utils/csrf.js";
 import logger from "../middlewares/logger.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 const csrfRouter = Router()
 
 csrfRouter.get('/csrf-token', (req, res) => {

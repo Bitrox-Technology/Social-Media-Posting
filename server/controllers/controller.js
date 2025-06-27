@@ -1,7 +1,7 @@
 import { postToInsta, schedulePost } from "../services/insta.js";
 import { Ollama } from "ollama";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/apiResponse.js";
+import { ApiError } from "../utils/apiError.js";
 import fs from "fs/promises";
 import { generateImage } from "../services/imageGenerator.js";
 import path from "path";

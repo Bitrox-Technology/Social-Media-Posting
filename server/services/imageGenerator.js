@@ -1,4 +1,4 @@
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/apiError.js";
 import axios from "axios";
 
 const SD_API_URL = process.env.SD_API_URL || "http://127.0.0.1:7860";

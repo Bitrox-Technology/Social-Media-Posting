@@ -1,6 +1,6 @@
 import PaytmChecksum from 'paytm-pg-node-sdk';
 import axios from 'axios';
-import { ApiError } from '../utils/ApiError.js';
+import { ApiError } from '../utils/apiError.js';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, PAGE_NOT_FOUND } from '../utils/apiResponseCode.js';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';

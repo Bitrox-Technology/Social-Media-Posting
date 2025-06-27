@@ -1,6 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
-import { ApiError } from "./ApiError.js";
+import { ApiError } from "./apiError.js";
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR } from "./apiResponseCode.js";
 import { Readable } from 'stream';
 

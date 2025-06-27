@@ -1,4 +1,4 @@
-import { ApiError } from './ApiError.js';
+import { ApiError } from './apiError.js';
 import { BAD_REQUEST } from './apiResponseCode.js';
 import { promises as fs } from 'fs'; // Use fs.promises
 import { createWriteStream } from 'fs';
