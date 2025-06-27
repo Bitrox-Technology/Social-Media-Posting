@@ -2,13 +2,12 @@ import mongoose from 'mongoose';
 import logger from '../middlewares/logger.js'; // Assuming this is your winston logger
 
 const connectDB = async () => {
+
+  const NODE_ENV = process.env.NODE_ENV || 'development';
+  const dbUrl = NODE_ENV === 'production' ? process.env.MONGODB_ATLAS_URL : process.env.MONGODB_URL;
+  const dbName = NODE_ENV === 'production' ? process.env.ATLAS_DB_NAME : process.env.DB_NAME;
   try {
-    // Log the connection attempt
 
-    const NODE_ENV = process.env.NODE_ENV || 'development';
-
-    const dbUrl = NODE_ENV === 'production' ? process.env.MONGODB_ATLAS_URL : process.env.MONGODB_URL;
-    const dbName = NODE_ENV === 'production' ? process.env.ATLAS_DB_NAME :  process.env.DB_NAME;
     logger.info('Attempting to connect to MongoDB', {
       url: dbUrl,
       dbName: dbName,
@@ -46,7 +45,7 @@ const connectDB = async () => {
       try {
         logger.info(`Retrying MongoDB connection (attempt ${attempt}/${maxRetries})`);
         const connectionInstance = await mongoose.connect(
-          `${process.env.MONGODB_URL}/${process.env.DB_NAME}`,
+          `${dbUrl}/${dbName}`,
           {
             maxPoolSize: 50,
             minPoolSize: 5,
