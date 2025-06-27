@@ -155,34 +155,39 @@ app.use((req, res, next) => {
   next();
 });
 // Session middleware
-app.use(session({
-  secret: process.env.CSRF_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: `${process.env.MONGODB_URL}/${process.env.DB_NAME}`,
-    collectionName: 'sessions',
-    ttl: 24 * 60 * 60,
-    autoRemove: 'native',
-  }).on('error', (error) => {
-    logger.error('MongoStore error', { message: error.message, stack: error.stack });
+app.use(
+  session({
+    secret: process.env.CSRF_SECRET || 'fallback-secret-key', // Ensure a default secret
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.NODE_ENV === 'production' ? process.env.MONGODB_ATLAS_URL : process.env.MONGODB_URL, // Use base URL without /dbName
+      dbName: process.env.NODE_ENV === 'production' ? process.env.ATLAS_DB_NAME : process.env.DB_NAME, // Specify dbName separately
+      collectionName: 'sessions',
+      ttl: 24 * 60 * 60, // 24 hours
+      autoRemove: 'native',
+      mongooseConnection: mongoose.connection, // Share Mongoose connection
+    }).on('error', (error) => {
+      logger.error('MongoStore error', { message: error.message, stack: error.stack });
+    }),
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      domain: process.env.DOMAIN,
+      path: '/',
+    },
   }),
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000,
-    domain: process.env.DOMAIN,
-    path: '/',
-  },
-}), (req, res, next) => {
-  logger.info('Session details', {
-    sessionID: req.sessionID,
-    csrfToken: req.session.csrfToken,
-    headers: req.headers,
-  });
-  next()
-});
+  (req, res, next) => {
+    logger.info('Session details', {
+      sessionID: req.sessionID,
+      csrfToken: req.session.csrfToken,
+      headers: req.headers,
+    });
+    next();
+  }
+);
 
 app.use((req, res, next) => {
   try {
@@ -357,14 +362,12 @@ process.on('SIGINT', async () => {
 });
 
 // Connect to MongoDB and start the server
-connectDB()
-  .then(() => {
-    checkExpiredSubscriptions();
-    server.listen(PORT, () => {
-      logger.info(`Server is running at port: ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    logger.error("MongoDB connection failed", { message: err.message, stack: err.stack });
-    process.exit(1);
+connectDB().then(() => {
+  checkExpiredSubscriptions();
+  server.listen(PORT, () => {
+    logger.info(`Server is running at port: ${PORT}`);
   });
+}).catch((err) => {
+  logger.error("MongoDB connection failed", { message: err.message, stack: err.stack });
+  process.exit(1);
+});
