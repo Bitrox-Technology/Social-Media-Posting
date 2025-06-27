@@ -9,7 +9,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import sanitizeHtml from 'sanitize-html';
 import hpp from 'hpp';
 import compression from 'compression';
-import { ApiError } from "./utils/ApiError.js";
+import { ApiError } from "./utils/apiError.js";
 import path from "path";
 import { fileURLToPath } from 'url';
 import connectDB from "./config/db.js";
@@ -22,7 +22,7 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import { csrfSynchronisedProtection, generateToken } from './utils/csrf.js';
 import { INTERNAL_SERVER_ERROR } from "./utils/apiResponseCode.js";
-import { ApiResponse } from "./utils/ApiResponse.js";
+import { ApiResponse } from "./utils/apiResponse.js";
 import initSocket from "./socket/socket.js";
 import { checkExpiredSubscriptions } from "./config/scheduler.js";
 
@@ -280,6 +280,9 @@ app.use((req, res, next) => {
 // Serve static files
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
+app.get('/', (req, res) => {
+  res.status(200).json(new ApiResponse(200, null, i18n.__('WELCOME_MESSAGE')));
+});
 // Routes
 app.use("/api/v1", router);
 
